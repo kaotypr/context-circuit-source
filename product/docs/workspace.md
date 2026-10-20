@@ -10,14 +10,14 @@ the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
-| members.yaml | Member ID to display name, optional allocation band, and optional record language and tone; empty in a solo workspace | Yes |
-| .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
+| members.yaml | Member ID to display name, allocation band, optional record language and tone, and optional informational roles; lists at least one member | Yes |
+| .context-circuit/ids/MEMBER.yaml | One member's permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug/plan.md | New plan entry, repositories, dependencies, optional intent and required_files, created_by, created_at, completed_at | Yes |
 | plans/pNNNN-slug/* | Optional supporting design files assigned in the plan entry | Yes |
 | plans/pNNNN-slug.md | Legacy single-file plan, still readable and editable | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
-| member.local.yaml | Active member ID on this machine; absent in a solo workspace | No |
+| member.local.yaml | Active member ID on this machine; written by init, and by member use on every other machine | No |
 | repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
@@ -26,7 +26,7 @@ the shared instruction and folders alongside these small records:
 Example shared repository definition:
 
 ```yaml
-version: 2
+version: 3
 name: Acme
 purpose: Billing software
 workspace_repository:
@@ -98,6 +98,21 @@ the workspace's own checkout and names `workspace connect` instead.
 No command commits, pushes, or merges the workspace. Members share one branch of
 it; a member who keeps the workspace on another branch records that in the local
 binding, where it describes that machine and nobody else.
+
+## Member roles
+
+A member may carry `roles`, a list of free text saying what they contribute,
+such as `[maintainer, docs]`, shown wherever the roster is shown. Roles are
+informational and decide nothing: approval, allocation, deletion, and dispatch
+behave the same with or without them, and the roster is still not access
+control. `member roles` sets or clears them, `member add --role` and
+`init --member-role` record them with the member. Each role is one nonempty line
+of text, like a member's name, with no list of allowed values; a role given
+twice is kept once.
+
+Roles are written only at schema 3. A CLI too old to know the field reads the
+roster strictly, so roles wait until the workspace is at a schema that CLI has
+already refused to work in. `check` reports roles found in a schema 2 roster.
 
 ## Language
 
@@ -226,9 +241,10 @@ nobody here can move it.
 
 A clone carries the shared records and none of this machine's state. `check`
 names what is missing: an active member, the workspace binding, and a binding
-per repository. Until a member is selected, `status` reports `identity_required`
-and the agent declines changing requests; reading still works. A solo workspace,
-initialized without a member, has an empty roster and asks nobody who they are. Add the member to the roster if nobody has, select them, run
+per repository. Until a member is selected, `status` reports `identity_required`,
+every changing command is refused, and the agent declines changing requests;
+reading still works. Add the member to the roster with a band if nobody has,
+select them, run
 `workspace connect`, obtain each repository, and run `agent setup` to write the
 role definitions, which are gitignored and so never arrive with the clone.
 
@@ -259,17 +275,31 @@ keys produce errors. User notes remain ordinary Markdown with no schema registry
 Atomic single-file replacements and a portable OS lock protect cooperating
 commands in one directory. Multi-file operations may leave useful partial output
 on interruption; IDs are reserved before file creation and are not rolled back.
-`record delete` releases IDs deliberately, updating the ledger before it removes
-the files, so an interrupted deletion leaves numbers still counted as taken.
+`record delete` releases IDs deliberately, from every ID file holding them,
+only after it has removed the record files — plans before intents, and each
+`plan.md` after the rest of its folder — so an interrupted deletion leaves every
+selected number reserved and every partly removed plan still a record. `--all`
+empties every ID file and keeps the files. `--id` first takes each deleted plan
+out of its own intent's `plans:` list. A deletion interrupted at any point is
+finished by running `record delete --id` with the IDs still reserved, which the
+error names, or the same `--id` or `--all` call again; a plan folder already
+emptied of its `plan.md` is named for removal by hand. Deleting another
+member's records edits their ID file, so if they create a record before pulling
+the deletion, Git reports a conflict in that file; keeping the union of both
+sides is safe, since a released number left reserved is only a gap.
 Check the reported path and resume or repair the named files. Locks are released
 when the process exits, including abnormal exit; the empty local lock file remains.
 
-An optional per-member allocation band divides the numeric range so members can
-allocate offline without colliding. A member holding band N takes intents from
-`N*100` and plans from `N*1000`; unbanded members take the numbers no band
-claims. Bands must be distinct, and a roster with two members on one band is
-refused until it is resolved. Changing or clearing a band leaves existing records
-and their reservations untouched.
+Every member holds an allocation band, which divides the numeric range so
+members can allocate offline without colliding. A member holding band N takes
+intents from `N*100` and plans from `N*1000`. Band 0 is a band like any other,
+written as `band: 0`, and covers `i001`-`i099` and `p0001`-`p0999`. Allocation
+skips every number already taken inside the band. Bands must be distinct, band 0
+included, and a roster with two members on one band is refused until it is
+resolved. A member with no `band` key, which only a roster written by an earlier
+version holds, leaves setup incomplete: every change is refused until that
+member is given one. Changing a band leaves existing records and their
+reservations untouched.
 
 ```yaml
 members:
@@ -280,6 +310,63 @@ members:
     name: Alex
     band: 2
 ```
+
+## ID files
+
+Each member's reservations live in their own file,
+`.context-circuit/ids/MEMBER.yaml`, holding an `intents` list and a `plans`
+list. Creating a record appends to its author's file and to no other, so once
+every clone has the per-member layout, two members who create records on
+separate clones change different files. The one-time split below is the
+exception: it writes every author's file at once. Allocation treats a
+number as taken when any member's file reserves it or any record file holds it,
+archived ones included.
+
+A member's file may hold numbers outside that member's current band, such as
+records an earlier version wrote without an author, or ones made before bands
+changed. That is valid, and `check` does not report it. A member ID that is a
+Windows device name (`con`, `nul`, `com1`, and the like) is refused, because no
+clone on Windows could check its file out.
+
+A workspace an earlier CLI wrote is at schema 2, with every reservation in one
+shared `.context-circuit/ids.yaml`. The first command that changes something,
+once a member is selected and every member holds a band, splits that file: each
+reservation goes to the file of the member its record names in `created_by`,
+and one with no author, or whose record file is gone, goes to the member
+selected on this machine. The shared file is removed and `workspace.yaml` moves
+to `version: 3`. CLIs before 2.4.0 refuse a schema 3 workspace with "requires a
+newer CLI", so every member needs 2.4.0 from then on. Reading commands, a
+`record delete` preview, and a command that refuses its own arguments never
+split.
+
+Because the split writes a file for every author, only one person on a team
+upgrades first. That person makes the first changing command, which splits the
+IDs and moves the workspace to schema 3, then commits and pushes it. Everyone
+else pulls that commit before making any change of their own. Teammates who
+upgrade at the same time and each make a change before pulling will each have
+written the same member files with different content, and Git reports a conflict
+in `.context-circuit/ids/*.yaml`. That conflict is theirs to resolve by hand:
+keep the union of both sides' entries in each member file, then run `check`,
+which reports any number reserved twice.
+
+A member ID that is a Windows device name, which a 2.3.0 roster could hold,
+stops the split: it names the member, or the author and their records, and
+changes nothing. `status` and `check` report such a member beforehand. No command
+renames a member, so rename it by hand in `members.yaml`, in the `created_by` of
+every record they authored, and in `member.local.yaml` on each machine that
+selected it.
+
+If the shared file comes back, typically merged from a teammate's clone that had
+not pulled the split, the next changing command splits it again: numbers a member
+file already holds are skipped, new ones are moved by the same rules, and the
+file is removed again. If Git reports a conflict in it, resolve it first,
+keeping every entry. If Git reports the shared file renamed to two different
+member files, keep both member files and remove the shared file.
+
+Two clones that each split before pulling the other also give the same
+authorless numbers to two different members. Nothing is handed out twice,
+because allocation reads every file. `check` reports each number reserved in
+more than one file, and a person removes the extra entry by hand.
 
 Bands are the only offline collision prevention here, and they only cover members
 who hold distinct ones against a current roster. Before allocating from separate

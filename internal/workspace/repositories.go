@@ -409,8 +409,39 @@ func Inspect(ctx context.Context, path string) (Snapshot, error) {
 	if err != nil {
 		return result, err
 	}
-	if changes != "" {
-		result.Changes = strings.Split(strings.TrimSuffix(changes, "\x00"), "\x00")
+	for _, entry := range ParseStatus(changes) {
+		result.Changes = append(result.Changes, entry.Code+" "+entry.Path)
 	}
 	return result, nil
+}
+
+// StatusEntry is one path `git status --porcelain=v1 -z` reports: its two-letter
+// code, its path, and for a rename or copy the path it came from.
+type StatusEntry struct {
+	Code string
+	Path string
+	From string
+}
+
+// ParseStatus reads `git status --porcelain=v1 -z` output. A rename or copy
+// carries its old path as the next NUL field rather than inside the entry, so
+// splitting on NUL alone reports the old path as a second entry with no code.
+// Paths are as Git prints them: slash-separated and relative to the top of the
+// repository, on every OS.
+func ParseStatus(text string) []StatusEntry {
+	fields := strings.Split(strings.TrimSuffix(text, "\x00"), "\x00")
+	var entries []StatusEntry
+	for i := 0; i < len(fields); i++ {
+		field := fields[i]
+		if len(field) < 4 {
+			continue
+		}
+		entry := StatusEntry{Code: field[:2], Path: field[3:]}
+		if strings.ContainsAny(entry.Code, "RC") && i+1 < len(fields) {
+			i++
+			entry.From = fields[i]
+		}
+		entries = append(entries, entry)
+	}
+	return entries
 }

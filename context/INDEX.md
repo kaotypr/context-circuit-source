@@ -22,11 +22,13 @@ collide with one, because a repository ID is always lowercase. Matching is
 plain case-insensitive substring: a line holding `invoices` already answers a
 search for `invoice`, and the braces stop `{api}` from also matching
 `{api-gateway}`. Choose terms that separate a note from its neighbours, since a
-word carried by every entry narrows nothing.
+word carried by every entry narrows nothing. When a note changes, rewrite its
+terms against what it now says rather than adding to them, and split a note
+whose entry would need a very long list.
 
-Group entries under headings and order them within a group. This catalog stays
-small enough to read in full; searching it is the fallback once it is not. A
-note absent from here is reachable only by someone who already knows its
+Group entries under headings and order them within a group. A reader searches
+this catalog for the few entries a task needs rather than reading it whole, and
+the grouping keeps it easy to browse when they do. A note absent from here is reachable only by someone who already knows its
 filename, and an entry naming a note that is not there is a confident miss, so
 the entry and the note are written in the same edit. The `check` diagnostic
 reports either half when it is missing.
@@ -94,8 +96,8 @@ as concerns earn them, each with its own scope line.*
 *What Context Circuit is for, who it serves, and the decisions behind it. How it
 is built is `architecture/`.*
 
-- [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, coordination · reviewed 2026-09-17
-- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, publication target, publication order, release request, release repository · reviewed 2026-09-19
+- [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, planning request, coordination · reviewed 2026-10-20
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, publication target, publication order, release request, release repository, precedence, behind, outdated cli, schema 3, cut-over, template delta · reviewed 2026-10-20
 - [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the CLI, which cover a workspace, and why a workspace holds no license file · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge, export-ignore, gitattributes · reviewed 2026-09-19
 
 ### Architecture
@@ -103,10 +105,10 @@ is built is `architecture/`.*
 *How the product is built and why it is shaped that way — the seam between CLI
 and agent, the command surface, the instruction layers, the file contract.*
 
-- [The CLI and agent seam](architecture/cli-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go CLI and which to the agent · seam, boundary, cli, refusals, model-blind, judgment, mechanism, remedy · reviewed 2026-09-19
+- [The CLI and agent seam](architecture/cli-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go CLI and which to the agent · seam, boundary, cli, refusals, model-blind, judgment, mechanism, remedy, id file · reviewed 2026-10-20
 - [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the CLI exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-18
-- [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability, audience · reviewed 2026-09-19
-- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema, interrupted deletion · reviewed 2026-09-27
+- [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability, audience, next step · reviewed 2026-10-20
+- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema, interrupted deletion, roster, band, id file, split, schema 3, roles, member roles · reviewed 2026-10-20
 
 ### Actors
 
@@ -114,7 +116,7 @@ and agent, the command surface, the instruction layers, the file contract.*
 does for them is `domains/`.*
 
 - [Maintainer](actors/maintainer.md) {context-circuit-source} — who owns this checkout and what they need from it · actor, maintainer, ships, release, manifest, validation, versioning · reviewed 2026-09-19
-- [Workspace member](actors/workspace-member.md) {context-circuit-source} — who runs the product against a project and what they need from it · actor, member, user, team, roster, solo, identity, joining, approval, isolation, retrieval, deletion · reviewed 2026-09-27
+- [Workspace member](actors/workspace-member.md) {context-circuit-source} — who runs the product against a project and what they need from it · actor, member, user, team, roster, team of one, working alone, setup, identity, joining, approval, isolation, retrieval, deletion, roles, contribution · reviewed 2026-10-20
 - [Coding agent](actors/coding-agent.md) {context-circuit-source} — what the agent reading this workspace needs in order to act correctly · actor, agent, host, instruction, brief, dispatch, output, refusal · reviewed 2026-09-19
 
 ### Coordination domains
@@ -122,15 +124,15 @@ does for them is `domains/`.*
 *What the product does for a project, and the rules that govern each area. Who
 it does that for is `actors/`.*
 
-- [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen, kept unique across clones, and released by deletion, who is allocating, and which language each record is written in · id, allocation, band, reservation, ledger, member, solo, identity, identity_required, member use, delete, release, reset, offline, collision, language, approval gate · reviewed 2026-09-27
+- [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen, kept unique across clones, and released by deletion, who is allocating, and which language each record is written in · id, allocation, band, band 0, band suggestion, band_required, next_band, reservation, ledger, id file, per-member id file, split, re-split, schema 3, member, setup, team of one, identity, identity_required, member use, member band, roster conflict, delete, delete by id, reservation only, unlink, leftover branch, interrupted deletion, re-run, still reserved, empty plan folder, release, reset, offline, collision, language, approval gate, planning request · reviewed 2026-10-20
 - [Grounding an intent and its open questions](domains/intent-grounding.md) {context-circuit-source} — what an intent is written against and how unsettled decisions reach the person · intent, grounding, open questions, numbered, answer, assumption, contradiction · reviewed 2026-09-19
-- [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors, mermaid, fence · reviewed 2026-09-18
-- [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, isolation, execution, copy-on-write, clone, dependency, environment, predecessor start · reviewed 2026-09-16
+- [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, search terms, rewrite terms, split, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors, mermaid, fence · reviewed 2026-10-20
+- [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, isolation, execution, copy-on-write, clone, dependency, environment, predecessor start, prune, stale association, dropped, checked out elsewhere, reused plan number, plan_created_at, earlier plan, legacy association, base tip, remove, empty folder, removed_directories · reviewed 2026-10-21
 - [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how selected plans are sequenced, merged, and released · order, selection, waves, chain, chain end, deliver, dependency, integration merge, concurrency, stop · reviewed 2026-09-23
-- [Plan artifacts and their reading map](domains/plan-artifacts.md) {context-circuit-source} — how standalone and linked folder plans organize detail for each repository · plan, standalone, folder, required_files, supporting files, dispatch, selection, legacy · reviewed 2026-09-23
+- [Plan artifacts and their reading map](domains/plan-artifacts.md) {context-circuit-source} — how standalone and linked folder plans organize detail for each repository · plan, standalone, folder, required_files, supporting files, dispatch, selection, legacy, planning request · reviewed 2026-10-20
 - [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do, how a brief is composed, and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, brief, prompt, integration, review, commit · reviewed 2026-09-23
 - [Changing something directly](domains/direct-changes.md) {context-circuit-source} — when a person skips intent and planning, and what still holds when they do · direct, bypass, small change, quick fix, bound checkout, lane, routing, uncommitted, reconcile · reviewed 2026-09-19
-- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, standalone plan, execution request, authorization, delivery, completion, cleanup, scope, consent, gate, obligation, planning_required, reconcile_required, commit, ancestry, bypass, record deletion, preview, confirm, identity · reviewed 2026-09-27
+- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, standalone plan, execution request, authorization, delivery, completion, cleanup, scope, consent, gate, obligation, planning_recommended, planning request, recommendation, reconcile_required, commit, commit_recommended, uncommitted, git status, ancestry, bypass, record deletion, preview, confirm, identity · reviewed 2026-10-20
 
 ### Maintaining this source
 

@@ -11,22 +11,25 @@ already has the shared files.
 
 ## Initialize
 
-Initialize a workspace only when requested. Gather its name and purpose, and ask
-whether other people will work in it. A team workspace starts with its first
-member: gather their name and derive a readable member ID. A solo workspace
-starts with no member at all.
+Initialize a workspace only when requested. Gather its name and purpose, and the
+first member, who is the person initializing it — a person working alone is a
+team of one. Suggest their name and a readable member ID from
+`git config user.name` and `git config user.email`, and use them only after the
+person confirms or changes them. Their band is 1 unless they pick another. Ask
+what roles they contribute in, such as maintainer or docs; the question may be
+skipped, and a skipped one records no roles.
 
 ```sh
 context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
   --member ID --member-name NAME
-context-circuit-cli --workspace <root> init --name NAME --purpose TEXT
+context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
+  --member ID --member-name NAME --member-band N --member-role maintainer
 ```
 
 The CLI creates embedded instructions, folders, and initial records, and
-preserves existing files. A solo workspace has an empty roster: nobody selects an
-identity and its records carry no author. It becomes a team workspace when its
-first member is added, and every machine then selects one — so a solo developer
-bringing someone in adds themselves as well as the teammate.
+preserves existing files. It writes the member to the roster with their band and
+selects them on this machine, so nothing is left to set up afterwards. A
+teammate brought in later is added with a band of their own.
 
 On another machine, select an existing member and connect its local checkouts;
 do not reinitialize the shared workspace. Cloning a workspace onto a second
@@ -39,13 +42,14 @@ A cloned workspace carries the shared records and none of this machine's state:
 no active member, no bindings, and no role definitions, because those are
 gitignored. `check` on a fresh clone names what is missing; work through it.
 
-In a workspace that lists members, a person this machine has not identified is
-asked who they are before anything changes, which is the entry instruction's
-gate. Show the members `members.yaml` lists and ask whether they are one of them
-or someone new. An existing member is selected with `member use`. Someone new is
-added with a readable ID, their name, and a band nobody holds, then selected.
-Take their answer as given; nothing verifies it. Once selected, return to the
-request they made.
+A person this machine has not identified is asked who they are before anything
+changes, which is the entry instruction's gate. Show the members `members.yaml`
+lists and ask whether they are one of them or someone new. An existing member is
+selected with `member use`. Someone new is added with a readable ID, their name,
+and a band: offer the `next_band` that `status` reports and let them confirm it
+or pick another nobody holds, and ask what roles they contribute in, which they
+may skip. Then select them. Take their answer as given;
+nothing verifies it. Once selected, return to the request they made.
 
 Unless the request says otherwise, put checkouts under `repositories/<id>`,
 which is gitignored and is where the workspace expects its working copies.
@@ -60,18 +64,24 @@ context-circuit-cli --workspace <root> agent setup
 ```
 
 Add the member only when the roster does not already carry them; someone may
-have added them already. A band is required once a workspace has more than one
-member, and the CLI refuses a band another member holds — read `members.yaml`,
-propose a free one, and confirm it rather than choosing silently.
+have added them already. Every member holds a band, `member add` refuses to run
+without one, and the CLI refuses a band another member holds — propose the
+suggested one and confirm it rather than choosing silently.
 
 Cloning a repository the workspace already describes takes no `--url`: the
 shared record carries it, and nothing shared is rewritten. A repository the
 record gives no URL for has to be obtained by hand and bound with `repo
 connect`.
 
-`members.yaml` is the only shared file joining changes. Committing and pushing
-it is the user's decision, as every commit is. Stop when `check` is clean and
-say what changed.
+On a workspace already at schema 3, `members.yaml` is the only shared file
+joining changes. On one still at schema 2 the joiner's first changing command,
+such as `workspace connect`, also splits the ID file: it writes
+`.context-circuit/ids/`, moves `workspace.yaml` to schema 3, and gives every
+reservation with no author to the joiner. That split is the one-person-first
+upgrade described under the members section below, so before it, confirm nobody
+else on the team has upgraded and pull first. Committing and pushing is the
+user's decision, as every commit is. Stop when `check` is clean and say what
+changed.
 
 ## Connect repositories
 
@@ -156,20 +166,57 @@ binding alone.
 
 ## Members and allocation bands
 
-A member may hold an allocation band: a numeric block that member allocates from
-alone. Bands are what let two clones that cannot see each other allocate without
-colliding, so give every member of a team workspace a distinct band before they
-work apart. A solo workspace has no members to band, and an unbanded member
-allocates from the numbers no band has claimed.
+Every member holds an allocation band: a numeric block that member allocates
+from alone. Band N takes intents from `N*100` and plans from `N*1000`, so band 5
+starts at `i500` and `p5000`. Band 0 is a band like any other, covering
+`i001`-`i099` and `p0001`-`p0999`. No two members hold the same band, which is
+what lets two clones that cannot see each other allocate without colliding.
 
 ```sh
-context-circuit-cli --workspace <root> member add --id ID --name NAME --band 100
-context-circuit-cli --workspace <root> member band --id ID --band 200
+context-circuit-cli --workspace <root> member add --id ID --name NAME --band 2
+context-circuit-cli --workspace <root> member band --id ID --band 3
 ```
 
-The band decides which number comes next and never makes a reserved number
-reusable; only `record delete` releases one. A band is not a namespace: the ID
-stays global.
+The CLI suggests a band and the person confirms it or picks another. Suggestions
+start at 1, never offer band 0, and never offer a band whose range already holds
+records, so a suggested band starts empty. A person may still pick any unused
+band by hand, band 0 or one holding old records included: allocation skips every
+number already taken. The band decides which number comes next and never makes a
+reserved number reusable; only `record delete` releases one. A band is not a
+namespace: the ID stays global.
+
+A member who has used up their band's numbers on abandoned records, a member
+leaving the team, or a person changing their mind about some intents is served
+by `record delete --id ID`, repeatable: it removes exactly the named records,
+whoever wrote them, and releases their numbers so the lowest free one in the
+author's band comes next. It previews first, showing each record's author and
+status; show the person that list and any warnings about leftover `cc/pNNNN/*`
+branches, and run `--confirm` only once they agree. A refusal naming a record
+outside the list is resolved by adding the IDs it names, if the person wants
+those gone too, or by leaving the records in place.
+
+A roster written by an earlier version may hold members with no band. `status`
+then reports `band_required` and a `band_suggestions` entry for each of them,
+and every change is refused until each has one. Offer each member their
+suggested band, record what the person confirms with `member band`, and return
+to their request.
+
+A workspace an earlier CLI wrote is at schema 2, with one shared
+`.context-circuit/ids.yaml`, and the first changing command a 2.4.0 CLI runs
+there splits it into a file for every author. Only one person on a team
+upgrades first. Before that first change, tell the person so: they make it,
+then commit and push it, and everyone else pulls before changing anything. A
+teammate who upgraded at the same time gets a Git conflict in
+`.context-circuit/ids/*.yaml`. That is theirs to resolve by hand, not yours to
+pick: suggest keeping the union of both sides' entries in each member file, then
+run `check`, which reports any number reserved twice. A member whose ID is a
+Windows device name, such as `con`, stops the split; `status` names them, and
+the person renames them by hand.
+
+Two clones may band the same members at the same time. When their choices
+clash — `members.yaml` left with Git conflict markers, two members on one band,
+or one member given two bands — `check` reports it as needing a person. Show the
+person both versions and let them choose; never pick a winner for them.
 
 ## The language a member writes records in
 
@@ -202,9 +249,31 @@ when a team knows the register it wants; unset leaves the general composition
 guidance in `.agents/skills/cc-intent/SKILL.md` to decide. Ask the member for
 the wording rather than inventing a register on their behalf.
 
+## The roles a member contributes in
+
+A member may record roles: free text saying what they contribute, such as
+maintainer or docs, so people reading the roster can see who works on what.
+
+```sh
+context-circuit-cli --workspace <root> member add --id ID --name NAME --band N --role docs
+context-circuit-cli --workspace <root> member roles --id ID --role maintainer --role docs
+context-circuit-cli --workspace <root> member roles --id ID --clear
+```
+
+`member roles` replaces whatever roles were recorded. Record the roles the person
+names, in their words; there is no list of allowed values, and none is
+invented for them. Roles are informational and decide nothing: never treat one
+as authority to approve, plan, execute, deliver, complete, or delete. They are
+not the subagent `--role` that `agent configure` and `agent dispatch` take.
+
+Roles are written only at workspace schema 3. While a workspace written by an
+earlier version is still mid-setup, `member add --role` is refused: add the
+member without roles, finish setup, and set them with `member roles`, by which
+time the next change has moved the workspace to schema 3.
+
 Bands prevent collisions only between members who actually hold distinct ones.
-Unbanded members working in separate clones, and any clone whose roster is
-stale, can still allocate the same number. Synchronize the shared workspace
+Two clones of the same member, and any clone whose roster is stale, can still
+allocate the same number. Synchronize the shared workspace
 before allocating, and resolve conflicting allocations and references before
 publishing their IDs. Do not claim distributed collision prevention beyond what
 bands give.

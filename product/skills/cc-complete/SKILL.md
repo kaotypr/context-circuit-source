@@ -21,7 +21,9 @@ English regardless.
 
 The result carries `completed_at`, the catalog entries scoped to that plan's
 repositories, and `reconcile_required` naming the judging whenever there are any.
-Completion reporting success is the record written, not the request finished.
+In a Git workspace it also carries `commit_recommended`, the plan, intent, and ID
+files left uncommitted: pass it on, and commit them only when the person
+authorizes it. Completion reporting success is the record written, not the request finished.
 
 ## Judge, do not rewrite
 

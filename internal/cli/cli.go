@@ -19,17 +19,21 @@ const Help = `Context Circuit — shared workspace operations
 
 Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 
-init                  --name NAME --purpose TEXT [--member ID --member-name NAME]
-                      (no member makes a solo workspace, with no roster)
+init                  --name NAME --purpose TEXT --member ID --member-name NAME
+                      [--member-band N] [--member-role ROLE ...] (the first member,
+                      selected here; band 1 unless another is given)
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
-member add            --id ID --name NAME [--band N] [--language NAME] [--tone TEXT]
-member band           --id ID --band N|0 (allocation block; 0 clears it)
+member add            --id ID --name NAME --band N [--language NAME] [--tone TEXT]
+                      [--role ROLE ...]
+member band           --id ID --band N (allocation block, 0-9999; 0 is a band)
 member language       --id ID --language NAME (the language this member's
                       intents and plans are written in; knowledge stays English)
 member tone           --id ID --tone TEXT | --clear (the register that language
                       is written in, such as 'semi-formal; keep technical terms
                       in English')
+member roles          --id ID --role ROLE ... | --clear (what this member
+                      contributes, such as maintainer; informational, decides nothing)
 member use            --id ID
 member list
 repo connect          --id ID --path PATH --base BRANCH [--url URL]
@@ -62,8 +66,9 @@ record list           [--archived]
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
-record delete         --member ID | --all [--confirm] (a member's intents and plans,
-                      or every record in a solo workspace, releasing their IDs;
+record delete         --member ID | --all | --id ID [--id ID ...] [--confirm]
+                      (a member's intents and plans, every record while the roster
+                      lists one member, or the named records, releasing their IDs;
                       without --confirm it previews and deletes nothing)
 record order          [--intent ID | --plan ID ...] [--mode auto|waves|linear]
                       derive dependency waves, start refs, and integration merges
@@ -76,6 +81,7 @@ worktree inspect       --repo ID --path PATH
 worktree move          --repo ID --path PATH --to NEW_PATH
 worktree repair        --repo ID --path PATH
 worktree remove        --repo ID --path PATH [--discard]
+worktree prune         --repo ID (drops associations of worktrees Git no longer lists)
 template export       --path NEW_DIRECTORY (blank workspace files)
 agent settings        inspect effective per-host role model and effort preferences
                       (shared, with any role-tiering.local.yaml override applied)
@@ -88,6 +94,10 @@ agent dispatch        --host HOST --role ROLE --path DIRECTORY [--task TEXT]
                       --task is the assignment where no record carries it.
                       Host must launch the returned prompt unmodified.)
 version
+
+Every command that changes something is refused until the roster lists this
+machine's selected member and every member holds a band; init, member add,
+member use, and member band are the steps that settle it.
 
 Approval, completion, fetch, and removal are explicit operations. The caller must
 hold the user's authorization. No command executes plans, starts review, commits,
@@ -141,6 +151,33 @@ func pinnedVersionWarning(s *workspace.Store, running string) string {
 	}
 	return fmt.Sprintf("warning: this workspace pins CLI %s but %s is running; "+
 		"run the version this workspace pins, or ask the cc-cli skill to install it\n", pinned, running)
+}
+
+// commitRecommendation names the records and ID files a gate leaves
+// uncommitted. Until they are committed and pushed no other clone sees them,
+// and an ID file left behind is how two people reserve the same number.
+type commitRecommendation struct {
+	Files []workspace.UncommittedFile `json:"files"`
+	Note  string                      `json:"note"`
+}
+
+// recommendCommit adds what approval and completion leave uncommitted to their
+// result. It runs after the command has succeeded and only ever adds a key: a
+// recommendation when there is something to commit, or the reason Git could
+// not say. It never stages or commits, because committing workspace records is
+// the person's decision.
+func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]any, ids ...string) {
+	files, unchecked := s.UncommittedRecords(ctx, ids...)
+	if unchecked != "" {
+		result["commit_unchecked"] = unchecked + "; whether these records and the ID files are committed was not checked"
+		return
+	}
+	if len(files) > 0 {
+		result["commit_recommended"] = commitRecommendation{
+			Files: files,
+			Note:  "these records and ID files are not committed, so other clones cannot see them yet: recommend committing and pushing them to the person; committing still needs the person's authorization, and nothing was staged or committed",
+		}
+	}
 }
 
 func Run(ctx context.Context, args []string, out, errOut io.Writer, version string) int {
@@ -201,15 +238,22 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			values[name] = f.String(name, "", name)
 		}
 	}
-	var repos, dependencies, copyPaths, plans listFlag
+	var repos, dependencies, copyPaths, plans, roles, recordIDs listFlag
 	var band int
-	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone, all, confirm bool
+	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone, clearRoles, all, confirm bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
+		f.IntVar(&band, "member-band", 1, "allocation block for the first member")
+		f.Var(&roles, "member-role", "informational role of the first member (repeatable)")
 	case "member add":
 		add("id", "name", "language", "tone")
 		f.IntVar(&band, "band", 0, "allocation block for this member")
+		f.Var(&roles, "role", "informational role of this member (repeatable)")
+	case "member roles":
+		add("id")
+		f.Var(&roles, "role", "informational role, replacing those recorded (repeatable)")
+		f.BoolVar(&clearRoles, "clear", false, "remove this member's recorded roles")
 	case "member language":
 		add("id", "language")
 	case "member tone":
@@ -217,7 +261,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		f.BoolVar(&clearTone, "clear", false, "remove this member's recorded register")
 	case "member band":
 		add("id")
-		f.IntVar(&band, "band", 0, "allocation block, or 0 to clear it")
+		f.IntVar(&band, "band", 0, "allocation block; 0 is a band like any other")
 	case "member use", "repo inspect":
 		add("id")
 	case "repo connect", "repo clone":
@@ -257,7 +301,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("id", "text")
 	case "record delete":
 		add("member")
-		f.BoolVar(&all, "all", false, "every record in a solo workspace")
+		f.BoolVar(&all, "all", false, "every record, while the roster lists one member")
+		f.Var(&recordIDs, "id", "intent or plan ID to delete (repeatable)")
 		f.BoolVar(&confirm, "confirm", false, "delete, after the person agreed to the previewed list")
 	case "record dependencies":
 		add("id")
@@ -273,7 +318,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		values["copy-mode"] = f.String("copy-mode", "auto", "runtime file reuse: auto, required, copy, off")
 		f.Var(&copyPaths, "copy-path", "additional ignored runtime path (repeatable)")
 		f.BoolVar(&reuse, "reuse", false, "explicitly reuse existing work")
-	case "worktree list":
+	case "worktree list", "worktree prune":
 		add("repo")
 	case "worktree inspect", "worktree repair":
 		add("repo", "path")
@@ -349,10 +394,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// carries the source in the shared record — which is what joining one
 	// looks like.
 	optional["url"] = true
-	// A solo workspace is initialized with no member, and a solo deletion
-	// names none; the store refuses a half-given pair where it can say why.
-	optional["member"] = command == "init" || command == "record delete"
-	optional["member-name"] = command == "init"
+	// Deleting every record names no member; the store refuses a half-given
+	// pair where it can say why.
+	optional["member"] = command == "record delete"
 	optional["intent"] = command == "record create" || command == "record order" || command == "agent dispatch"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
@@ -387,9 +431,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 	}
 	// The required check above reads string flags, and a band is a number whose
-	// zero value is the documented way to clear one. Omitting the flag would
-	// otherwise clear the member's block silently, which is the one outcome a
-	// caller who forgot it cannot have meant.
+	// zero value is a real band. Omitting the flag would otherwise move the
+	// member to band 0 silently, which a caller who forgot it cannot have meant.
 	if command == "member band" && !provided(f, "band") {
 		fmt.Fprintln(errOut, "missing --band")
 		return 2
@@ -414,8 +457,67 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 	}
 	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "knowledge list" || command == "worktree list" || command == "worktree inspect"
+	// These settle setup, so they must run before it is complete; every other
+	// change waits for it. A command missing from readOnly is refused here by
+	// default, which is the safe direction for one added later.
+	setupStep := command == "init" || command == "member add" || command == "member use" || command == "member band"
+	// The ID split is a change of its own, so only a changing command makes it,
+	// and only once setup has named the member who receives authorless
+	// reservations. Init writes the new layout itself, and a deletion preview
+	// promises to write nothing.
+	splits := !readOnly && command != "init" && !(command == "record delete" && !confirm)
+	splitNotice := ""
 	checkFailed := false
 	action := func() (any, error) {
+		if !readOnly && !setupStep {
+			if err := s.RequireSetup(); err != nil {
+				return nil, fmt.Errorf("setup is incomplete, so nothing was changed: %w", err)
+			}
+		}
+		// A call its own command would refuse is refused before the split, so a
+		// mistyped command never moves a schema 2 workspace on its way to failing.
+		switch command {
+		case "member add":
+			// Nothing is written without a band the person chose, but the
+			// refusal offers one so choosing costs nothing.
+			if !provided(f, "band") {
+				suggestions, e := s.SuggestBands()
+				if e != nil {
+					return nil, fmt.Errorf("pass --band N: %w", e)
+				}
+				return nil, fmt.Errorf("pass --band N; the next free band is %d", suggestions.Next)
+			}
+		case "member roles":
+			if err := workspace.RolesCall(roles, clearRoles); err != nil {
+				return nil, err
+			}
+		case "record delete":
+			// The preview writes nothing and reads either ID-file layout, so a
+			// deletion it refuses is refused before the split.
+			if confirm {
+				if _, err := s.DeleteRecords(ctx, get("member"), all, recordIDs, false); err != nil {
+					return nil, err
+				}
+			}
+		}
+		if _, err := workspace.MemberRoles(roles); err != nil {
+			return nil, err
+		}
+		if splits {
+			if state, err := s.Setup(); err == nil {
+				pending, err := s.IDSplitPending()
+				if err != nil {
+					return nil, err
+				}
+				if pending {
+					split, err := s.SplitIDLedger(state.Active)
+					if err != nil {
+						return nil, fmt.Errorf("the ID files could not be moved to one file per member, so nothing was changed: %w", err)
+					}
+					splitNotice = split.Notice()
+				}
+			}
+		}
 		var err error
 		switch command {
 		case "init", "template export":
@@ -428,7 +530,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				if e != nil {
 					return nil, e
 				}
-				err = s.Init(files, readme, get("name"), get("purpose"), get("member"), get("member-name"))
+				err = s.Init(files, readme, get("name"), get("purpose"), get("member"), get("member-name"), band, roles)
 			} else {
 				err = s.Export(files)
 			}
@@ -449,13 +551,15 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member list":
 			return s.Members()
 		case "member add":
-			err = s.AddMember(get("id"), get("name"), band, get("language"), get("tone"))
+			err = s.AddMember(get("id"), get("name"), band, get("language"), get("tone"), roles)
 		case "member band":
 			err = s.SetMemberBand(get("id"), band)
 		case "member language":
 			err = s.SetMemberLanguage(get("id"), get("language"))
 		case "member tone":
 			err = s.SetMemberTone(get("id"), get("tone"), clearTone)
+		case "member roles":
+			err = s.SetMemberRoles(get("id"), roles, clearRoles)
 		case "member use":
 			err = s.UseMember(get("id"))
 		case "repo connect":
@@ -519,13 +623,15 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				return nil, err
 			}
 			// Approval hands work back rather than finishing it, and a bare
-			// `ok: true` reads as the request being done. What it authorized
-			// is said here, where the caller is standing, rather than only in
-			// instructions read once at the start of a session.
-			return map[string]any{
-				"approved":          get("id"),
-				"planning_required": "approval authorizes planning and planning alone: without asking again, inspect real code and create linked pNNNN-slug/plan.md folders, then present the complete plans and stop",
-			}, nil
+			// `ok: true` reads as the request being done. The next step to
+			// recommend is said here, where the caller is standing, rather
+			// than only in instructions read once at the start of a session.
+			result := map[string]any{
+				"approved":             get("id"),
+				"planning_recommended": "approval is recorded; planning is the next step: recommend creating linked pNNNN-slug/plan.md folders to the person and stop, unless the same request already asked for plans, in which case inspect real code, create them, present the complete plans and stop",
+			}
+			recommendCommit(ctx, s, result, get("id"))
+			return result, nil
 		case "record complete":
 			if err := s.Note(get("id"), get("text"), "complete"); err != nil {
 				return nil, err
@@ -539,9 +645,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			if len(entries) > 0 {
 				result["reconcile_required"] = "judge each entry above against what this plan changed: edit the note and its catalog entry together and move its reviewed date, or record in the completion note that it changed nothing"
 			}
+			ids := []string{get("id")}
+			if plan, found := s.FindRecord(get("id")); found == nil && plan.Intent != "" {
+				ids = append(ids, plan.Intent)
+			}
+			recommendCommit(ctx, s, result, ids...)
 			return result, e
 		case "record delete":
-			return s.DeleteRecords(get("member"), all, confirm)
+			return s.DeleteRecords(ctx, get("member"), all, recordIDs, confirm)
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
 		case "record order":
@@ -581,9 +692,26 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "worktree move":
 			err = s.MoveWorktree(ctx, get("repo"), get("path"), get("to"))
 		case "worktree remove":
-			err = s.RemoveWorktree(ctx, get("repo"), get("path"), discard)
+			// The empty .worktrees/ folders the removal left are removed with it and
+			// listed, the way prune lists what it dropped. One that could not be
+			// removed is a warning, not a failure: the worktree is already gone.
+			removed, warnings, e := s.RemoveWorktree(ctx, get("repo"), get("path"), discard)
+			if e != nil {
+				return nil, e
+			}
+			result := map[string]any{"operation": command, "workspace": s.Root, "ok": true, "removed_directories": removed}
+			if len(warnings) > 0 {
+				result["warnings"] = warnings
+			}
+			return result, nil
 		case "worktree repair":
 			err = s.RepairWorktree(ctx, get("repo"), get("path"))
+		case "worktree prune":
+			dropped, e := s.PruneWorktreeAssociations(ctx, get("repo"))
+			if e != nil {
+				return nil, e
+			}
+			return map[string]any{"operation": command, "workspace": s.Root, "ok": true, "repository": get("repo"), "dropped": dropped}, nil
 		}
 		return map[string]any{"operation": command, "workspace": s.Root, "ok": err == nil}, err
 	}
@@ -592,6 +720,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		result, err = action()
 	} else {
 		result, err = s.WithLock(ctx, action)
+	}
+	// The split is reported on the error stream in both output modes, the way
+	// the pinned-version warning is, so no command's result changes shape. It
+	// is reported even when the command then failed, because it still happened.
+	if splitNotice != "" {
+		fmt.Fprint(errOut, splitNotice)
 	}
 	if err != nil {
 		fmt.Fprintln(errOut, err)

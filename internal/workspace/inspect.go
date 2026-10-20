@@ -19,7 +19,7 @@ import (
 // this diagnostic reported for its whole life, and it left the caller to derive
 // the remedy in the one situation where the workspace is already inconsistent
 // and deriving is most expensive. Every other command here hands back the next
-// move — `record approve` returns planning_required, `worktree prepare` names
+// move — `record approve` returns planning_recommended, `worktree prepare` names
 // the branch to pass — and this was the exception.
 //
 // Resolve is an instruction, not a category: it names the command where one
@@ -68,13 +68,20 @@ type Orientation struct {
 	Self         *Snapshot `json:"workspace_repository,omitempty"`
 	Members      Members   `json:"members"`
 	ActiveMember string    `json:"active_member,omitempty"`
-	// IdentityRequired names the outstanding act when a workspace lists members
-	// and this machine has selected none of them. It is said beside the data,
-	// the way approval says planning_required, because an agent reading an
-	// empty active_member cannot tell a solo workspace from an unidentified
-	// person in a team one.
-	IdentityRequired string              `json:"identity_required,omitempty"`
-	Repositories     map[string]Snapshot `json:"repositories"`
+	// IdentityRequired names the outstanding act when this machine has selected
+	// no member of the roster, including when the roster lists nobody or cannot
+	// be read. It is said beside the data, the way approval says
+	// planning_recommended, because an empty active_member alone does not tell
+	// an agent what to do next.
+	IdentityRequired string `json:"identity_required,omitempty"`
+	// BandRequired names the outstanding act when a member holds no band, which
+	// only a roster written before every member needed one can have.
+	// BandSuggestions offers a band for each such member, and NextBand the one
+	// for a member added next; the person confirms each or picks another.
+	BandRequired    string              `json:"band_required,omitempty"`
+	BandSuggestions map[string]int      `json:"band_suggestions,omitempty"`
+	NextBand        int                 `json:"next_band,omitempty"`
+	Repositories    map[string]Snapshot `json:"repositories"`
 	// Knowledge is every borrowed repository and what this machine currently
 	// sees of it. It is reported beside the repositories, and separately from
 	// them, because reading it is part of orienting and working in it is not.
@@ -87,18 +94,42 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 	if err != nil {
 		return Orientation{}, err
 	}
+	result := Orientation{Workspace: cfg, Members: Members{Members: map[string]Member{}}, Repositories: map[string]Snapshot{}, Issues: []Finding{}}
+	// An unreadable roster is reported, not fatal: two clones that both changed
+	// it are exactly when a person most needs to see why they are being asked
+	// to repair it.
 	members, err := s.Members()
 	if err != nil {
-		return Orientation{}, err
-	}
-	result := Orientation{Workspace: cfg, Members: members, Repositories: map[string]Snapshot{}, Issues: []Finding{}}
-	result.ActiveMember, err = s.ActiveMember()
-	if err != nil {
-		result.Issues = append(result.Issues, found(err.Error(),
-			"select this machine's member with `member use --id ID`; add them to the roster first with `member add` if nobody has"))
-		if errors.Is(err, ErrIdentityRequired) {
-			result.IdentityRequired = "decline any request that changes the workspace, its repositories, or its records until the person says which member they are: select them with `member use --id ID`, or add them with `member add` and then select them, and continue the request they made"
+		result.Issues = append(result.Issues, found("members.yaml: "+err.Error(),
+			needsAPerson+"repair members.yaml by hand so each member appears once, holds one band, and shares it with nobody; when two clones clashed, choose which of their edits stands"))
+		result.IdentityRequired = identityRequired
+	} else {
+		result.Members = members
+		result.ActiveMember, err = s.activeMember(members)
+		if err != nil {
+			result.Issues = append(result.Issues, found(err.Error(),
+				"select this machine's member with `member use --id ID`; add them to the roster first with `member add --id ID --name NAME --band N` if nobody has"))
+			if errors.Is(err, ErrIdentityRequired) {
+				result.IdentityRequired = identityRequired
+			}
 		}
+		if suggestions, err := s.SuggestBands(); err != nil {
+			result.Issues = append(result.Issues, found(err.Error(),
+				needsAPerson+"bands cannot be suggested until the ID ledger and record files can be read; `check` names what is wrong"))
+		} else {
+			result.NextBand = suggestions.Next
+			if len(suggestions.Members) > 0 {
+				result.BandSuggestions = suggestions.Members
+			}
+		}
+		if unbanded := unbandedMembers(members, result.BandSuggestions); len(unbanded) > 0 {
+			result.Issues = append(result.Issues, unbanded...)
+			result.BandRequired = "decline any request that changes the workspace, its repositories, or its records until every member holds a band: offer each member in band_suggestions that band, let the person confirm it or pick another unused one, record it with `member band --id ID --band N`, and continue the request they made"
+		}
+		if cfg.Version < CurrentSchema {
+			result.Issues = append(result.Issues, schema2Roles(members)...)
+		}
+		result.Issues = append(result.Issues, deviceNameMembers(members)...)
 	}
 	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
 		result.Issues = append(result.Issues, found("workspace repository: "+err.Error(),
@@ -156,26 +187,54 @@ func (s *Store) workspaceRepositoryIssues(ctx context.Context, state Orientation
 		"`workspace connect --base BRANCH`, which reads the URL from this checkout's origin"}}
 }
 
-// unbandedMembers reports members allocating from the shared range in a
-// workspace that has more than one. Bands are what let clones that cannot see
-// each other allocate without colliding; a solo workspace needs none, so the
-// finding waits until a second member makes collision possible.
-func unbandedMembers(members Members) []Finding {
-	if len(members.Members) < 2 {
-		return nil
+// identityRequired is the instruction status gives while this machine has no
+// member of a readable roster selected.
+const identityRequired = "decline any request that changes the workspace, its repositories, or its records until the person says which member they are: select them with `member use --id ID`, or add them with `member add --id ID --name NAME --band N` and then select them, and continue the request they made"
+
+// unbandedMembers reports each member holding no band, with the band it would
+// be offered. Every member holds one, and changes are refused until they do.
+func unbandedMembers(members Members, suggestions map[string]int) []Finding {
+	var out []Finding
+	for _, id := range members.IDs() {
+		if members.Members[id].Band != nil {
+			continue
+		}
+		resolve := "give it a band nobody holds with `member band --id " + id + " --band N`"
+		if band, ok := suggestions[id]; ok {
+			resolve = fmt.Sprintf("give it a band with `member band --id %s --band %d`, or another band nobody holds that the person picks", id, band)
+		}
+		out = append(out, found("member "+id+" holds no band", resolve))
 	}
-	var unbanded []string
-	for id, member := range members.Members {
-		if member.Band == 0 {
-			unbanded = append(unbanded, id)
+	return out
+}
+
+// schema2Roles reports roles in a schema 2 roster, which only a hand edit can
+// write. A 2.3.0 CLI still reads that workspace and stops at the unknown field
+// instead of asking its user to upgrade, which is why roles wait for schema 3.
+func schema2Roles(members Members) []Finding {
+	var out []Finding
+	for _, id := range members.IDs() {
+		if len(members.Members[id].Roles) == 0 {
+			continue
+		}
+		out = append(out, found("member "+id+" records roles in a schema 2 workspace, which a 2.3.0 CLI cannot read",
+			"remove the roles from members.yaml by hand, or finish setup so the next changing command moves the workspace to schema 3"))
+	}
+	return out
+}
+
+// deviceNameMembers reports roster IDs that are Windows device names. A 2.3.0
+// roster could hold one, and no clone on Windows can check out the ID file it
+// would name, so the split refuses it and every change waits on a rename.
+func deviceNameMembers(members Members) []Finding {
+	var out []Finding
+	for _, id := range members.IDs() {
+		if windowsDevice.MatchString(id) {
+			out = append(out, found("member "+id+" is a Windows device name, which cannot name an ID file",
+				needsAPerson+renameMemberByHand))
 		}
 	}
-	if len(unbanded) == 0 {
-		return nil
-	}
-	sort.Strings(unbanded)
-	return []Finding{{fmt.Sprintf("members allocating from the shared range in a workspace of %d: %s", len(members.Members), strings.Join(unbanded, ", ")),
-		"give each a distinct band with `member band --id ID --band N` before they work apart; bands must not repeat"}}
+	return out
 }
 
 // Check is an explicitly invoked diagnostic, not an execution admission gate.
@@ -193,7 +252,6 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	}
 	issues := state.Issues
 	issues = append(issues, s.workspaceRepositoryIssues(ctx, state)...)
-	issues = append(issues, unbandedMembers(state.Members)...)
 	for _, baseRel := range []string{"plans", "plans/archive"} {
 		base, err := s.Path(baseRel)
 		if err != nil {
@@ -209,6 +267,13 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 			}
 			rel := filepath.ToSlash(filepath.Join(baseRel, entry.Name(), "plan.md"))
 			if _, err := s.Read(rel); err != nil {
+				// An interrupted record delete can leave a plan folder emptied of
+				// everything; there is nothing in it to restore.
+				if left, err := os.ReadDir(filepath.Join(base, entry.Name())); err == nil && len(left) == 0 {
+					issues = append(issues, found("empty plan folder: "+filepath.ToSlash(filepath.Join(baseRel, entry.Name())),
+						"remove the empty folder, which an interrupted `record delete` leaves behind; restore its plan.md instead only if the plan was meant to stay"))
+					continue
+				}
 				issues = append(issues, found("missing or invalid plan entry: "+rel, "restore a regular plan.md in this plan folder"))
 			}
 		}
@@ -218,18 +283,9 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		return append(issues, found(err.Error(),
 			needsAPerson+"the records could not be listed; inspect intent/ and plans/ for an unreadable file")), nil
 	}
-	var ledger Ledger
-	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
-		issues = append(issues, found(err.Error(),
-			needsAPerson+"the permanent ID ledger cannot be read; repair .context-circuit/ids.yaml by hand, preserving every reservation it already held"))
-	}
-	reserved := map[string]bool{}
-	for _, id := range append(append([]string{}, ledger.Intents...), ledger.Plans...) {
-		if reserved[id] || !recordPattern.MatchString(id) {
-			issues = append(issues, found("invalid/duplicate reserved ID: "+id,
-				needsAPerson+"an ID is reserved twice or is malformed; correct .context-circuit/ids.yaml by hand without dropping a reservation; only `record delete` releases one"))
-		}
-		reserved[id] = true
+	issues, reserved, err := s.checkIDFiles(issues)
+	if err != nil {
+		return nil, err
 	}
 	paths, err := s.RecordPaths(true)
 	if err != nil {
@@ -248,16 +304,31 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		}
 		seen[id] = true
 		if !reserved[id] {
-			issues = append(issues, found("record ID missing from permanent ledger: "+id,
-				needsAPerson+"add the ID to .context-circuit/ids.yaml so nothing allocates it again"))
+			owner := "<member>"
+			if record, err := s.readRecord(path); err == nil && record.CreatedBy != "" {
+				owner = record.CreatedBy
+			} else if active, err := s.ActiveMember(); err == nil {
+				owner = active
+			}
+			issues = append(issues, found("record ID reserved in no ID file: "+id,
+				needsAPerson+"add the ID to "+IDFilesDir+"/"+owner+".yaml, the file of the record's created_by or, when it has none, of the local member, so nothing allocates it again"))
 		}
 	}
+	// An unreadable roster is already reported; reading every author as unknown
+	// against it would bury that finding under ones that are not true.
+	_, rosterErr := s.Members()
 	for _, record := range records {
-		// A record with no author was written while the workspace had no
-		// roster, and stays valid once members are added.
-		if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" {
+		// A record with no author was written by an earlier version while the
+		// workspace had no roster, and stays valid.
+		if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" && rosterErr == nil {
 			issues = append(issues, found(record.ID+": unknown created_by member",
-				"add them with `member add --id ID --name NAME`, or correct the record's created_by to a member the roster carries"))
+				"add them with `member add --id ID --name NAME --band N`, or correct the record's created_by to a member the roster carries"))
+		}
+		// A roster member with such an ID is reported by status; an author the
+		// roster does not carry still stops the split.
+		if _, ok := state.Members.Members[record.CreatedBy]; !ok && windowsDevice.MatchString(record.CreatedBy) {
+			issues = append(issues, found(record.ID+": created_by "+record.CreatedBy+" is a Windows device name, which cannot name an ID file",
+				needsAPerson+"correct the record's created_by to a member the roster carries whose ID is not a Windows device name"))
 		}
 		// An instant that no longer parses is reported rather than read as an event
 		// that never happened. Each gate belongs to one kind of record: nothing
@@ -367,14 +438,22 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	} else {
 		for _, assoc := range local.Worktrees {
 			_, tree, err := s.selectedTree(ctx, assoc.Repository, assoc.Path)
-			if err != nil || tree.Prunable || tree.Branch != assoc.Branch {
+			if errors.Is(err, errNotWorktree) {
+				issues = append(issues, found("worktree association needs attention: "+assoc.Path,
+					"Git no longer lists this worktree: `worktree prune --repo "+assoc.Repository+"` drops the associations of worktrees that are gone and touches no worktree, branch, or file; use `worktree repair --repo "+assoc.Repository+" --path PATH` instead if the checkout only moved"))
+			} else if err != nil || tree.Prunable || tree.Branch != assoc.Branch {
 				issues = append(issues, found("worktree association needs attention: "+assoc.Path,
 					"`worktree repair --repo "+assoc.Repository+" --path "+assoc.Path+"` where the checkout moved; Git's own inventory is authoritative, and this association is only a convenience"))
 			}
 			if assoc.Plan != "" {
-				if _, err := s.FindRecord(assoc.Plan); err != nil {
+				if plan, err := s.FindRecord(assoc.Plan); err != nil {
 					issues = append(issues, found("worktree has missing plan: "+assoc.Plan,
 						needsAPerson+"the plan this worktree was prepared for is gone; the worktree and its branch are untouched, and removing one is a separate authorized request"))
+				} else if assoc.PlanCreatedAt != "" && assoc.PlanCreatedAt != plan.CreatedAt {
+					// The number was released and handed out again: the worktree
+					// holds the earlier plan's work, which this one must not meet.
+					issues = append(issues, found("worktree "+assoc.Path+" was prepared for an earlier "+assoc.Plan+", created at "+string(assoc.PlanCreatedAt)+", not the "+assoc.Plan+" created at "+string(plan.CreatedAt),
+						needsAPerson+"remove it with `worktree remove --repo "+assoc.Repository+" --path \""+assoc.Path+"\"` (dirty work is kept unless discard is explicitly authorized) and delete branch "+assoc.Branch+" once its work no longer matters, or run `worktree prune --repo "+assoc.Repository+"` if Git no longer lists it; removing either is a separate authorized request"))
 				}
 			}
 		}

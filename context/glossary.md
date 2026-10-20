@@ -14,7 +14,7 @@ the repositories for the business word finds nothing without it.
 
 | Term | Meaning | Code |
 | --- | --- | --- |
-| Allocation band | A member's optional numeric block, so members allocate offline without colliding | `context-circuit-source@internal/workspace/records.go` `bandWidth`, `Store.allocate` |
+| Allocation band | The numeric block every member holds, band 0 included, so members allocate offline without colliding | `context-circuit-source@internal/workspace/records.go` `bandWidth`, `Store.allocate`; `internal/workspace/bands.go` `Store.SuggestBands` |
 | Catalog | The retrieval index a reader searches to choose a note, one unwrapped line per note | `context-circuit-source@internal/workspace/inspect.go` `catalogIssues`, `FindContext` |
 | Check | The explicitly invoked diagnostic over records, bindings, and notes; never a gate | `context-circuit-source@internal/workspace/inspect.go` `Store.Check` |
 | Coordinator | The main agent session that interprets, dispatches, integrates, and reports | `context-circuit-source@product/AGENTS.md.in` |
@@ -23,16 +23,19 @@ the repositories for the business word finds nothing without it.
 | Direct execution | Implementing a plan inside a bound checkout instead of a prepared worktree, only when a person asks for it | `context-circuit-source@product/AGENTS.md.in` |
 | Dispatch specification | The resolved subagent invocation the CLI returns without launching anything | `context-circuit-source@internal/workspace/agents.go` `DispatchAgent` |
 | Execution request | A person's separate decision to run presented plans, authorizing worktree preparation and implementation | `context-circuit-source@product/AGENTS.md.in` |
+| ID file | One member's permanent reservations, in a file named after the member; a member's record creation writes only theirs, and a schema 2 workspace's shared ID file is split into them | `context-circuit-source@internal/workspace/ids.go` `IDFilePath`, `Store.SplitIDLedger` |
 | Integration merge | The local merge assembling a dependent plan's base at a fan-in; implementation, not delivery | `context-circuit-source@internal/workspace/order.go` `OrderIntegration` |
 | Intent | One approved statement of the outcome a change should produce, written before the code is read | `context-circuit-source@internal/workspace/records.go` `CreateRecord` |
-| Ledger | The permanent record of every reserved intent and plan number | `context-circuit-source@internal/workspace/records.go` `Ledger` |
+| Ledger | The intent and plan lists one ID file holds; every ID file together is the permanent record of every reserved number | `context-circuit-source@internal/workspace/ids.go` `Ledger` |
 | Linear chain | An execution shape stacking every plan on the previous one, serial and merge-free | `context-circuit-source@internal/workspace/order.go` `Order.Chain` |
 | Local binding | This machine's checkout path for a shared repository ID | `context-circuit-source@internal/workspace/workspace.go` `Bindings` |
 | Logical repository ID | The shared name for a repository, independent of where anyone checked it out | `context-circuit-source@internal/workspace/workspace.go` `Config.Repositories` |
+| Member role | Free text in the roster saying what a member contributes, informational only and unrelated to role tiering or a dispatched subagent role | `context-circuit-source@internal/workspace/workspace.go` `Member.Roles`, `Store.SetMemberRoles` |
 | Plan | How an approved intent maps to real code, plus what actually happened | `context-circuit-source@internal/workspace/records.go` `Record` |
-| Reservation | An allocated number the ledger keeps, never reused while it stays there; archiving leaves it, and only deletion releases it | `context-circuit-source@internal/workspace/records.go` `Store.allocate` |
+| Reservation | An allocated number an ID file keeps, never reused while any ID file holds it; archiving leaves it, and only deletion releases it | `context-circuit-source@internal/workspace/ids.go` `reserve`, `reservedIDs` |
 | Role tiering | The per-host model and effort preference for each subagent role, shared and optionally overridden per machine | `context-circuit-source@template/role-tiering.yaml`, `internal/workspace/agents.go` |
 | Seed | The blank workspace embedded in the CLI for initialization and export | `context-circuit-source@assets.go`, `template/` |
+| Setup | A readable roster listing this machine's selected member, with every member holding a band; every change waits for it | `context-circuit-source@internal/workspace/workspace.go` `Store.Setup`, `Store.RequireSetup` |
 | Start reference | Where a plan's branch begins in one repository, with any merges it needs first | `context-circuit-source@internal/workspace/order.go` `OrderStart` |
 | Version store | The directory holding side-by-side CLI installs, one per version and platform | `context-circuit-source@product/skills/cc-cli/scripts/install.sh` |
 | Wave | One layer of plans that may run concurrently, derived from dependencies and completion | `context-circuit-source@internal/workspace/order.go` `OrderWave` |
@@ -50,4 +53,4 @@ workspace binds one.
 Leave out general English, generic technology vocabulary, and the coordination
 words this workspace product defines for itself.
 
-_Reviewed: 2026-09-15._
+_Reviewed: 2026-10-20._

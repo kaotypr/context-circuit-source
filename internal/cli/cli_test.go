@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -36,7 +37,10 @@ func setup(t *testing.T) fixture {
 	t.Setenv("GIT_CONFIG_GLOBAL", config)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
 	f := fixture{t, filepath.Join(home, "workspace"), home}
-	f.ok("init", "--name", "Acme", "--purpose", "Billing software", "--member", "maya", "--member-name", "Maya")
+	// Band 0 is picked by hand on purpose. It is a real band, not "no band",
+	// and it keeps the i001/p0001 expectations across these tests valid where
+	// the default band 1 would start at i100/p1000.
+	f.ok("init", "--name", "Acme", "--purpose", "Billing software", "--member", "maya", "--member-name", "Maya", "--member-band", "0")
 	return f
 }
 func write(t *testing.T, path, text string) {
@@ -149,6 +153,17 @@ func TestInitializationAndReleaseSeed(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// A new workspace starts in the per-member ID layout and never holds the
+	// shared file a schema 2 workspace had.
+	if got := read(t, filepath.Join(f.root, "workspace.yaml")); !strings.Contains(got, "version: 3") {
+		t.Fatalf("a new workspace is not at schema 3:\n%s", got)
+	}
+	if l := idFile(t, f, ".context-circuit/ids/maya.yaml"); len(l.Intents)+len(l.Plans) != 0 {
+		t.Fatalf("a new member's ID file is not empty: %+v", l)
+	}
+	if exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) {
+		t.Fatal("a new workspace holds the shared ID file")
+	}
 	before := read(t, filepath.Join(f.root, "workspace.yaml"))
 	f.fail("init", "--name", "Other", "--purpose", "Other", "--member", "other", "--member-name", "Other")
 	if after := read(t, filepath.Join(f.root, "workspace.yaml")); after != before {
@@ -164,8 +179,25 @@ func TestInitializationAndReleaseSeed(t *testing.T) {
 		path := filepath.Join(blank, filepath.FromSlash(name))
 		write(t, path, strings.ReplaceAll(read(t, path), "\n", "\r\n"))
 	}
+	if paths, _ := filepath.Glob(filepath.Join(blank, ".context-circuit", "ids*")); len(paths) != 0 {
+		t.Fatalf("the exported seed carries an ID file: %v", paths)
+	}
 	g := fixture{t, blank, f.home}
 	g.ok("init", "--name", "Seed", "--purpose", "Seed", "--member", "alex", "--member-name", "Alex")
+	// A seed exported by an earlier CLI is at schema 2 with an empty shared ID
+	// file, and initializing it ends in the same layout as a new seed.
+	older := filepath.Join(f.home, "older")
+	f.ok("template", "export", "--path", older)
+	config := filepath.Join(older, "workspace.yaml")
+	write(t, config, strings.Replace(read(t, config), "version: 3", "version: 2", 1))
+	write(t, filepath.Join(older, ".context-circuit", "ids.yaml"), "intents: []\nplans: []\n")
+	o := fixture{t, older, f.home}
+	o.ok("init", "--name", "Older", "--purpose", "Older", "--member", "alex", "--member-name", "Alex")
+	if exists(filepath.Join(older, ".context-circuit", "ids.yaml")) || !exists(filepath.Join(older, ".context-circuit", "ids", "alex.yaml")) ||
+		!strings.Contains(read(t, config), "version: 3") {
+		t.Fatal("initializing an older seed did not end in the per-member ID layout at schema 3")
+	}
+	o.ok("check")
 	protected := filepath.Join(f.home, "protected")
 	write(t, filepath.Join(protected, "AGENTS.md"), "Keep my instructions")
 	h := fixture{t, protected, f.home}
@@ -223,8 +255,8 @@ func TestInitKeepsTheRecordedCLIRegistry(t *testing.T) {
 
 func TestYAMLEditTrial(t *testing.T) {
 	f := setup(t)
-	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n")
-	f.ok("member", "add", "--id", "alex", "--name", "Alex")
+	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n    band: 0\n")
+	f.ok("member", "add", "--id", "alex", "--name", "Alex", "--band", "1")
 	updated := read(t, filepath.Join(f.root, "members.yaml"))
 	for _, text := range []string{"# Team roster", "# Keep this author", "# display name", `"Maya"`} {
 		if !strings.Contains(updated, text) {
@@ -233,11 +265,11 @@ func TestYAMLEditTrial(t *testing.T) {
 	}
 	f.ok("member", "use", "--id", "alex")
 	r := f.intent("first")
-	if r.CreatedBy != "alex" || r.ID != "i001" {
+	if r.CreatedBy != "alex" || r.ID != "i100" {
 		t.Fatalf("unexpected record: %+v", r)
 	}
 	f.repository("api")
-	before := "version: 2\nname: Acme\npurpose: |\n  Billing software\n  and invoicing\nrepositories:\n  api:\n    default_branch: main # preferred target\nrelationships: []\n"
+	before := "version: 3\nname: Acme\npurpose: |\n  Billing software\n  and invoicing\nrepositories:\n  api:\n    default_branch: main # preferred target\nrelationships: []\n"
 	write(t, filepath.Join(f.root, "workspace.yaml"), before)
 	f.ok("repo", "remote", "--id", "api", "--default-branch", "development")
 	updated = read(t, filepath.Join(f.root, "workspace.yaml"))
@@ -431,7 +463,7 @@ func TestABriefDrawsTheLanguageBoundary(t *testing.T) {
 
 	// The language reported is the one the record was written in, not the one
 	// whoever is dispatching happens to write in.
-	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--language", "English")
+	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "1", "--language", "English")
 	f.ok("member", "use", "--id", "rina")
 	brief = f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
 	if !strings.Contains(brief, "stated in Bahasa Indonesia") {
@@ -442,7 +474,7 @@ func TestABriefDrawsTheLanguageBoundary(t *testing.T) {
 	// carrying instructions of its own.
 	f.fail("member", "language", "--id", "rina", "--language", strings.Repeat("long ", 20))
 	f.fail("member", "language", "--id", "nobody", "--language", "English")
-	f.fail("member", "add", "--id", "maya", "--name", "Maya", "--language", "English")
+	f.fail("member", "add", "--id", "maya", "--name", "Maya", "--band", "0", "--language", "English")
 }
 
 // The whole of joining a published workspace, driven against a real clone: a
@@ -591,26 +623,6 @@ func TestWorkspaceRepositoryIsDescribedSeparately(t *testing.T) {
 	}
 }
 
-// Bands are what let clones that cannot see each other allocate without
-// colliding. A solo workspace needs none, so the finding waits for a second
-// member to make a collision possible.
-func TestUnbandedMembersAreReportedOnlyOnceSharingIsPossible(t *testing.T) {
-	f := setup(t)
-	if out := f.ok("check"); strings.Contains(out, "shared range") {
-		t.Fatal("a solo workspace was asked for allocation bands", out)
-	}
-	f.ok("member", "add", "--id", "rina", "--name", "Rina")
-	out := f.fail("check")
-	if !strings.Contains(out, "maya") || !strings.Contains(out, "rina") {
-		t.Fatal("unbanded members went unreported", out)
-	}
-	f.ok("member", "band", "--id", "maya", "--band", "1")
-	f.ok("member", "band", "--id", "rina", "--band", "2")
-	if out := f.ok("check"); strings.Contains(out, "shared range") {
-		t.Fatal("banded members are still reported", out)
-	}
-}
-
 // A base branch describes one machine, not the repository: the checkout path and
 // the branch work starts from travel together in the local binding, while the
 // shared record keeps the URL and the default branch everyone agrees on.
@@ -737,6 +749,287 @@ func TestWorktreePrepareResumeMoveRepairRemove(t *testing.T) {
 	}
 }
 
+// pruned is the paths a `worktree prune` reported as dropped. The report is JSON, so a path is compared
+// decoded: the raw text escapes every backslash of a Windows path.
+func pruned(t *testing.T, out string) []string {
+	t.Helper()
+	var report struct {
+		Dropped []workspace.Association `json:"dropped"`
+	}
+	if err := json.Unmarshal([]byte(out), &report); err != nil {
+		t.Fatalf("prune did not report JSON: %v: %s", err, out)
+	}
+	// Prune drops associations and never removes a worktree, so the result must
+	// not carry a field that reads as files deleted.
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(out), &fields); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := fields["removed"]; ok {
+		t.Fatalf("prune still reports removed: %s", out)
+	}
+	if _, ok := fields["dropped"]; !ok {
+		t.Fatalf("prune reports no dropped field: %s", out)
+	}
+	paths := []string{}
+	for _, assoc := range report.Dropped {
+		paths = append(paths, assoc.Path)
+	}
+	return paths
+}
+
+func TestWorktreePruneDropsOnlyTheAssociationsOfGoneWorktrees(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	f.repository("web")
+	i := f.intent("billing")
+	p := f.plan(i.ID, "billing", "api", "web")
+	gone := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+	other := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID, "--branch", "cc/other/api", "--path", filepath.Join(f.home, "other"), "--reuse"))
+	webTree := tree(t, f.ok("worktree", "prepare", "--repo", "web", "--plan", p.ID))
+
+	// With every worktree listed there is nothing to drop, and the check agrees.
+	if dropped := pruned(t, f.ok("worktree", "prune", "--repo", "api")); len(dropped) != 0 {
+		t.Fatalf("pruned a worktree Git still lists: %v", dropped)
+	}
+	f.ok("check")
+
+	// A worktree removed with Git itself leaves its association behind. The check names the
+	// command that discharges it rather than a repair that cannot work.
+	git(t, api, "worktree", "remove", "--force", gone.Path)
+	report := f.fail("check")
+	if !strings.Contains(report, "worktree prune --repo api") {
+		t.Fatalf("check does not point at prune: %s", report)
+	}
+
+	// Another repository's stale association is not this repository's to drop.
+	if dropped := pruned(t, f.ok("worktree", "prune", "--repo", "web")); len(dropped) != 0 {
+		t.Fatalf("pruned another repository's association: %v", dropped)
+	}
+	if dropped := pruned(t, f.ok("worktree", "prune", "--repo", "api")); !slices.Equal(dropped, []string{gone.Path}) {
+		t.Fatalf("pruned the wrong associations: %v, want only %s", dropped, gone.Path)
+	}
+	f.ok("check")
+
+	// Nothing but the association went: the branch and the other worktrees are as they were.
+	git(t, api, "show-ref", "--verify", "refs/heads/"+gone.Branch)
+	if _, err := os.Stat(other.Path); err != nil {
+		t.Fatal("pruned a worktree that Git still lists")
+	}
+	if _, err := os.Stat(webTree.Path); err != nil {
+		t.Fatal("pruned another repository's worktree")
+	}
+	if again := pruned(t, f.ok("worktree", "prune", "--repo", "api")); len(again) != 0 {
+		t.Fatalf("pruned twice: %v", again)
+	}
+	f.fail("worktree", "prune", "--repo", "missing")
+}
+
+// removedDirectories is the folders a `worktree remove` reported removing, decoded from its JSON so a
+// Windows path compares unescaped. A removal in these tests never leaves a warning.
+func removedDirectories(t *testing.T, out string) []string {
+	t.Helper()
+	var report struct {
+		Removed  []string `json:"removed_directories"`
+		Warnings []string `json:"warnings"`
+	}
+	if err := json.Unmarshal([]byte(out), &report); err != nil {
+		t.Fatalf("remove did not report JSON: %v: %s", err, out)
+	}
+	if report.Removed == nil || len(report.Warnings) > 0 {
+		t.Fatalf("remove reports no removed_directories list, or a warning: %s", out)
+	}
+	return report.Removed
+}
+
+// resolved is a path as the CLI reports it after resolving symbolic links, which macOS needs for its
+// /private temporary directories and Windows for short names.
+func resolved(t *testing.T, path string) string {
+	t.Helper()
+	real, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return real
+}
+
+func TestWorktreeRemoveRemovesTheEmptyWorktreesFoldersItLeaves(t *testing.T) {
+	t.Run("the last worktree of a plan", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		f.repository("web")
+		p := f.plan(f.intent("billing").ID, "billing", "api", "web")
+		apiTree := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+		webTree := tree(t, f.ok("worktree", "prepare", "--repo", "web", "--plan", p.ID))
+		worktrees := resolved(t, filepath.Join(f.root, ".worktrees"))
+		planDir := filepath.Join(worktrees, p.ID)
+
+		// The other repository's worktree still holds the plan folder open.
+		if got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "api", "--path", apiTree.Path)); len(got) != 0 {
+			t.Fatalf("removed folders beside another worktree: %v", got)
+		}
+		if _, err := os.Stat(webTree.Path); err != nil {
+			t.Fatal("removed the other repository's worktree")
+		}
+		got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "web", "--path", webTree.Path))
+		if !slices.Equal(got, []string{planDir, worktrees}) {
+			t.Fatalf("removed %v, want %v", got, []string{planDir, worktrees})
+		}
+		if _, err := os.Stat(worktrees); !os.IsNotExist(err) {
+			t.Fatalf("the empty .worktrees folder is still there: %v", err)
+		}
+		f.ok("check")
+	})
+
+	t.Run("a .worktrees folder holding something else", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		p := f.plan(f.intent("billing").ID, "billing", "api")
+		w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+		worktrees := resolved(t, filepath.Join(f.root, ".worktrees"))
+		notes := filepath.Join(worktrees, "notes.txt")
+		write(t, notes, "keep")
+		got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "api", "--path", w.Path))
+		if !slices.Equal(got, []string{filepath.Join(worktrees, p.ID)}) {
+			t.Fatalf("removed %v, want only the plan folder", got)
+		}
+		if read(t, notes) != "keep" {
+			t.Fatal("a file beside the plan folders changed")
+		}
+	})
+
+	t.Run("a worktree outside .worktrees", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		p := f.plan(f.intent("billing").ID, "billing", "api")
+		parent := filepath.Join(f.home, "elsewhere")
+		if err := os.MkdirAll(parent, 0755); err != nil {
+			t.Fatal(err)
+		}
+		// An empty folder under .worktrees/ is not this removal's to clean either.
+		unrelated := filepath.Join(f.root, ".worktrees", "empty")
+		if err := os.MkdirAll(unrelated, 0755); err != nil {
+			t.Fatal(err)
+		}
+		w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID, "--path", filepath.Join(parent, "api")))
+		if got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "api", "--path", w.Path)); len(got) != 0 {
+			t.Fatalf("removed folders for a worktree outside .worktrees: %v", got)
+		}
+		for _, kept := range []string{parent, unrelated} {
+			if _, err := os.Stat(kept); err != nil {
+				t.Fatalf("%s was removed: %v", kept, err)
+			}
+		}
+	})
+}
+
+// A plan branch already checked out elsewhere is refused with what that place
+// is and what is safe to do, and preparation changes nothing to get past it.
+// Paths are compared as `worktree list` and `prepare` report them decoded,
+// never as a raw temporary path, which macOS resolves through /private and
+// Windows escapes inside JSON.
+func TestPreparingABranchCheckedOutElsewhereExplainsIt(t *testing.T) {
+	listed := func(f fixture, path string) workspace.Worktree {
+		t.Helper()
+		var list []workspace.Worktree
+		if err := json.Unmarshal([]byte(f.ok("worktree", "list", "--repo", "api")), &list); err != nil {
+			t.Fatal(err)
+		}
+		for _, tree := range list {
+			if path == "" && tree.Main || path != "" && tree.Path == path {
+				return tree
+			}
+		}
+		t.Fatalf("worktree list has no entry for %q: %+v", path, list)
+		return workspace.Worktree{}
+	}
+	untouched := func(t *testing.T, before workspace.Worktree, after workspace.Worktree, destination string) {
+		t.Helper()
+		if after.Head != before.Head || after.Branch != before.Branch {
+			t.Fatalf("the other checkout changed: before %+v, after %+v", before, after)
+		}
+		if _, err := os.Stat(destination); !os.IsNotExist(err) {
+			t.Fatalf("a refused preparation created %s", destination)
+		}
+	}
+
+	t.Run("a worktree prepared for the plan", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		p := f.plan(f.intent("billing").ID, "api", "api")
+		w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+		before := listed(f, w.Path)
+		destination := filepath.Join(f.home, "elsewhere")
+		out := f.fail("worktree", "prepare", "--repo", "api", "--plan", p.ID, "--path", destination)
+		for _, want := range []string{
+			w.Branch, w.Path, "prepared for " + p.ID,
+			"worktree prepare --repo api --plan " + p.ID + ` --path "` + w.Path + `"`,
+			"worktree remove --repo api", "Nothing was checked out, switched, or reset.",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("refusal does not say %q: %s", want, out)
+			}
+		}
+		untouched(t, before, listed(f, w.Path), destination)
+	})
+
+	t.Run("the bound checkout", func(t *testing.T) {
+		f := setup(t)
+		api := f.repository("api")
+		p := f.plan(f.intent("billing").ID, "api", "api")
+		git(t, api, "switch", "-c", "cc/"+p.ID+"/api")
+		before := listed(f, "")
+		destination := filepath.Join(f.root, ".worktrees", p.ID, "api")
+		out := f.fail("worktree", "prepare", "--repo", "api", "--plan", p.ID)
+		for _, want := range []string{
+			"cc/" + p.ID + "/api", before.Path, "bound checkout", "Switch that checkout to another branch",
+			"Nothing was checked out, switched, or reset.",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("refusal does not say %q: %s", want, out)
+			}
+		}
+		// The primary checkout is never offered for removal.
+		if strings.Contains(out, "worktree remove") {
+			t.Errorf("refusal suggests removing the bound checkout: %s", out)
+		}
+		untouched(t, before, listed(f, ""), destination)
+		if branch := git(t, api, "branch", "--show-current"); branch != "cc/"+p.ID+"/api" {
+			t.Fatalf("the bound checkout was switched to %s", branch)
+		}
+	})
+
+	t.Run("a worktree the workspace does not know", func(t *testing.T) {
+		f := setup(t)
+		api := f.repository("api")
+		p := f.plan(f.intent("billing").ID, "api", "api")
+		git(t, api, "worktree", "add", "-b", "cc/"+p.ID+"/api", filepath.Join(f.home, "by hand"))
+		var path string
+		var list []workspace.Worktree
+		if err := json.Unmarshal([]byte(f.ok("worktree", "list", "--repo", "api")), &list); err != nil {
+			t.Fatal(err)
+		}
+		for _, tree := range list {
+			if !tree.Main {
+				path = tree.Path
+			}
+		}
+		before := listed(f, path)
+		destination := filepath.Join(f.root, ".worktrees", p.ID, "api")
+		out := f.fail("worktree", "prepare", "--repo", "api", "--plan", p.ID)
+		for _, want := range []string{
+			"cc/" + p.ID + "/api", path, "not a worktree this workspace knows for this plan",
+			"Resume the work there", "switch that checkout to another branch", "remove that worktree",
+			"unless discard is explicitly authorized", "Nothing was checked out, switched, or reset.",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("refusal does not say %q: %s", want, out)
+			}
+		}
+		untouched(t, before, listed(f, path), destination)
+	})
+}
+
 func TestWorktreeExistingBranchAndIgnoredFiles(t *testing.T) {
 	f := setup(t)
 	api := f.repository("api")
@@ -825,9 +1118,9 @@ func TestHumanOutputAndDuplicateRecordProtection(t *testing.T) {
 	duplicate := filepath.Join(f.root, "intent", "archive", i.ID+"-duplicate.md")
 	write(t, duplicate, i.Content)
 	f.fail("record", "show", "--id", i.ID)
-	before := read(t, filepath.Join(f.root, ".context-circuit", "ids.yaml"))
+	before := idFiles(t, f)
 	f.fail("record", "create", "--kind", "intent", "--slug", "another", "--title", "Another")
-	if read(t, filepath.Join(f.root, ".context-circuit", "ids.yaml")) != before {
+	if idFiles(t, f) != before {
 		t.Fatal("allocated through an unresolved duplicate")
 	}
 	if err := os.Remove(duplicate); err != nil {
@@ -890,20 +1183,29 @@ func TestMistypedArgumentsAreReported(t *testing.T) {
 	}
 }
 
-// A band is cleared by passing zero, so an omitted --band would otherwise clear
-// the member's block without anybody asking for that.
-func TestClearingABandTakesTheFlagThatClearsIt(t *testing.T) {
+// Band 0 is a real band set by passing zero, so an omitted --band would
+// otherwise move the member into it without anybody asking for that. There is
+// no clearing a band.
+func TestSettingBandZeroTakesTheFlag(t *testing.T) {
 	f := setup(t)
 	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "2")
 	if out := f.fail("member", "band", "--id", "rina"); !strings.Contains(out, "missing --band") {
 		t.Errorf("omitting --band was accepted: %s", out)
 	}
 	if !strings.Contains(f.ok("member", "list"), `"band": 2`) {
-		t.Error("the refused call cleared the band anyway")
+		t.Error("the refused call changed the band anyway")
 	}
+	if out := f.fail("member", "band", "--id", "rina", "--band", "0"); !strings.Contains(out, "band 0 already belongs to member maya") {
+		t.Errorf("band 0 was given to a second member: %s", out)
+	}
+	f.ok("member", "band", "--id", "maya", "--band", "3")
 	f.ok("member", "band", "--id", "rina", "--band", "0")
-	if strings.Contains(f.ok("member", "list"), `"band"`) {
-		t.Error("--band 0 no longer clears the block")
+	if !strings.Contains(f.ok("member", "list"), `"band": 0`) {
+		t.Error("--band 0 did not set band 0")
+	}
+	f.ok("member", "use", "--id", "rina")
+	if id := f.intent("zero").ID; id != "i001" {
+		t.Errorf("band 0 allocated %s, want i001", id)
 	}
 }
 

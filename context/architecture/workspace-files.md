@@ -8,8 +8,19 @@ they travel with the project or belong to one machine.
 **Shared** (committed): the workspace record carrying schema version, name,
 purpose, the workspace's own repository, logical repository IDs with their URL
 and default branch, and recorded relationships; the member roster with each
-member's optional allocation band; the permanent ID ledger; the per-host role
-settings; intent and plan records; and the knowledge tree.
+member's allocation band and any informational roles; one permanent ID file per
+member; the per-host role settings; intent and plan records; and the knowledge
+tree.
+
+Member roles are written only at schema 3. An older CLI reads the roster
+strictly and stops at a field it does not know, so roles wait for a schema that
+CLI has already refused to work in; a change that would write them below it is
+refused, and `check` reports any a hand edit put there.
+
+The ID reservations are one file per member rather than one shared list because
+the shared list was the one file every member's record creation edited at the
+same place, so two clones conflicted in Git on every merge. Keyed by member,
+each clone appends only to its own member's file.
 
 **Local** (ignored): the active member on this machine; this machine's workspace
 checkout and the map from logical repository ID to its checkout path and base
@@ -64,9 +75,9 @@ checkout and names the command that replaced it.
 The path stays in the binding because a workspace need not sit at its
 repository's root; one kept in a subdirectory records the containing root.
 Members share one branch of the workspace. A per-member branch was considered
-and rejected: a reservation in the ID ledger on an unmerged branch is invisible
-to everyone else, which would make allocation bands mandatory rather than
-optional, and `record order` would derive waves from a partial set of plans. A
+and rejected: a reservation in an ID file on an unmerged branch is invisible
+to everyone else, so only bands would stand between two members and the same
+number, and `record order` would derive waves from a partial set of plans. A
 machine that works from another branch records that in its own binding, where it
 describes that machine and nobody else.
 
@@ -84,8 +95,13 @@ describes that machine and nobody else.
   number is reserved before its file is created and never rolled back. The
   command reports the path so the work can be resumed or repaired — silently
   reusing a reserved number would be worse. Deletion is the one deliberate
-  release, and it updates the ledger before removing files so an interruption
-  still leaves the numbers counted as taken.
+  release, and it updates the ID files before removing records so an
+  interruption still leaves the numbers counted as taken.
+- **The ID split is the one rewrite nobody asked for.** A schema 2 workspace's
+  shared ID file is split into member files, and the schema moved to 3, by the
+  first changing command once setup is complete. It is reported on the error
+  stream so no result changes shape, and committing it stays the person's
+  decision. Interrupted anywhere, running it again finishes it.
 
 ## Dates
 
@@ -106,6 +122,8 @@ Owner:
   and the document-preserving YAML edit.
 - `context-circuit-source@internal/workspace/workspace.go` — the shared and
   machine-local files and what each may hold.
+- `context-circuit-source@internal/workspace/ids.go` — the per-member ID files
+  and the split of the shared one.
 - `context-circuit-source@internal/workspace/self.go` — describing and binding
   the workspace's own repository.
 - `context-circuit-source@product/docs/workspace.md` — the description shipped

@@ -92,6 +92,14 @@ written; a placeholder would invent a pending decision.
 A question the request already answers is applied without asking. An
 implementation question belongs in the plan, not here.
 
+## After approval
+
+Record the person's approval in their own words. `record approve` returns
+`planning_recommended`: confirm the approval, recommend creating plans as the
+next step, and stop. Planning starts when the person asks for it, which may be
+in the same request that approved the intent; then go straight on through
+`.agents/skills/cc-plan/SKILL.md`, and do not ask for approval a second time.
+
 ## What belongs here and what does not
 
 A question that bears on the intended outcome returns to this record even after
@@ -107,6 +115,8 @@ format belongs in a workspace file.
 Intent and plan IDs are workspace-global. Use only `created_by` for
 member-related metadata; there are no assignee, owner, reviewer, or member
 namespaces. A reserved ID is never reused while it stays reserved; archiving or
-removing a file by hand releases nothing, and only `record delete` does.
+removing a file by hand releases nothing, and only `record delete` does. An
+intent the person no longer wants is removed with `record delete --id`, on their
+request, after they have seen its preview.
 
 `.context-circuit/docs/working.md` describes the record structures in full.

@@ -38,8 +38,10 @@ Three consequences shape the whole product:
 
 Approving the intended outcome, and authorizing any outward action. Consent
 cannot come from a command, an editable note, or another agent. Everything
-between those two points is ordinary work done in the open — there is no second
-approval between a plan and its execution. See
+between those two points is ordinary work done in the open — planning and
+execution each start on the person's request, which is a request rather than a
+further gate, and there is no second approval between a plan and its execution.
+See
 [authorization boundaries](../domains/authorization.md).
 
 Whether that path applies at all is also theirs. A change whose outcome is

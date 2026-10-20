@@ -35,6 +35,14 @@ error stream and continues, leaving structured output untouched. The warning is
 framed as a caller mistake — the workspace recorded what it wanted and something
 ran the wrong binary.
 
+The template's entry instruction takes precedence whenever it and CLI output
+disagree. A CLI is behind the template when the running version is older than
+the pin, or when its output has a shape the template no longer expects — before
+2.4.0, approval answered `planning_required`. An agent that sees either tells the
+person to install or upgrade the pinned version rather than acting on the older
+text; no minimum version is written into the instruction, because it would go
+stale.
+
 Each product is tagged, built and released from the repository that owns it. The
 CLI's `cli-v*` tag, its build and its release all live in this checkout, where
 its source is, so a released binary is traceable to the commit that produced it
@@ -93,8 +101,17 @@ The CLI embeds a blank workspace used by initialization and by export. It is a
 convenience, not a second source of truth: an exact source-to-output manifest is
 the authority, the embedding reads only what that manifest names, and the
 release check verifies the embedded inventory against it so the seed cannot
-drift from the shipped template by accident. An initialized workspace is never
-automatically rewritten.
+drift from the shipped template by accident.
+
+An initialized workspace is never automatically rewritten, with one exception: a
+schema 2 workspace's shared ID file is split into one file per member, and the
+schema moved to 3, by the first changing command a CLI from 2.4.0 on runs there.
+Older CLIs refuse schema 3, so that split is a cut-over every member upgrades
+through.
+
+A template delta that deletes the shared ID file or changes the schema version
+is therefore read and not applied. The CLI migrates both, and applying the
+deletion by hand would drop reservations no record file holds.
 
 Owner:
 

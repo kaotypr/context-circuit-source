@@ -11,7 +11,6 @@ product/docs/working.md .context-circuit/docs/working.md
 template/gitignore.in .gitignore
 template/workspace.yaml workspace.yaml
 template/members.yaml members.yaml
-template/ids.yaml .context-circuit/ids.yaml
 template/context/INDEX.md context/INDEX.md
 template/context/glossary.md context/glossary.md
 template/intent/README.md intent/README.md

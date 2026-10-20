@@ -84,13 +84,29 @@ for, and the date it was last confirmed against the code.
 The entry must be **one unwrapped line**, because retrieval matches whole lines
 by case-insensitive substring: a wrapped entry returns a fragment carrying no
 link, a match nobody can follow. The primitive matching is deliberate — one
-small file needs no index, no embedding store, and no service, and it degrades
-gracefully to reading the catalog, which stays short enough to read.
+small file needs no index, no embedding store, and no service. A reader searches
+it for the few entries a task needs rather than reading it whole, and its
+grouping keeps it browsable when someone does.
 
 Braces do real work: a brace-delimited ID cannot partially match a longer one,
 and a real repository ID is always lowercase so the shipped placeholder in the
 seed cannot collide with one. Search terms should separate a note from its
 neighbours; a word every entry carries narrows nothing.
+
+## Terms are rewritten, not appended
+
+When a note is edited, its entry's terms are rewritten against what the note now
+says. Terms that are only ever added make lines grow without limit — one entry
+reached over a hundred — and every extra term makes the entry match searches it
+cannot answer, so a stale term sends the reader to the wrong note. Rewriting
+drops the terms a note no longer answers and keeps the other wordings a reader
+would search for, which is why nothing mechanical decides it: a synonym that
+never appears in the note's text is often the reason the entry is found.
+
+A note whose entry would need a very long list of terms usually covers two
+topics, and is split so each half gets its own short entry. This stays guidance
+rather than a cap or a `check` finding, because the right length depends on how
+many neighbours a note has to be told apart from.
 
 **Both halves are written in the same edit.** An entry naming an absent note is
 a confident miss; a note no entry names is reachable only by someone who already

@@ -11,8 +11,14 @@ one exception is a person asking to work directly in a bound checkout: work
 there, and preserve everything it already holds.
 
 ```sh
-context-circuit-cli --workspace <root> worktree prepare --repo api --plan p0001 --reuse
+context-circuit-cli --workspace <root> worktree prepare --repo api --plan p0001
 ```
+
+Preparing again for a plan whose worktree already exists resumes it without a
+flag. `--reuse` takes an existing branch or worktree the CLI did not prepare for
+this plan record, so pass it only after inspecting what a refusal names: a
+deleted plan's number can come back for a new plan, and its old branch carries
+the old plan's commits.
 
 ## Choosing the starting point
 
