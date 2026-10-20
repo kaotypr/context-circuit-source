@@ -14,7 +14,8 @@ the repositories for the business word finds nothing without it.
 
 | Term | Meaning | Code |
 | --- | --- | --- |
-| Allocation band | The numeric block every member holds, band 0 included, so members allocate offline without colliding | `context-circuit-source@internal/workspace/records.go` `bandWidth`, `Store.allocate`; `internal/workspace/bands.go` `Store.SuggestBands` || Catalog | The retrieval index a reader searches to choose a note, one unwrapped line per note | `context-circuit-source@internal/workspace/inspect.go` `catalogIssues`, `FindContext` |
+| Allocation band | The numeric block every member holds, band 0 included, so members allocate offline without colliding | `context-circuit-source@internal/workspace/records.go` `bandWidth`, `Store.allocate`; `internal/workspace/bands.go` `Store.SuggestBands` |
+| Catalog | The retrieval index a reader searches to choose a note, one unwrapped line per note | `context-circuit-source@internal/workspace/inspect.go` `catalogIssues`, `FindContext` |
 | Check | The explicitly invoked diagnostic over records, bindings, and notes; never a gate | `context-circuit-source@internal/workspace/inspect.go` `Store.Check` |
 | Coordinator | The main agent session that interprets, dispatches, integrates, and reports | `context-circuit-source@product/AGENTS.md.in` |
 | Copy-on-write reuse | Cloning a checkout's ignored runtime entries into a new worktree by filesystem cloning | `context-circuit-source@internal/cow/`, `internal/workspace/reuse.go` |
