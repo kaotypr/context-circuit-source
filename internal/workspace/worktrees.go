@@ -181,7 +181,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 			return tree, err
 		}
 		if tree.Branch == branch {
-			return Worktree{}, fmt.Errorf("branch is already checked out at %s; select that worktree to resume it", tree.Path)
+			return Worktree{}, checkedOutElsewhere(repoID, plan, branch, tree)
 		}
 	}
 	if _, err := os.Lstat(path); !os.IsNotExist(err) {
@@ -199,7 +199,11 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		}
 		_, err = Git(ctx, repo, "worktree", "add", "--", path, branch)
 		if err != nil {
-			return Worktree{}, err
+			// The inventory above catches a branch Git lists anywhere, but a
+			// worktree mid-rebase or mid-bisect lists as detached while Git
+			// still refuses to check its branch out twice. Git's text names the
+			// place and varies by version and locale, so it is kept, not parsed.
+			return Worktree{}, fmt.Errorf("branch %s could not be checked out; if Git says it is used by another worktree, finish or abort the operation there, switch that checkout to another branch, or remove that worktree (dirty work is kept unless discard is explicitly authorized), then prepare again. Nothing was checked out, switched, or reset: %w", branch, err)
 		}
 	} else {
 		if start == "" {
@@ -250,6 +254,38 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	}
 	result.Environment, err = ReuseEnvironment(ctx, repo, result.Path, options)
 	return result, err
+}
+
+// checkedOutElsewhere explains a plan branch Git already has checked out in
+// another working copy. A path alone left the caller to work out whether that
+// copy was theirs to resume or someone's checkout to leave alone, so the
+// refusal says which, and names only steps that preserve the work there.
+// Nothing is checked out, switched, or reset to make preparation succeed.
+func checkedOutElsewhere(repoID, plan, branch string, tree Worktree) error {
+	var text strings.Builder
+	fmt.Fprintf(&text, "branch %s is already checked out at %s. ", branch, tree.Path)
+	switch {
+	case tree.Main:
+		fmt.Fprintf(&text, "That is the bound checkout of %s, not a worktree for this plan. Switch that checkout to another branch, then prepare again.", repoID)
+	case plan != "" && tree.Plan == plan:
+		// The path is quoted plainly rather than escaped, so a Windows path
+		// keeps single backslashes and still pastes into --path whole.
+		quoted := `"` + tree.Path + `"`
+		fmt.Fprintf(&text, "That is the worktree this workspace prepared for %s. Resume it with `worktree prepare --repo %s --plan %s --path %s`, or remove it with `worktree remove --repo %s --path %s` (dirty work is kept unless discard is explicitly authorized) and prepare again.",
+			plan, repoID, plan, quoted, repoID, quoted)
+	default:
+		if tree.Plan != "" {
+			fmt.Fprintf(&text, "That worktree is associated with %s, not this plan. ", tree.Plan)
+		} else {
+			text.WriteString("That is not a worktree this workspace knows for this plan. ")
+		}
+		text.WriteString("Resume the work there, switch that checkout to another branch, or remove that worktree (dirty work is kept unless discard is explicitly authorized), then prepare again.")
+	}
+	if tree.Prunable {
+		text.WriteString(" Git marks that worktree prunable: run `worktree repair` if it moved, or `git worktree prune` if it is gone.")
+	}
+	text.WriteString(" Nothing was checked out, switched, or reset.")
+	return errors.New(text.String())
 }
 
 func (s *Store) saveAssociation(repo string, tree Worktree) error {
