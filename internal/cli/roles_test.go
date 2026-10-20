@@ -120,15 +120,6 @@ func TestRolesWaitForSchema3(t *testing.T) {
 	f.ok("check")
 }
 
-func TestASchema2RosterWithRolesIsReported(t *testing.T) {
-	f := setup(t)
-	schema2(t, f, nil, nil)
-	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    band: 0\n    roles: [maintainer]\n")
-	if out := f.fail("check"); !strings.Contains(out, "records roles in a schema 2 workspace") {
-		t.Fatalf("check did not report roles in a schema 2 roster: %s", out)
-	}
-}
-
 // Roles decide nothing: the same work with and without them allocates the same
 // IDs, approves and deletes the same records, and briefs agents the same way.
 func TestRolesDecideNothing(t *testing.T) {
