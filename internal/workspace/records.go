@@ -436,7 +436,12 @@ func (s *Store) editRecord(record Record, key string, value any) error {
 	if err != nil {
 		return err
 	}
-	return s.replaceRecord(record, []byte("---\n"+strings.TrimRight(string(updated), "\n")+"\n---\n"+string(body)))
+	next := "---\n" + strings.TrimRight(string(updated), "\n") + "\n---\n" + string(body)
+	// The split read normalized CRLF away; a record written with it keeps it.
+	if strings.Contains(record.Content, "\r\n") {
+		next = strings.ReplaceAll(next, "\n", "\r\n")
+	}
+	return s.replaceRecord(record, []byte(next))
 }
 
 func (s *Store) replaceRecord(record Record, next []byte) error {

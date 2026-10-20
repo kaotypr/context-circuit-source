@@ -221,4 +221,98 @@ func TestDeletingAPlanByIDWarnsAboutLeftoverBranches(t *testing.T) {
 	if !exists(filepath.Join(f.home, "spike")) {
 		t.Fatal("the deletion removed a worktree directory")
 	}
+	if !strings.Contains(done.SyncRequired, "worktree prune") || !strings.Contains(done.SyncRequired, "`check`") {
+		t.Fatalf("the result does not tell other machines what to clean up: %s", done.SyncRequired)
+	}
+}
+
+// --member warns about leftovers the way --id does.
+func TestDeletingByMemberWarnsAboutLeftoverBranches(t *testing.T) {
+	f := team(t)
+	api := filepath.Join(f.home, "api")
+	plan := f.plan(f.intent("billing").ID, "billing-api", "api")
+	git(t, api, "branch", "cc/"+plan.ID+"/api", "main")
+	d := deletion(t, f.ok("record", "delete", "--member", "maya"))
+	if !strings.Contains(strings.Join(d.Warnings, "\n"), "branch cc/"+plan.ID+"/api in api") {
+		t.Fatalf("a deletion by member did not warn about the leftover branch: %v", d.Warnings)
+	}
+}
+
+// A plan number no file holds any more, still listed by its intent, is taken
+// out of the list rather than refused.
+func TestDeletingAReservationOnlyPlanUnlinksIt(t *testing.T) {
+	f := team(t)
+	intent := f.intent("billing")
+	plan := f.plan(intent.ID, "billing-api", "api")
+	if err := os.RemoveAll(filepath.Join(f.root, filepath.Dir(plan.Path))); err != nil {
+		t.Fatal(err)
+	}
+	done := deletion(t, f.ok("record", "delete", "--id", plan.ID, "--confirm"))
+	if !slices.Equal(done.Unlinked, []string{plan.ID + " from intent " + intent.ID}) || !slices.Equal(done.Released, []string{plan.ID}) {
+		t.Fatalf("the reservation-only plan was not unlinked and released: %+v", done)
+	}
+	if listed := record(t, f.ok("record", "show", "--id", intent.ID)); len(listed.Plans) != 0 {
+		t.Fatalf("the intent still lists the plan: %v", listed.Plans)
+	}
+}
+
+// A plan given a released number does not quietly resume the worktree an
+// earlier plan with that number left behind; the same plan still resumes its own.
+func TestPreparingAReusedPlanNumberRefusesTheOldWorktree(t *testing.T) {
+	f := team(t)
+	plan := f.plan(f.intent("billing").ID, "billing-api", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID))
+	write(t, filepath.Join(w.Path, "old.txt"), "old work\n")
+	git(t, w.Path, "add", "old.txt")
+	git(t, w.Path, "commit", "-m", "old work")
+	if again := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID)); !again.Reused || again.Path != w.Path {
+		t.Fatalf("the same plan did not resume its worktree: %+v", again)
+	}
+
+	// Another machine pulled a deletion and the number came back for a new
+	// plan: same ID, same path and branch, a later created_at.
+	path := filepath.Join(f.root, plan.Path)
+	original := read(t, path)
+	write(t, path, strings.Replace(original, "created_at: "+string(plan.CreatedAt), "created_at: 2099-01-01T00:00:00Z", 1))
+	out := f.fail("worktree", "prepare", "--repo", "api", "--plan", plan.ID)
+	for _, want := range []string{"not this plan's to resume", "earlier plan given the number " + plan.ID, "worktree remove --repo api", "--reuse"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("want %q in the refusal: %s", want, out)
+		}
+	}
+
+	// An association written before 2.4.0 has no created_at; its commits,
+	// made before the new plan existed, say the same.
+	assocs := filepath.Join(f.root, ".context-circuit", "local", "worktrees.yaml")
+	lines := []string{}
+	for _, line := range strings.Split(read(t, assocs), "\n") {
+		if !strings.Contains(line, "plan_created_at") {
+			lines = append(lines, line)
+		}
+	}
+	write(t, assocs, strings.Join(lines, "\n"))
+	if out := f.fail("worktree", "prepare", "--repo", "api", "--plan", plan.ID); !strings.Contains(out, "holds commits made before this "+plan.ID) {
+		t.Fatalf("a legacy association with older commits was resumed: %s", out)
+	}
+	// The same plan from before the field existed still resumes, and is
+	// recorded from then on.
+	write(t, path, original)
+	f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID)
+	if !strings.Contains(read(t, assocs), "plan_created_at: "+string(plan.CreatedAt)) {
+		t.Fatalf("the resumed association did not record the plan's created_at:\n%s", read(t, assocs))
+	}
+
+	// --reuse takes the old commits deliberately and adopts the worktree.
+	write(t, path, strings.Replace(original, "created_at: "+string(plan.CreatedAt), "created_at: 2099-01-01T00:00:00Z", 1))
+	if adopted := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID, "--reuse")); !adopted.Reused {
+		t.Fatalf("--reuse did not select the worktree: %+v", adopted)
+	}
+	f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID)
+
+	// A bare branch left from the earlier plan is named as that.
+	f.ok("worktree", "remove", "--repo", "api", "--path", w.Path)
+	write(t, path, strings.Replace(original, "created_at: "+string(plan.CreatedAt), "created_at: 2099-01-02T00:00:00Z", 1))
+	if out := f.fail("worktree", "prepare", "--repo", "api", "--plan", plan.ID); !strings.Contains(out, "likely left from an earlier plan given the number "+plan.ID) {
+		t.Fatalf("a branch from an earlier plan was not named as one: %s", out)
+	}
 }
