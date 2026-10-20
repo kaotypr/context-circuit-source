@@ -101,7 +101,7 @@ understood, and stops.
 | File | What the agent learns |
 | --- | --- |
 | `workspace.yaml` | Project identity and purpose, which repositories exist, their URLs and default branches, how they relate |
-| `members.yaml` | Who shares this workspace, and the language and tone their records are written in |
+| `members.yaml` | Who shares this workspace, the language and tone their records are written in, and the roles they contribute in |
 | `member.local.yaml` | Which member is working here |
 | `repositories.local.yaml` | Where each repository is checked out on this machine, and the branch it starts from |
 | `context/INDEX.md` | The catalog of product knowledge — read to find the few notes that bear on billing, not scanned whole |
