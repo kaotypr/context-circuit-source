@@ -185,6 +185,16 @@ number already taken. The band decides which number comes next and never makes a
 reserved number reusable; only `record delete` releases one. A band is not a
 namespace: the ID stays global.
 
+A member who has used up their band's numbers on abandoned records, a member
+leaving the team, or a person changing their mind about some intents is served
+by `record delete --id ID`, repeatable: it removes exactly the named records,
+whoever wrote them, and releases their numbers so the lowest free one in the
+author's band comes next. It previews first, showing each record's author and
+status; show the person that list and any warnings about leftover `cc/pNNNN/*`
+branches, and run `--confirm` only once they agree. A refusal naming a record
+outside the list is resolved by adding the IDs it names, if the person wants
+those gone too, or by leaving the records in place.
+
 A roster written by an earlier version may hold members with no band. `status`
 then reports `band_required` and a `band_suggestions` entry for each of them,
 and every change is refused until each has one. Offer each member their

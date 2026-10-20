@@ -278,6 +278,8 @@ on interruption; IDs are reserved before file creation and are not rolled back.
 `record delete` releases IDs deliberately, from every ID file holding them,
 before it removes the record files, so an interrupted deletion leaves numbers
 still counted as taken. `--all` empties every ID file and keeps the files.
+`--id` first takes each deleted plan out of its own intent's `plans:` list, so
+a deletion interrupted at any point is finished by running it again.
 Check the reported path and resume or repair the named files. Locks are released
 when the process exits, including abnormal exit; the empty local lock file remains.
 

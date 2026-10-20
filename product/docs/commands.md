@@ -76,6 +76,8 @@ context-circuit-cli record order --plan p1002 --mode waves
 context-circuit-cli record delete --member alex
 context-circuit-cli record delete --member alex --confirm
 context-circuit-cli record delete --all
+context-circuit-cli record delete --id p1002
+context-circuit-cli record delete --id i101 --id p1003 --confirm
 ```
 
 `context find` takes one of the two: a query searches this workspace's catalog
@@ -106,16 +108,31 @@ releases its reservation.
 every intent and plan that member created, active and archived. `--all` takes
 every record, including any an earlier version wrote without an author, and
 empties every ID file while keeping the files; it is refused unless the roster
-lists exactly one member. Without `--confirm` it returns the records and
-`released_ids` with `confirmation_required` and deletes nothing; with it, each
+lists exactly one member. `--id` names the records instead, and is repeatable:
+each intent or plan with that ID, active or archived, approved or completed,
+whoever wrote it or with no author at all, and a reserved ID no record file holds,
+shown as `reservation only`. It cannot be combined with `--member` or `--all`,
+and an ID matching neither a record nor a reservation is refused. Without
+`--confirm` it returns the records, each with its author, path, and `status`
+(`draft` or `approved` for an intent, `open` or `completed` for a plan), and
+`released_ids` with `confirmation_required`, and deletes nothing; with it, each
 released ID is removed from every ID file holding it, the files and plan folders
 are removed, and `sync_required` says the deletion lives in this checkout until
-it is committed and pulled everywhere. It refuses, deleting nothing, while
-another member's record would be left naming a deleted one — a plan under a
+it is committed and pulled everywhere. It refuses, deleting nothing, while a
+record outside the selection would be left naming a deleted one — a plan under a
 deleted intent, a dependency, or an intent linking a deleted plan — or while a
-worktree on this machine was prepared for a deleted plan. Interrupted after the
-ID files are updated, the remaining files still count as taken; run the same
-deletion again to finish.
+worktree on this machine was prepared for a deleted plan. With `--id`, links
+between the named records do not block, and a deleted plan is taken out of its
+own intent's `plans:` list and reported under `unlinked` instead of refusing;
+any other link refuses and the refusal names the `--id` values to add so the
+records are deleted together. With `--id`, `warnings` also lists what each bound
+checkout still holds for a deleted plan number — local and remote-tracking
+`cc/pNNNN/*` branches, worktrees on such a branch, and a leftover
+`.worktrees/pNNNN` directory — without refusing and without touching them; a
+plan given that number again meets the old branch. The 2.3.0 CLI does not know
+`--id`, rejects it, and deletes nothing. Interrupted after the ID files are
+updated, the remaining files still count as taken; run the same deletion again
+to finish.
 
 A workspace written by a CLI before 2.4.0 is at schema 2, with every reservation
 in one shared `.context-circuit/ids.yaml`. The first changing command run once

@@ -46,9 +46,9 @@ Runs the product against a real project, on a roster of one or of many.
 3. **As a developer working alone, I want setting up as a member to happen once
    inside `init`, with nothing after,** so that working alone costs nothing for a
    feature built for teams.
-4. **As a member, I want to delete my own trial records and get their numbers
-   back,** so that a direction I abandoned does not stay in the workspace as
-   noise.
+4. **As a member, I want to delete my own trial records, or just the ones I
+   name, and get their numbers back,** so that a direction I abandoned, or a
+   band I used up on it, does not stay in the workspace as noise.
 5. **As a member, I want the roster to show what each of us contributes,** so
    that I can see who works on what without that deciding who may do what.
 

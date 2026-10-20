@@ -385,12 +385,15 @@ is part of core v2.
 Deleting records happens only on request, through `record delete`. It takes one
 member's intents and plans, active and archived; while the roster lists exactly
 one member, `--all` takes every record, including any an earlier version wrote
-without an author. Either way it releases their IDs, so those
-numbers are handed out again. Run it first without `--confirm`, which previews
-the records and IDs and deletes nothing. Show the person the whole list, say that
-the numbers become reusable, and run it with `--confirm` only once they agree to
-that list. A refusal naming another member's record, or a worktree on this
-machine, is resolved by whoever owns it, not by editing around it. Deletion is a
+without an author; `--id`, repeatable, takes exactly the records the person
+named, or a reservation no record file holds. Either way it releases their IDs,
+so those numbers are handed out again. Run it first without `--confirm`, which
+previews the records, their authors and status, and IDs, and deletes nothing.
+Show the person the whole list, any warnings about leftover branches, and say
+that the numbers become reusable, and run it with `--confirm` only once they
+agree to that list. A refusal naming a record outside the selection, or a
+worktree on this machine, is resolved by whoever owns it or by the person naming
+those records too, not by editing around it. Deletion is a
 change in this checkout: committing and pushing it are separate authorizations,
 and until every clone pulls it, another clone still holds those records.
 
