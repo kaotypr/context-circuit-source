@@ -259,10 +259,74 @@ func TestGeneralRulesStayOutOfTheStackedSkill(t *testing.T) {
 		// Reporting an observation never made corrupts every decision taken
 		// after it, and nothing loads a do-not-fabricate skill before doing it.
 		"an interactive flow you could not drive is not an\nobservation",
+		// Approving an outcome and spending effort on planning are two
+		// decisions, and the second must not ride in on the first.
+		"Approval alone does not start planning",
 	} {
 		if !strings.Contains(agents, gate) {
 			t.Errorf("gate or prohibition missing from the entry instruction: %q", gate)
 		}
+	}
+}
+
+// Every place that states the approval rule states the same one: approval
+// recommends planning and stops. The old field told the agent to plan without
+// asking again, so it may appear only where it is named as the sign of a CLI
+// older than the template.
+func TestApprovalRecommendsPlanningEverywhere(t *testing.T) {
+	for _, rel := range []string{
+		"AGENTS.md.in",
+		filepath.Join("skills", "cc-plan", "SKILL.md"),
+		filepath.Join("skills", "cc-intent", "SKILL.md"),
+		filepath.Join("docs", "commands.md"),
+		filepath.Join("docs", "how-it-works.md"),
+		filepath.Join("docs", "working.md"),
+	} {
+		text := productFile(t, rel)
+		if strings.Contains(text, "without asking again") {
+			t.Errorf("%s still tells the agent to plan without asking again", rel)
+		}
+		if !strings.Contains(text, "plan") {
+			t.Errorf("%s no longer mentions planning", rel)
+		}
+		for _, paragraph := range strings.Split(text, "\n\n") {
+			if strings.Contains(paragraph, "planning_required") &&
+				!strings.Contains(paragraph, "older") && !strings.Contains(paragraph, "behind") {
+				t.Errorf("%s names planning_required other than as an old CLI's output:\n%s", rel, paragraph)
+			}
+		}
+	}
+	for _, rel := range []string{
+		"AGENTS.md.in",
+		filepath.Join("skills", "cc-plan", "SKILL.md"),
+		filepath.Join("skills", "cc-intent", "SKILL.md"),
+		filepath.Join("docs", "commands.md"),
+		filepath.Join("docs", "how-it-works.md"),
+	} {
+		if !strings.Contains(productFile(t, rel), "planning_recommended") {
+			t.Errorf("%s does not name what approval returns", rel)
+		}
+	}
+}
+
+// The gates recommend committing; they never commit, and the agent passing the
+// recommendation on still needs the person's say before committing.
+func TestCommitRecommendationNeedsAuthorizationEverywhere(t *testing.T) {
+	for _, rel := range []string{
+		"AGENTS.md.in",
+		filepath.Join("docs", "commands.md"),
+		filepath.Join("skills", "cc-complete", "SKILL.md"),
+	} {
+		text := strings.Join(strings.Fields(productFile(t, rel)), " ")
+		if !strings.Contains(text, "commit_recommended") {
+			t.Errorf("%s does not name commit_recommended", rel)
+		}
+		if !strings.Contains(text, "authoriz") {
+			t.Errorf("%s does not say committing needs the person's authorization", rel)
+		}
+	}
+	if text := productFile(t, filepath.Join("docs", "commands.md")); !strings.Contains(text, "commit_unchecked") {
+		t.Error("docs/commands.md does not name commit_unchecked")
 	}
 }
 

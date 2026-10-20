@@ -47,6 +47,12 @@ there. CI supplies native Linux, macOS, and Windows coverage.
 
 ## Opening a pull request
 
+Open pull requests against `development/v2`, where v2 development happens. A
+release is prepared on its own branch, such as `development/2.4.0`, and lands in
+`development/v2` through a pull request; work for that release may target its
+branch instead when a maintainer asks. CI runs on every pull request, whatever
+its target.
+
 Use `type(scope): imperative subject` for commit subjects, with the changed
 component as the scope. Describe what the change decides, not only what it edits —
 a reviewer needs to see which behavior moved and why.

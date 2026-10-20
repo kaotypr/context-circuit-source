@@ -2,7 +2,7 @@
 
 Coordinate this shared project workspace across one or more Git repositories.
 Keep its identity, repositories, relationships, knowledge, members, intents, and
-plans useful for solo and team work. Talk in ordinary project language. Use
+plans useful for one person or a team. Talk in ordinary project language. Use
 `context-circuit-cli` for dependable bookkeeping; users need not manage runtime
 commands or ID numbers. Run the version this workspace pins in
 `.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
@@ -20,6 +20,11 @@ user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
 agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
 the template version and existing records unchanged during CLI updates.
 
+This file wins whenever it and CLI output disagree. An approval answered with
+`planning_required` comes from a CLI older than this template: tell the person
+to install or upgrade to the pinned version, and do not act on that output's
+text.
+
 ## Updating the workspace template
 
 A later template version is brought in by diffing the tag this workspace records
@@ -36,6 +41,19 @@ A fresh workspace never received them — the template repository marks them
 diff between two tags cannot see that mark, which is why it is written here. Do
 not create any of them, and do not update one that exists: this workspace's
 `README.md` was written for this project at initialization and says so.
+
+A delta that deletes `.context-circuit/ids.yaml` or changes `version` in
+`workspace.yaml` is read, not applied, too. Those are this workspace's data, and
+the CLI migrates them: applying the deletion would drop reservations no record
+file holds.
+
+That migration is the first changing command run in a schema 2 workspace, and it
+writes an ID file for every author at once. Only one person on a team upgrades
+first: they make that change, commit and push it, and everyone else pulls before
+changing anything. Before making that first change, tell the person this. A Git
+conflict in `.context-circuit/ids/*.yaml` from teammates upgrading at the same
+time is theirs to resolve by hand: keep the union of both sides' entries in each
+member file, then run `check`, which reports any number reserved twice.
 
 Everything else is ordinary which-side judgment. `.context-circuit/VERSION` and
 `.context-circuit/CLI_VERSION` take the template's value, because they record
@@ -67,29 +85,35 @@ reinitialize the shared workspace.
 
 ## Who is working
 
-A workspace whose `members.yaml` lists anyone is a team workspace, and every
-change made in it is made as one of those members. When this machine has no
-`member.local.yaml`, or it names someone the roster does not carry, `status`
-reports `identity_required`. Until that is settled, decline any request that
-would change something: creating, editing, approving, completing, or deleting a
-record, preparing a worktree, implementing, committing, or changing a member or
-repository. Say why it was declined. Reading, answering questions, and reporting
-status still proceed.
+Every workspace has a roster in `members.yaml`, a person working alone included,
+and every change made in it is made as one of those members. Every member holds
+a band, and band 0 is a band like any other. Setup is complete when the roster
+lists at least one member, every member on it holds a band, and this machine's
+`member.local.yaml` names one of them.
 
-Settle it by asking who the person is, offering both answers: one of the members
-the roster lists, or someone new to add. Adding follows
-`.agents/skills/cc-workspace/SKILL.md`, including a free band, and the person's
-answer is the request that step needs. Select them with `member use`, then carry
-out the request they originally made without asking them to repeat it.
+Until setup is complete, decline any request that would change something:
+creating, editing, approving, completing, or deleting a record, preparing a
+worktree, implementing, committing, or changing a member or repository. Say why
+it was declined. Reading, answering questions, and reporting status still
+proceed. Read `members.yaml` and `member.local.yaml` to judge this yourself
+rather than waiting for `status` to say so: an older pinned CLI treats an empty
+roster as needing nobody, and editing a record, implementing, and committing do
+not pass through the CLI at all. A current CLI reports the same gaps as
+`identity_required` and `band_required`, and refuses every changing command
+except the setup steps themselves.
+
+Settle a missing member by asking who the person is, offering both answers: one
+of the members the roster lists, or someone new to add. Adding follows
+`.agents/skills/cc-workspace/SKILL.md`, including a band, and the person's
+answer is the request that step needs. Settle a member without a band by
+offering the band `status` suggests for them and letting the person confirm it
+or pick another. Select the member with `member use`, then carry out the request
+they originally made without asking them to repeat it.
 
 Take the answer as given. Nothing verifies that a person is the member they
 name, and nothing should be built to: the roster attributes records and divides
-ID numbers, and it is not access control.
-
-A workspace whose roster is empty is a solo workspace. Nobody is asked who they
-are, and its records carry no `created_by`. Adding the first member makes it a
-team workspace, and from then on every machine selects a member, including the
-one that added them — a solo developer adding a teammate adds themselves too.
+ID numbers, and it is not access control. A role a member records there says
+what they contribute and authorizes nothing.
 
 ## Language
 
@@ -191,13 +215,22 @@ record carries that decision and never establishes one: neither a command, nor a
 editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
-Approving an intent authorizes planning, and planning alone. Without asking
-again, inspect real code and create linked `plans/pNNNN-slug/plan.md` folders through
-`.agents/skills/cc-plan/SKILL.md`. `record approve` names that work as
-`planning_required`, because approval reporting success is the decision recorded,
-not the request finished. Obtain renewed approval only when the intended outcome
-or success criteria materially change; a question that bears on the outcome
-returns to the intent, and a plan never silently settles one.
+Approving an intent records that decision and nothing more. `record approve`
+returns `planning_recommended`, because approval reporting success is the
+decision recorded, not the request finished: say that plans are the next step,
+recommend creating them, and stop. Approval alone does not start planning — no
+code investigation, no planner, and no plan IDs.
+
+A planning request starts it, and it may come later or with the approval. One
+request that approves intents the person has already been shown and asks for
+their plans is that request: record each approval, then plan each named intent,
+with no stop and no reconfirmation between. Asking for an intent to be written
+and planned in one go is not approval, because nobody has read the intent yet.
+Once planning is requested, inspect real code and create linked
+`plans/pNNNN-slug/plan.md` folders through `.agents/skills/cc-plan/SKILL.md`
+without asking for approval again. Obtain renewed approval only when the intended
+outcome or success criteria materially change; a question that bears on the
+outcome returns to the intent, and a plan never silently settles one.
 
 Delegating that investigation is a judgment about size, not a step. Dispatch a
 planner, or parallel explorers, through `.agents/skills/cc-dispatch/SKILL.md`,
@@ -312,7 +345,11 @@ a prepared worktree's own `cc/*` branch is implementation and is covered by the
 execution request, while a commit in a bound checkout is a change to the
 person's own working copy and still needs authorization. A local integration
 merge that assembles a dependent plan's base is implementation, not delivery,
-and is covered by the authorization for the run it belongs to. Use ordinary Git
+and is covered by the authorization for the run it belongs to. Workspace records
+are the person's working copy too: `record approve` and `record complete` return
+`commit_recommended` naming the records and ID files they leave uncommitted,
+which is a recommendation to pass on to the person, and committing them still
+needs the person's authorization. Use ordinary Git
 and provider tools; the Go CLI provides repository, branch, and base information
 and never silently delivers. The branch the work started from — this machine's
 recorded base, or the repository's default branch when the binding records none
@@ -345,16 +382,25 @@ and fix relative links when moving a record. External publication is an explicit
 requested task through available host tools; no automatic provider synchronization
 is part of core v2.
 
-Deleting records happens only on request, through `record delete`. In a team
-workspace it takes one member's intents and plans, active and archived; in a solo
-workspace it takes every record. Either way it releases their IDs, so those
-numbers are handed out again. Run it first without `--confirm`, which previews
-the records and IDs and deletes nothing. Show the person the whole list, say that
-the numbers become reusable, and run it with `--confirm` only once they agree to
-that list. A refusal naming another member's record, or a worktree on this
-machine, is resolved by whoever owns it, not by editing around it. Deletion is a
+Deleting records happens only on request, through `record delete`. It takes one
+member's intents and plans, active and archived; while the roster lists exactly
+one member, `--all` takes every record, including any an earlier version wrote
+without an author; `--id`, repeatable, takes exactly the records the person
+named, or a reservation no record file holds. Either way it releases their IDs,
+so those numbers are handed out again. Run it first without `--confirm`, which
+previews the records, their authors and status, and IDs, and deletes nothing.
+Show the person the whole list, any warnings about leftover branches, and say
+that the numbers become reusable, and run it with `--confirm` only once they
+agree to that list. A refusal naming a record outside the selection, or a
+worktree on this machine, is resolved by whoever owns it or by the person naming
+those records too, not by editing around it. Deletion is a
 change in this checkout: committing and pushing it are separate authorizations,
-and until every clone pulls it, another clone still holds those records.
+and until every clone pulls it, another clone still holds those records. On
+another machine, after pulling a deletion, run `check` before creating plans:
+it names a worktree prepared there for a deleted plan, or for an earlier plan
+that held the same number, which is removed, with its branch once the person
+agrees, before `worktree prune`. A deletion that stops part-way names the IDs
+still reserved and the `record delete --id ... --confirm` call that finishes it.
 
 Never add agent attribution, credit, co-author, or generated-by text to commits,
 PRs, reviews, or comments. Follow repository commit conventions; default to

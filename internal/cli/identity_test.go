@@ -11,14 +11,14 @@ import (
 	"github.com/kaotypr/context-circuit-source/internal/workspace"
 )
 
-// solo initializes a workspace with no member, which is what a solo workspace
-// is: an empty roster, nobody to select, and records with no author.
-func solo(t *testing.T) fixture {
+// upgraded rewrites a fixture into what an earlier version left behind: the
+// given roster, written by hand, and no member selected on this machine.
+func upgraded(t *testing.T, f fixture, roster string) {
 	t.Helper()
-	f := setup(t)
-	g := fixture{t, filepath.Join(f.home, "solo"), f.home}
-	g.ok("init", "--name", "Solo", "--purpose", "Side project")
-	return g
+	write(t, filepath.Join(f.root, "members.yaml"), roster)
+	if err := os.Remove(filepath.Join(f.root, "member.local.yaml")); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func orientation(t *testing.T, out string) workspace.Orientation {
@@ -44,46 +44,157 @@ func exists(path string) bool {
 	return err == nil
 }
 
-func TestASoloWorkspaceAsksNobodyWhoTheyAre(t *testing.T) {
-	f := solo(t)
-	if exists(filepath.Join(f.root, "member.local.yaml")) {
-		t.Fatal("a solo workspace selected a member nobody named")
+// A person working alone is a team of one, set up once inside init: the roster
+// lists them, this machine selects them, and they hold band 1 unless they pick
+// another.
+func TestInitSetsUpItsMember(t *testing.T) {
+	f := setup(t)
+	g := fixture{t, filepath.Join(f.home, "alone"), f.home}
+	if out := g.fail("init", "--name", "Alone", "--purpose", "Side project"); !strings.Contains(out, "missing --member") {
+		t.Fatalf("init without a member was not refused: %s", out)
 	}
-	if roster := read(t, filepath.Join(f.root, "members.yaml")); !strings.Contains(roster, "members: {}") {
-		t.Fatalf("a solo workspace recorded a roster:\n%s", roster)
+	g.ok("init", "--name", "Alone", "--purpose", "Side project", "--member", "ana", "--member-name", "Ana")
+	status := orientation(t, g.ok("status"))
+	if status.ActiveMember != "ana" || status.IdentityRequired != "" || status.BandRequired != "" {
+		t.Fatalf("init left setup outstanding: %+v", status)
 	}
+	if band := status.Members.Members["ana"].Band; band == nil || *band != 1 {
+		t.Fatalf("init did not give its member band 1: %v", band)
+	}
+	if status.NextBand != 2 {
+		t.Fatalf("the next band offered should be 2, got %d", status.NextBand)
+	}
+	if created := g.intent("first"); created.ID != "i100" || created.CreatedBy != "ana" {
+		t.Fatalf("the first record should be i100 by ana: %+v", created)
+	}
+	g.ok("check")
+}
+
+// A workspace an earlier version left with an empty roster keeps its records,
+// tells the person what to set up, and refuses every change until they have.
+func TestAnUpgradedEmptyRosterIsSetUpBeforeAnyChange(t *testing.T) {
+	f := setup(t)
+	api := filepath.Join(f.home, "api")
+	if err := os.Mkdir(api, 0755); err != nil {
+		t.Fatal(err)
+	}
+	git(t, api, "init", "-b", "main")
+	// A record an earlier version wrote with no author stays valid.
+	write(t, filepath.Join(f.root, "intent", "i001-old.md"), "---\nid: i001\ncreated_at: 2026-09-15T10:53:00Z\n---\n\n# Old\n")
+	write(t, filepath.Join(f.root, ".context-circuit", "ids.yaml"), "intents:\n  - i001\nplans: []\n")
+	upgraded(t, f, "members: {}\n")
+
 	status := orientation(t, f.ok("status"))
-	if status.IdentityRequired != "" || status.ActiveMember != "" {
-		t.Fatalf("a solo workspace asked for an identity: %+v", status)
+	if !strings.Contains(status.IdentityRequired, "member add --id ID --name NAME --band N") || status.NextBand != 1 {
+		t.Fatalf("status did not ask for a member and offer band 1: %+v", status)
 	}
-	created := f.intent("first")
-	if created.ID != "i001" || created.CreatedBy != "" {
-		t.Fatalf("a solo record should be i001 with no author: %+v", created)
+	for _, args := range [][]string{
+		{"record", "create", "--kind", "intent", "--slug", "x", "--title", "X"},
+		{"repo", "connect", "--id", "api", "--path", api, "--base", "main"},
+	} {
+		if out := f.fail(args...); !strings.Contains(out, "setup is incomplete") || !strings.Contains(out, "member add") {
+			t.Fatalf("%v was not refused naming setup: %s", args, out)
+		}
 	}
-	if text := read(t, filepath.Join(f.root, created.Path)); strings.Contains(text, "created_by") {
-		t.Fatalf("a solo record carries an author field:\n%s", text)
+	if code, out, _ := call(f.root, "check"); code == 0 || !strings.Contains(out, "select a workspace member") || strings.Contains(out, "unknown created_by") {
+		t.Fatalf("check did not run and report the missing member alone: %s", out)
 	}
 
-	// The first member turns it into a team workspace. The record written
-	// before that stays valid, and this machine now has to say who it is.
 	f.ok("member", "add", "--id", "ana", "--name", "Ana", "--band", "1")
-	status = orientation(t, f.ok("status"))
-	if status.IdentityRequired == "" {
-		t.Fatal("a workspace that now lists members did not ask this machine who is working")
-	}
-	if out := f.fail("record", "create", "--kind", "intent", "--slug", "second", "--title", "Second"); !strings.Contains(out, "member use --id ID") {
-		t.Fatalf("an unidentified create did not name the remedy: %s", out)
-	}
-	_, out, _ := call(f.root, "check")
-	if strings.Contains(out, "unknown created_by") {
-		t.Fatalf("a record written before the roster existed is reported as unattributed:\n%s", out)
-	}
 	f.ok("member", "use", "--id", "ana")
-	if status = orientation(t, f.ok("status")); status.IdentityRequired != "" || status.ActiveMember != "ana" {
-		t.Fatalf("selecting a member did not settle the identity: %+v", status)
+	if created := f.intent("next"); created.ID != "i100" || created.CreatedBy != "ana" {
+		t.Fatalf("a record made after setup should carry its author: %+v", created)
 	}
-	if next := f.intent("second"); next.ID != "i100" || next.CreatedBy != "ana" {
-		t.Fatalf("an identified member should allocate from their band: %+v", next)
+	f.ok("repo", "connect", "--id", "api", "--path", api, "--base", "main")
+	if _, err := os.Stat(filepath.Join(f.root, "intent", "i001-old.md")); err != nil {
+		t.Fatal("the old record did not survive setup")
+	}
+}
+
+// Members an earlier version left without a band are each offered one that
+// starts empty, and changes wait until every member holds one.
+func TestAMemberWithoutABandIsOfferedOne(t *testing.T) {
+	f := setup(t)
+	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    band: 0\n  rina:\n    name: Rina\n  ben:\n    name: Ben\n")
+	// i120 already sits in band 1, so band 1 is not offered.
+	write(t, filepath.Join(f.root, ".context-circuit", "ids.yaml"), "intents:\n  - i120\nplans: []\n")
+
+	status := orientation(t, f.ok("status"))
+	if status.BandRequired == "" || status.BandSuggestions["ben"] != 2 || status.BandSuggestions["rina"] != 3 || len(status.BandSuggestions) != 2 || status.NextBand != 4 {
+		t.Fatalf("unexpected band suggestions: %+v %v next %d", status.BandRequired, status.BandSuggestions, status.NextBand)
+	}
+	if out := f.fail("record", "create", "--kind", "intent", "--slug", "x", "--title", "X"); !strings.Contains(out, "member band --id ID --band N") || !strings.Contains(out, "ben band 2") {
+		t.Fatalf("a change with an unbanded member was not refused naming the step: %s", out)
+	}
+	findings := checkFindings(t, f.root)
+	var named bool
+	for _, item := range findings {
+		if item.Issue == "member rina holds no band" && strings.Contains(item.Resolve, "`member band --id rina --band 3`") {
+			named = true
+		}
+	}
+	if !named {
+		t.Fatalf("check did not offer rina band 3: %v", findings)
+	}
+	f.ok("member", "band", "--id", "rina", "--band", "3")
+	f.ok("member", "band", "--id", "ben", "--band", "1")
+	if status := orientation(t, f.ok("status")); status.BandRequired != "" {
+		t.Fatalf("banding every member did not settle setup: %+v", status)
+	}
+	// Picked by hand, a band holding old records allocates past them.
+	f.ok("member", "use", "--id", "ben")
+	if created := f.intent("ben"); created.ID != "i100" {
+		t.Fatalf("band 1 allocated %s, want i100", created.ID)
+	}
+}
+
+// Every command that changes something is refused before setup, while reading
+// keeps working so the person can see why.
+func TestEveryChangeWaitsForSetup(t *testing.T) {
+	f := setup(t)
+	intent := f.intent("billing")
+	upgraded(t, f, "members:\n  maya:\n    name: Maya\n    band: 0\n")
+	path := filepath.Join(f.home, "anywhere")
+	for _, args := range [][]string{
+		{"record", "create", "--kind", "intent", "--slug", "x", "--title", "X"},
+		{"record", "approve", "--id", intent.ID, "--text", "yes"},
+		{"record", "complete", "--id", "p0001", "--text", "done"},
+		{"record", "dependencies", "--id", "p0001"},
+		{"record", "delete", "--all"},
+		{"record", "delete", "--id", intent.ID},
+		{"repo", "connect", "--id", "api", "--path", path, "--base", "main"},
+		{"repo", "clone", "--id", "api", "--path", path, "--base", "main", "--url", "https://example.invalid/api.git"},
+		{"repo", "init", "--id", "api", "--path", path, "--base", "main"},
+		{"repo", "base", "--id", "api", "--branch", "main"},
+		{"repo", "remote", "--id", "api", "--url", "https://example.invalid/api.git"},
+		{"repo", "relate", "--from", "api", "--to", "web", "--description", "calls"},
+		{"repo", "fetch", "--id", "api"},
+		{"workspace", "connect", "--base", "main"},
+		{"workspace", "base", "--branch", "main"},
+		{"workspace", "remote", "--url", "https://example.invalid/w.git"},
+		{"knowledge", "connect", "--id", "k", "--path", path},
+		{"knowledge", "clone", "--id", "k", "--url", "https://example.invalid/k.git"},
+		{"knowledge", "remote", "--id", "k", "--url", "https://example.invalid/k.git"},
+		{"knowledge", "sync", "--id", "k"},
+		{"worktree", "prepare", "--repo", "api"},
+		{"worktree", "move", "--repo", "api", "--path", path, "--to", path + "2"},
+		{"worktree", "repair", "--repo", "api", "--path", path},
+		{"worktree", "remove", "--repo", "api", "--path", path},
+		{"worktree", "prune", "--repo", "api"},
+		{"agent", "setup"},
+		{"agent", "configure", "--host", "claude-code", "--role", "worker", "--model", "inherit", "--effort", "inherit"},
+		{"member", "language", "--id", "maya", "--language", "English"},
+		{"member", "tone", "--id", "maya", "--clear"},
+	} {
+		if out := f.fail(args...); !strings.Contains(out, "setup is incomplete") {
+			t.Errorf("%v was not refused for setup: %s", args, out)
+		}
+	}
+	for _, args := range [][]string{{"status"}, {"record", "list"}, {"member", "list"}, {"record", "show", "--id", intent.ID}} {
+		f.ok(args...)
+	}
+	if _, out, _ := call(f.root, "check"); !strings.Contains(out, "select a workspace member") {
+		t.Fatalf("check did not run: %s", out)
 	}
 }
 
@@ -110,15 +221,28 @@ func TestAnUnidentifiedCloneIsToldToSayWhoItIs(t *testing.T) {
 	}
 }
 
-func TestInitTakesAMemberWholeOrNotAtAll(t *testing.T) {
+func TestInitTakesAWholeMember(t *testing.T) {
 	f := setup(t)
 	for i, half := range [][]string{{"--member", "ana"}, {"--member-name", "Ana"}} {
 		g := fixture{t, filepath.Join(f.home, "half"+string(rune('a'+i))), f.home}
 		args := append([]string{"init", "--name", "Half", "--purpose", "Half"}, half...)
-		if out := g.fail(args...); !strings.Contains(out, "together") {
+		if out := g.fail(args...); !strings.Contains(out, "missing --member") {
 			t.Fatalf("%v: half a member was not refused by name: %s", half, out)
 		}
 	}
+}
+
+// Adding a member writes nothing without a band the person chose, and the
+// refusal offers the next free one.
+func TestAddingAMemberTakesABand(t *testing.T) {
+	f := setup(t)
+	if out := f.fail("member", "add", "--id", "ana", "--name", "Ana"); !strings.Contains(out, "pass --band N; the next free band is 1") {
+		t.Fatalf("member add without --band did not offer the next band: %s", out)
+	}
+	if strings.Contains(read(t, filepath.Join(f.root, "members.yaml")), "ana") {
+		t.Fatal("a refused member add wrote the member")
+	}
+	f.ok("member", "add", "--id", "ana", "--name", "Ana", "--band", "7")
 }
 
 // team gives maya band 1 and alex band 2 on one machine, switching between
@@ -132,13 +256,51 @@ func team(t *testing.T) fixture {
 	return f
 }
 
-func ledger(t *testing.T, f fixture) workspace.Ledger {
+// idFileNames lists every ID file in the fixture, legacy one included.
+func idFileNames(t *testing.T, f fixture) []string {
+	t.Helper()
+	s, err := workspace.Open(f.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, err := s.IDFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
+}
+
+// idFiles is every ID file's name and content, so a test can tell whether any
+// of them changed.
+func idFiles(t *testing.T, f fixture) string {
+	t.Helper()
+	var b strings.Builder
+	for _, rel := range idFileNames(t, f) {
+		b.WriteString(rel + "\n" + read(t, filepath.Join(f.root, rel)))
+	}
+	return b.String()
+}
+
+// idFile reads one ID file.
+func idFile(t *testing.T, f fixture, rel string) workspace.Ledger {
 	t.Helper()
 	var l workspace.Ledger
-	if err := workspace.Decode([]byte(read(t, filepath.Join(f.root, ".context-circuit/ids.yaml"))), &l); err != nil {
+	if err := workspace.Decode([]byte(read(t, filepath.Join(f.root, rel))), &l); err != nil {
 		t.Fatal(err)
 	}
 	return l
+}
+
+// ledger is every reservation across the ID files, in file order.
+func ledger(t *testing.T, f fixture) workspace.Ledger {
+	t.Helper()
+	all := workspace.Ledger{Intents: []string{}, Plans: []string{}}
+	for _, rel := range idFileNames(t, f) {
+		l := idFile(t, f, rel)
+		all.Intents = append(all.Intents, l.Intents...)
+		all.Plans = append(all.Plans, l.Plans...)
+	}
+	return all
 }
 
 func TestDeletingAMembersRecordsReleasesTheirNumbers(t *testing.T) {
@@ -196,6 +358,17 @@ func TestDeletingAMembersRecordsReleasesTheirNumbers(t *testing.T) {
 	if out := f.fail("record", "delete", "--member", "nobody"); !strings.Contains(out, "no intents or plans were created by member nobody") {
 		t.Fatalf("deleting for a member with no records did not say so: %s", out)
 	}
+
+	// Two clones that split before pulling each other can leave maya's number
+	// in alex's file too. Deleting her record releases it from every file.
+	write(t, filepath.Join(f.root, ".context-circuit/ids/alex.yaml"), "intents:\n  - i200\n  - i100\nplans: []\n")
+	deletion(t, f.ok("record", "delete", "--member", "maya", "--confirm"))
+	if l := idFile(t, f, ".context-circuit/ids/alex.yaml"); !slices.Equal(l.Intents, []string{"i200"}) {
+		t.Fatalf("a number reserved in another member's file was not released there: %+v", l)
+	}
+	if l := idFile(t, f, ".context-circuit/ids/maya.yaml"); len(l.Intents)+len(l.Plans) != 0 {
+		t.Fatalf("maya's file kept a released number: %+v", l)
+	}
 }
 
 func TestDeletionRefusesToStrandAnotherMembersWork(t *testing.T) {
@@ -228,40 +401,42 @@ func TestDeletionRefusesAPlanThisMachineIsWorkingOn(t *testing.T) {
 	}
 }
 
-func TestDeletionMatchesTheWorkspaceItIsIn(t *testing.T) {
+// --all deletes every record, authorless ones from an earlier version
+// included, and only while the roster lists exactly one member.
+func TestDeletingEverythingNeedsARosterOfOne(t *testing.T) {
 	f := team(t)
-	if out := f.fail("record", "delete", "--all"); !strings.Contains(out, "--member ID") {
-		t.Fatalf("--all in a team workspace was not refused toward --member: %s", out)
+	if out := f.fail("record", "delete", "--all"); !strings.Contains(out, "--member ID") || !strings.Contains(out, "exactly one member") {
+		t.Fatalf("--all with two members was not refused toward --member: %s", out)
 	}
 	if out := f.fail("record", "delete", "--member", "maya", "--all"); !strings.Contains(out, "not both") {
 		t.Fatalf("--member with --all was not refused: %s", out)
 	}
 	f.fail("record", "delete")
 
-	g := solo(t)
+	g := setup(t)
 	g.repository("api")
 	intent := g.intent("first")
 	g.plan(intent.ID, "first-api", "api")
-	g.intent("second")
-	if out := g.fail("record", "delete", "--member", "maya"); !strings.Contains(out, "--all") {
-		t.Fatalf("--member in a solo workspace was not refused toward --all: %s", out)
-	}
+	// A record written by an earlier version, with no author.
+	write(t, filepath.Join(g.root, "intent", "i050-old.md"), "---\nid: i050\ncreated_at: 2026-09-15T10:53:00Z\n---\n\n# Old\n")
+	l := ledger(t, g)
+	write(t, filepath.Join(g.root, ".context-circuit", "ids.yaml"), "intents:\n  - "+strings.Join(append(l.Intents, "i050"), "\n  - ")+"\nplans:\n  - "+strings.Join(l.Plans, "\n  - ")+"\n")
 	preview := deletion(t, g.ok("record", "delete", "--all"))
 	if len(preview.Records) != 3 || preview.Deleted {
-		t.Fatalf("a solo preview should list every record and delete none: %+v", preview)
+		t.Fatalf("a preview should list every record and delete none: %+v", preview)
 	}
 	deletion(t, g.ok("record", "delete", "--all", "--confirm"))
 	if l := ledger(t, g); len(l.Intents)+len(l.Plans) != 0 {
-		t.Fatalf("a solo deletion did not reset the ledger: %+v", l)
+		t.Fatalf("deleting everything did not reset the ledger: %+v", l)
 	}
 	if paths, _ := filepath.Glob(filepath.Join(g.root, "intent", "i*")); len(paths) != 0 {
-		t.Fatalf("records survived a solo deletion: %v", paths)
+		t.Fatalf("records survived deleting everything: %v", paths)
 	}
 	if next := g.intent("restart"); next.ID != "i001" {
-		t.Fatalf("a reset solo workspace should count from i001 again: %s", next.ID)
+		t.Fatalf("a reset workspace should count from i001 again: %s", next.ID)
 	}
-	g.ok("record", "delete", "--all", "--confirm")
+	g.ok("record", "delete", "--member", "maya", "--confirm")
 	if out := g.fail("record", "delete", "--all"); !strings.Contains(out, "no intents, plans, or reserved IDs") {
-		t.Fatalf("an empty solo deletion did not say there was nothing to delete: %s", out)
+		t.Fatalf("an empty deletion did not say there was nothing to delete: %s", out)
 	}
 }

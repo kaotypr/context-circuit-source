@@ -31,8 +31,8 @@ func breakThings(t *testing.T, f fixture) {
 	t.Helper()
 	git(t, f.root, "init", "-b", "main")
 
-	// Two members allocating from the shared range.
-	f.ok("member", "add", "--id", "alex", "--name", "Alex")
+	// A member an earlier version left without a band.
+	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    band: 0\n  alex:\n    name: Alex\n")
 
 	// A knowledge repository nobody here has obtained.
 	shared := read(t, filepath.Join(f.root, "workspace.yaml"))
@@ -78,12 +78,12 @@ func TestAResolutionIsACommandAnEditOrAPerson(t *testing.T) {
 	findings := checkFindings(t, f.root)
 
 	want := map[string]string{
-		"is not obtained on this machine":          "`knowledge clone --id core-service-knowledge`",
-		"members allocating from the shared range": "`member band --id ID --band N`",
-		"describes no workspace repository":        "`workspace connect --base BRANCH`",
-		"record ID missing from permanent ledger":  "needs a person:",
-		"note is not listed in the catalog":        "add its entry to context/INDEX.md",
-		"catalog entry links to a missing note":    "write the note, or correct the link",
+		"is not obtained on this machine":       "`knowledge clone --id core-service-knowledge`",
+		"member alex holds no band":             "`member band --id alex --band 1`",
+		"describes no workspace repository":     "`workspace connect --base BRANCH`",
+		"record ID reserved in no ID file":      "needs a person:",
+		"note is not listed in the catalog":     "add its entry to context/INDEX.md",
+		"catalog entry links to a missing note": "write the note, or correct the link",
 	}
 	for issue, resolve := range want {
 		var seen bool
@@ -97,6 +97,43 @@ func TestAResolutionIsACommandAnEditOrAPerson(t *testing.T) {
 		}
 		if !seen {
 			t.Errorf("the broken workspace produced no finding matching %q; findings were %v", issue, findings)
+		}
+	}
+}
+
+// Two clones assigning bands at once can leave a roster nobody may silently
+// repair: the CLI does not pick a winner, so each case is a person's to fix,
+// and status still runs so they can see it.
+func TestABrokenRosterNeedsAPerson(t *testing.T) {
+	for name, roster := range map[string]string{
+		"conflict markers": "members:\n  maya:\n    name: Maya\n<<<<<<< HEAD\n    band: 1\n=======\n    band: 2\n>>>>>>> theirs\n",
+		"duplicate band":   "members:\n  maya:\n    name: Maya\n    band: 1\n  alex:\n    name: Alex\n    band: 1\n",
+		"two band keys":    "members:\n  maya:\n    name: Maya\n    band: 1\n    band: 2\n",
+		"listed twice":     "members:\n  maya:\n    name: Maya\n    band: 1\n  maya:\n    name: Maya\n    band: 2\n",
+	} {
+		f := setup(t)
+		write(t, filepath.Join(f.root, "members.yaml"), roster)
+		status := orientation(t, f.ok("status"))
+		if status.IdentityRequired == "" {
+			t.Errorf("%s: status did not ask for setup", name)
+		}
+		var seen bool
+		for _, item := range checkFindings(t, f.root) {
+			if strings.HasPrefix(item.Issue, "members.yaml: ") {
+				seen = true
+				if !strings.HasPrefix(item.Resolve, "needs a person:") {
+					t.Errorf("%s: resolves to %q", name, item.Resolve)
+				}
+				if name == "conflict markers" && !strings.Contains(item.Issue, "conflict markers") {
+					t.Errorf("conflict markers were not named: %q", item.Issue)
+				}
+			}
+		}
+		if !seen {
+			t.Errorf("%s: check reported nothing about the roster", name)
+		}
+		if out := f.fail("record", "create", "--kind", "intent", "--slug", "x", "--title", "X"); !strings.Contains(out, "setup is incomplete") {
+			t.Errorf("%s: a change was not refused: %s", name, out)
 		}
 	}
 }

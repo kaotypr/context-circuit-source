@@ -47,13 +47,29 @@ automate:
   a caller selects an existing branch or adopts an existing association.
 - Repeating preparation for the same association returns its actual Git state
   rather than recreating anything.
+- The same plan ID is not proof of the same plan: deletion releases numbers, and
+  another machine may still hold the old plan's worktree under the same path and
+  branch. An association remembers the `created_at` of the plan it was made for,
+  and one that differs, or (for an association older than that field) commits
+  made before the plan record existed, is refused without the reuse flag. An
+  older association with no commit to date has nothing to judge, so it resumes
+  only when clean and at the base tip a fresh preparation would start from. The
+  explicit diagnostic names a worktree whose remembered `created_at` differs
+  from its plan's.
+- A plan branch already checked out elsewhere is refused, and the refusal says
+  whether that place is the plan's own worktree, the bound checkout, or a
+  worktree the workspace does not know for the plan. It offers only steps that
+  keep the work there — resume, switch that checkout, or remove that worktree —
+  and never offers the bound checkout for removal. Nothing is checked out,
+  switched, or reset to get past it.
 - Removal preserves dirty, untracked, and ignored files unless an explicit
   discard flag carries authorization to dispose of them, and that flag is never
   added merely to get past a failure.
 - Removal never touches the primary checkout or a locked worktree, and keeps the
   branch. Branch deletion is separate ordinary Git.
 - Marking work complete removes neither worktree nor branch, and no automatic
-  cleanup or pruning follows failure or completion.
+  cleanup or pruning follows failure or completion. Prune runs only when
+  invoked.
 - Base drift triggers nothing: no automatic rebase, review, or repair loop.
 
 ## Git is the inventory
@@ -63,6 +79,15 @@ not prove a path exists or still holds the same branch. Resume by listing and
 inspecting through Git, then read the real diff. Repair reconnects a manually
 moved working copy; move relocates one through Git. The diagnostic reports stale
 associations.
+
+A worktree removed with Git itself, or deleted by hand, leaves a stale
+association behind. Repair cannot fix it, because repair works only on a path
+Git still lists, so the diagnostic and the record-deletion blocker point at
+prune instead. Prune drops the associations of one repository whose path Git no
+longer lists and reports them as `dropped`. It rewrites only the local
+association file and never touches a worktree, branch, or file. An association
+whose worktree Git still lists stays, even one Git marks prunable or one now on
+another branch; those are left for repair and Git's own prune.
 
 ## Copy-on-write environment reuse
 

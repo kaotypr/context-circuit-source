@@ -15,7 +15,8 @@ complete.
 
 | Concern | Owner |
 | --- | --- |
-| Identity, reservations, record creation and notes | `context-circuit-source@internal/workspace/records.go` |
+| Identity, record creation and notes | `context-circuit-source@internal/workspace/records.go` |
+| Per-member ID files, reservations, and the split of the shared one | `context-circuit-source@internal/workspace/ids.go` |
 | Workspace and member records, local bindings | `context-circuit-source@internal/workspace/workspace.go` |
 | Repository connect, clone, init, base, relate, fetch | `context-circuit-source@internal/workspace/repositories.go` |
 | Git state inspection and the diagnostic | `context-circuit-source@internal/workspace/inspect.go` |

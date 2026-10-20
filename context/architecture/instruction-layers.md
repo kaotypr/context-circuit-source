@@ -63,8 +63,8 @@ Two things, and either is enough.
 A **user word** that reliably precedes it — "run these plans", "review this",
 "initialize", "add a member". The person's own request is the trigger.
 
-A **command that names the obligation in its own output** — `setup_required`,
-`planning_required`, `reconcile_required`. The pointer then arrives at the
+A **command that names the next step in its own output** — `setup_required`,
+`planning_recommended`, `reconcile_required`. The pointer then arrives at the
 moment the work comes due rather than depending on a document read once at
 session start. This is why those fields exist and why the procedures behind
 those gates can live outside the entry instruction; see

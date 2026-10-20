@@ -21,6 +21,7 @@ context-circuit-cli member add --id alex --name Alex --band 2
 context-circuit-cli member band --id alex --band 3
 context-circuit-cli member language --id alex --language 'Bahasa Indonesia'
 context-circuit-cli member tone --id alex --tone 'semi-formal; keep technical terms in English'
+context-circuit-cli member roles --id alex --role maintainer --role docs
 context-circuit-cli member use --id alex
 context-circuit-cli member list
 context-circuit-cli repo connect --id api --path ../api --base main
@@ -59,22 +60,24 @@ Records:
 
 ```sh
 context-circuit-cli record create --kind intent --slug add-billing --title 'Add billing'
-context-circuit-cli record approve --id i001 --text 'User approved the billing outcome'
+context-circuit-cli record approve --id i100 --text 'User approved the billing outcome'
 context-circuit-cli record create --kind plan --slug billing-api --title 'Billing API' \
-  --intent i001 --repo api
+  --intent i100 --repo api
 context-circuit-cli record create --kind plan --slug billing-web --title 'Billing UI' \
-  --intent i001 --repo web --depends-on p0001
+  --intent i100 --repo web --depends-on p1000
 context-circuit-cli record create --kind plan --slug specified-change --title 'Specified change' \
   --repo api
-context-circuit-cli record show --id p0001
+context-circuit-cli record show --id p1000
 context-circuit-cli record list
-context-circuit-cli record dependencies --id p0002 --depends-on p0001
-context-circuit-cli record complete --id p0001 --text 'User requested completion.'
-context-circuit-cli record order --intent i001 --mode waves
-context-circuit-cli record order --plan p0003 --mode waves
+context-circuit-cli record dependencies --id p1001 --depends-on p1000
+context-circuit-cli record complete --id p1000 --text 'User requested completion.'
+context-circuit-cli record order --intent i100 --mode waves
+context-circuit-cli record order --plan p1002 --mode waves
 context-circuit-cli record delete --member alex
 context-circuit-cli record delete --member alex --confirm
 context-circuit-cli record delete --all
+context-circuit-cli record delete --id p1002
+context-circuit-cli record delete --id i101 --id p1003 --confirm
 ```
 
 `context find` takes one of the two: a query searches this workspace's catalog
@@ -88,31 +91,105 @@ knowledge to reconcile. An unknown repository is refused rather than answered
 with an empty list, because nothing to reconcile and nothing found read the
 same.
 
-`--band` is optional. A member holding band N allocates intents from `N*100` and
-plans from `N*1000`, so band 2 writes `i200` and `p2000`; members without one
-allocate from the numbers no band claims. `member band --band 0` clears a band.
-Bands must be distinct across the roster, and every command refuses to run while
-two members share one. Assigning, changing, or clearing a band never renumbers an
-existing record or releases its reservation.
+Every member holds a band, and `member add` requires `--band`; without it, it
+refuses and names the next free band. A member holding band N allocates intents
+from `N*100` and plans from `N*1000`, so band 2 writes `i200` and `p2000`. Band 0
+is a band like any other and starts at `i001` and `p0001`, never `i000` or
+`p0000`. `member band --band 0` sets band 0; there is no clearing a band. Bands
+must be distinct across the roster, band 0 included, and every command refuses
+to run while two members share one. Allocation skips every number already
+reserved in any member's ID file or held by a record file, inside any band, and
+a full band is refused naming the member, the band, and its range. The new
+number is reserved in the author's own `.context-circuit/ids/MEMBER.yaml` and in
+no other file. Assigning or changing a band never renumbers an existing record or
+releases its reservation.
 
 `record delete` is the one command that releases reservations. `--member` takes
-every intent and plan that member created, active and archived, in a workspace
-that lists members; `--all` takes every record in a solo workspace, whose roster
-is empty, and resets the ledger. Each is refused in the other kind of workspace.
-Without `--confirm` it returns the records and `released_ids` with
-`confirmation_required` and deletes nothing; with it, the ledger is updated and
-the files and plan folders are removed, and `sync_required` says the deletion
-lives in this checkout until it is committed and pulled everywhere. It refuses,
-deleting nothing, while another member's record would be left naming a deleted
-one — a plan under a deleted intent, a dependency, or an intent linking a deleted
-plan — or while a worktree on this machine was prepared for a deleted plan.
-Interrupted after the ledger is updated, the remaining files still count as taken;
-run the same deletion again to finish.
+every intent and plan that member created, active and archived. `--all` takes
+every record, including any an earlier version wrote without an author, and
+empties every ID file while keeping the files; it is refused unless the roster
+lists exactly one member. `--id` names the records instead, and is repeatable:
+each intent or plan with that ID, active or archived, approved or completed,
+whoever wrote it or with no author at all, and a reserved ID no record file holds,
+shown as `reservation only`. It cannot be combined with `--member` or `--all`,
+and an ID matching neither a record nor a reservation is refused. Without
+`--confirm` it returns the records, each with its author, path, and `status`
+(`draft` or `approved` for an intent, `open` or `completed` for a plan), and
+`released_ids` with `confirmation_required`, and deletes nothing; with it, the
+record files and plan folders are removed, plans before intents and each
+`plan.md` after the rest of its folder, then each released ID is removed from
+every ID file holding it, and `sync_required` says the deletion lives in this
+checkout until it is committed and pulled everywhere, and that every other
+machine should then run `check` and remove or prune what it names before
+creating plans. It refuses, deleting nothing, while a
+record outside the selection would be left naming a deleted one — a plan under a
+deleted intent, a dependency, or an intent linking a deleted plan — or while a
+worktree on this machine was prepared for a deleted plan. With `--id`, links
+between the named records do not block, and a deleted plan is taken out of its
+own intent's `plans:` list and reported under `unlinked` instead of refusing;
+any other link refuses and the refusal names the `--id` values to add so the
+records are deleted together. A plan its intent lists that no record file holds
+any more is unlinked the same way. In every mode, `warnings` also lists what each
+bound checkout still holds for a deleted plan number — local and remote-tracking
+`cc/pNNNN/*` branches, worktrees on such a branch, and a leftover
+`.worktrees/pNNNN` directory — without refusing and without touching them; a
+plan given that number again meets the old branch. The 2.3.0 CLI does not know
+`--id`, rejects it, and deletes nothing. No ID is released until every file is
+gone, so an interrupted deletion leaves every selected number still reserved:
+a failed removal names the path and the call that finishes the job, `record
+delete --id ID ... --confirm` with exactly the IDs still reserved, or `record
+delete --all --confirm` after `--all`, and running the same `--id` or `--all`
+deletion again finishes it too. A plan folder that has already lost its
+`plan.md` is no longer a record and no re-run reaches it, so the error names it
+for removal by hand, and `check` reports it as an empty plan folder. A failure while
+rewriting the ID files, after every record file is gone, names the IDs still
+reserved and the same finishing call, or says nothing is left when none is.
 
-`status` reports `identity_required` when a workspace lists members and this
-machine has selected none of them, or names one the roster does not carry, and
-`record create` is refused until `member use` settles it. A solo workspace, with
-an empty roster, never reports it.
+A workspace written by a CLI before 2.4.0 is at schema 2, with every reservation
+in one shared `.context-circuit/ids.yaml`. The first changing command run once
+setup is complete splits it into one file per member: each reservation goes to
+the file of its record's `created_by`, and one with no author or no record file
+goes to the member selected on this machine. The shared file is removed and
+`workspace.yaml` moves to `version: 3`. A shared file that comes back later, from
+a clone that had not pulled the split, is split again on the next changing
+command, skipping numbers a member file already holds. The split is reported as
+one `notice:` paragraph on the error stream, in `--json` mode too, so no
+command's result changes shape. `status`, `check`, the other reading commands,
+and `record delete` without `--confirm` never split. Nor do a few refusals
+checked before the split: `member add` without `--band`, a malformed `member
+roles` call, and a confirmed `record delete` its preview would refuse. A refusal
+found while the command runs, such as an unknown member or record ID, comes
+after the split, which then stands; it is the same split any later change makes. `init` writes the per-member
+layout itself.
+
+The split is the one time a CLI rewrites an existing workspace's files on its
+own, and it is a cut-over: CLIs before 2.4.0 refuse a schema 3 workspace with
+"requires a newer CLI", so every member needs 2.4.0 before they pull it. It
+writes a file for every author, so only one person on a team upgrades first:
+they make the first changing command, then commit and push `workspace.yaml` and
+`.context-circuit/`; committing is the person's decision. Everyone else pulls
+before making any change. Teammates who upgrade at the same time get a Git
+conflict in `.context-circuit/ids/*.yaml`, which is theirs to resolve by hand:
+keep the union of both sides' entries in each member file, then run `check`,
+which reports any number reserved twice. If a merge leaves Git conflict markers
+in `ids.yaml`, the split refuses until a person resolves them, keeping every
+entry. A member or record author whose ID is a Windows device name stops the
+split, which names them; `status` and `check` report a roster member like that
+beforehand, and the rename is made by hand.
+
+Setup is complete when the roster lists at least one member, every member holds a
+band, and this machine has selected one of them. Until then every changing
+command is refused with a message naming the step, except the setup steps
+themselves: `init`, `member add`, `member use`, and `member band`. `status`,
+`check`, and the other read-only commands keep working. `status` reports
+`identity_required` when the roster is empty or unreadable, or this machine has
+selected nobody on it or someone it does not carry; `band_required` with
+`band_suggestions`, one suggested band per member without one, when a member
+holds no band; and `next_band`, the band to offer a member added next.
+Suggestions start at 1, never offer band 0, and skip any band whose range already
+holds a taken number. `check` reports a `members.yaml` holding Git conflict
+markers, one it cannot parse — a member listed twice or given two `band:` keys —
+and two members holding one band as needing a person.
 
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
 are repeatable. Creation reserves IDs and links a new plan from its intent when
@@ -122,15 +199,35 @@ Approval records the instant in the intent's frontmatter `approved_at` and appen
 the person's words under a heading carrying the same instant; an unapproved
 intent has no such field. It records a decision and never establishes one, and
 commands do not independently authorize anything. Approval returns
-`planning_required`, and completion returns `reconcile_required` whenever the
-plan's repositories hold catalog entries: each names the work its own gate has
-just made due, because a gate reporting success has recorded a decision and not
-finished a request. Dependency updates detect cycles; omit `--depends-on` to
+`planning_recommended`, a recommendation to put to the person rather than a duty
+to start planning: plans follow a planning request, which may come with the
+approval. Completion returns `reconcile_required` whenever the plan's
+repositories hold catalog entries. Each names what comes due after its gate,
+because a gate reporting success has recorded a decision and not finished a
+request. A CLI older than 2.4.0 returns `planning_required` from approval; that
+CLI is behind the template, and `AGENTS.md` wins over its text. Dependency updates detect cycles; omit `--depends-on` to
 clear a plan's dependencies. Completion also
 records `completed_at` in the plan's frontmatter beside its written note. Every
 record also carries the `created_at` instant of its creation. Instants are
 canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; other dates are ISO
 8601 `YYYY-MM-DD` in UTC.
+
+After it succeeds, approval reads the workspace's Git status for the approved
+intent's file, and completion for the plan's files and its intent's file,
+wherever each lives, archives included; both also read every ID file, the
+shared `.context-circuit/ids.yaml` and each per-member file. Whatever is not
+committed is returned as `commit_recommended`: `files`, each a `path` relative
+to the workspace root with `/` separators and a `change` of `new`, `modified`,
+or `deleted`, and a `note`. A renamed record is listed as its new path `new` and
+its old path `deleted`. Other uncommitted records are not listed. Approval and
+completion always rewrite the record they touch, so in a Git workspace that
+record is always listed. The key is omitted when nothing is listed. When Git is
+not installed, or the workspace is not in a Git repository, the result carries
+`commit_unchecked` with the reason instead. Neither ever blocks or undoes the
+command, and the CLI never stages, commits, or pushes: committing the records
+still needs the person's authorization. A workspace inside another repository
+is reported relative to its own root, leaving out files outside it; one that
+repository ignores lists nothing.
 
 `record order` derives execution shape from recorded dependencies and completion.
 Repeat `--plan ID` to select an exact run, or use `--intent ID` to select linked
@@ -162,6 +259,13 @@ context-circuit-cli worktree prune --repo api
 context-circuit-cli check
 ```
 
+`worktree prune` drops the plan-to-worktree associations of one repository whose
+path Git no longer lists, such as a worktree removed with `git worktree remove` or
+by hand. It never removes a worktree, branch, or file. Its `dropped` list names
+each association it dropped, with `repository`, `plan`, `path`, `branch`, and
+`start_commit`. `worktree prepare` refuses a plan branch already checked out
+elsewhere, and says where and what is safe to do next.
+
 `check` reports findings as an `issue` and the `resolve` that discharges it:
 
 ```yaml
@@ -171,8 +275,17 @@ issues:
   - issue: "duplicate record ID: p0003"
     resolve: "needs a person: two clones allocated the same number; renumber one record
       and every reference to it before either is shared, and keep both reservations"
+  - issue: "i050 is reserved in more than one ID file: .context-circuit/ids/alex.yaml, .context-circuit/ids/maya.yaml"
+    resolve: "needs a person: two clones each moved it into their own member's file; keep it
+      in the file of the member who created the record and remove the extra entry by hand"
 ok: false
 ```
+
+For ID files, `check` reports a file it cannot read, a malformed or misplaced
+ID, a number reserved twice in one file or across member files, a record whose
+ID no file reserves, and a file in `.context-circuit/ids/` not named after a
+member ID, whose numbers still count as taken. Numbers outside a member's band,
+and files of members no longer on the roster, are valid and not reported.
 
 `check` also reads each catalog entry's `reviewed` date against the code its note
 anchors to, and reports a note whose anchors have moved since — with how many
@@ -187,7 +300,9 @@ discharges the finding, so none should be improvised in its place. `check` still
 reports and exits, and is never a gate.
 
 `--reuse` explicitly selects an existing branch/worktree, without resetting it.
-Preparation derives no order, so a plan that records a dependency in the same
+Without it, `worktree prepare` refuses a worktree or branch left from an earlier
+plan that held the same number, and the refusal says how to remove it; preparing
+again for the same plan resumes its worktree. Preparation derives no order, so a plan that records a dependency in the same
 repository is refused without `--start`, and the refusal names the predecessor
 branch to pass — or says which predecessor has not been implemented and committed
 yet. An explicit start is always honored, including one that is not the

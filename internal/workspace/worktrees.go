@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type Worktree struct {
@@ -34,6 +36,10 @@ type Worktree struct {
 	// repository are ordinary, and only the caller knows which it meant to
 	// build on.
 	UnmergedPlans string `json:"unmerged_plans,omitempty"`
+
+	// planCreatedAt is the created_at of the plan record this worktree was
+	// prepared for, kept in the association and never printed.
+	planCreatedAt string
 }
 type Association struct {
 	Repository  string `yaml:"repository" json:"repository"`
@@ -41,6 +47,11 @@ type Association struct {
 	Path        string `yaml:"path" json:"path"`
 	Branch      string `yaml:"branch" json:"branch"`
 	StartCommit string `yaml:"start_commit" json:"start_commit"`
+
+	// PlanCreatedAt tells the plan record this worktree was prepared for from
+	// an earlier one given the same number after a deletion released it.
+	// Associations written before 2.4.0 lack it.
+	PlanCreatedAt ISOTime `yaml:"plan_created_at,omitempty" json:"plan_created_at,omitempty"`
 }
 type Associations struct {
 	Worktrees []Association `yaml:"worktrees"`
@@ -102,7 +113,7 @@ func (s *Store) Worktrees(ctx context.Context, repoID string) ([]Worktree, error
 	for i := range list {
 		for _, assoc := range local.Worktrees {
 			if assoc.Repository == repoID && filepath.Clean(assoc.Path) == filepath.Clean(list[i].Path) && assoc.Branch == list[i].Branch {
-				list[i].Plan, list[i].StartCommit = assoc.Plan, assoc.StartCommit
+				list[i].Plan, list[i].StartCommit, list[i].planCreatedAt = assoc.Plan, assoc.StartCommit, string(assoc.PlanCreatedAt)
 			}
 		}
 	}
@@ -164,11 +175,25 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 			if (tree.Plan != plan || tree.StartCommit == "") && !reuse {
 				return Worktree{}, errors.New("worktree has another association; use --reuse to select it explicitly")
 			}
-			if _, err := Inspect(ctx, tree.Path); err != nil {
+			// The same plan ID is not the same plan once a deletion released
+			// the number: another machine's leftover worktree for the old plan
+			// matches on path, branch, and ID alike.
+			if !reuse {
+				if why := earlierPlan(ctx, repo, record, tree.planCreatedAt, tree.StartCommit, branch); why != "" {
+					return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
+				}
+			}
+			snapshot, err := Inspect(ctx, tree.Path)
+			if err != nil {
 				return Worktree{}, err
 			}
-			if tree.Plan != plan || tree.StartCommit == "" {
-				tree.Plan = plan
+			if !reuse && record.ID != "" && tree.planCreatedAt == "" {
+				if why := unprovenWorktree(ctx, repo, checkout.BaseBranch, record, tree, snapshot); why != "" {
+					return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
+				}
+			}
+			if tree.Plan != plan || tree.StartCommit == "" || tree.planCreatedAt != string(record.CreatedAt) {
+				tree.Plan, tree.planCreatedAt = plan, string(record.CreatedAt)
 				if tree.StartCommit == "" {
 					tree.StartCommit = tree.Head
 				}
@@ -181,7 +206,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 			return tree, err
 		}
 		if tree.Branch == branch {
-			return Worktree{}, fmt.Errorf("branch is already checked out at %s; select that worktree to resume it", tree.Path)
+			return Worktree{}, checkedOutElsewhere(repoID, plan, branch, tree)
 		}
 	}
 	if _, err := os.Lstat(path); !os.IsNotExist(err) {
@@ -191,6 +216,12 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	derived := false
 	if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err == nil {
 		if !reuse {
+			// A clone with only origin's base branch would otherwise date the
+			// branch's whole history.
+			base, _ := baseRef(ctx, repo, checkout.BaseBranch)
+			if why := earlierPlan(ctx, repo, record, "", base, branch); why != "" {
+				return Worktree{}, fmt.Errorf("branch %s already exists and %s, so it is likely left from an earlier plan given the number %s. Delete that branch once its work no longer matters, or pass --reuse to start from its commits deliberately. Nothing was checked out", branch, why, plan)
+			}
 			return Worktree{}, errors.New("branch already exists; use --reuse to preserve and check out its existing commits")
 		}
 		commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", "refs/heads/"+branch+"^{commit}")
@@ -199,7 +230,11 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		}
 		_, err = Git(ctx, repo, "worktree", "add", "--", path, branch)
 		if err != nil {
-			return Worktree{}, err
+			// The inventory above catches a branch Git lists anywhere, but a
+			// worktree mid-rebase or mid-bisect lists as detached while Git
+			// still refuses to check its branch out twice. Git's text names the
+			// place and varies by version and locale, so it is kept, not parsed.
+			return Worktree{}, fmt.Errorf("branch %s could not be checked out; if Git says it is used by another worktree, finish or abort the operation there, switch that checkout to another branch, or remove that worktree (dirty work is kept unless discard is explicitly authorized), then prepare again. Nothing was checked out, switched, or reset: %w", branch, err)
 		}
 	} else {
 		if start == "" {
@@ -244,12 +279,123 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if err != nil {
 		return Worktree{}, err
 	}
-	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch, SyncRequired: stale, UnmergedPlans: unmerged}
+	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch, SyncRequired: stale, UnmergedPlans: unmerged, planCreatedAt: string(record.CreatedAt)}
 	if err := s.saveAssociation(repoID, result); err != nil {
 		return result, fmt.Errorf("worktree exists at %s but local association could not be saved: %w", actual, err)
 	}
 	result.Environment, err = ReuseEnvironment(ctx, repo, result.Path, options)
 	return result, err
+}
+
+// checkedOutElsewhere explains a plan branch Git already has checked out in
+// another working copy. A path alone left the caller to work out whether that
+// copy was theirs to resume or someone's checkout to leave alone, so the
+// refusal says which, and names only steps that preserve the work there.
+// Nothing is checked out, switched, or reset to make preparation succeed.
+func checkedOutElsewhere(repoID, plan, branch string, tree Worktree) error {
+	var text strings.Builder
+	fmt.Fprintf(&text, "branch %s is already checked out at %s. ", branch, tree.Path)
+	switch {
+	case tree.Main:
+		fmt.Fprintf(&text, "That is the bound checkout of %s, not a worktree for this plan. Switch that checkout to another branch, then prepare again.", repoID)
+	case plan != "" && tree.Plan == plan:
+		// The path is quoted plainly rather than escaped, so a Windows path
+		// keeps single backslashes and still pastes into --path whole.
+		quoted := `"` + tree.Path + `"`
+		fmt.Fprintf(&text, "That is the worktree this workspace prepared for %s. Resume it with `worktree prepare --repo %s --plan %s --path %s`, or remove it with `worktree remove --repo %s --path %s` (dirty work is kept unless discard is explicitly authorized) and prepare again.",
+			plan, repoID, plan, quoted, repoID, quoted)
+	default:
+		if tree.Plan != "" {
+			fmt.Fprintf(&text, "That worktree is associated with %s, not this plan. ", tree.Plan)
+		} else {
+			text.WriteString("That is not a worktree this workspace knows for this plan. ")
+		}
+		text.WriteString("Resume the work there, switch that checkout to another branch, or remove that worktree (dirty work is kept unless discard is explicitly authorized), then prepare again.")
+	}
+	if tree.Prunable {
+		quoted := `"` + tree.Path + `"`
+		fmt.Fprintf(&text, " Git marks that worktree prunable: run `worktree repair --repo %s --path %s` if it moved; if it is gone, run `git worktree prune`, then `worktree prune --repo %s`.",
+			repoID, quoted, repoID)
+	}
+	text.WriteString(" Nothing was checked out, switched, or reset.")
+	return errors.New(text.String())
+}
+
+// earlierPlan says why a worktree or branch found for a plan belongs to an
+// earlier plan that held the same number, or returns "" when nothing says so.
+// An association records the plan's created_at, which settles it. One written
+// before that, or a bare branch, is judged by its commits: work committed
+// before this plan record existed was not done for it.
+func earlierPlan(ctx context.Context, repo string, plan Record, recorded, start, branch string) string {
+	if plan.ID == "" {
+		return ""
+	}
+	if recorded != "" {
+		if recorded == string(plan.CreatedAt) {
+			return ""
+		}
+		return fmt.Sprintf("it was prepared for a %s created at %s, while this %s was created at %s", plan.ID, recorded, plan.ID, plan.CreatedAt)
+	}
+	created, err := time.Parse(TimeLayout, string(plan.CreatedAt))
+	if err != nil {
+		return ""
+	}
+	span := branch
+	if start != "" {
+		span = start + ".." + branch
+	}
+	times, err := Git(ctx, repo, "log", "--format=%ct", "--end-of-options", span)
+	if err != nil {
+		return ""
+	}
+	for _, field := range strings.Fields(times) {
+		if at, err := strconv.ParseInt(field, 10, 64); err == nil && at < created.Unix() {
+			return fmt.Sprintf("it holds commits made before this %s was created at %s", plan.ID, plan.CreatedAt)
+		}
+	}
+	return ""
+}
+
+// unprovenWorktree says why a worktree whose association predates
+// plan_created_at, and whose branch holds no commit past its start, is not safe
+// to resume, or returns "". With no commit there is nothing to date, so it is
+// resumed only when it is exactly what a fresh prepare would create: clean, and
+// at the tip of the base branch. Anything else may be the earlier plan's.
+func unprovenWorktree(ctx context.Context, repo, base string, plan Record, tree Worktree, snapshot Snapshot) string {
+	count, err := Git(ctx, repo, "rev-list", "--count", "--end-of-options", tree.StartCommit+"..refs/heads/"+tree.Branch)
+	if err != nil {
+		return "its association predates 2.4.0 and its commits could not be read"
+	}
+	if count != "0" {
+		return ""
+	}
+	if len(snapshot.Changes) > 0 {
+		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and its uncommitted changes are tied to no %s", plan.ID)
+	}
+	if ref, commit := baseRef(ctx, repo, base); ref == "" || snapshot.Head != tree.StartCommit || commit != snapshot.Head {
+		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and it is not at the tip of %s, where a fresh prepare for this %s would start", base, plan.ID)
+	}
+	return ""
+}
+
+// baseRef is the ref a fresh prepare starts from, and its commit: the local
+// base branch, or origin's when this clone has none. Both are "" when neither
+// exists.
+func baseRef(ctx context.Context, repo, base string) (string, string) {
+	for _, ref := range []string{"refs/heads/" + base, "refs/remotes/origin/" + base} {
+		if commit, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", ref+"^{commit}"); err == nil {
+			return ref, commit
+		}
+	}
+	return "", ""
+}
+
+// earlierPlanError refuses to resume another plan's worktree under a reused
+// number and names only steps that keep the old work until a person drops it.
+func earlierPlanError(repoID, plan, branch, path, why string) error {
+	quoted := `"` + path + `"`
+	return fmt.Errorf("the worktree at %s on %s is not this plan's to resume: %s, so it is likely left from an earlier plan given the number %s. Remove it with `worktree remove --repo %s --path %s` (dirty work is kept unless discard is explicitly authorized) and delete branch %s once its work no longer matters, or pass --reuse to continue from its commits deliberately. Nothing was checked out, switched, or reset",
+		path, branch, why, plan, repoID, quoted, branch)
 }
 
 func (s *Store) saveAssociation(repo string, tree Worktree) error {
@@ -263,7 +409,7 @@ func (s *Store) saveAssociation(repo string, tree Worktree) error {
 			kept = append(kept, assoc)
 		}
 	}
-	kept = append(kept, Association{repo, tree.Plan, tree.Path, tree.Branch, tree.StartCommit})
+	kept = append(kept, Association{repo, tree.Plan, tree.Path, tree.Branch, tree.StartCommit, ISOTime(tree.planCreatedAt)})
 	return s.WriteYAML(".context-circuit/local/worktrees.yaml", Associations{kept}, 0600)
 }
 

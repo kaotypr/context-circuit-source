@@ -5,9 +5,18 @@ description: Create Context Circuit plan folders from an approved intent or a di
 
 # Write grounded plan folders
 
-Approval authorizes planning, and planning alone. `record approve` returns
-`planning_required` naming this work, because approval reporting success is the
-decision recorded, not the request finished.
+Planning starts on a person's request to plan, not on approval. `record approve`
+returns `planning_recommended`: approval records the decision, and the next step
+is to recommend planning to the person and stop. A later request to plan an
+approved intent is the planning request, and so is one request that approves
+intents the person has already been shown and asks for their plans; plan each
+named intent then, without a stop and without asking for approval again. Asking
+for an intent to be written and planned in one go is not approval.
+
+An approval answered with `planning_required` instead comes from a CLI older
+than this template. Tell the person to install or upgrade to the version the
+workspace pins, through `.agents/skills/cc-cli/SKILL.md`, and follow `AGENTS.md`
+rather than that output's text.
 
 Write a plan in the language recorded for the active member in `members.yaml`,
 and in English where none is. A plan is quoted whole into the brief a worker
@@ -24,7 +33,8 @@ engineers there actually say. Where the member records a `tone` in
 `members.yaml`, follow it; it overrides that guidance.
 `.agents/skills/cc-intent/SKILL.md` carries the same rules with worked examples.
 
-For an approved intent, inspect real code and create linked plan folders:
+Once planning is requested for an approved intent, inspect real code and create
+linked plan folders:
 
 ```sh
 context-circuit-cli --workspace <root> record create --kind plan --slug SLUG --title TITLE --intent i001 --repo api

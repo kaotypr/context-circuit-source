@@ -188,6 +188,15 @@ applies to, the question it answers, its search terms, and the date it was last
 confirmed against the code, as `context/INDEX.md` describes. `check` reports an
 entry that claims repositories without that date.
 
+When you edit a note, rewrite its entry's search terms against what the note now
+says, rather than adding new ones to the old list. Remove a term the note no
+longer answers, and keep the other wordings a reader would actually search for,
+since a synonym that never appears in the note is often the reason the entry is
+found. Terms that only grow make every entry match every search, and a stale
+term sends the next reader to the wrong note. An entry that would need a very
+long list of terms to be found usually means the note covers two topics: split
+it, each half with its own entry.
+
 A note lives in a directory named for its concern and is catalogued under a
 heading for the same one, so a reader can guess where it is. Each heading
 carries one line under it saying what belongs there, written before its first
@@ -255,16 +264,16 @@ covers work done through this workspace, and this covers everything else — a
 merge by somebody else, a commit from before the workspace existed, a hotfix
 pushed straight to the branch.
 
-Read the note against that code, then either edit the note and its entry together
-and move the reviewed date, or move the date alone because nothing it says
-changed. Both are real outcomes. What is not an outcome is moving the date
+Read the note against that code, then either edit the note and its entry together,
+rewriting the entry's terms as above, and move the reviewed date, or move the date
+alone because nothing it says changed. Both are real outcomes. What is not an outcome is moving the date
 without reading, which converts a stale note into a confident one.
 
 ## Reconciling after a plan completes
 
 `record complete` returns the catalog entries scoped to that plan's repositories
 and names the judging as `reconcile_required`. Judge each against what the plan
-actually changed: edit the note and its catalog entry together and move its
-reviewed date, or record in the completion note that it changed nothing. Most
+actually changed: edit the note and its catalog entry together, rewriting the
+entry's terms against the note, and move its reviewed date, or record in the completion note that it changed nothing. Most
 completions change no durable knowledge, and recording that is the normal
 outcome rather than a skipped step.

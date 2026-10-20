@@ -1,7 +1,8 @@
 # Intents, plans, knowledge, and review
 
-For an intent-led change, the user approves the intended outcome and later asks
-for a plan to be executed. A developer may request a grounded plan directly for
+For an intent-led change, the user approves the intended outcome, asks for it to
+be planned — later, or in the same request — and later asks for a plan to be
+executed. A developer may request a grounded plan directly for
 an outcome they have already specified, with no intent. The agent interprets the project and writes meaningful
 content between them. Go supplies IDs, record structures, references, and
 reliable file operations. It does not authenticate consent or implement a plan.
@@ -54,13 +55,14 @@ Dependencies are optional, and `record order` derives waves, start references,
 and integration merges from them. Separate repository plans may be useful; no
 one-plan-per-repository constraint applies. IDs are global and prefixed, with a minimum of
 three intent digits and four plan digits; numbering expands beyond that width.
-A member holding a band allocates from that band's block alone — intents from
-`band*100` and plans from `band*1000`, so band 1 writes `i100` and `p1000` — and
-an unbanded member allocates from the numbers no band claims. Plans use
+Every member holds a band and allocates from that band's block alone — intents
+from `band*100` and plans from `band*1000`, so band 1 writes `i100` and `p1000`,
+and band 0 writes `i001` and `p0001` — skipping every number already taken. Plans use
 `created_by` only for member data; a band changes numbering, never ownership.
 
-The agent writes the plan from real code once the intent is approved and links it,
-without asking a second time. Record task order, useful risks, expected checks,
+Approval alone stops with a recommendation to plan. The agent writes the plan from
+real code once the person asks for planning of an approved intent, and links it
+without asking for approval again. Record task order, useful risks, expected checks,
 and optional affected paths. Paths are descriptive, not an enforcement contract.
 Changes to the intended outcome reopen approval; an additional file within the
 approved outcome does not automatically do so.
@@ -131,11 +133,17 @@ inventories filenames, including archives, without reading archived content. Kee
 reservations and fix any handwritten relative links when records move.
 
 Deletion is not archival. `record delete --member ID` removes one member's intents
-and plans, archived ones included, and `record delete --all` removes every record
-in a solo workspace; both release the deleted IDs from `ids.yaml`, so allocation
-hands those numbers out again. A preview without `--confirm` comes first and
-deletes nothing, and the person agrees to its list before `--confirm` runs.
-Records by another member that point at a deleted one block the deletion rather
-than being edited or removed with it. Once deleted, a number that reached a
+and plans, archived ones included, `record delete --all` removes every record
+while the roster lists exactly one member, and `record delete --id ID`, repeatable,
+removes the named records whoever wrote them, or frees a reserved ID no record
+file holds. Each releases the deleted IDs from every ID file under
+`.context-circuit/ids/` holding them, so allocation hands the lowest free number
+in the author's band out again. A preview without `--confirm` comes first,
+showing each record's author and whether it is approved or completed, and
+deletes nothing; the person agrees to its list before `--confirm` runs. Records
+outside the selection that point at a deleted one block the deletion rather
+than being edited or removed with it. The one exception is by ID: a deleted plan
+is taken out of its own intent's `plans:` list. Any other link is resolved by
+naming that record too, and the refusal lists the IDs to add. Once deleted, a number that reached a
 branch name, a pull request, or a conversation may later mean a different record,
 so delete before an ID has travelled where possible.

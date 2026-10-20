@@ -101,7 +101,7 @@ understood, and stops.
 | File | What the agent learns |
 | --- | --- |
 | `workspace.yaml` | Project identity and purpose, which repositories exist, their URLs and default branches, how they relate |
-| `members.yaml` | Who shares this workspace, and the language and tone their records are written in |
+| `members.yaml` | Who shares this workspace, the language and tone their records are written in, and the roles they contribute in |
 | `member.local.yaml` | Which member is working here |
 | `repositories.local.yaml` | Where each repository is checked out on this machine, and the branch it starts from |
 | `context/INDEX.md` | The catalog of product knowledge — read to find the few notes that bear on billing, not scanned whole |
@@ -147,12 +147,17 @@ agent.
 **The prompt.** Answers to the numbered questions, and consent to the outcome as
 written — not to the original request.
 
-**What the agent does.** It records the approval in the person's own words, then
-goes into the actual code and writes plans. It does not ask again.
+**What the agent does.** It records the approval in the person's own words,
+recommends creating plans as the next step, and stops. No code is read and no
+plan ID is reserved yet.
 
 **What the CLI does.** `record approve` stamps `approved_at` and keeps the words
-beside it. It returns `planning_required`, because recording a decision is not
-finishing the request.
+beside it. It returns `planning_recommended`, because recording a decision is
+not finishing the request, and the next step is the person's to ask for.
+
+**Then "Plan it."** A planning request starts the work: a later message, or the
+same one, as in "I approve — plan it". Once planning is requested, the agent goes
+into the actual code and writes plans without asking for approval again.
 
 ```mermaid
 sequenceDiagram
@@ -165,9 +170,12 @@ sequenceDiagram
   P->>A: answers by number, and approval
   A->>C: record approve --id i001 --text "the person's words"
   C->>W: stamp approved_at, append the note
-  C-->>A: planning_required
-  Note over A,C: approval authorizes planning, and planning only
+  C-->>A: planning_recommended
+  A->>P: approval recorded; planning is the recommended next step
+  Note over A: stops — unless the same request asked for plans
 
+  P->>A: plan it
+  Note over A,C: approval authorizes planning once a person asks for it
   A->>W: repositories.local.yaml → where api and web live
   A->>R: read the real code in api and web
   R-->>A: what exists, and what the change will touch

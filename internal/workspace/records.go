@@ -18,13 +18,9 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-type Ledger struct {
-	Intents []string `yaml:"intents" json:"intents"`
-	Plans   []string `yaml:"plans" json:"plans"`
-}
-
-// A Record's CreatedBy is empty only for one written while the workspace had no
-// roster: a solo workspace has nobody to attribute a record to.
+// A Record's CreatedBy is empty only for one written by an earlier version
+// while the workspace had no roster. Such a record stays valid; every record
+// written now carries its author.
 type Record struct {
 	ID            string         `yaml:"id" json:"id"`
 	CreatedBy     string         `yaml:"created_by,omitempty" json:"created_by,omitempty"`
@@ -197,94 +193,91 @@ func bandWidth(kind string) int {
 	return 100
 }
 
-// allocate reserves the next free number for a record kind. An author holding a
-// band draws from that band's block alone; an author without one draws from the
-// numbers no band has claimed. Either way a reserved number is not reused while
-// it stays in the ledger, so a band changes which number comes next and nothing
-// about the ledger's rules. Only DeleteRecords takes a number back out.
-func (s *Store) allocate(kind, author string) (string, error) {
-	var ledger Ledger
-	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
-		return "", err
-	}
-	if ledger.Intents == nil || ledger.Plans == nil {
-		return "", errors.New("ID ledger needs intents and plans lists; restore it from workspace history")
+// takenNumbers reports every number of one record kind that allocation must not
+// hand out: those reserved in any member's ID file and those a record file
+// already holds, archived ones included.
+func (s *Store) takenNumbers(kind string) (map[int]bool, error) {
+	reserved, err := s.reservedIDs()
+	if err != nil {
+		return nil, err
 	}
 	seen := map[string]bool{}
-	for _, group := range []struct {
-		prefix string
-		values []string
-	}{{"i", ledger.Intents}, {"p", ledger.Plans}} {
-		for _, id := range group.values {
-			if !recordPattern.MatchString(id) || !strings.HasPrefix(id, group.prefix) || seen[id] {
-				return "", errors.New("invalid or duplicate reserved ID; resolve the workspace merge first")
-			}
-			seen[id] = true
-		}
+	for id := range reserved {
+		seen[id] = true
 	}
 	paths, err := s.RecordPaths(true)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	fileIDs := map[string]bool{}
 	for _, path := range paths {
 		id := recordPathID(path)
 		if fileIDs[id] {
-			return "", fmt.Errorf("duplicate record ID: %s", id)
+			return nil, fmt.Errorf("duplicate record ID: %s", id)
 		}
 		fileIDs[id], seen[id] = true, true
 	}
-	prefix, width, key := "i", 3, "intents"
+	prefix := "i"
 	if kind == "plan" {
-		prefix, width, key = "p", 4, "plans"
+		prefix = "p"
 	}
 	taken := map[int]bool{}
 	for id := range seen {
 		if strings.HasPrefix(id, prefix) {
 			n, err := strconv.Atoi(id[1:])
 			if err != nil || n >= 999999999 {
-				return "", errors.New("numeric ID is outside the supported range")
+				return nil, errors.New("numeric ID is outside the supported range")
 			}
 			taken[n] = true
 		}
 	}
+	return taken, nil
+}
+
+// allocate reserves the next free number for a record kind inside the author's
+// band, in the author's own ID file and no other. A number reserved in any
+// member's file is not reused while it stays there, and a number an old record
+// already holds inside the band is stepped over, so a band changes which number
+// comes next and nothing about the reservation rules. Only DeleteRecords takes a
+// number back out.
+func (s *Store) allocate(kind, author string) (string, error) {
 	members, err := s.Members()
 	if err != nil {
 		return "", err
 	}
-	block := bandWidth(kind)
-	band := members.Members[author].Band
-	low, high := 1, 999999998
-	if band != 0 {
-		low, high = band*block, band*block+block-1
+	member, ok := members.Members[author]
+	if !ok || member.Band == nil {
+		return "", fmt.Errorf("member %s holds no band; give them one with `member band --id %s --band N`", author, author)
 	}
+	taken, err := s.takenNumbers(kind)
+	if err != nil {
+		return "", err
+	}
+	width := 3
+	if kind == "plan" {
+		width = 4
+	}
+	block, band := bandWidth(kind), *member.Band
+	// Band 0 starts at 1: there is never an i000 or a p0000.
+	low, high := max(1, band*block), band*block+block-1
 	number := 0
 	for n := low; n <= high; n++ {
-		// An unbanded author must not walk into a band another member is
-		// holding, or the band would stop preventing anything.
-		if band == 0 && members.claimed(n, block) {
-			continue
-		}
 		if !taken[n] {
 			number = n
 			break
 		}
 	}
 	if number == 0 {
-		if band != 0 {
-			return "", fmt.Errorf("member %s has used every %s number in band %d (%d-%d); assign a further band", author, kind, band, low, high)
-		}
-		return "", errors.New("no unbanded numeric ID remains; assign the author a band")
+		return "", fmt.Errorf("member %s has used every %s number in band %d (%d-%d); assign a further band with `member band`", author, kind, band, low, high)
 	}
-	id := fmt.Sprintf("%s%0*d", prefix, width, number)
-	values := ledger.Intents
-	if kind == "plan" {
-		values = ledger.Plans
-	}
+	id := fmt.Sprintf("%s%0*d", kind[:1], width, number)
 	// Reserve before creating a record: an interrupted write consumes a number,
 	// and removing or archiving its file by hand never makes that number
 	// reusable. Releasing one is DeleteRecords' job, done with the files.
-	return id, s.Update(".context-circuit/ids.yaml", []string{key}, append(values, id), 0644)
+	if kind == "plan" {
+		return id, s.reserve(author, nil, []string{id})
+	}
+	return id, s.reserve(author, []string{id}, nil)
 }
 
 func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent string, repos, dependencies []string) (Record, error) {
@@ -443,7 +436,12 @@ func (s *Store) editRecord(record Record, key string, value any) error {
 	if err != nil {
 		return err
 	}
-	return s.replaceRecord(record, []byte("---\n"+strings.TrimRight(string(updated), "\n")+"\n---\n"+string(body)))
+	next := "---\n" + strings.TrimRight(string(updated), "\n") + "\n---\n" + string(body)
+	// The split read normalized CRLF away; a record written with it keeps it.
+	if strings.Contains(record.Content, "\r\n") {
+		next = strings.ReplaceAll(next, "\n", "\r\n")
+	}
+	return s.replaceRecord(record, []byte(next))
 }
 
 func (s *Store) replaceRecord(record Record, next []byte) error {

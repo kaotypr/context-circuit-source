@@ -601,8 +601,9 @@ func TestCompletionNamesTheOutstandingReconciliation(t *testing.T) {
 }
 
 // Approval is the gate that hands work back instead of finishing it, so a bare
-// success reads as the request being done. It names what it authorized.
-func TestApprovalNamesWhatItAuthorized(t *testing.T) {
+// success reads as the request being done. It names the next step, and that step
+// is a recommendation to the person rather than work the agent starts unasked.
+func TestApprovalRecommendsPlanning(t *testing.T) {
 	f := setup(t)
 	i := f.intent("billing")
 	var approved map[string]any
@@ -612,9 +613,15 @@ func TestApprovalNamesWhatItAuthorized(t *testing.T) {
 	if approved["approved"] != i.ID {
 		t.Fatalf("approval did not name the intent: %+v", approved)
 	}
-	required, _ := approved["planning_required"].(string)
-	if !strings.Contains(required, "plan") {
-		t.Fatalf("approval named no outstanding act: %+v", approved)
+	recommended, _ := approved["planning_recommended"].(string)
+	if !strings.Contains(recommended, "plan") {
+		t.Fatalf("approval named no next step: %+v", approved)
+	}
+	if _, old := approved["planning_required"]; old {
+		t.Fatalf("approval still returns the field that started planning unasked: %+v", approved)
+	}
+	if strings.Contains(recommended, "without asking again") {
+		t.Fatalf("approval still tells the agent to plan without asking: %q", recommended)
 	}
 }
 
