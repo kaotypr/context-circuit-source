@@ -37,7 +37,10 @@ func setup(t *testing.T) fixture {
 	t.Setenv("GIT_CONFIG_GLOBAL", config)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
 	f := fixture{t, filepath.Join(home, "workspace"), home}
-	f.ok("init", "--name", "Acme", "--purpose", "Billing software", "--member", "maya", "--member-name", "Maya")
+	// Band 0 is picked by hand on purpose. It is a real band, not "no band",
+	// and it keeps the i001/p0001 expectations across these tests valid where
+	// the default band 1 would start at i100/p1000.
+	f.ok("init", "--name", "Acme", "--purpose", "Billing software", "--member", "maya", "--member-name", "Maya", "--member-band", "0")
 	return f
 }
 func write(t *testing.T, path, text string) {
@@ -224,8 +227,8 @@ func TestInitKeepsTheRecordedCLIRegistry(t *testing.T) {
 
 func TestYAMLEditTrial(t *testing.T) {
 	f := setup(t)
-	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n")
-	f.ok("member", "add", "--id", "alex", "--name", "Alex")
+	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n    band: 0\n")
+	f.ok("member", "add", "--id", "alex", "--name", "Alex", "--band", "1")
 	updated := read(t, filepath.Join(f.root, "members.yaml"))
 	for _, text := range []string{"# Team roster", "# Keep this author", "# display name", `"Maya"`} {
 		if !strings.Contains(updated, text) {
@@ -234,7 +237,7 @@ func TestYAMLEditTrial(t *testing.T) {
 	}
 	f.ok("member", "use", "--id", "alex")
 	r := f.intent("first")
-	if r.CreatedBy != "alex" || r.ID != "i001" {
+	if r.CreatedBy != "alex" || r.ID != "i100" {
 		t.Fatalf("unexpected record: %+v", r)
 	}
 	f.repository("api")
@@ -432,7 +435,7 @@ func TestABriefDrawsTheLanguageBoundary(t *testing.T) {
 
 	// The language reported is the one the record was written in, not the one
 	// whoever is dispatching happens to write in.
-	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--language", "English")
+	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "1", "--language", "English")
 	f.ok("member", "use", "--id", "rina")
 	brief = f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
 	if !strings.Contains(brief, "stated in Bahasa Indonesia") {
@@ -443,7 +446,7 @@ func TestABriefDrawsTheLanguageBoundary(t *testing.T) {
 	// carrying instructions of its own.
 	f.fail("member", "language", "--id", "rina", "--language", strings.Repeat("long ", 20))
 	f.fail("member", "language", "--id", "nobody", "--language", "English")
-	f.fail("member", "add", "--id", "maya", "--name", "Maya", "--language", "English")
+	f.fail("member", "add", "--id", "maya", "--name", "Maya", "--band", "0", "--language", "English")
 }
 
 // The whole of joining a published workspace, driven against a real clone: a
@@ -589,26 +592,6 @@ func TestWorkspaceRepositoryIsDescribedSeparately(t *testing.T) {
 	}
 	if state.Self == nil || state.Self.Branch != "main" || state.Self.BaseBranch != "integration" {
 		t.Fatalf("status does not report the workspace's own Git state: %+v", state.Self)
-	}
-}
-
-// Bands are what let clones that cannot see each other allocate without
-// colliding. A solo workspace needs none, so the finding waits for a second
-// member to make a collision possible.
-func TestUnbandedMembersAreReportedOnlyOnceSharingIsPossible(t *testing.T) {
-	f := setup(t)
-	if out := f.ok("check"); strings.Contains(out, "shared range") {
-		t.Fatal("a solo workspace was asked for allocation bands", out)
-	}
-	f.ok("member", "add", "--id", "rina", "--name", "Rina")
-	out := f.fail("check")
-	if !strings.Contains(out, "maya") || !strings.Contains(out, "rina") {
-		t.Fatal("unbanded members went unreported", out)
-	}
-	f.ok("member", "band", "--id", "maya", "--band", "1")
-	f.ok("member", "band", "--id", "rina", "--band", "2")
-	if out := f.ok("check"); strings.Contains(out, "shared range") {
-		t.Fatal("banded members are still reported", out)
 	}
 }
 
@@ -1074,20 +1057,29 @@ func TestMistypedArgumentsAreReported(t *testing.T) {
 	}
 }
 
-// A band is cleared by passing zero, so an omitted --band would otherwise clear
-// the member's block without anybody asking for that.
-func TestClearingABandTakesTheFlagThatClearsIt(t *testing.T) {
+// Band 0 is a real band set by passing zero, so an omitted --band would
+// otherwise move the member into it without anybody asking for that. There is
+// no clearing a band.
+func TestSettingBandZeroTakesTheFlag(t *testing.T) {
 	f := setup(t)
 	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "2")
 	if out := f.fail("member", "band", "--id", "rina"); !strings.Contains(out, "missing --band") {
 		t.Errorf("omitting --band was accepted: %s", out)
 	}
 	if !strings.Contains(f.ok("member", "list"), `"band": 2`) {
-		t.Error("the refused call cleared the band anyway")
+		t.Error("the refused call changed the band anyway")
 	}
+	if out := f.fail("member", "band", "--id", "rina", "--band", "0"); !strings.Contains(out, "band 0 already belongs to member maya") {
+		t.Errorf("band 0 was given to a second member: %s", out)
+	}
+	f.ok("member", "band", "--id", "maya", "--band", "3")
 	f.ok("member", "band", "--id", "rina", "--band", "0")
-	if strings.Contains(f.ok("member", "list"), `"band"`) {
-		t.Error("--band 0 no longer clears the block")
+	if !strings.Contains(f.ok("member", "list"), `"band": 0`) {
+		t.Error("--band 0 did not set band 0")
+	}
+	f.ok("member", "use", "--id", "rina")
+	if id := f.intent("zero").ID; id != "i001" {
+		t.Errorf("band 0 allocated %s, want i001", id)
 	}
 }
 

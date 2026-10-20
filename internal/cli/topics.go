@@ -16,9 +16,10 @@ var groups = map[string]bool{
 var Topics = map[string]string{
 	"init": `Creates a workspace in place from the embedded seed: instructions, folders,
 initial records, and native subagent role definitions for every supported host.
-Existing files are preserved. Without --member it creates a solo workspace, whose
-empty roster means nobody selects an identity and records carry no author; adding
-the first member later makes it a team workspace. It neither migrates a v1 workspace nor
+Existing files are preserved. It requires the first member, writes them to the
+roster with band 1 unless --member-band names another, and selects them on this
+machine, so a person working alone is a team of one with nothing left to set up.
+It neither migrates a v1 workspace nor
 reinitializes an active v2 one; on a second machine, select an existing member
 and connect local checkouts instead.`,
 
@@ -38,13 +39,16 @@ belongs under it. It is an explicitly invoked diagnostic that reports and exits,
 never an implementation or delivery gate.`,
 
 	"member": `The roster in members.yaml is shared; the active member in member.local.yaml is
-this machine's alone. A band is a numeric block one member allocates from, which
-is what lets clones that cannot see each other avoid colliding. A band is not a
-namespace: IDs stay workspace-global and the member is recorded only as
-created_by. A workspace whose roster is empty is a solo one; once the roster lists
-anyone, a machine that has selected none of them is told so by status as
-identity_required, and record creation waits for member use. Selection is taken
-as given: nothing verifies who a person is.`,
+this machine's alone. Every member holds a band, a numeric block that member
+allocates from, which is what lets clones that cannot see each other avoid
+colliding. Band 0 is a band like any other, covering i001-i099 and p0001-p0999;
+no two members share one. A band is not a namespace: IDs stay workspace-global
+and the member is recorded only as created_by. Add requires --band and, without
+it, names the next free band. Until the roster lists this machine's selected
+member and every member holds a band, status reports identity_required or
+band_required with band_suggestions, and every changing command except these
+setup steps is refused. Selection is taken as given: nothing verifies who a
+person is.`,
 
 	"knowledge": `Mounts a repository of knowledge this workspace reads and never owns: an
 organization's knowledge center, shared by many workspaces and changed through
@@ -80,8 +84,8 @@ happens. Fetch updates refs only and implies no rebase or reset.`,
 	"record": `Creates and updates intents and plans, allocating IDs from a permanent ledger.
 Approve and complete record a decision a person already made; neither command
 constitutes that decision, and no command executes a plan. Delete removes one
-member's intents and plans, active and archived, or every record in a solo
-workspace, and is the only operation that releases a reserved ID. Without
+member's intents and plans, active and archived, or every record while the roster
+lists one member, and is the only operation that releases a reserved ID. Without
 --confirm it previews what would go and deletes nothing; it refuses while another
 member's record, or a worktree on this machine, still points at one of them. Order derives
 dependency waves, starting references, and integration merges without running or

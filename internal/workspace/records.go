@@ -23,8 +23,9 @@ type Ledger struct {
 	Plans   []string `yaml:"plans" json:"plans"`
 }
 
-// A Record's CreatedBy is empty only for one written while the workspace had no
-// roster: a solo workspace has nobody to attribute a record to.
+// A Record's CreatedBy is empty only for one written by an earlier version
+// while the workspace had no roster. Such a record stays valid; every record
+// written now carries its author.
 type Record struct {
 	ID            string         `yaml:"id" json:"id"`
 	CreatedBy     string         `yaml:"created_by,omitempty" json:"created_by,omitempty"`
@@ -197,18 +198,17 @@ func bandWidth(kind string) int {
 	return 100
 }
 
-// allocate reserves the next free number for a record kind. An author holding a
-// band draws from that band's block alone; an author without one draws from the
-// numbers no band has claimed. Either way a reserved number is not reused while
-// it stays in the ledger, so a band changes which number comes next and nothing
-// about the ledger's rules. Only DeleteRecords takes a number back out.
-func (s *Store) allocate(kind, author string) (string, error) {
+// takenNumbers reports every number of one record kind that allocation must not
+// hand out: those reserved in the ledger and those a record file already holds,
+// archived ones included. It returns the ledger as well, because allocation
+// appends to it.
+func (s *Store) takenNumbers(kind string) (map[int]bool, Ledger, error) {
 	var ledger Ledger
 	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
-		return "", err
+		return nil, ledger, err
 	}
 	if ledger.Intents == nil || ledger.Plans == nil {
-		return "", errors.New("ID ledger needs intents and plans lists; restore it from workspace history")
+		return nil, ledger, errors.New("ID ledger needs intents and plans lists; restore it from workspace history")
 	}
 	seen := map[string]bool{}
 	for _, group := range []struct {
@@ -217,66 +217,76 @@ func (s *Store) allocate(kind, author string) (string, error) {
 	}{{"i", ledger.Intents}, {"p", ledger.Plans}} {
 		for _, id := range group.values {
 			if !recordPattern.MatchString(id) || !strings.HasPrefix(id, group.prefix) || seen[id] {
-				return "", errors.New("invalid or duplicate reserved ID; resolve the workspace merge first")
+				return nil, ledger, errors.New("invalid or duplicate reserved ID; resolve the workspace merge first")
 			}
 			seen[id] = true
 		}
 	}
 	paths, err := s.RecordPaths(true)
 	if err != nil {
-		return "", err
+		return nil, ledger, err
 	}
 	fileIDs := map[string]bool{}
 	for _, path := range paths {
 		id := recordPathID(path)
 		if fileIDs[id] {
-			return "", fmt.Errorf("duplicate record ID: %s", id)
+			return nil, ledger, fmt.Errorf("duplicate record ID: %s", id)
 		}
 		fileIDs[id], seen[id] = true, true
 	}
-	prefix, width, key := "i", 3, "intents"
+	prefix := "i"
 	if kind == "plan" {
-		prefix, width, key = "p", 4, "plans"
+		prefix = "p"
 	}
 	taken := map[int]bool{}
 	for id := range seen {
 		if strings.HasPrefix(id, prefix) {
 			n, err := strconv.Atoi(id[1:])
 			if err != nil || n >= 999999999 {
-				return "", errors.New("numeric ID is outside the supported range")
+				return nil, ledger, errors.New("numeric ID is outside the supported range")
 			}
 			taken[n] = true
 		}
 	}
+	return taken, ledger, nil
+}
+
+// allocate reserves the next free number for a record kind inside the author's
+// band. A reserved number is not reused while it stays in the ledger, and a
+// number an old record already holds inside the band is stepped over, so a band
+// changes which number comes next and nothing about the ledger's rules. Only
+// DeleteRecords takes a number back out.
+func (s *Store) allocate(kind, author string) (string, error) {
 	members, err := s.Members()
 	if err != nil {
 		return "", err
 	}
-	block := bandWidth(kind)
-	band := members.Members[author].Band
-	low, high := 1, 999999998
-	if band != 0 {
-		low, high = band*block, band*block+block-1
+	member, ok := members.Members[author]
+	if !ok || member.Band == nil {
+		return "", fmt.Errorf("member %s holds no band; give them one with `member band --id %s --band N`", author, author)
 	}
+	taken, ledger, err := s.takenNumbers(kind)
+	if err != nil {
+		return "", err
+	}
+	width, key := 3, "intents"
+	if kind == "plan" {
+		width, key = 4, "plans"
+	}
+	block, band := bandWidth(kind), *member.Band
+	// Band 0 starts at 1: there is never an i000 or a p0000.
+	low, high := max(1, band*block), band*block+block-1
 	number := 0
 	for n := low; n <= high; n++ {
-		// An unbanded author must not walk into a band another member is
-		// holding, or the band would stop preventing anything.
-		if band == 0 && members.claimed(n, block) {
-			continue
-		}
 		if !taken[n] {
 			number = n
 			break
 		}
 	}
 	if number == 0 {
-		if band != 0 {
-			return "", fmt.Errorf("member %s has used every %s number in band %d (%d-%d); assign a further band", author, kind, band, low, high)
-		}
-		return "", errors.New("no unbanded numeric ID remains; assign the author a band")
+		return "", fmt.Errorf("member %s has used every %s number in band %d (%d-%d); assign a further band with `member band`", author, kind, band, low, high)
 	}
-	id := fmt.Sprintf("%s%0*d", prefix, width, number)
+	id := fmt.Sprintf("%s%0*d", kind[:1], width, number)
 	values := ledger.Intents
 	if kind == "plan" {
 		values = ledger.Plans
