@@ -115,24 +115,30 @@ shown as `reservation only`. It cannot be combined with `--member` or `--all`,
 and an ID matching neither a record nor a reservation is refused. Without
 `--confirm` it returns the records, each with its author, path, and `status`
 (`draft` or `approved` for an intent, `open` or `completed` for a plan), and
-`released_ids` with `confirmation_required`, and deletes nothing; with it, each
-released ID is removed from every ID file holding it, the files and plan folders
-are removed, and `sync_required` says the deletion lives in this checkout until
-it is committed and pulled everywhere. It refuses, deleting nothing, while a
+`released_ids` with `confirmation_required`, and deletes nothing; with it, the
+record files and plan folders are removed, plans before intents and each
+`plan.md` after the rest of its folder, then each released ID is removed from
+every ID file holding it, and `sync_required` says the deletion lives in this
+checkout until it is committed and pulled everywhere, and that every other
+machine should then run `check` and remove or prune what it names before
+creating plans. It refuses, deleting nothing, while a
 record outside the selection would be left naming a deleted one — a plan under a
 deleted intent, a dependency, or an intent linking a deleted plan — or while a
 worktree on this machine was prepared for a deleted plan. With `--id`, links
 between the named records do not block, and a deleted plan is taken out of its
 own intent's `plans:` list and reported under `unlinked` instead of refusing;
 any other link refuses and the refusal names the `--id` values to add so the
-records are deleted together. With `--id`, `warnings` also lists what each bound
-checkout still holds for a deleted plan number — local and remote-tracking
+records are deleted together. A plan its intent lists that no record file holds
+any more is unlinked the same way. In every mode, `warnings` also lists what each
+bound checkout still holds for a deleted plan number — local and remote-tracking
 `cc/pNNNN/*` branches, worktrees on such a branch, and a leftover
 `.worktrees/pNNNN` directory — without refusing and without touching them; a
 plan given that number again meets the old branch. The 2.3.0 CLI does not know
-`--id`, rejects it, and deletes nothing. Interrupted after the ID files are
-updated, the remaining files still count as taken; run the same deletion again
-to finish.
+`--id`, rejects it, and deletes nothing. No ID is released until every file is
+gone, so an interrupted deletion leaves every selected number still reserved:
+a failed removal names the path and the call that finishes the job, `record
+delete --id ID ... --confirm` with exactly the IDs left, and running the same
+`--id` or `--all` deletion again finishes it too.
 
 A workspace written by a CLI before 2.4.0 is at schema 2, with every reservation
 in one shared `.context-circuit/ids.yaml`. The first changing command run once
@@ -144,8 +150,11 @@ a clone that had not pulled the split, is split again on the next changing
 command, skipping numbers a member file already holds. The split is reported as
 one `notice:` paragraph on the error stream, in `--json` mode too, so no
 command's result changes shape. `status`, `check`, the other reading commands,
-`record delete` without `--confirm`, and a command refusing its own arguments,
-such as `member add` without `--band`, never split. `init` writes the per-member
+and `record delete` without `--confirm` never split. Nor do a few refusals
+checked before the split: `member add` without `--band`, a malformed `member
+roles` call, and a confirmed `record delete` its preview would refuse. A refusal
+found while the command runs, such as an unknown member or record ID, comes
+after the split, which then stands; it is the same split any later change makes. `init` writes the per-member
 layout itself.
 
 The split is the one time a CLI rewrites an existing workspace's files on its

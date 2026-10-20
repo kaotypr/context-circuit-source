@@ -58,12 +58,22 @@ association whose worktree Git still lists is left alone, even when Git marks th
 worktree prunable or it now holds another branch; use `worktree repair` or
 `git worktree prune` for those.
 
-Removing a worktree leaves its branch. `record delete --id` warns about local and
+Removing a worktree leaves its branch. `record delete` warns about local and
 remote-tracking `cc/pNNNN/*` branches, worktrees on such a branch, and a leftover
 `.worktrees/pNNNN` directory for a deleted plan number, and touches none of them:
 a plan later given that number meets the old branch, and `--reuse` would start
 it from the old commits, so delete or rename the branch first if that work is
-done with.
+done with. Another machine sees none of this until it pulls the deletion; there,
+`check` names a worktree prepared for a plan that is gone, which is removed with
+`worktree remove` (its branch deleted once the work no longer matters) before
+`worktree prune` and before creating plans.
+
+Preparation never resumes another plan's work silently. The association records
+the plan's `created_at`, so a worktree or branch left from an earlier plan that
+held the same number is refused without `--reuse`, and the refusal says how to
+remove it; an association written before 2.4.0 is judged by its commits instead,
+and is refused when any was made before the plan was created. Preparing again for
+the plan a worktree was made for resumes it as before.
 
 Successful preparation means a usable Git working copy. The agent still needs to
 follow repository setup instructions for package managers, toolchains,

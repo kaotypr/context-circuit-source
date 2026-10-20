@@ -84,8 +84,9 @@ reserved in two files, and a person removes the extra entry.
 ## Releasing numbers
 
 Deletion is the one deliberate way a number goes back. It removes every intent
-and plan one member created, active and archived, or — while the roster lists
-exactly one member — every record, or exactly the records a person names by ID.
+and plan one member created, active and archived; or exactly the records a
+person names by ID, on a roster of any size; or every record, which only a
+roster of exactly one member may do.
 It takes their numbers out of every ID file holding them, so the next allocation
 hands the lowest free one in the author's band out again.
 
@@ -116,13 +117,19 @@ set do not block.
 Its first run is a preview: the person sees the records, their authors and
 whether they are approved or completed, and the numbers, and agrees to that list
 before the confirmed run deletes anything. Branches and worktree directories Git
-still holds for a named plan's number are reported and left alone, because a
-plan later given that number meets them.
+still holds for a deleted plan's number are reported and left alone, because a
+plan later given that number meets them. Worktree preparation will not resume
+one of them for the new plan without being told to: an association remembers
+when the plan it was made for was created, and a branch whose commits predate
+the plan record is taken as earlier work.
 
-The plan-list edits come first, then the ID files, then the record files.
-Interrupted anywhere, the remaining files still stand and allocation still
-counts their filenames as taken, so no number is handed out twice, and running
-the same deletion again finishes it.
+The plan-list edits come first, then the record files — plans before the
+intents they point to, and a plan folder's `plan.md` after everything else in
+it — and the ID files last. Interrupted anywhere, every selected number is still
+reserved and every partly removed plan is still a record, so no number is handed
+out twice and naming the IDs left finishes it; a failed removal names that call.
+Deleting by member cannot reach a removed record's number again, which is why
+the finishing call is always by ID.
 
 What a released number already reached is not recalled. A branch name, a pull
 request, or a conversation that carried it now names two records, and a clone
@@ -226,5 +233,7 @@ Owner:
   whether a change may be made and names what is outstanding.
 - `context-circuit-source@internal/workspace/deletion.go` `DeleteRecords` —
   selection by author or by ID, the refusals, unlinking a named plan from its
-  intent, and releasing numbers from the ID files; `Store.leftovers` reports
-  the branches and worktrees a named plan's number still has.
+  intent, removing files before releasing numbers from the ID files, and
+  `Store.unfinished`, which names the call that finishes an interrupted
+  deletion; `Store.leftovers` reports the branches and worktrees a deleted
+  plan's number still has.

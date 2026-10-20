@@ -97,8 +97,10 @@ and is the only operation that releases a reserved ID. Without --confirm it
 previews what would go, with each record's author and status, and deletes
 nothing. It refuses while a record outside the selection, or a worktree on this
 machine, still points at one of them; by ID, a deleted plan is taken out of its
-own intent's plans list instead, and leftover cc/pNNNN branches and worktree
-directories are warned about rather than refused. Order derives
+own intent's plans list instead. Leftover cc/pNNNN branches and worktree
+directories are warned about rather than refused. IDs are released only after
+the files are gone, so a deletion that stops part-way names the --id call that
+finishes it. Order derives
 dependency waves, starting references, and integration merges without running or
 reserving anything.`,
 
@@ -116,7 +118,9 @@ explicitly authorized. Prune only drops the associations of worktrees Git no
 longer lists, such as ones removed with git itself; it touches no worktree,
 branch, or file, and reports what it dropped as dropped. Preparation refuses a
 branch already checked out elsewhere, says where and what is safe to do next, and
-changes nothing.`,
+changes nothing. Without --reuse it also refuses a worktree or branch left from an
+earlier plan that held the same number, judged by the plan's created_at; preparing
+again for the same plan resumes its worktree.`,
 
 	"template": `Exports blank workspace files to a new directory, for seeding a workspace that
 init will complete. It never writes over an existing directory.`,
