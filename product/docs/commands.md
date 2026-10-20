@@ -60,19 +60,19 @@ Records:
 
 ```sh
 context-circuit-cli record create --kind intent --slug add-billing --title 'Add billing'
-context-circuit-cli record approve --id i001 --text 'User approved the billing outcome'
+context-circuit-cli record approve --id i100 --text 'User approved the billing outcome'
 context-circuit-cli record create --kind plan --slug billing-api --title 'Billing API' \
-  --intent i001 --repo api
+  --intent i100 --repo api
 context-circuit-cli record create --kind plan --slug billing-web --title 'Billing UI' \
-  --intent i001 --repo web --depends-on p0001
+  --intent i100 --repo web --depends-on p1000
 context-circuit-cli record create --kind plan --slug specified-change --title 'Specified change' \
   --repo api
-context-circuit-cli record show --id p0001
+context-circuit-cli record show --id p1000
 context-circuit-cli record list
-context-circuit-cli record dependencies --id p0002 --depends-on p0001
-context-circuit-cli record complete --id p0001 --text 'User requested completion.'
-context-circuit-cli record order --intent i001 --mode waves
-context-circuit-cli record order --plan p0003 --mode waves
+context-circuit-cli record dependencies --id p1001 --depends-on p1000
+context-circuit-cli record complete --id p1000 --text 'User requested completion.'
+context-circuit-cli record order --intent i100 --mode waves
+context-circuit-cli record order --plan p1002 --mode waves
 context-circuit-cli record delete --member alex
 context-circuit-cli record delete --member alex --confirm
 context-circuit-cli record delete --all
@@ -127,15 +127,24 @@ a clone that had not pulled the split, is split again on the next changing
 command, skipping numbers a member file already holds. The split is reported as
 one `notice:` paragraph on the error stream, in `--json` mode too, so no
 command's result changes shape. `status`, `check`, the other reading commands,
-`init`, and `record delete` without `--confirm` never split.
+`record delete` without `--confirm`, and a command refusing its own arguments,
+such as `member add` without `--band`, never split. `init` writes the per-member
+layout itself.
 
 The split is the one time a CLI rewrites an existing workspace's files on its
 own, and it is a cut-over: CLIs before 2.4.0 refuse a schema 3 workspace with
-"requires a newer CLI", so every member needs 2.4.0 before they pull it. Commit
-and push `workspace.yaml` and `.context-circuit/` after it, like any record
-change, so teammates see the same reservations; committing is the person's
-decision. If a merge leaves Git conflict markers in `ids.yaml`, the split refuses
-until a person resolves them, keeping every entry.
+"requires a newer CLI", so every member needs 2.4.0 before they pull it. It
+writes a file for every author, so only one person on a team upgrades first:
+they make the first changing command, then commit and push `workspace.yaml` and
+`.context-circuit/`; committing is the person's decision. Everyone else pulls
+before making any change. Teammates who upgrade at the same time get a Git
+conflict in `.context-circuit/ids/*.yaml`, which is theirs to resolve by hand:
+keep the union of both sides' entries in each member file, then run `check`,
+which reports any number reserved twice. If a merge leaves Git conflict markers
+in `ids.yaml`, the split refuses until a person resolves them, keeping every
+entry. A member or record author whose ID is a Windows device name stops the
+split, which names them; `status` and `check` report a roster member like that
+beforehand, and the rename is made by hand.
 
 Setup is complete when the roster lists at least one member, every member holds a
 band, and this machine has selected one of them. Until then every changing
