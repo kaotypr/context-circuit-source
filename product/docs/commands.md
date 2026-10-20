@@ -137,8 +137,13 @@ plan given that number again meets the old branch. The 2.3.0 CLI does not know
 `--id`, rejects it, and deletes nothing. No ID is released until every file is
 gone, so an interrupted deletion leaves every selected number still reserved:
 a failed removal names the path and the call that finishes the job, `record
-delete --id ID ... --confirm` with exactly the IDs left, and running the same
-`--id` or `--all` deletion again finishes it too.
+delete --id ID ... --confirm` with exactly the IDs still reserved, or `record
+delete --all --confirm` after `--all`, and running the same `--id` or `--all`
+deletion again finishes it too. A plan folder that has already lost its
+`plan.md` is no longer a record and no re-run reaches it, so the error names it
+for removal by hand, and `check` reports it as an empty plan folder. A failure while
+rewriting the ID files, after every record file is gone, names the IDs still
+reserved and the same finishing call, or says nothing is left when none is.
 
 A workspace written by a CLI before 2.4.0 is at schema 2, with every reservation
 in one shared `.context-circuit/ids.yaml`. The first changing command run once
@@ -295,7 +300,9 @@ discharges the finding, so none should be improvised in its place. `check` still
 reports and exits, and is never a gate.
 
 `--reuse` explicitly selects an existing branch/worktree, without resetting it.
-Preparation derives no order, so a plan that records a dependency in the same
+Without it, `worktree prepare` refuses a worktree or branch left from an earlier
+plan that held the same number, and the refusal says how to remove it; preparing
+again for the same plan resumes its worktree. Preparation derives no order, so a plan that records a dependency in the same
 repository is refused without `--start`, and the refusal names the predecessor
 branch to pass — or says which predecessor has not been implemented and committed
 yet. An explicit start is always honored, including one that is not the

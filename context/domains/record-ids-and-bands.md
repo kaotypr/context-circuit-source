@@ -127,9 +127,13 @@ The plan-list edits come first, then the record files — plans before the
 intents they point to, and a plan folder's `plan.md` after everything else in
 it — and the ID files last. Interrupted anywhere, every selected number is still
 reserved and every partly removed plan is still a record, so no number is handed
-out twice and naming the IDs left finishes it; a failed removal names that call.
-Deleting by member cannot reach a removed record's number again, which is why
-the finishing call is always by ID.
+out twice and naming the IDs still reserved finishes it.
+
+The error names that call, also when an ID file could not be rewritten after
+every record file was gone. Deleting by member cannot reach a removed record's
+number again, which is why the finishing call is by ID, or deleting everything
+again. A plan folder that already lost its `plan.md` is no record any more, so
+it is named for removal by hand.
 
 What a released number already reached is not recalled. A branch name, a pull
 request, or a conversation that carried it now names two records, and a clone
@@ -234,6 +238,6 @@ Owner:
 - `context-circuit-source@internal/workspace/deletion.go` `DeleteRecords` —
   selection by author or by ID, the refusals, unlinking a named plan from its
   intent, removing files before releasing numbers from the ID files, and
-  `Store.unfinished`, which names the call that finishes an interrupted
-  deletion; `Store.leftovers` reports the branches and worktrees a deleted
+  `Store.unfinished` and `Store.unreleased`, which name the IDs still reserved
+  and the call that finishes an interrupted deletion; `Store.leftovers` reports the branches and worktrees a deleted
   plan's number still has.

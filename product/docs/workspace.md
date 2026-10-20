@@ -281,8 +281,9 @@ only after it has removed the record files — plans before intents, and each
 selected number reserved and every partly removed plan still a record. `--all`
 empties every ID file and keeps the files. `--id` first takes each deleted plan
 out of its own intent's `plans:` list. A deletion interrupted at any point is
-finished by running `record delete --id` with the IDs left, which a failed
-removal names, or the same `--id` or `--all` call again. Deleting another
+finished by running `record delete --id` with the IDs still reserved, which the
+error names, or the same `--id` or `--all` call again; a plan folder already
+emptied of its `plan.md` is named for removal by hand. Deleting another
 member's records edits their ID file, so if they create a record before pulling
 the deletion, Git reports a conflict in that file; keeping the union of both
 sides is safe, since a released number left reserved is only a gap.
