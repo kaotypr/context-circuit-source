@@ -825,6 +825,104 @@ func TestWorktreePruneDropsOnlyTheAssociationsOfGoneWorktrees(t *testing.T) {
 	f.fail("worktree", "prune", "--repo", "missing")
 }
 
+// removedDirectories is the folders a `worktree remove` reported removing, decoded from its JSON so a
+// Windows path compares unescaped. A removal in these tests never leaves a warning.
+func removedDirectories(t *testing.T, out string) []string {
+	t.Helper()
+	var report struct {
+		Removed  []string `json:"removed_directories"`
+		Warnings []string `json:"warnings"`
+	}
+	if err := json.Unmarshal([]byte(out), &report); err != nil {
+		t.Fatalf("remove did not report JSON: %v: %s", err, out)
+	}
+	if report.Removed == nil || len(report.Warnings) > 0 {
+		t.Fatalf("remove reports no removed_directories list, or a warning: %s", out)
+	}
+	return report.Removed
+}
+
+// resolved is a path as the CLI reports it after resolving symbolic links, which macOS needs for its
+// /private temporary directories and Windows for short names.
+func resolved(t *testing.T, path string) string {
+	t.Helper()
+	real, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return real
+}
+
+func TestWorktreeRemoveRemovesTheEmptyWorktreesFoldersItLeaves(t *testing.T) {
+	t.Run("the last worktree of a plan", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		f.repository("web")
+		p := f.plan(f.intent("billing").ID, "billing", "api", "web")
+		apiTree := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+		webTree := tree(t, f.ok("worktree", "prepare", "--repo", "web", "--plan", p.ID))
+		worktrees := resolved(t, filepath.Join(f.root, ".worktrees"))
+		planDir := filepath.Join(worktrees, p.ID)
+
+		// The other repository's worktree still holds the plan folder open.
+		if got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "api", "--path", apiTree.Path)); len(got) != 0 {
+			t.Fatalf("removed folders beside another worktree: %v", got)
+		}
+		if _, err := os.Stat(webTree.Path); err != nil {
+			t.Fatal("removed the other repository's worktree")
+		}
+		got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "web", "--path", webTree.Path))
+		if !slices.Equal(got, []string{planDir, worktrees}) {
+			t.Fatalf("removed %v, want %v", got, []string{planDir, worktrees})
+		}
+		if _, err := os.Stat(worktrees); !os.IsNotExist(err) {
+			t.Fatalf("the empty .worktrees folder is still there: %v", err)
+		}
+		f.ok("check")
+	})
+
+	t.Run("a .worktrees folder holding something else", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		p := f.plan(f.intent("billing").ID, "billing", "api")
+		w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+		worktrees := resolved(t, filepath.Join(f.root, ".worktrees"))
+		notes := filepath.Join(worktrees, "notes.txt")
+		write(t, notes, "keep")
+		got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "api", "--path", w.Path))
+		if !slices.Equal(got, []string{filepath.Join(worktrees, p.ID)}) {
+			t.Fatalf("removed %v, want only the plan folder", got)
+		}
+		if read(t, notes) != "keep" {
+			t.Fatal("a file beside the plan folders changed")
+		}
+	})
+
+	t.Run("a worktree outside .worktrees", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		p := f.plan(f.intent("billing").ID, "billing", "api")
+		parent := filepath.Join(f.home, "elsewhere")
+		if err := os.MkdirAll(parent, 0755); err != nil {
+			t.Fatal(err)
+		}
+		// An empty folder under .worktrees/ is not this removal's to clean either.
+		unrelated := filepath.Join(f.root, ".worktrees", "empty")
+		if err := os.MkdirAll(unrelated, 0755); err != nil {
+			t.Fatal(err)
+		}
+		w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID, "--path", filepath.Join(parent, "api")))
+		if got := removedDirectories(t, f.ok("worktree", "remove", "--repo", "api", "--path", w.Path)); len(got) != 0 {
+			t.Fatalf("removed folders for a worktree outside .worktrees: %v", got)
+		}
+		for _, kept := range []string{parent, unrelated} {
+			if _, err := os.Stat(kept); err != nil {
+				t.Fatalf("%s was removed: %v", kept, err)
+			}
+		}
+	})
+}
+
 // A plan branch already checked out elsewhere is refused with what that place
 // is and what is safe to do, and preparation changes nothing to get past it.
 // Paths are compared as `worktree list` and `prepare` report them decoded,

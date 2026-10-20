@@ -503,20 +503,24 @@ func (s *Store) MoveWorktree(ctx context.Context, repoID, input, destination str
 	return nil
 }
 
-func (s *Store) RemoveWorktree(ctx context.Context, repoID, input string, discard bool) error {
+// RemoveWorktree removes one worktree through Git and drops its association. It then removes the
+// directories under the workspace's .worktrees/ that the removal left empty, and returns them, never nil,
+// with a warning for each one that could not be removed; neither fails the command, because the worktree
+// is already gone.
+func (s *Store) RemoveWorktree(ctx context.Context, repoID, input string, discard bool) ([]string, []string, error) {
 	repo, tree, err := s.selectedTree(ctx, repoID, input)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if tree.Main || tree.Locked {
-		return errors.New("primary or locked worktrees cannot be removed by this command")
+		return nil, nil, errors.New("primary or locked worktrees cannot be removed by this command")
 	}
 	changes, err := Git(ctx, tree.Path, "status", "--porcelain=v1", "-z", "--untracked-files=all", "--ignored")
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if changes != "" && !discard {
-		return errors.New("worktree contains changes, untracked, or ignored files; preserve them or explicitly authorize --discard")
+		return nil, nil, errors.New("worktree contains changes, untracked, or ignored files; preserve them or explicitly authorize --discard")
 	}
 	args := []string{"worktree", "remove"}
 	if discard {
@@ -524,12 +528,60 @@ func (s *Store) RemoveWorktree(ctx context.Context, repoID, input string, discar
 	}
 	args = append(args, "--", tree.Path)
 	if _, err := Git(ctx, repo, args...); err != nil {
-		return err
+		return nil, nil, err
 	}
 	if err := s.updateAssociation(repoID, tree.Path, ""); err != nil {
-		return fmt.Errorf("worktree removed; local association update failed: %w", err)
+		return nil, nil, fmt.Errorf("worktree removed; local association update failed: %w", err)
 	}
-	return nil
+	removed, warnings := s.removeEmptyWorktreeParents(tree.Path)
+	return removed, warnings, nil
+}
+
+// removeEmptyWorktreeParents removes the directories that removing the worktree at path left empty under
+// the workspace's .worktrees/, from its parent up to and including .worktrees/ itself, and stops at the
+// first one that is not empty. Both sides are compared resolved, so a worktree outside .worktrees/ gets no
+// cleanup at all. Only os.Remove is used, which refuses a directory that is not empty, and .worktrees/ is
+// kept when it is a symbolic link rather than removing what it points to. A directory that cannot be
+// removed stops the walk and is reported as a warning.
+func (s *Store) removeEmptyWorktreeParents(path string) ([]string, []string) {
+	removed, warnings := []string{}, []string(nil)
+	link, err := s.LocalPath(".worktrees")
+	if err != nil {
+		return removed, warnings
+	}
+	info, err := os.Lstat(link)
+	if err != nil {
+		return removed, warnings
+	}
+	root, err := filepath.EvalSymlinks(link)
+	if err != nil {
+		return removed, warnings
+	}
+	dir, err := filepath.EvalSymlinks(filepath.Dir(filepath.Clean(path)))
+	if err != nil {
+		return removed, warnings
+	}
+	for {
+		rel, err := filepath.Rel(root, dir)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+			return removed, warnings
+		}
+		if rel == "." && info.Mode()&os.ModeSymlink != 0 {
+			return removed, warnings
+		}
+		entries, err := os.ReadDir(dir)
+		if err != nil || len(entries) > 0 {
+			return removed, warnings
+		}
+		if err := os.Remove(dir); err != nil {
+			return removed, append(warnings, fmt.Sprintf("the empty directory %s was left in place: %v", dir, err))
+		}
+		removed = append(removed, dir)
+		if rel == "." {
+			return removed, warnings
+		}
+		dir = filepath.Dir(dir)
+	}
 }
 
 // PruneWorktreeAssociations drops the plan-to-worktree associations of one repository whose path Git no
