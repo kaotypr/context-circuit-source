@@ -66,9 +66,10 @@ record list           [--archived]
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
-record delete         --member ID | --all [--confirm] (a member's intents and plans,
-                      or every record while the roster lists one member, releasing
-                      their IDs; without --confirm it previews and deletes nothing)
+record delete         --member ID | --all | --id ID [--id ID ...] [--confirm]
+                      (a member's intents and plans, every record while the roster
+                      lists one member, or the named records, releasing their IDs;
+                      without --confirm it previews and deletes nothing)
 record order          [--intent ID | --plan ID ...] [--mode auto|waves|linear]
                       derive dependency waves, start refs, and integration merges
 context find          --query TEXT | --repo ID (optional index only)
@@ -237,7 +238,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			values[name] = f.String(name, "", name)
 		}
 	}
-	var repos, dependencies, copyPaths, plans, roles listFlag
+	var repos, dependencies, copyPaths, plans, roles, recordIDs listFlag
 	var band int
 	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone, clearRoles, all, confirm bool
 	switch command {
@@ -301,6 +302,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "record delete":
 		add("member")
 		f.BoolVar(&all, "all", false, "every record, while the roster lists one member")
+		f.Var(&recordIDs, "id", "intent or plan ID to delete (repeatable)")
 		f.BoolVar(&confirm, "confirm", false, "delete, after the person agreed to the previewed list")
 	case "record dependencies":
 		add("id")
@@ -489,6 +491,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			if err := workspace.RolesCall(roles, clearRoles); err != nil {
 				return nil, err
 			}
+		case "record delete":
+			// The preview writes nothing and reads either ID-file layout, so a
+			// deletion it refuses is refused before the split.
+			if confirm {
+				if _, err := s.DeleteRecords(ctx, get("member"), all, recordIDs, false); err != nil {
+					return nil, err
+				}
+			}
 		}
 		if _, err := workspace.MemberRoles(roles); err != nil {
 			return nil, err
@@ -642,7 +652,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			recommendCommit(ctx, s, result, ids...)
 			return result, e
 		case "record delete":
-			return s.DeleteRecords(get("member"), all, confirm)
+			return s.DeleteRecords(ctx, get("member"), all, recordIDs, confirm)
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
 		case "record order":

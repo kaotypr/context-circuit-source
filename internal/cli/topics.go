@@ -91,10 +91,14 @@ happens. Fetch updates refs only and implies no rebase or reset.`,
 	"record": `Creates and updates intents and plans, allocating IDs from a permanent ledger.
 Approve and complete record a decision a person already made; neither command
 constitutes that decision, and no command executes a plan. Delete removes one
-member's intents and plans, active and archived, or every record while the roster
-lists one member, and is the only operation that releases a reserved ID. Without
---confirm it previews what would go and deletes nothing; it refuses while another
-member's record, or a worktree on this machine, still points at one of them. Order derives
+member's intents and plans, active and archived, every record while the roster
+lists one member, or the records named with repeatable --id, whoever wrote them,
+and is the only operation that releases a reserved ID. Without --confirm it
+previews what would go, with each record's author and status, and deletes
+nothing. It refuses while a record outside the selection, or a worktree on this
+machine, still points at one of them; by ID, a deleted plan is taken out of its
+own intent's plans list instead, and leftover cc/pNNNN branches and worktree
+directories are warned about rather than refused. Order derives
 dependency waves, starting references, and integration merges without running or
 reserving anything.`,
 

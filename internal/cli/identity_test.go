@@ -161,6 +161,7 @@ func TestEveryChangeWaitsForSetup(t *testing.T) {
 		{"record", "complete", "--id", "p0001", "--text", "done"},
 		{"record", "dependencies", "--id", "p0001"},
 		{"record", "delete", "--all"},
+		{"record", "delete", "--id", intent.ID},
 		{"repo", "connect", "--id", "api", "--path", path, "--base", "main"},
 		{"repo", "clone", "--id", "api", "--path", path, "--base", "main", "--url", "https://example.invalid/api.git"},
 		{"repo", "init", "--id", "api", "--path", path, "--base", "main"},
