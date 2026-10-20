@@ -74,7 +74,7 @@ list nobody had seen, for the same reason an early instruction to implement
 does not cover unread plans. Committing and pushing that deletion stay separate
 authorizations.
 
-Identity is not an authorization. A team workspace asks an unidentified person
+Identity is not an authorization. Every workspace asks an unidentified person
 which member they are before changing anything, and takes the answer as given;
 that attributes the work and chooses its numbers, and grants nothing the person
 could not otherwise do.

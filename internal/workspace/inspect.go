@@ -68,13 +68,20 @@ type Orientation struct {
 	Self         *Snapshot `json:"workspace_repository,omitempty"`
 	Members      Members   `json:"members"`
 	ActiveMember string    `json:"active_member,omitempty"`
-	// IdentityRequired names the outstanding act when a workspace lists members
-	// and this machine has selected none of them. It is said beside the data,
-	// the way approval says planning_recommended, because an agent reading an
-	// empty active_member cannot tell a solo workspace from an unidentified
-	// person in a team one.
-	IdentityRequired string              `json:"identity_required,omitempty"`
-	Repositories     map[string]Snapshot `json:"repositories"`
+	// IdentityRequired names the outstanding act when this machine has selected
+	// no member of the roster, including when the roster lists nobody or cannot
+	// be read. It is said beside the data, the way approval says
+	// planning_recommended, because an empty active_member alone does not tell
+	// an agent what to do next.
+	IdentityRequired string `json:"identity_required,omitempty"`
+	// BandRequired names the outstanding act when a member holds no band, which
+	// only a roster written before every member needed one can have.
+	// BandSuggestions offers a band for each such member, and NextBand the one
+	// for a member added next; the person confirms each or picks another.
+	BandRequired    string              `json:"band_required,omitempty"`
+	BandSuggestions map[string]int      `json:"band_suggestions,omitempty"`
+	NextBand        int                 `json:"next_band,omitempty"`
+	Repositories    map[string]Snapshot `json:"repositories"`
 	// Knowledge is every borrowed repository and what this machine currently
 	// sees of it. It is reported beside the repositories, and separately from
 	// them, because reading it is part of orienting and working in it is not.
@@ -87,17 +94,37 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 	if err != nil {
 		return Orientation{}, err
 	}
+	result := Orientation{Workspace: cfg, Members: Members{Members: map[string]Member{}}, Repositories: map[string]Snapshot{}, Issues: []Finding{}}
+	// An unreadable roster is reported, not fatal: two clones that both changed
+	// it are exactly when a person most needs to see why they are being asked
+	// to repair it.
 	members, err := s.Members()
 	if err != nil {
-		return Orientation{}, err
-	}
-	result := Orientation{Workspace: cfg, Members: members, Repositories: map[string]Snapshot{}, Issues: []Finding{}}
-	result.ActiveMember, err = s.ActiveMember()
-	if err != nil {
-		result.Issues = append(result.Issues, found(err.Error(),
-			"select this machine's member with `member use --id ID`; add them to the roster first with `member add` if nobody has"))
-		if errors.Is(err, ErrIdentityRequired) {
-			result.IdentityRequired = "decline any request that changes the workspace, its repositories, or its records until the person says which member they are: select them with `member use --id ID`, or add them with `member add` and then select them, and continue the request they made"
+		result.Issues = append(result.Issues, found("members.yaml: "+err.Error(),
+			needsAPerson+"repair members.yaml by hand so each member appears once, holds one band, and shares it with nobody; when two clones clashed, choose which of their edits stands"))
+		result.IdentityRequired = identityRequired
+	} else {
+		result.Members = members
+		result.ActiveMember, err = s.activeMember(members)
+		if err != nil {
+			result.Issues = append(result.Issues, found(err.Error(),
+				"select this machine's member with `member use --id ID`; add them to the roster first with `member add --id ID --name NAME --band N` if nobody has"))
+			if errors.Is(err, ErrIdentityRequired) {
+				result.IdentityRequired = identityRequired
+			}
+		}
+		if suggestions, err := s.SuggestBands(); err != nil {
+			result.Issues = append(result.Issues, found(err.Error(),
+				needsAPerson+"bands cannot be suggested until the ID ledger and record files can be read; `check` names what is wrong"))
+		} else {
+			result.NextBand = suggestions.Next
+			if len(suggestions.Members) > 0 {
+				result.BandSuggestions = suggestions.Members
+			}
+		}
+		if unbanded := unbandedMembers(members, result.BandSuggestions); len(unbanded) > 0 {
+			result.Issues = append(result.Issues, unbanded...)
+			result.BandRequired = "decline any request that changes the workspace, its repositories, or its records until every member holds a band: offer each member in band_suggestions that band, let the person confirm it or pick another unused one, record it with `member band --id ID --band N`, and continue the request they made"
 		}
 	}
 	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
@@ -156,26 +183,25 @@ func (s *Store) workspaceRepositoryIssues(ctx context.Context, state Orientation
 		"`workspace connect --base BRANCH`, which reads the URL from this checkout's origin"}}
 }
 
-// unbandedMembers reports members allocating from the shared range in a
-// workspace that has more than one. Bands are what let clones that cannot see
-// each other allocate without colliding; a solo workspace needs none, so the
-// finding waits until a second member makes collision possible.
-func unbandedMembers(members Members) []Finding {
-	if len(members.Members) < 2 {
-		return nil
-	}
-	var unbanded []string
-	for id, member := range members.Members {
-		if member.Band == 0 {
-			unbanded = append(unbanded, id)
+// identityRequired is the instruction status gives while this machine has no
+// member of a readable roster selected.
+const identityRequired = "decline any request that changes the workspace, its repositories, or its records until the person says which member they are: select them with `member use --id ID`, or add them with `member add --id ID --name NAME --band N` and then select them, and continue the request they made"
+
+// unbandedMembers reports each member holding no band, with the band it would
+// be offered. Every member holds one, and changes are refused until they do.
+func unbandedMembers(members Members, suggestions map[string]int) []Finding {
+	var out []Finding
+	for _, id := range members.IDs() {
+		if members.Members[id].Band != nil {
+			continue
 		}
+		resolve := "give it a band nobody holds with `member band --id " + id + " --band N`"
+		if band, ok := suggestions[id]; ok {
+			resolve = fmt.Sprintf("give it a band with `member band --id %s --band %d`, or another band nobody holds that the person picks", id, band)
+		}
+		out = append(out, found("member "+id+" holds no band", resolve))
 	}
-	if len(unbanded) == 0 {
-		return nil
-	}
-	sort.Strings(unbanded)
-	return []Finding{{fmt.Sprintf("members allocating from the shared range in a workspace of %d: %s", len(members.Members), strings.Join(unbanded, ", ")),
-		"give each a distinct band with `member band --id ID --band N` before they work apart; bands must not repeat"}}
+	return out
 }
 
 // Check is an explicitly invoked diagnostic, not an execution admission gate.
@@ -193,7 +219,6 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	}
 	issues := state.Issues
 	issues = append(issues, s.workspaceRepositoryIssues(ctx, state)...)
-	issues = append(issues, unbandedMembers(state.Members)...)
 	for _, baseRel := range []string{"plans", "plans/archive"} {
 		base, err := s.Path(baseRel)
 		if err != nil {
@@ -252,10 +277,13 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 				needsAPerson+"add the ID to .context-circuit/ids.yaml so nothing allocates it again"))
 		}
 	}
+	// An unreadable roster is already reported; reading every author as unknown
+	// against it would bury that finding under ones that are not true.
+	_, rosterErr := s.Members()
 	for _, record := range records {
-		// A record with no author was written while the workspace had no
-		// roster, and stays valid once members are added.
-		if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" {
+		// A record with no author was written by an earlier version while the
+		// workspace had no roster, and stays valid.
+		if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" && rosterErr == nil {
 			issues = append(issues, found(record.ID+": unknown created_by member",
 				"add them with `member add --id ID --name NAME`, or correct the record's created_by to a member the roster carries"))
 		}

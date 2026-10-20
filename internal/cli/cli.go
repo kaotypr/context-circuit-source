@@ -19,12 +19,13 @@ const Help = `Context Circuit — shared workspace operations
 
 Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 
-init                  --name NAME --purpose TEXT [--member ID --member-name NAME]
-                      (no member makes a solo workspace, with no roster)
+init                  --name NAME --purpose TEXT --member ID --member-name NAME
+                      [--member-band N] (the first member, selected here; band 1
+                      unless another is given)
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
-member add            --id ID --name NAME [--band N] [--language NAME] [--tone TEXT]
-member band           --id ID --band N|0 (allocation block; 0 clears it)
+member add            --id ID --name NAME --band N [--language NAME] [--tone TEXT]
+member band           --id ID --band N (allocation block, 0-9999; 0 is a band)
 member language       --id ID --language NAME (the language this member's
                       intents and plans are written in; knowledge stays English)
 member tone           --id ID --tone TEXT | --clear (the register that language
@@ -63,8 +64,8 @@ record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
 record delete         --member ID | --all [--confirm] (a member's intents and plans,
-                      or every record in a solo workspace, releasing their IDs;
-                      without --confirm it previews and deletes nothing)
+                      or every record while the roster lists one member, releasing
+                      their IDs; without --confirm it previews and deletes nothing)
 record order          [--intent ID | --plan ID ...] [--mode auto|waves|linear]
                       derive dependency waves, start refs, and integration merges
 context find          --query TEXT | --repo ID (optional index only)
@@ -89,6 +90,10 @@ agent dispatch        --host HOST --role ROLE --path DIRECTORY [--task TEXT]
                       --task is the assignment where no record carries it.
                       Host must launch the returned prompt unmodified.)
 version
+
+Every command that changes something is refused until the roster lists this
+machine's selected member and every member holds a band; init, member add,
+member use, and member band are the steps that settle it.
 
 Approval, completion, fetch, and removal are explicit operations. The caller must
 hold the user's authorization. No command executes plans, starts review, commits,
@@ -208,6 +213,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
+		f.IntVar(&band, "member-band", 1, "allocation block for the first member")
 	case "member add":
 		add("id", "name", "language", "tone")
 		f.IntVar(&band, "band", 0, "allocation block for this member")
@@ -218,7 +224,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		f.BoolVar(&clearTone, "clear", false, "remove this member's recorded register")
 	case "member band":
 		add("id")
-		f.IntVar(&band, "band", 0, "allocation block, or 0 to clear it")
+		f.IntVar(&band, "band", 0, "allocation block; 0 is a band like any other")
 	case "member use", "repo inspect":
 		add("id")
 	case "repo connect", "repo clone":
@@ -258,7 +264,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("id", "text")
 	case "record delete":
 		add("member")
-		f.BoolVar(&all, "all", false, "every record in a solo workspace")
+		f.BoolVar(&all, "all", false, "every record, while the roster lists one member")
 		f.BoolVar(&confirm, "confirm", false, "delete, after the person agreed to the previewed list")
 	case "record dependencies":
 		add("id")
@@ -350,10 +356,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// carries the source in the shared record — which is what joining one
 	// looks like.
 	optional["url"] = true
-	// A solo workspace is initialized with no member, and a solo deletion
-	// names none; the store refuses a half-given pair where it can say why.
-	optional["member"] = command == "init" || command == "record delete"
-	optional["member-name"] = command == "init"
+	// Deleting every record names no member; the store refuses a half-given
+	// pair where it can say why.
+	optional["member"] = command == "record delete"
 	optional["intent"] = command == "record create" || command == "record order" || command == "agent dispatch"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
@@ -388,9 +393,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 	}
 	// The required check above reads string flags, and a band is a number whose
-	// zero value is the documented way to clear one. Omitting the flag would
-	// otherwise clear the member's block silently, which is the one outcome a
-	// caller who forgot it cannot have meant.
+	// zero value is a real band. Omitting the flag would otherwise move the
+	// member to band 0 silently, which a caller who forgot it cannot have meant.
 	if command == "member band" && !provided(f, "band") {
 		fmt.Fprintln(errOut, "missing --band")
 		return 2
@@ -415,8 +419,17 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 	}
 	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "knowledge list" || command == "worktree list" || command == "worktree inspect"
+	// These settle setup, so they must run before it is complete; every other
+	// change waits for it. A command missing from readOnly is refused here by
+	// default, which is the safe direction for one added later.
+	setupStep := command == "init" || command == "member add" || command == "member use" || command == "member band"
 	checkFailed := false
 	action := func() (any, error) {
+		if !readOnly && !setupStep {
+			if err := s.RequireSetup(); err != nil {
+				return nil, fmt.Errorf("setup is incomplete, so nothing was changed: %w", err)
+			}
+		}
 		var err error
 		switch command {
 		case "init", "template export":
@@ -429,7 +442,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				if e != nil {
 					return nil, e
 				}
-				err = s.Init(files, readme, get("name"), get("purpose"), get("member"), get("member-name"))
+				err = s.Init(files, readme, get("name"), get("purpose"), get("member"), get("member-name"), band)
 			} else {
 				err = s.Export(files)
 			}
@@ -450,6 +463,15 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member list":
 			return s.Members()
 		case "member add":
+			// Nothing is written without a band the person chose, but the
+			// refusal offers one so choosing costs nothing.
+			if !provided(f, "band") {
+				suggestions, e := s.SuggestBands()
+				if e != nil {
+					return nil, fmt.Errorf("pass --band N: %w", e)
+				}
+				return nil, fmt.Errorf("pass --band N; the next free band is %d", suggestions.Next)
+			}
 			err = s.AddMember(get("id"), get("name"), band, get("language"), get("tone"))
 		case "member band":
 			err = s.SetMemberBand(get("id"), band)

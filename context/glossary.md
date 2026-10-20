@@ -14,8 +14,7 @@ the repositories for the business word finds nothing without it.
 
 | Term | Meaning | Code |
 | --- | --- | --- |
-| Allocation band | A member's optional numeric block, so members allocate offline without colliding | `context-circuit-source@internal/workspace/records.go` `bandWidth`, `Store.allocate` |
-| Catalog | The retrieval index a reader searches to choose a note, one unwrapped line per note | `context-circuit-source@internal/workspace/inspect.go` `catalogIssues`, `FindContext` |
+| Allocation band | The numeric block every member holds, band 0 included, so members allocate offline without colliding | `context-circuit-source@internal/workspace/records.go` `bandWidth`, `Store.allocate`; `internal/workspace/bands.go` `Store.SuggestBands` || Catalog | The retrieval index a reader searches to choose a note, one unwrapped line per note | `context-circuit-source@internal/workspace/inspect.go` `catalogIssues`, `FindContext` |
 | Check | The explicitly invoked diagnostic over records, bindings, and notes; never a gate | `context-circuit-source@internal/workspace/inspect.go` `Store.Check` |
 | Coordinator | The main agent session that interprets, dispatches, integrates, and reports | `context-circuit-source@product/AGENTS.md.in` |
 | Copy-on-write reuse | Cloning a checkout's ignored runtime entries into a new worktree by filesystem cloning | `context-circuit-source@internal/cow/`, `internal/workspace/reuse.go` |
@@ -33,6 +32,7 @@ the repositories for the business word finds nothing without it.
 | Reservation | An allocated number the ledger keeps, never reused while it stays there; archiving leaves it, and only deletion releases it | `context-circuit-source@internal/workspace/records.go` `Store.allocate` |
 | Role tiering | The per-host model and effort preference for each subagent role, shared and optionally overridden per machine | `context-circuit-source@template/role-tiering.yaml`, `internal/workspace/agents.go` |
 | Seed | The blank workspace embedded in the CLI for initialization and export | `context-circuit-source@assets.go`, `template/` |
+| Setup | A readable roster listing this machine's selected member, with every member holding a band; every change waits for it | `context-circuit-source@internal/workspace/workspace.go` `Store.Setup`, `Store.RequireSetup` |
 | Start reference | Where a plan's branch begins in one repository, with any merges it needs first | `context-circuit-source@internal/workspace/order.go` `OrderStart` |
 | Version store | The directory holding side-by-side CLI installs, one per version and platform | `context-circuit-source@product/skills/cc-cli/scripts/install.sh` |
 | Wave | One layer of plans that may run concurrently, derived from dependencies and completion | `context-circuit-source@internal/workspace/order.go` `OrderWave` |
@@ -50,4 +50,4 @@ workspace binds one.
 Leave out general English, generic technology vocabulary, and the coordination
 words this workspace product defines for itself.
 
-_Reviewed: 2026-09-15._
+_Reviewed: 2026-10-20._

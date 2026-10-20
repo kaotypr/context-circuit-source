@@ -56,9 +56,11 @@ an interrupted create leaves behind, and what a hand-removed record leaves too.
 ## Releasing numbers
 
 Deletion is the one deliberate way a number goes back. It removes every intent
-and plan one member created, active and archived, or in a solo workspace every
-record, and takes their numbers out of the ledger so the next allocation hands
-them out again. That exists for work that should never have been recorded — a
+and plan one member created, active and archived, or — while the roster lists
+exactly one member — every record, and takes their numbers out of the ledger so
+the next allocation hands them out again. Deleting everything is how records an
+earlier version wrote without an author are removed, since nothing selects them
+by member. That exists for work that should never have been recorded — a
 trial run, a member's abandoned direction — where keeping the gap would only
 preserve noise.
 
@@ -80,14 +82,21 @@ that has not pulled the deletion still holds the originals.
 
 ## Who is allocating
 
-A workspace whose roster is empty is a solo one: nobody selects an identity,
-records carry no author, and allocation takes the lowest free numbers. Once the
-roster lists anyone, each machine says which member is working, because the
-author decides the band and the band decides the number. Until it does, record
-creation is refused and orientation reports the identity as outstanding; the
-agent declines changing requests and asks who the person is, offering an
-existing member or adding a new one. A record written before the roster existed
-keeps its missing author and stays valid.
+Every workspace has a roster, a person working alone included: they are a team
+of one, set up once inside initialization, which writes them to the roster with a
+band and selects them on that machine. Each other machine says which member is
+working, because the author decides the band and the band decides the number.
+
+Setup is complete when the roster can be read, lists this machine's selected
+member, and every member on it holds a band. Until then every changing command
+is refused naming the step that settles it. The steps themselves stay allowed —
+initializing, adding a member, selecting one, and giving one a band — and so do
+orientation and the diagnostic, so a person can always see why they are asked.
+
+The agent applies the same rule by reading the roster itself, because editing a
+record, implementing, and committing never pass through the CLI, and an older
+CLI read an empty roster as needing nobody. A record an earlier version wrote
+without an author keeps its missing author and stays valid.
 
 The answer is taken as given. A person could name someone else's member, and
 nothing checks: the roster attributes records and divides numbers, and it was
@@ -96,13 +105,29 @@ ceremony to prevent a mistake nobody gains from.
 
 ## Allocation bands
 
-A member may hold an optional band: a numeric block that member allocates from
+Every member holds exactly one band: a numeric block that member allocates from
 alone. A member holding band N takes intents from `N*100` and plans from
 `N*1000`, so blocks can never overlap and band 1 still lands on each kind's
-minimum digit width. A member **without** a band takes the numbers no band
-claims, which is why a solo workspace keeps counting from the lowest numbers and
-pays nothing for the feature. Unbanded allocation steps over every declared
-block, or a band would stop preventing anything.
+minimum digit width. Band 0 is a band like any other, covering intent numbers 1
+to 99 and plan numbers 1 to 999 — never number zero — so it is stored explicitly
+rather than read from an absent value. A member with no band at all
+exists only in a roster an earlier version wrote, and leaves setup incomplete
+until they are given one.
+
+Allocation skips every number already taken inside the band, reserved or held by
+a record file, so old records sitting in a member's range are never handed out
+again. That is what makes picking any unused band safe, band 0 or one holding old
+records included.
+
+Suggestions are stricter, because a suggested band should start empty. They:
+
+- begin at band 1 and never offer band 0;
+- never offer a band another member holds;
+- never offer one whose range already holds a taken number.
+
+Initialization offers band 1; adding a member, or banding one an earlier roster
+left without, offers the next such band, and the person confirms it or picks
+another.
 
 Bands exist because two people allocating from separate clones is not rare in
 the workspace this product is for, and resolving a collision afterwards means
@@ -112,8 +137,8 @@ Three properties keep a band from becoming a namespace:
 
 1. **The number stays global.** Nothing parses a member out of it.
 2. **A band decides which number comes next, never which numbers were right.**
-   Assigning, changing, or clearing one renumbers nothing and releases no
-   reservation, and a reserved number inside a band is still skipped.
+   Assigning or changing one renumbers nothing and releases no reservation, and
+   a reserved number inside a band is still skipped.
 3. **Attribution is unchanged.** The author field remains the only member
    metadata — no assignee, owner, reviewer, or member namespace. It answers who
    wrote the record, not whose work it is.
@@ -123,22 +148,30 @@ for, so the roster is refused until that is resolved rather than allocating from
 an ambiguous state. An exhausted band errors naming the member, the band, and
 its range.
 
+Two clones may band the same members at once, and that race is accepted rather
+than coordinated. When their choices clash — a roster left with merge conflict
+markers, two members on one band, or one member given two bands — the diagnostic
+reports it as needing a person, and nothing picks a winner.
+
 ## The honest limit
 
 Within one directory a file lock serializes cooperating commands and single-file
 writes are atomic. Across clones, bands are the offline mechanism — two members
 holding distinct bands cannot choose the same number however long they work
-apart. What bands do not cover is stated rather than glossed: unbanded members
-in separate clones, and any clone whose roster is stale, can still collide, so
+apart. What bands do not cover is stated rather than glossed: two clones of the
+same member, and any clone whose roster is stale, can still collide, so
 the shared workspace is synchronized before allocating. There is no distributed
 allocation service, and none is claimed.
 
 Owner:
 
-- `context-circuit-source@internal/workspace/records.go` `Store.allocate` and
-  `bandWidth` — how a number is chosen and which band it falls in.
+- `context-circuit-source@internal/workspace/records.go` `Store.allocate`,
+  `takenNumbers`, and `bandWidth` — how a number is chosen and which band it
+  falls in.
+- `context-circuit-source@internal/workspace/bands.go` `Store.SuggestBands` —
+  which bands are offered.
 - `context-circuit-source@internal/workspace/workspace.go` `Members` — the
-  roster validation the bands are derived from, and `ActiveMember`, which tells
-  a solo workspace from an unidentified machine in a team one.
+  roster validation the bands are derived from, and `Store.Setup`, which decides
+  whether a change may be made and names what is outstanding.
 - `context-circuit-source@internal/workspace/deletion.go` `DeleteRecords` —
   selection by author, the refusals, and releasing numbers from the ledger.

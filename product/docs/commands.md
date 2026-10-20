@@ -88,17 +88,21 @@ knowledge to reconcile. An unknown repository is refused rather than answered
 with an empty list, because nothing to reconcile and nothing found read the
 same.
 
-`--band` is optional. A member holding band N allocates intents from `N*100` and
-plans from `N*1000`, so band 2 writes `i200` and `p2000`; members without one
-allocate from the numbers no band claims. `member band --band 0` clears a band.
-Bands must be distinct across the roster, and every command refuses to run while
-two members share one. Assigning, changing, or clearing a band never renumbers an
-existing record or releases its reservation.
+Every member holds a band, and `member add` requires `--band`; without it, it
+refuses and names the next free band. A member holding band N allocates intents
+from `N*100` and plans from `N*1000`, so band 2 writes `i200` and `p2000`. Band 0
+is a band like any other and starts at `i001` and `p0001`, never `i000` or
+`p0000`. `member band --band 0` sets band 0; there is no clearing a band. Bands
+must be distinct across the roster, band 0 included, and every command refuses
+to run while two members share one. Allocation skips every number already
+reserved or held by a record file, inside any band, and a full band is refused
+naming the member, the band, and its range. Assigning or changing a band never
+renumbers an existing record or releases its reservation.
 
 `record delete` is the one command that releases reservations. `--member` takes
-every intent and plan that member created, active and archived, in a workspace
-that lists members; `--all` takes every record in a solo workspace, whose roster
-is empty, and resets the ledger. Each is refused in the other kind of workspace.
+every intent and plan that member created, active and archived. `--all` takes
+every record, including any an earlier version wrote without an author, and
+resets the ledger; it is refused unless the roster lists exactly one member.
 Without `--confirm` it returns the records and `released_ids` with
 `confirmation_required` and deletes nothing; with it, the ledger is updated and
 the files and plan folders are removed, and `sync_required` says the deletion
@@ -109,10 +113,19 @@ plan — or while a worktree on this machine was prepared for a deleted plan.
 Interrupted after the ledger is updated, the remaining files still count as taken;
 run the same deletion again to finish.
 
-`status` reports `identity_required` when a workspace lists members and this
-machine has selected none of them, or names one the roster does not carry, and
-`record create` is refused until `member use` settles it. A solo workspace, with
-an empty roster, never reports it.
+Setup is complete when the roster lists at least one member, every member holds a
+band, and this machine has selected one of them. Until then every changing
+command is refused with a message naming the step, except the setup steps
+themselves: `init`, `member add`, `member use`, and `member band`. `status`,
+`check`, and the other read-only commands keep working. `status` reports
+`identity_required` when the roster is empty or unreadable, or this machine has
+selected nobody on it or someone it does not carry; `band_required` with
+`band_suggestions`, one suggested band per member without one, when a member
+holds no band; and `next_band`, the band to offer a member added next.
+Suggestions start at 1, never offer band 0, and skip any band whose range already
+holds a taken number. `check` reports a `members.yaml` holding Git conflict
+markers, one it cannot parse — a member listed twice or given two `band:` keys —
+and two members holding one band as needing a person.
 
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
 are repeatable. Creation reserves IDs and links a new plan from its intent when

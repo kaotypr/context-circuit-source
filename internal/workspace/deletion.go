@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// Deletion describes removing a member's records, or every record in a solo
-// workspace, together with the ledger reservations they held. Without
+// Deletion describes removing a member's records, or every record in a
+// workspace of one member, together with the ledger reservations they held. Without
 // confirmation it is a preview that deletes nothing, because the person asked
 // has to see exactly which records and numbers go before they agree to it.
 type Deletion struct {
@@ -38,24 +38,23 @@ type DeletedRecord struct {
 }
 
 // DeleteRecords removes every intent and plan one member created, active and
-// archived, and releases their numbers so allocation can hand them out again. A
-// solo workspace has no roster to select by, so there it removes every record
-// and empties the ledger. It refuses rather than leave another member's record
-// pointing at something gone, or this machine's worktree prepared for a plan
-// whose number is about to become reusable.
+// archived, and releases their numbers so allocation can hand them out again.
+// While the roster lists exactly one member it can instead remove every record
+// and empty the ledger, which is how records written without an author by an
+// earlier version are removed: nothing selects them by member. It refuses
+// rather than leave another member's record pointing at something gone, or
+// this machine's worktree prepared for a plan whose number is about to become
+// reusable.
 func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error) {
 	members, err := s.Members()
 	if err != nil {
 		return Deletion{}, err
 	}
-	solo := len(members.Members) == 0
 	switch {
 	case all && member != "":
 		return Deletion{}, errors.New("pass --member or --all, not both")
-	case solo && !all:
-		return Deletion{}, errors.New("this workspace lists no members, so its records have no author to select by: pass --all to delete every intent and plan")
-	case !solo && all:
-		return Deletion{}, errors.New("--all is for a solo workspace; this one lists members, so name whose records to delete with --member ID")
+	case all && len(members.Members) != 1:
+		return Deletion{}, fmt.Errorf("--all is for a workspace whose roster lists exactly one member; this one lists %d, so name whose records to delete with --member ID", len(members.Members))
 	case !all:
 		if err := Name(member); err != nil {
 			return Deletion{}, err
@@ -137,7 +136,7 @@ func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error
 		sort.Strings(blockers)
 		return Deletion{}, fmt.Errorf("nothing was deleted, because these would be left pointing at deleted records: %s. Resolve each first: its author edits the link out or deletes the record", strings.Join(blockers, "; "))
 	}
-	// A solo deletion resets the ledger outright, including numbers an
+	// Deleting everything resets the ledger outright, including numbers an
 	// interrupted create reserved and never wrote a file for.
 	keep := func(ids []string) []string {
 		kept := []string{}

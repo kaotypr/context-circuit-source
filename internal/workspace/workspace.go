@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -77,11 +78,13 @@ type CLIRegistry struct {
 	API string `yaml:"api,omitempty" json:"api,omitempty"`
 }
 
-// Band is an optional allocation block index. Members holding distinct bands
-// allocate from disjoint numeric ranges, so two clones that cannot see each
-// other still never choose the same ID. Band 0 means unbanded: those members
-// share the range outside every declared band, which is how a solo workspace
-// and every workspace predating a band keeps allocating from i001 and p0001.
+// Band is the member's allocation block index. Every member holds exactly one,
+// and members holding distinct bands allocate from disjoint numeric ranges, so
+// two clones that cannot see each other still never choose the same ID. Band 0
+// is a real band like any other, covering i001-i099 and p0001-p0999, so it is
+// stored as a pointer: nil is a member with no band at all, which only a roster
+// written before every member needed one can hold, and setup is incomplete
+// until that member is given one.
 //
 // Language names the language this member's intents and plans are written in,
 // as a person would say it rather than as a tag, because the only reader is a
@@ -99,7 +102,7 @@ type CLIRegistry struct {
 // in every record. Unset leaves the general composition guidance to decide.
 type Member struct {
 	Name     string `yaml:"name" json:"name"`
-	Band     int    `yaml:"band,omitempty" json:"band,omitempty"`
+	Band     *int   `yaml:"band,omitempty" json:"band,omitempty"`
 	Language string `yaml:"language,omitempty" json:"language,omitempty"`
 	Tone     string `yaml:"tone,omitempty" json:"tone,omitempty"`
 }
@@ -214,49 +217,64 @@ func (s *Store) Config() (Config, error) {
 	return cfg, nil
 }
 
+// conflictMarker matches a line Git leaves behind when a merge of two clones'
+// edits to the same lines was not resolved.
+var conflictMarker = regexp.MustCompile(`(?m)^(<{7}|={7}|>{7})( |$)`)
+
 func (s *Store) Members() (Members, error) {
 	var members Members
 	if err := s.YAML("members.yaml", &members); err != nil {
+		// A merge left unresolved is the likeliest way a roster stops parsing,
+		// and the decoder reports it as a syntax error at some line. Name it.
+		if data, readErr := s.Read("members.yaml"); readErr == nil && conflictMarker.Match(bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))) {
+			return members, errors.New("members.yaml holds unresolved Git conflict markers")
+		}
 		return members, err
 	}
 	if members.Members == nil {
 		return members, errors.New("members.yaml needs a members mapping")
 	}
 	bands := map[int]string{}
-	for id, member := range members.Members {
+	// Walk the IDs in order so the pair a duplicate band names is the same on
+	// every run and every machine.
+	for _, id := range members.IDs() {
+		member := members.Members[id]
 		if err := Name(id); err != nil {
 			return members, err
 		}
 		if err := Text(member.Name); err != nil {
 			return members, err
 		}
-		if err := Band(member.Band); err != nil {
+		if member.Band == nil {
+			continue
+		}
+		if err := Band(*member.Band); err != nil {
 			return members, fmt.Errorf("%s: %w", id, err)
 		}
 		// Two members sharing a band share a range, which defeats the only
 		// thing a band is for. Refuse to allocate until it is resolved.
-		if member.Band != 0 {
-			if other, taken := bands[member.Band]; taken {
-				return members, fmt.Errorf("members %s and %s both hold band %d", other, id, member.Band)
-			}
-			bands[member.Band] = id
+		if other, taken := bands[*member.Band]; taken {
+			return members, fmt.Errorf("members %s and %s both hold band %d", other, id, *member.Band)
 		}
+		bands[*member.Band] = id
 	}
 	return members, nil
 }
 
-// claimed reports whether a number falls inside some member's band block, which
-// is what keeps unbanded allocation out of banded territory.
-func (m Members) claimed(number, block int) bool {
-	for _, member := range m.Members {
-		if member.Band != 0 && number >= member.Band*block && number < member.Band*block+block {
-			return true
-		}
+// IDs lists the roster's member IDs in order.
+func (m Members) IDs() []string {
+	ids := make([]string, 0, len(m.Members))
+	for id := range m.Members {
+		ids = append(ids, id)
 	}
-	return false
+	sort.Strings(ids)
+	return ids
 }
 
-// Band validates an allocation block index. Zero is unbanded.
+// BandOf returns a band as the stored value, so band 0 is written as `band: 0`
+// rather than omitted as if no band were held.
+func BandOf(band int) *int { return &band }
+
 // Language is quoted into a brief, so it is one short line of prose naming a
 // language, not free text carrying instructions of its own.
 func Language(language string) error {
@@ -289,9 +307,10 @@ func Tone(tone string) error {
 	return nil
 }
 
+// Band validates an allocation block index. Zero is a band like any other.
 func Band(band int) error {
 	if band < 0 || band > 9999 {
-		return errors.New("band must be between 1 and 9999, or absent")
+		return errors.New("band must be between 0 and 9999")
 	}
 	return nil
 }
@@ -330,22 +349,31 @@ func (b Bindings) WorkspaceBase(cfg Config) string {
 	return ""
 }
 
-// ErrIdentityRequired reports a workspace with a roster on a machine that has not
-// said which member is working. A workspace without a roster is a solo one, and
-// nobody there has anyone to be told apart from.
-var ErrIdentityRequired = errors.New("select a workspace member: this workspace lists members and this machine has selected none of them; run `member use --id ID`, after `member add` if the person is not on the roster")
+// ErrIdentityRequired reports a machine that has not said which member is
+// working, including in a workspace whose roster lists nobody yet. Every
+// workspace has a roster, a person working alone included, so there is always
+// someone to select.
+var ErrIdentityRequired = errors.New("select a workspace member: this machine has selected no member of this workspace's roster; run `member use --id ID`, after `member add --id ID --name NAME --band N` if the person is not on the roster")
 
-// ActiveMember returns this machine's member, or "" in a solo workspace, whose
-// roster is empty. Selection is a statement, not a proof: nothing here verifies
-// that the person is who member.local.yaml says, because a roster is for
-// attribution and allocation, and neither is a security boundary.
+// ErrBandRequired reports a roster with a member who holds no band, which only
+// a roster written before every member needed one can have.
+var ErrBandRequired = errors.New("give every member a band")
+
+// ActiveMember returns this machine's member. Selection is a statement, not a
+// proof: nothing here verifies that the person is who member.local.yaml says,
+// because a roster is for attribution and allocation, and neither is a security
+// boundary.
 func (s *Store) ActiveMember() (string, error) {
 	members, err := s.Members()
 	if err != nil {
 		return "", err
 	}
+	return s.activeMember(members)
+}
+
+func (s *Store) activeMember(members Members) (string, error) {
 	if len(members.Members) == 0 {
-		return "", nil
+		return "", fmt.Errorf("this workspace lists no members: %w", ErrIdentityRequired)
 	}
 	var local Identity
 	if err := s.YAML("member.local.yaml", &local); err != nil {
@@ -360,25 +388,82 @@ func (s *Store) ActiveMember() (string, error) {
 	return local.Member, nil
 }
 
-func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, member, display string) error {
+// SetupState is what a change needs settled before it is made: a readable
+// roster, this machine's member on it, and a band for every member.
+type SetupState struct {
+	Members  Members
+	Active   string
+	Unbanded []string
+}
+
+// Setup reads the workspace's setup and returns the first thing left
+// outstanding, naming the step that settles it. The state carries whatever
+// could be read, so a caller reporting setup can still show it.
+func (s *Store) Setup() (SetupState, error) {
+	state := SetupState{Members: Members{Members: map[string]Member{}}}
+	members, err := s.Members()
+	if err != nil {
+		return state, fmt.Errorf("%w; a person repairs members.yaml by hand, and `check` names what is wrong", err)
+	}
+	state.Members = members
+	for _, id := range members.IDs() {
+		if members.Members[id].Band == nil {
+			state.Unbanded = append(state.Unbanded, id)
+		}
+	}
+	if state.Active, err = s.activeMember(members); err != nil {
+		return state, err
+	}
+	if len(state.Unbanded) > 0 {
+		return state, fmt.Errorf("%w: without a band: %s; run `member band --id ID --band N` for each%s",
+			ErrBandRequired, strings.Join(state.Unbanded, ", "), s.suggestionText(state.Unbanded))
+	}
+	return state, nil
+}
+
+// suggestionText names the bands Setup would offer, or nothing when they cannot
+// be worked out, since the refusal is still right without them.
+func (s *Store) suggestionText(unbanded []string) string {
+	suggestions, err := s.SuggestBands()
+	if err != nil {
+		return ""
+	}
+	parts := make([]string, 0, len(unbanded))
+	for _, id := range unbanded {
+		parts = append(parts, fmt.Sprintf("%s band %d", id, suggestions.Members[id]))
+	}
+	return "; suggested: " + strings.Join(parts, ", ")
+}
+
+// RequireSetup refuses a change until setup is complete. Every changing command
+// passes through it, because a change made before anyone is selected carries no
+// author, and one made before every member holds a band can hand two clones the
+// same number.
+func (s *Store) RequireSetup() error {
+	_, err := s.Setup()
+	return err
+}
+
+// Init writes a new workspace and its first member, who is selected on this
+// machine. A person working alone is a team of one: the roster is never empty,
+// so nobody is asked later who they are and every record carries an author.
+func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, member, display string, band int) error {
 	for _, value := range []string{name, purpose} {
 		if err := Text(value); err != nil {
 			return err
 		}
 	}
-	// A workspace initialized without a member is a solo one: no roster, no
-	// identity to select on another machine, and records carrying no author.
-	// Adding the first member later is what makes it a team workspace.
-	if (member == "") != (display == "") {
-		return errors.New("pass --member and --member-name together, or neither for a solo workspace")
+	if member == "" || display == "" {
+		return errors.New("pass --member and --member-name: every workspace lists its members, one person working alone included")
 	}
-	if member != "" {
-		if err := Name(member); err != nil {
-			return err
-		}
-		if err := Text(display); err != nil {
-			return err
-		}
+	if err := Name(member); err != nil {
+		return err
+	}
+	if err := Text(display); err != nil {
+		return err
+	}
+	if err := Band(band); err != nil {
+		return err
 	}
 	for _, rel := range []string{"member.local.yaml", "repositories.local.yaml"} {
 		p, err := s.Path(rel)
@@ -446,20 +531,15 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if err := s.WriteYAML("workspace.yaml", cfg, 0644); err != nil {
 		return err
 	}
-	roster := map[string]Member{}
-	if member != "" {
-		roster[member] = Member{Name: display}
-	}
+	roster := map[string]Member{member: {Name: display, Band: BandOf(band)}}
 	if err := s.WriteYAML("members.yaml", Members{roster}, 0644); err != nil {
 		return err
 	}
 	if err := s.WriteYAML("repositories.local.yaml", Bindings{Bindings: map[string]Binding{}}, 0600); err != nil {
 		return err
 	}
-	if member != "" {
-		if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {
-			return err
-		}
+	if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {
+		return err
 	}
 	// The README travels with the workspace, so it carries the workspace's name
 	// and the versions it received rather than the product's newest release. It
@@ -511,15 +591,18 @@ func (s *Store) AddMember(id, name string, band int, language, tone string) erro
 		if tone != "" && existing.Tone != tone {
 			return fmt.Errorf("member %s already records a tone; use member tone to change it", id)
 		}
-		if band == 0 || existing.Band == band {
+		if existing.Band == nil {
+			return fmt.Errorf("member %s holds no band yet; use member band to give it one", id)
+		}
+		if *existing.Band == band {
 			return nil
 		}
-		return fmt.Errorf("member %s already holds band %d; use member band to change it", id, existing.Band)
+		return fmt.Errorf("member %s already holds band %d; use member band to change it", id, *existing.Band)
 	}
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
 	}
-	return s.Update("members.yaml", []string{"members", id}, Member{name, band, language, tone}, 0644)
+	return s.Update("members.yaml", []string{"members", id}, Member{Name: name, Band: BandOf(band), Language: language, Tone: tone}, 0644)
 }
 
 // existingLanguage names what a member writes in, including the unset case, so
@@ -556,8 +639,7 @@ func (s *Store) SetMemberLanguage(id, language string) error {
 
 // SetMemberTone records the register a member's intents and plans are written
 // in. It is set and cleared rather than only set, because a team that recorded
-// a register and changed its mind wants the general guidance back, and there is
-// no sentinel value for prose the way band 0 clears a band.
+// a register and changed its mind wants the general guidance back.
 func (s *Store) SetMemberTone(id, tone string, clear bool) error {
 	if err := Tone(tone); err != nil {
 		return err
@@ -580,9 +662,10 @@ func (s *Store) SetMemberTone(id, tone string, clear bool) error {
 	return s.Update("members.yaml", []string{"members", id}, member, 0644)
 }
 
-// SetMemberBand assigns or clears an existing member's allocation band. Records
-// already allocated keep their IDs and their reservations: a band decides which
-// numbers come next, never which numbers were right.
+// SetMemberBand assigns or moves an existing member's allocation band. There is
+// no clearing one: every member holds a band, and band 0 is one of them.
+// Records already allocated keep their IDs and their reservations: a band
+// decides which numbers come next, never which numbers were right.
 func (s *Store) SetMemberBand(id string, band int) error {
 	if err := Band(band); err != nil {
 		return err
@@ -598,16 +681,13 @@ func (s *Store) SetMemberBand(id string, band int) error {
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
 	}
-	member.Band = band
+	member.Band = BandOf(band)
 	return s.Update("members.yaml", []string{"members", id}, member, 0644)
 }
 
 func (s *Store) freeBand(members Members, id string, band int) error {
-	if band == 0 {
-		return nil
-	}
-	for other, member := range members.Members {
-		if other != id && member.Band == band {
+	for _, other := range members.IDs() {
+		if held := members.Members[other].Band; other != id && held != nil && *held == band {
 			return fmt.Errorf("band %d already belongs to member %s", band, other)
 		}
 	}

@@ -2,7 +2,7 @@
 
 Coordinate this shared project workspace across one or more Git repositories.
 Keep its identity, repositories, relationships, knowledge, members, intents, and
-plans useful for solo and team work. Talk in ordinary project language. Use
+plans useful for one person or a team. Talk in ordinary project language. Use
 `context-circuit-cli` for dependable bookkeeping; users need not manage runtime
 commands or ID numbers. Run the version this workspace pins in
 `.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
@@ -72,29 +72,34 @@ reinitialize the shared workspace.
 
 ## Who is working
 
-A workspace whose `members.yaml` lists anyone is a team workspace, and every
-change made in it is made as one of those members. When this machine has no
-`member.local.yaml`, or it names someone the roster does not carry, `status`
-reports `identity_required`. Until that is settled, decline any request that
-would change something: creating, editing, approving, completing, or deleting a
-record, preparing a worktree, implementing, committing, or changing a member or
-repository. Say why it was declined. Reading, answering questions, and reporting
-status still proceed.
+Every workspace has a roster in `members.yaml`, a person working alone included,
+and every change made in it is made as one of those members. Every member holds
+a band, and band 0 is a band like any other. Setup is complete when the roster
+lists at least one member, every member on it holds a band, and this machine's
+`member.local.yaml` names one of them.
 
-Settle it by asking who the person is, offering both answers: one of the members
-the roster lists, or someone new to add. Adding follows
-`.agents/skills/cc-workspace/SKILL.md`, including a free band, and the person's
-answer is the request that step needs. Select them with `member use`, then carry
-out the request they originally made without asking them to repeat it.
+Until setup is complete, decline any request that would change something:
+creating, editing, approving, completing, or deleting a record, preparing a
+worktree, implementing, committing, or changing a member or repository. Say why
+it was declined. Reading, answering questions, and reporting status still
+proceed. Read `members.yaml` and `member.local.yaml` to judge this yourself
+rather than waiting for `status` to say so: an older pinned CLI treats an empty
+roster as needing nobody, and editing a record, implementing, and committing do
+not pass through the CLI at all. A current CLI reports the same gaps as
+`identity_required` and `band_required`, and refuses every changing command
+except the setup steps themselves.
+
+Settle a missing member by asking who the person is, offering both answers: one
+of the members the roster lists, or someone new to add. Adding follows
+`.agents/skills/cc-workspace/SKILL.md`, including a band, and the person's
+answer is the request that step needs. Settle a member without a band by
+offering the band `status` suggests for them and letting the person confirm it
+or pick another. Select the member with `member use`, then carry out the request
+they originally made without asking them to repeat it.
 
 Take the answer as given. Nothing verifies that a person is the member they
 name, and nothing should be built to: the roster attributes records and divides
 ID numbers, and it is not access control.
-
-A workspace whose roster is empty is a solo workspace. Nobody is asked who they
-are, and its records carry no `created_by`. Adding the first member makes it a
-team workspace, and from then on every machine selects a member, including the
-one that added them — a solo developer adding a teammate adds themselves too.
 
 ## Language
 
@@ -359,9 +364,10 @@ and fix relative links when moving a record. External publication is an explicit
 requested task through available host tools; no automatic provider synchronization
 is part of core v2.
 
-Deleting records happens only on request, through `record delete`. In a team
-workspace it takes one member's intents and plans, active and archived; in a solo
-workspace it takes every record. Either way it releases their IDs, so those
+Deleting records happens only on request, through `record delete`. It takes one
+member's intents and plans, active and archived; while the roster lists exactly
+one member, `--all` takes every record, including any an earlier version wrote
+without an author. Either way it releases their IDs, so those
 numbers are handed out again. Run it first without `--confirm`, which previews
 the records and IDs and deletes nothing. Show the person the whole list, say that
 the numbers become reusable, and run it with `--confirm` only once they agree to
