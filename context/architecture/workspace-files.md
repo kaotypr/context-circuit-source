@@ -8,7 +8,7 @@ they travel with the project or belong to one machine.
 **Shared** (committed): the workspace record carrying schema version, name,
 purpose, the workspace's own repository, logical repository IDs with their URL
 and default branch, and recorded relationships; the member roster with each
-member's optional allocation band; the permanent ID ledger; the per-host role
+member's allocation band; the permanent ID ledger; the per-host role
 settings; intent and plan records; and the knowledge tree.
 
 **Local** (ignored): the active member on this machine; this machine's workspace
@@ -65,8 +65,8 @@ The path stays in the binding because a workspace need not sit at its
 repository's root; one kept in a subdirectory records the containing root.
 Members share one branch of the workspace. A per-member branch was considered
 and rejected: a reservation in the ID ledger on an unmerged branch is invisible
-to everyone else, which would make allocation bands mandatory rather than
-optional, and `record order` would derive waves from a partial set of plans. A
+to everyone else, so only bands would stand between two members and the same
+number, and `record order` would derive waves from a partial set of plans. A
 machine that works from another branch records that in its own binding, where it
 describes that machine and nobody else.
 
