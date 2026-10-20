@@ -28,7 +28,8 @@ Bahasa comment, which review catches, but a domain term rendered into English in
 an identifier, where it silently disagrees with the glossary that named it.
 
 A **plan** says how an approved intent maps to real code and what actually
-happened, and is written *after* approval from the code itself. One plan may
+happened, and is written from the code itself *after* approval, once a person
+asks for planning. One plan may
 cover several repositories; it is split when execution or delivery wants it
 separate, not because the repository layout does.
 

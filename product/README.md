@@ -321,11 +321,13 @@ numbered questions and correct anything it misunderstood:
 ```text
 1. Existing customers stay on their current plan.
 2. Failed renewals get a seven-day grace period.
-The rest of the goal looks right. I approve it.
+The rest of the goal looks right. I approve it. Create the plans.
 ```
 
-Approval lets the agent, or a spawned sub-agent with the `planner` role, inspect
-the actual repositories and prepare grounded plans. It does not start implementation.
+Approval alone records your decision and stops with a recommendation to plan.
+Asking for plans, in the same message or a later one, lets the agent, or a
+spawned sub-agent with the `planner` role, inspect the actual repositories and
+prepare grounded plans. It does not start implementation.
 
 ### 2. Read the plan—or ask for the summary
 
@@ -663,7 +665,7 @@ agent work faster without making it disposable.
 | Records in your language | A team that does not work in English records in its own language and register, while headings and field names stay English so records stay diffable. |
 | Stacked multi-repository plans | Every AI agent receives its plan dependencies, waits for prerequisites, and runs in the correct parallel wave or linear order. |
 | Isolated implementation | Each plan gets a separate working copy by default, protecting unrelated and unfinished work. |
-| Human control points | The agent waits for approval of the goal and a later request to begin implementation. Delivery and cleanup remain separate choices. |
+| Human control points | The agent waits for approval of the goal, a request to plan it, and a later request to begin implementation. Delivery and cleanup remain separate choices. |
 | Preserved failures | Partial work and failed checks are kept and reported instead of reset, stashed, or hidden. |
 | Optional sub-agents | Exploration, implementation, and independent review can be delegated when useful; they are not mandatory ceremony. |
 | Actionable diagnostics | Every finding names what discharges it: a command to run, an edit to make, or a decision only a person can take. |

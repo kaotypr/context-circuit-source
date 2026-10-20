@@ -35,6 +35,14 @@ error stream and continues, leaving structured output untouched. The warning is
 framed as a caller mistake — the workspace recorded what it wanted and something
 ran the wrong binary.
 
+The template's entry instruction takes precedence whenever it and CLI output
+disagree. A CLI is behind the template when the running version is older than
+the pin, or when its output has a shape the template no longer expects — before
+2.4.0, approval answered `planning_required`. An agent that sees either tells the
+person to install or upgrade the pinned version rather than acting on the older
+text; no minimum version is written into the instruction, because it would go
+stale.
+
 Each product is tagged, built and released from the repository that owns it. The
 CLI's `cli-v*` tag, its build and its release all live in this checkout, where
 its source is, so a released binary is traceable to the commit that produced it

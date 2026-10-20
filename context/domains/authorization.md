@@ -33,6 +33,19 @@ explained and recorded, not re-gated, because recorded paths are descriptive
 planning information rather than an enforcement contract. Asking twice for the
 same thing teaches people to approve reflexively.
 
+**Asking for plans.** Approval records the decision and nothing more: the agent
+recommends planning as the next step and stops. Approving an outcome and spending
+effort on planning are two decisions — a person may approve now and plan later,
+approve several intents and choose which to plan first, or decide how planning is
+done — so each is made explicitly.
+
+A planning request starts the work, and it may arrive with the approval. One
+request that approves intents the person has already read and asks for their
+plans records each approval and then plans each intent, with no stop between.
+Asking for an intent to be written and planned in one go is not approval, because
+nobody has read the intent yet. Once planning is requested, approval is not asked
+for again.
+
 An explicit request for a detailed plan of an already specified outcome may
 create a standalone plan without an intent. It authorizes investigation and
 drafting, not implementation. The agent presents its complete entry and
@@ -144,11 +157,17 @@ had changed, then reconciled four notes an hour later. In each case the rule was
 in the always-loaded entry instruction and the command had answered with a bare
 success, so success is what the agent acted on.
 
-So each gate names its own consequence in its own output: `planning_required` on
+So each gate names what comes next in its own output: `planning_recommended` on
 approval, and `reconcile_required` on completion whenever the plan's repositories
-hold catalog entries, the way a dispatch names `setup_required`. A field whose
-name is the obligation arrives at the moment that obligation comes due, which a
-paragraph read once at session start does not.
+hold catalog entries, the way a dispatch names `setup_required`. A field naming
+the next step arrives at the moment that step comes due, which a paragraph read
+once at session start does not.
+
+For approval that step is a recommendation to the person, not work the agent
+starts on its own. The field was once `planning_required`, telling the agent to
+plan without asking again, which turned one approval into a code investigation
+nobody had asked for. A CLI still returning it is older than the template, and
+the entry instruction wins over its text.
 
 This is the same reason [workspace files and safe
 editing](../architecture/workspace-files.md) reports a resolved base branch

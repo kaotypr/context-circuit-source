@@ -102,6 +102,15 @@ warning as an instruction to re-resolve, not as a workspace fault. Verify `versi
 initialized workspace. A blank template still needs `init` when the user requests
 workspace initialization. Installation never initializes or migrates a workspace.
 
+## Recognize a CLI that is behind the template
+
+The workspace's `AGENTS.md` wins whenever it and CLI output disagree. A CLI is
+behind the template when the running version is older than the pin, or when its
+output has a shape the template no longer expects — before 2.4.0, `record
+approve` returned `planning_required` and told the agent to plan without asking.
+Tell the person the CLI needs installing or upgrading to the pinned version,
+offer to do it, and do not act on the older output's text meanwhile.
+
 On updates, retain workspace records and template version. Report old/new CLI
 versions and any compatibility issue. A checksum, platform, download, or version
 failure leaves the current command unchanged; fix the cause before retrying.

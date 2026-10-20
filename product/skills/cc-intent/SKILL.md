@@ -92,6 +92,14 @@ written; a placeholder would invent a pending decision.
 A question the request already answers is applied without asking. An
 implementation question belongs in the plan, not here.
 
+## After approval
+
+Record the person's approval in their own words. `record approve` returns
+`planning_recommended`: confirm the approval, recommend creating plans as the
+next step, and stop. Planning starts when the person asks for it, which may be
+in the same request that approved the intent; then go straight on through
+`.agents/skills/cc-plan/SKILL.md`, and do not ask for approval a second time.
+
 ## What belongs here and what does not
 
 A question that bears on the intended outcome returns to this record even after
