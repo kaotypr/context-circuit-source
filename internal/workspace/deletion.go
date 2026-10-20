@@ -307,7 +307,7 @@ func (s *Store) DeleteRecords(ctx context.Context, member string, all bool, ids 
 				continue
 			}
 			if err := s.removeRecord(record.Path); err != nil {
-				return Deletion{}, s.unfinished(record.Path, result.Records, reserved, err)
+				return Deletion{}, s.unfinished(record.Path, result.Records, reserved, all, err)
 			}
 		}
 	}
@@ -316,13 +316,13 @@ func (s *Store) DeleteRecords(ctx context.Context, member string, all bool, ids 
 		ledger := ledgers[rel]
 		intents, plans := keep(ledger.Intents), keep(ledger.Plans)
 		if !slices.Equal(intents, ledger.Intents) {
-			if err := s.Update(rel, []string{"intents"}, intents, 0644); err != nil {
-				return Deletion{}, err
+			if err := writeIDList(s, rel, "intents", intents); err != nil {
+				return Deletion{}, s.unreleased(rel, idFiles, ledgers, result.Released, all, err)
 			}
 		}
 		if !slices.Equal(plans, ledger.Plans) {
-			if err := s.Update(rel, []string{"plans"}, plans, 0644); err != nil {
-				return Deletion{}, err
+			if err := writeIDList(s, rel, "plans", plans); err != nil {
+				return Deletion{}, s.unreleased(rel, idFiles, ledgers, result.Released, all, err)
 			}
 		}
 	}
@@ -363,11 +363,53 @@ func (s *Store) removeRecord(rel string) error {
 	return removePath(p)
 }
 
+// writeIDList rewrites one list in one ID file. Tests replace it to interrupt a
+// deletion between ID files.
+var writeIDList = func(s *Store, rel, key string, ids []string) error {
+	return s.Update(rel, []string{key}, ids, 0644)
+}
+
+// finishing names the call that finishes an interrupted deletion. --all is
+// re-run as itself, because it also releases numbers no record file held; any
+// other deletion is finished by exactly the IDs still left, which --id reaches
+// on any roster.
+func finishing(ids []string, all bool) string {
+	if all {
+		return "Run `record delete --all --confirm` to finish"
+	}
+	return "Run `record delete --id " + strings.Join(ids, " --id ") + " --confirm` to finish"
+}
+
+// unreleased explains a deletion stopped while rewriting ID files. Every record
+// file is already gone, so what is left is reservations: the error names the
+// IDs still reserved, read back from the files, and the call that releases
+// them, or says nothing is left when none is.
+func (s *Store) unreleased(rel string, idFiles []string, ledgers map[string]Ledger, released []string, all bool, cause error) error {
+	var left []string
+	for _, file := range idFiles {
+		ledger, err := s.readIDFile(file)
+		if err != nil {
+			ledger = ledgers[file]
+		}
+		for _, id := range append(slices.Clone(ledger.Intents), ledger.Plans...) {
+			if slices.Contains(released, id) && !slices.Contains(left, id) {
+				left = append(left, id)
+			}
+		}
+	}
+	slices.Sort(left)
+	if len(left) == 0 {
+		return fmt.Errorf("could not rewrite %s, but every record file is gone and no released ID is still reserved, so nothing is left to finish: %w", rel, cause)
+	}
+	return fmt.Errorf("could not rewrite %s: every record file is gone, and these IDs are still reserved: %s. %s: %w",
+		rel, strings.Join(left, ", "), finishing(left, all), cause)
+}
+
 // unfinished explains a deletion stopped while removing files. Nothing was
 // released yet, so every selected ID still holding a file or a reservation is
 // reachable by --id on any roster; --member could not reach a removed record's
-// number again, so the call that finishes it is always the --id one.
-func (s *Store) unfinished(path string, records []DeletedRecord, reserved map[string]bool, cause error) error {
+// number again, so the call that finishes it is the --id one, or --all again.
+func (s *Store) unfinished(path string, records []DeletedRecord, reserved map[string]bool, all bool, cause error) error {
 	var left []string
 	for _, record := range records {
 		held := reserved[record.ID]
@@ -388,8 +430,18 @@ func (s *Store) unfinished(path string, records []DeletedRecord, reserved map[st
 	if len(left) == 0 {
 		return fmt.Errorf("could not remove %s; every record is gone and no ID was released, so remove it by hand: %w", path, cause)
 	}
-	return fmt.Errorf("could not remove %s, so no ID was released and these stay reserved: %s. Run `record delete --id %s --confirm` to finish: %w",
-		path, strings.Join(left, ", "), strings.Join(left, " --id "), cause)
+	// Only plan.md makes a folder a record, so once it is gone no re-run
+	// reaches what is left of the folder.
+	folder := ""
+	if strings.HasSuffix(path, "/") {
+		if p, err := s.Path(strings.TrimSuffix(path, "/")); err == nil {
+			if _, err := os.Lstat(filepath.Join(p, "plan.md")); os.IsNotExist(err) {
+				folder = fmt.Sprintf(", then remove the folder %s by hand: it no longer holds plan.md, so no re-run reaches it", path)
+			}
+		}
+	}
+	return fmt.Errorf("could not remove %s, so no ID was released and these stay reserved: %s. %s%s: %w",
+		path, strings.Join(left, ", "), finishing(left, all), folder, cause)
 }
 
 // leftovers names what each bound checkout on this machine still holds for the

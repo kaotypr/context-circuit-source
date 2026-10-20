@@ -116,6 +116,49 @@ func TestAnInterruptedDeletionByMemberNamesTheIDsLeft(t *testing.T) {
 	}
 }
 
+// Interrupted between ID files, the error names exactly the IDs still reserved
+// and the call that releases them, and that call finishes the job.
+func TestADeletionInterruptedInTheIDFilesNamesTheIDsStillReserved(t *testing.T) {
+	store := deletable(t)
+	ctx := context.Background()
+	original := writeIDList
+	writeIDList = func(s *Store, rel, key string, ids []string) error {
+		if key == "plans" {
+			return errors.New("disk full")
+		}
+		return original(s, rel, key, ids)
+	}
+	t.Cleanup(func() { writeIDList = original })
+	_, err := store.DeleteRecords(ctx, "", false, []string{"i100", "p1000"}, true)
+	if err == nil || !strings.Contains(err.Error(), "still reserved: p1000.") || !strings.Contains(err.Error(), "`record delete --id p1000 --confirm` to finish") {
+		t.Fatalf("the interrupted deletion did not name the IDs still reserved: %v", err)
+	}
+	if got := mayaReserved(t, store); !slices.Equal(got, []string{"p1000"}) {
+		t.Fatalf("want only p1000 still reserved, got %v", got)
+	}
+
+	writeIDList = original
+	done, err := store.DeleteRecords(ctx, "", false, []string{"p1000"}, true)
+	if err != nil || !done.Deleted || len(mayaReserved(t, store)) != 0 {
+		t.Fatalf("the named call did not finish the deletion: %+v %v", done, err)
+	}
+}
+
+// After --all, the unfinished hint re-runs --all, which also releases numbers
+// no record file holds; and a plan folder whose plan.md is already gone is
+// named for removal by hand, because no re-run reaches it.
+func TestAnInterruptedDeletionOfEverythingSaysToRunItAgain(t *testing.T) {
+	store := deletable(t)
+	failOn(t, store, "plans/p1000-billing-api")
+	_, err := store.DeleteRecords(context.Background(), "", true, nil, true)
+	if err == nil || !strings.Contains(err.Error(), "`record delete --all --confirm` to finish") || strings.Contains(err.Error(), "--id") {
+		t.Fatalf("the interrupted --all deletion did not say to run --all again: %v", err)
+	}
+	if !strings.Contains(err.Error(), "remove the folder plans/p1000-billing-api/ by hand") {
+		t.Fatalf("the folder left without plan.md was not named: %v", err)
+	}
+}
+
 // Unlinking a plan from its intent keeps a CRLF intent CRLF.
 func TestUnlinkingAPlanKeepsCRLF(t *testing.T) {
 	store := deletable(t)

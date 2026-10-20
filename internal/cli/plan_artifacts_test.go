@@ -113,6 +113,10 @@ func TestPlanRequiredPathSafetyAndMissingEntry(t *testing.T) {
 	if err := os.Remove(entryPath); err != nil {
 		t.Fatal(err)
 	}
+	if out := f.fail("check"); !strings.Contains(out, "empty plan folder") {
+		t.Fatal(out)
+	}
+	write(t, filepath.Join(filepath.Dir(entryPath), "notes.md"), "# Notes\n")
 	if out := f.fail("check"); !strings.Contains(out, "missing or invalid plan entry") {
 		t.Fatal(out)
 	}
