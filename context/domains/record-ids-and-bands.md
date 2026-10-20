@@ -85,24 +85,44 @@ reserved in two files, and a person removes the extra entry.
 
 Deletion is the one deliberate way a number goes back. It removes every intent
 and plan one member created, active and archived, or — while the roster lists
-exactly one member — every record, and takes their numbers out of every ID file
-holding them so the next allocation hands them out again. Deleting everything is how records an
-earlier version wrote without an author are removed, since nothing selects them
-by member. That exists for work that should never have been recorded — a
-trial run, a member's abandoned direction — where keeping the gap would only
-preserve noise.
+exactly one member — every record, or exactly the records a person names by ID.
+It takes their numbers out of every ID file holding them, so the next allocation
+hands the lowest free one in the author's band out again.
 
-Selecting by author is what keeps it from reaching into anyone else's work, and
-the refusals keep the selection honest. It deletes nothing while another
-member's record would be left naming a deleted one, or while a worktree on this
-machine was prepared for a deleted plan, because a released number is about to
-mean something else and a stale pointer to it would then be silently wrong. Its
-first run is a preview: the person sees the records and numbers and agrees to
-that list before the confirmed run deletes anything.
+Records an earlier version wrote without an author are reached by deleting
+everything or by naming them, since nothing selects them by member. Naming an ID
+also frees a number an interrupted create reserved without writing a file.
 
-The ID files are updated before the record files go. Interrupted between the two, the
-files still stand and allocation still counts their filenames as taken, so no
-number is handed out twice, and running the same deletion again finishes it.
+That exists for work that should never have been recorded, or no longer should
+be, where keeping the gap would only preserve noise:
+
+- a trial run, or an intent the person changed their mind about;
+- a member who has used up their band's numbers on abandoned work;
+- the records a member leaving the team leaves behind.
+
+Selecting by author or by name is what keeps it from reaching into work nobody
+chose, and the refusals keep the selection honest. It deletes nothing while a
+record outside the selection would be left naming a deleted one, or while a
+worktree on this machine was prepared for a deleted plan. A released number is
+about to mean something else, and a stale pointer to it would then be silently
+wrong. Naming records is not access control, so any member's record can be
+named.
+
+The one link edited rather than refused is a named plan's entry in its own
+intent's plan list, since nearly every plan made from an intent is listed there.
+Any other link is resolved by naming that record too, and links inside the named
+set do not block.
+
+Its first run is a preview: the person sees the records, their authors and
+whether they are approved or completed, and the numbers, and agrees to that list
+before the confirmed run deletes anything. Branches and worktree directories Git
+still holds for a named plan's number are reported and left alone, because a
+plan later given that number meets them.
+
+The plan-list edits come first, then the ID files, then the record files.
+Interrupted anywhere, the remaining files still stand and allocation still
+counts their filenames as taken, so no number is handed out twice, and running
+the same deletion again finishes it.
 
 What a released number already reached is not recalled. A branch name, a pull
 request, or a conversation that carried it now names two records, and a clone
@@ -205,4 +225,6 @@ Owner:
   roster validation the bands are derived from, and `Store.Setup`, which decides
   whether a change may be made and names what is outstanding.
 - `context-circuit-source@internal/workspace/deletion.go` `DeleteRecords` —
-  selection by author, the refusals, and releasing numbers from the ID files.
+  selection by author or by ID, the refusals, unlinking a named plan from its
+  intent, and releasing numbers from the ID files; `Store.leftovers` reports
+  the branches and worktrees a named plan's number still has.

@@ -133,12 +133,17 @@ inventories filenames, including archives, without reading archived content. Kee
 reservations and fix any handwritten relative links when records move.
 
 Deletion is not archival. `record delete --member ID` removes one member's intents
-and plans, archived ones included, and `record delete --all` removes every record
-while the roster lists exactly one member; both release the deleted IDs from every
-ID file under `.context-circuit/ids/` holding them, so allocation hands those
-numbers out again. A preview without `--confirm` comes first and
-deletes nothing, and the person agrees to its list before `--confirm` runs.
-Records by another member that point at a deleted one block the deletion rather
-than being edited or removed with it. Once deleted, a number that reached a
+and plans, archived ones included, `record delete --all` removes every record
+while the roster lists exactly one member, and `record delete --id ID`, repeatable,
+removes the named records whoever wrote them, or frees a reserved ID no record
+file holds. Each releases the deleted IDs from every ID file under
+`.context-circuit/ids/` holding them, so allocation hands the lowest free number
+in the author's band out again. A preview without `--confirm` comes first,
+showing each record's author and whether it is approved or completed, and
+deletes nothing; the person agrees to its list before `--confirm` runs. Records
+outside the selection that point at a deleted one block the deletion rather
+than being edited or removed with it. The one exception is by ID: a deleted plan
+is taken out of its own intent's `plans:` list. Any other link is resolved by
+naming that record too, and the refusal lists the IDs to add. Once deleted, a number that reached a
 branch name, a pull request, or a conversation may later mean a different record,
 so delete before an ID has travelled where possible.
