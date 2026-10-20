@@ -169,6 +169,19 @@ plan without asking again, which turned one approval into a code investigation
 nobody had asked for. A CLI still returning it is older than the template, and
 the entry instruction wins over its text.
 
+Both gates also say what they leave uncommitted. An intent, its plans, and the
+ID files can sit uncommitted for days while the work they describe ships, and
+until they are pushed no other clone sees them and two people can reserve the
+same number. So after it succeeds each gate reads Git status for the records it
+concerns and every ID file and returns `commit_recommended`, or
+`commit_unchecked` with the reason when Git cannot be read. It is a
+recommendation in the same sense as planning's: the CLI never stages or
+commits, the gate never fails because of Git, and the agent commits workspace
+records only when the person authorizes it, since they are the person's working
+copy like a bound checkout. Nothing tracks this between gates — no `check`
+finding, no `status` field, no hook — because these two moments are where it
+matters and the agent can always ask.
+
 This is the same reason [workspace files and safe
 editing](../architecture/workspace-files.md) reports a resolved base branch
 instead of leaving it in a file: what the CLI knows and never states is
@@ -199,4 +212,6 @@ Owner:
 - `context-circuit-source@internal/workspace/records.go` `Store.Note` — the
   operations that record approval and completion.
 - `context-circuit-source@internal/cli/cli.go` — the obligation each gate's
-  result names, beside the record it just wrote.
+  result names, beside the record it just wrote, and the commit it recommends.
+- `context-circuit-source@internal/workspace/commits.go` — which of a gate's
+  records and ID files Git reports uncommitted, and why Git could not say.
