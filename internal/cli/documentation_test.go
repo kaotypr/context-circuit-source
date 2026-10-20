@@ -309,6 +309,27 @@ func TestApprovalRecommendsPlanningEverywhere(t *testing.T) {
 	}
 }
 
+// The gates recommend committing; they never commit, and the agent passing the
+// recommendation on still needs the person's say before committing.
+func TestCommitRecommendationNeedsAuthorizationEverywhere(t *testing.T) {
+	for _, rel := range []string{
+		"AGENTS.md.in",
+		filepath.Join("docs", "commands.md"),
+		filepath.Join("skills", "cc-complete", "SKILL.md"),
+	} {
+		text := strings.Join(strings.Fields(productFile(t, rel)), " ")
+		if !strings.Contains(text, "commit_recommended") {
+			t.Errorf("%s does not name commit_recommended", rel)
+		}
+		if !strings.Contains(text, "authoriz") {
+			t.Errorf("%s does not say committing needs the person's authorization", rel)
+		}
+	}
+	if text := productFile(t, filepath.Join("docs", "commands.md")); !strings.Contains(text, "commit_unchecked") {
+		t.Error("docs/commands.md does not name commit_unchecked")
+	}
+}
+
 // An agent asking about one command must get that command. Answering a narrow
 // question with the whole manual, and exiting zero, reads as success and sends
 // the caller round again with a different phrasing.

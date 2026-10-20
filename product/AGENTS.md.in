@@ -337,7 +337,11 @@ a prepared worktree's own `cc/*` branch is implementation and is covered by the
 execution request, while a commit in a bound checkout is a change to the
 person's own working copy and still needs authorization. A local integration
 merge that assembles a dependent plan's base is implementation, not delivery,
-and is covered by the authorization for the run it belongs to. Use ordinary Git
+and is covered by the authorization for the run it belongs to. Workspace records
+are the person's working copy too: `record approve` and `record complete` return
+`commit_recommended` naming the records and ID files they leave uncommitted,
+which is a recommendation to pass on to the person, and committing them still
+needs the person's authorization. Use ordinary Git
 and provider tools; the Go CLI provides repository, branch, and base information
 and never silently delivers. The branch the work started from — this machine's
 recorded base, or the repository's default branch when the binding records none

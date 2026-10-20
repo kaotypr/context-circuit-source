@@ -152,6 +152,33 @@ func pinnedVersionWarning(s *workspace.Store, running string) string {
 		"run the version this workspace pins, or ask the cc-cli skill to install it\n", pinned, running)
 }
 
+// commitRecommendation names the records and ID files a gate leaves
+// uncommitted. Until they are committed and pushed no other clone sees them,
+// and an ID file left behind is how two people reserve the same number.
+type commitRecommendation struct {
+	Files []workspace.UncommittedFile `json:"files"`
+	Note  string                      `json:"note"`
+}
+
+// recommendCommit adds what approval and completion leave uncommitted to their
+// result. It runs after the command has succeeded and only ever adds a key: a
+// recommendation when there is something to commit, or the reason Git could
+// not say. It never stages or commits, because committing workspace records is
+// the person's decision.
+func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]any, ids ...string) {
+	files, unchecked := s.UncommittedRecords(ctx, ids...)
+	if unchecked != "" {
+		result["commit_unchecked"] = unchecked + "; whether these records and the ID files are committed was not checked"
+		return
+	}
+	if len(files) > 0 {
+		result["commit_recommended"] = commitRecommendation{
+			Files: files,
+			Note:  "these records and ID files are not committed, so other clones cannot see them yet: recommend committing and pushing them to the person; committing still needs the person's authorization, and nothing was staged or committed",
+		}
+	}
+}
+
 func Run(ctx context.Context, args []string, out, errOut io.Writer, version string) int {
 	global := flag.NewFlagSet("context-circuit-cli", flag.ContinueOnError)
 	global.SetOutput(errOut)
@@ -577,10 +604,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			// `ok: true` reads as the request being done. The next step to
 			// recommend is said here, where the caller is standing, rather
 			// than only in instructions read once at the start of a session.
-			return map[string]any{
+			result := map[string]any{
 				"approved":             get("id"),
 				"planning_recommended": "approval is recorded; planning is the next step: recommend creating linked pNNNN-slug/plan.md folders to the person and stop, unless the same request already asked for plans, in which case inspect real code, create them, present the complete plans and stop",
-			}, nil
+			}
+			recommendCommit(ctx, s, result, get("id"))
+			return result, nil
 		case "record complete":
 			if err := s.Note(get("id"), get("text"), "complete"); err != nil {
 				return nil, err
@@ -594,6 +623,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			if len(entries) > 0 {
 				result["reconcile_required"] = "judge each entry above against what this plan changed: edit the note and its catalog entry together and move its reviewed date, or record in the completion note that it changed nothing"
 			}
+			ids := []string{get("id")}
+			if plan, found := s.FindRecord(get("id")); found == nil && plan.Intent != "" {
+				ids = append(ids, plan.Intent)
+			}
+			recommendCommit(ctx, s, result, ids...)
 			return result, e
 		case "record delete":
 			return s.DeleteRecords(get("member"), all, confirm)

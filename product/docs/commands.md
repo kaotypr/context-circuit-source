@@ -172,6 +172,23 @@ record also carries the `created_at` instant of its creation. Instants are
 canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; other dates are ISO
 8601 `YYYY-MM-DD` in UTC.
 
+After it succeeds, approval reads the workspace's Git status for the approved
+intent's file, and completion for the plan's files and its intent's file,
+wherever each lives, archives included; both also read every ID file, the
+shared `.context-circuit/ids.yaml` and each per-member file. Whatever is not
+committed is returned as `commit_recommended`: `files`, each a `path` relative
+to the workspace root with `/` separators and a `change` of `new`, `modified`,
+or `deleted`, and a `note`. A renamed record is listed as its new path `new` and
+its old path `deleted`. Other uncommitted records are not listed. Approval and
+completion always rewrite the record they touch, so in a Git workspace that
+record is always listed. The key is omitted when nothing is listed. When Git is
+not installed, or the workspace is not in a Git repository, the result carries
+`commit_unchecked` with the reason instead. Neither ever blocks or undoes the
+command, and the CLI never stages, commits, or pushes: committing the records
+still needs the person's authorization. A workspace inside another repository
+is reported relative to its own root, leaving out files outside it; one that
+repository ignores lists nothing.
+
 `record order` derives execution shape from recorded dependencies and completion.
 Repeat `--plan ID` to select an exact run, or use `--intent ID` to select linked
 plans; the two filters are exclusive. With neither, all active plans are selected.
