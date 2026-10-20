@@ -176,7 +176,7 @@ tar -tzf "$work/$package" | LC_ALL=C sort > "$work/actual"
 cmp "$work/expected" "$work/actual" >/dev/null || fail 'unexpected archive contents'
 mkdir "$work/package"
 tar -xzf "$work/$package" -C "$work/package"
-for file in context-circuit-cli README.md THIRD_PARTY_NOTICES.txt; do
+for file in context-circuit-cli README.md LICENSE THIRD_PARTY_NOTICES.txt; do
   [ -f "$work/package/$file" ] && [ ! -L "$work/package/$file" ] || fail 'archive contains non-regular files'
 done
 chmod 755 "$work/package/context-circuit-cli"
