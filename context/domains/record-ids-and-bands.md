@@ -46,19 +46,47 @@ and four plan digits, expanding beyond that width rather than wrapping. The
 prefix exists so an intent cannot be mistaken for a plan in a reference, a
 branch name, or conversation.
 
-A reserved number is **not reused while it stays in the ledger**, and archiving
-a record or removing its file by hand leaves it there. Allocation inventories
+A reserved number is **not reused while it stays reserved**, and archiving a
+record or removing its file by hand leaves it reserved. Allocation inventories
 filenames including archives without reading archived content, and the
-diagnostic reports a number present in a record but missing from the permanent
-ledger. The reverse — a reservation with no record — is not a fault: it is what
-an interrupted create leaves behind, and what a hand-removed record leaves too.
+diagnostic reports a number present in a record but reserved in no ID file. The
+reverse — a reservation with no record — is not a fault: it is what an
+interrupted create leaves behind, and what a hand-removed record leaves too.
+
+Reservations live in one **ID file** per member, named after the member, and a
+member's record creation appends to that member's file alone. Bands keep
+two members from choosing the same number; separate files keep them from
+editing the same lines, which Git would report as a conflict however different
+the numbers. A number counts as taken when any member's file reserves it, so a
+file may hold numbers outside its member's current band — old authorless
+records, or ones made before bands changed — and that is valid. A member ID that
+is a Windows device name is refused, because it is a file name on every clone.
+
+A workspace written before this layout is at schema 2 and keeps every
+reservation in one shared file. The first changing command run once setup is
+complete **splits** it:
+
+- each number goes to the file of its record's author;
+- one with no author or no record goes to the member selected on that machine,
+  and once setup is complete there always is one;
+- the shared file is removed and the schema moves to 3, which older CLIs refuse,
+  so the split is a cut-over every member upgrades through.
+
+A shared file merged back later from a clone that had not pulled the split is
+split again, skipping numbers a member file already holds. Reading commands and
+a deletion preview never split, because neither may change anything.
+
+Two clones that each split before pulling the other give the same authorless
+numbers to two different members. That race is accepted: nothing is handed out
+twice because allocation reads every file, the diagnostic reports each number
+reserved in two files, and a person removes the extra entry.
 
 ## Releasing numbers
 
 Deletion is the one deliberate way a number goes back. It removes every intent
 and plan one member created, active and archived, or — while the roster lists
-exactly one member — every record, and takes their numbers out of the ledger so
-the next allocation hands them out again. Deleting everything is how records an
+exactly one member — every record, and takes their numbers out of every ID file
+holding them so the next allocation hands them out again. Deleting everything is how records an
 earlier version wrote without an author are removed, since nothing selects them
 by member. That exists for work that should never have been recorded — a
 trial run, a member's abandoned direction — where keeping the gap would only
@@ -72,7 +100,7 @@ mean something else and a stale pointer to it would then be silently wrong. Its
 first run is a preview: the person sees the records and numbers and agrees to
 that list before the confirmed run deletes anything.
 
-The ledger is updated before the files go. Interrupted between the two, the
+The ID files are updated before the record files go. Interrupted between the two, the
 files still stand and allocation still counts their filenames as taken, so no
 number is handed out twice, and running the same deletion again finishes it.
 
@@ -168,10 +196,13 @@ Owner:
 - `context-circuit-source@internal/workspace/records.go` `Store.allocate`,
   `takenNumbers`, and `bandWidth` — how a number is chosen and which band it
   falls in.
+- `context-circuit-source@internal/workspace/ids.go` `reservedIDs`, `reserve`,
+  and `Store.SplitIDLedger` — where reservations are read and written, and how a
+  shared ID file is split into member files.
 - `context-circuit-source@internal/workspace/bands.go` `Store.SuggestBands` —
   which bands are offered.
 - `context-circuit-source@internal/workspace/workspace.go` `Members` — the
   roster validation the bands are derived from, and `Store.Setup`, which decides
   whether a change may be made and names what is outstanding.
 - `context-circuit-source@internal/workspace/deletion.go` `DeleteRecords` —
-  selection by author, the refusals, and releasing numbers from the ledger.
+  selection by author, the refusals, and releasing numbers from the ID files.

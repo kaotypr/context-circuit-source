@@ -101,8 +101,17 @@ The CLI embeds a blank workspace used by initialization and by export. It is a
 convenience, not a second source of truth: an exact source-to-output manifest is
 the authority, the embedding reads only what that manifest names, and the
 release check verifies the embedded inventory against it so the seed cannot
-drift from the shipped template by accident. An initialized workspace is never
-automatically rewritten.
+drift from the shipped template by accident.
+
+An initialized workspace is never automatically rewritten, with one exception: a
+schema 2 workspace's shared ID file is split into one file per member, and the
+schema moved to 3, by the first changing command a CLI from 2.4.0 on runs there.
+Older CLIs refuse schema 3, so that split is a cut-over every member upgrades
+through.
+
+A template delta that deletes the shared ID file or changes the schema version
+is therefore read and not applied. The CLI migrates both, and applying the
+deletion by hand would drop reservations no record file holds.
 
 Owner:
 
