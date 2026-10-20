@@ -73,9 +73,15 @@ shared record carries it, and nothing shared is rewritten. A repository the
 record gives no URL for has to be obtained by hand and bound with `repo
 connect`.
 
-`members.yaml` is the only shared file joining changes. Committing and pushing
-it is the user's decision, as every commit is. Stop when `check` is clean and
-say what changed.
+On a workspace already at schema 3, `members.yaml` is the only shared file
+joining changes. On one still at schema 2 the joiner's first changing command,
+such as `workspace connect`, also splits the ID file: it writes
+`.context-circuit/ids/`, moves `workspace.yaml` to schema 3, and gives every
+reservation with no author to the joiner. That split is the one-person-first
+upgrade described under the members section below, so before it, confirm nobody
+else on the team has upgraded and pull first. Committing and pushing is the
+user's decision, as every commit is. Stop when `check` is clean and say what
+changed.
 
 ## Connect repositories
 
@@ -184,6 +190,18 @@ then reports `band_required` and a `band_suggestions` entry for each of them,
 and every change is refused until each has one. Offer each member their
 suggested band, record what the person confirms with `member band`, and return
 to their request.
+
+A workspace an earlier CLI wrote is at schema 2, with one shared
+`.context-circuit/ids.yaml`, and the first changing command a 2.4.0 CLI runs
+there splits it into a file for every author. Only one person on a team
+upgrades first. Before that first change, tell the person so: they make it,
+then commit and push it, and everyone else pulls before changing anything. A
+teammate who upgraded at the same time gets a Git conflict in
+`.context-circuit/ids/*.yaml`. That is theirs to resolve by hand, not yours to
+pick: suggest keeping the union of both sides' entries in each member file, then
+run `check`, which reports any number reserved twice. A member whose ID is a
+Windows device name, such as `con`, stops the split; `status` names them, and
+the person renames them by hand.
 
 Two clones may band the same members at the same time. When their choices
 clash — `members.yaml` left with Git conflict markers, two members on one band,

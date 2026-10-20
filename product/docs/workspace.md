@@ -106,8 +106,9 @@ such as `[maintainer, docs]`, shown wherever the roster is shown. Roles are
 informational and decide nothing: approval, allocation, deletion, and dispatch
 behave the same with or without them, and the roster is still not access
 control. `member roles` sets or clears them, `member add --role` and
-`init --member-role` record them with the member, and nothing validates their
-text.
+`init --member-role` record them with the member. Each role is one nonempty line
+of text, like a member's name, with no list of allowed values; a role given
+twice is kept once.
 
 Roles are written only at schema 3. A CLI too old to know the field reads the
 roster strictly, so roles wait until the workspace is at a schema that CLI has
@@ -305,9 +306,10 @@ members:
 
 Each member's reservations live in their own file,
 `.context-circuit/ids/MEMBER.yaml`, holding an `intents` list and a `plans`
-list. Creating a record appends to its author's file and to no other, so two
-members who create records on separate clones change different files, and
-merging the workspace never conflicts on reserved IDs. Allocation treats a
+list. Creating a record appends to its author's file and to no other, so once
+every clone has the per-member layout, two members who create records on
+separate clones change different files. The one-time split below is the
+exception: it writes every author's file at once. Allocation treats a
 number as taken when any member's file reserves it or any record file holds it,
 archived ones included.
 
@@ -324,8 +326,26 @@ reservation goes to the file of the member its record names in `created_by`,
 and one with no author, or whose record file is gone, goes to the member
 selected on this machine. The shared file is removed and `workspace.yaml` moves
 to `version: 3`. CLIs before 2.4.0 refuse a schema 3 workspace with "requires a
-newer CLI", so every member needs 2.4.0 from then on. Reading commands, and a
-`record delete` preview, never split.
+newer CLI", so every member needs 2.4.0 from then on. Reading commands, a
+`record delete` preview, and a command that refuses its own arguments never
+split.
+
+Because the split writes a file for every author, only one person on a team
+upgrades first. That person makes the first changing command, which splits the
+IDs and moves the workspace to schema 3, then commits and pushes it. Everyone
+else pulls that commit before making any change of their own. Teammates who
+upgrade at the same time and each make a change before pulling will each have
+written the same member files with different content, and Git reports a conflict
+in `.context-circuit/ids/*.yaml`. That conflict is theirs to resolve by hand:
+keep the union of both sides' entries in each member file, then run `check`,
+which reports any number reserved twice.
+
+A member ID that is a Windows device name, which a 2.3.0 roster could hold,
+stops the split: it names the member, or the author and their records, and
+changes nothing. `status` and `check` report such a member beforehand. No command
+renames a member, so rename it by hand in `members.yaml`, in the `created_by` of
+every record they authored, and in `member.local.yaml` on each machine that
+selected it.
 
 If the shared file comes back, typically merged from a teammate's clone that had
 not pulled the split, the next changing command splits it again: numbers a member
@@ -334,10 +354,10 @@ file is removed again. If Git reports a conflict in it, resolve it first,
 keeping every entry. If Git reports the shared file renamed to two different
 member files, keep both member files and remove the shared file.
 
-Two clones may each split before pulling the other, giving the same authorless
-numbers to two different members. Nothing is handed out twice, because
-allocation reads every file. `check` reports each number reserved in more than
-one file, and a person removes the extra entry by hand.
+Two clones that each split before pulling the other also give the same
+authorless numbers to two different members. Nothing is handed out twice,
+because allocation reads every file. `check` reports each number reserved in
+more than one file, and a person removes the extra entry by hand.
 
 Bands are the only offline collision prevention here, and they only cover members
 who hold distinct ones against a current roster. Before allocating from separate

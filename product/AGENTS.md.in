@@ -47,6 +47,14 @@ A delta that deletes `.context-circuit/ids.yaml` or changes `version` in
 the CLI migrates them: applying the deletion would drop reservations no record
 file holds.
 
+That migration is the first changing command run in a schema 2 workspace, and it
+writes an ID file for every author at once. Only one person on a team upgrades
+first: they make that change, commit and push it, and everyone else pulls before
+changing anything. Before making that first change, tell the person this. A Git
+conflict in `.context-circuit/ids/*.yaml` from teammates upgrading at the same
+time is theirs to resolve by hand: keep the union of both sides' entries in each
+member file, then run `check`, which reports any number reserved twice.
+
 Everything else is ordinary which-side judgment. `.context-circuit/VERSION` and
 `.context-circuit/CLI_VERSION` take the template's value, because they record
 what this workspace received.

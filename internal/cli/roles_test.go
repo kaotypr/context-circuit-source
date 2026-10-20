@@ -45,13 +45,15 @@ func TestAMemberRecordsTheRolesTheyContribute(t *testing.T) {
 		}
 	}
 
-	// A role is free text: nothing is validated, an empty one included.
-	f.ok("member", "add", "--id", "alex", "--name", "Alex", "--band", "2", "--role", "Release & QA: weekends", "--role", "")
-	if got := orientation(t, f.ok("status")).Members.Members["alex"].Roles; !slices.Equal(got, []string{"Release & QA: weekends", ""}) {
-		t.Fatalf("expected member add to carry the roles as given: %v", got)
+	// A role is free text on one line, and one given twice is kept once.
+	f.ok("member", "add", "--id", "alex", "--name", "Alex", "--band", "2", "--role", "Release & QA: weekends", "--role", "docs", "--role", "Release & QA: weekends")
+	if got := orientation(t, f.ok("status")).Members.Members["alex"].Roles; !slices.Equal(got, []string{"Release & QA: weekends", "docs"}) {
+		t.Fatalf("expected member add to carry the roles once each, in order: %v", got)
 	}
+	f.ok("member", "roles", "--id", "alex", "--role", "Release & QA: weekends", "--role", "docs")
 	// Adding the same member again is a no-op only when nothing would change.
 	f.ok("member", "add", "--id", "alex", "--name", "Alex", "--band", "2")
+	f.ok("member", "add", "--id", "alex", "--name", "Alex", "--band", "2", "--role", "Release & QA: weekends", "--role", "docs", "--role", "docs")
 	if out := f.fail("member", "add", "--id", "alex", "--name", "Alex", "--band", "2", "--role", "docs"); !strings.Contains(out, "use member roles") {
 		t.Fatalf("re-adding with other roles should point at member roles: %s", out)
 	}
@@ -73,6 +75,12 @@ func TestRolesRefuseAnIncompleteCall(t *testing.T) {
 		{"neither value", []string{"member", "roles", "--id", "maya"}, "--clear"},
 		{"both values", []string{"member", "roles", "--id", "maya", "--role", "docs", "--clear"}, "not both"},
 		{"unknown member", []string{"member", "roles", "--id", "nobody", "--role", "docs"}, "unknown member"},
+		{"empty role", []string{"member", "roles", "--id", "maya", "--role", ""}, "single-line"},
+		{"blank role", []string{"member", "roles", "--id", "maya", "--role", "  "}, "single-line"},
+		{"multi-line role", []string{"member", "roles", "--id", "maya", "--role", "a\nb"}, "single-line"},
+		{"NUL in a role", []string{"member", "roles", "--id", "maya", "--role", "a\x00b"}, "single-line"},
+		{"member add with an empty role", []string{"member", "add", "--id", "alex", "--name", "Alex", "--band", "2", "--role", ""}, "single-line"},
+		{"init with a multi-line role", []string{"init", "--name", "X", "--purpose", "Y", "--member", "ana", "--member-name", "Ana", "--member-role", "a\rb"}, "single-line"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if out := f.fail(tc.args...); !strings.Contains(out, tc.want) {
