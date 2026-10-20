@@ -22,11 +22,13 @@ collide with one, because a repository ID is always lowercase. Matching is
 plain case-insensitive substring: a line holding `invoices` already answers a
 search for `invoice`, and the braces stop `{api}` from also matching
 `{api-gateway}`. Choose terms that separate a note from its neighbours, since a
-word carried by every entry narrows nothing.
+word carried by every entry narrows nothing. When a note changes, rewrite its
+terms against what it now says rather than adding to them, and split a note
+whose entry would need a very long list.
 
-Group entries under headings and order them within a group. This catalog stays
-small enough to read in full; searching it is the fallback once it is not. A
-note absent from here is reachable only by someone who already knows its
+Group entries under headings and order them within a group. A reader searches
+this catalog for the few entries a task needs rather than reading it whole, and
+the grouping keeps it easy to browse when they do. A note absent from here is reachable only by someone who already knows its
 filename, and an entry naming a note that is not there is a confident miss, so
 the entry and the note are written in the same edit. The `check` diagnostic
 reports either half when it is missing.
@@ -124,7 +126,7 @@ it does that for is `actors/`.*
 
 - [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen, kept unique across clones, and released by deletion, who is allocating, and which language each record is written in · id, allocation, band, reservation, ledger, member, solo, identity, identity_required, member use, delete, release, reset, offline, collision, language, approval gate · reviewed 2026-09-27
 - [Grounding an intent and its open questions](domains/intent-grounding.md) {context-circuit-source} — what an intent is written against and how unsettled decisions reach the person · intent, grounding, open questions, numbered, answer, assumption, contradiction · reviewed 2026-09-19
-- [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors, mermaid, fence · reviewed 2026-09-18
+- [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, search terms, rewrite terms, split, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors, mermaid, fence · reviewed 2026-10-20
 - [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, isolation, execution, copy-on-write, clone, dependency, environment, predecessor start · reviewed 2026-09-16
 - [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how selected plans are sequenced, merged, and released · order, selection, waves, chain, chain end, deliver, dependency, integration merge, concurrency, stop · reviewed 2026-09-23
 - [Plan artifacts and their reading map](domains/plan-artifacts.md) {context-circuit-source} — how standalone and linked folder plans organize detail for each repository · plan, standalone, folder, required_files, supporting files, dispatch, selection, legacy · reviewed 2026-09-23
