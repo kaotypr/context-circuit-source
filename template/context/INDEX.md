@@ -22,11 +22,13 @@ collide with one, because a repository ID is always lowercase. Matching is
 plain case-insensitive substring: a line holding `invoices` already answers a
 search for `invoice`, and the braces stop `{api}` from also matching
 `{api-gateway}`. Choose terms that separate a note from its neighbours, since a
-word carried by every entry narrows nothing.
+word carried by every entry narrows nothing. When a note changes, rewrite its
+terms against what it now says rather than adding to them, and split a note
+whose entry would need a very long list.
 
-Group entries under headings and order them within a group. This catalog stays
-small enough to read in full; searching it is the fallback once it is not. A
-note absent from here is reachable only by someone who already knows its
+Group entries under headings and order them within a group. A reader searches
+this catalog for the few entries a task needs rather than reading it whole, and
+the grouping keeps it easy to browse when they do. A note absent from here is reachable only by someone who already knows its
 filename, and an entry naming a note that is not there is a confident miss, so
 the entry and the note are written in the same edit. The `check` diagnostic
 reports either half when it is missing.
