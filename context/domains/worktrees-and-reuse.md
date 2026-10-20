@@ -67,6 +67,12 @@ automate:
   added merely to get past a failure.
 - Removal never touches the primary checkout or a locked worktree, and keeps the
   branch. Branch deletion is separate ordinary Git.
+- After removing a worktree, removal also removes the folders under the
+  workspace's worktree directory that it left empty, up to that directory
+  itself, and reports them. It stops at the first folder holding anything,
+  removes only empty folders, and never reaches outside that directory, so a
+  worktree at a custom path elsewhere leaves its parent alone. A folder it
+  cannot remove is a warning, not a failure.
 - Marking work complete removes neither worktree nor branch, and no automatic
   cleanup or pruning follows failure or completion. Prune runs only when
   invoked.

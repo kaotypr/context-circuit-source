@@ -114,7 +114,8 @@ prunes stale plan-to-worktree associations. Preparation may reuse ignored runtim
 filesystem cloning, skipping dependencies whose package inputs differ. Git's own
 inventory is authoritative; the plan-to-worktree association is a convenience for
 resuming. Removal preserves dirty, untracked, and ignored files unless discard is
-explicitly authorized. Prune only drops the associations of worktrees Git no
+explicitly authorized, then removes the folders under .worktrees/ it left empty,
+up to .worktrees/ itself, and reports them as removed_directories. Prune only drops the associations of worktrees Git no
 longer lists, such as ones removed with git itself; it touches no worktree,
 branch, or file, and reports what it dropped as dropped. Preparation refuses a
 branch already checked out elsewhere, says where and what is safe to do next, and

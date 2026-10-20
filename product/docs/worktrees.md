@@ -94,7 +94,15 @@ does not discard work in another. There is no cross-repository transaction.
 `worktree remove` preserves dirty, untracked, and ignored files unless the caller
 explicitly uses `--discard` with authorization to dispose of them. It never removes
 the primary checkout or a locked worktree. A successful removal keeps the branch;
-branch deletion is a separate ordinary Git action. Marking a plan done removes
+branch deletion is a separate ordinary Git action. It does remove the folders
+under the workspace's `.worktrees/` that the removal left empty, such as
+`.worktrees/pNNNN/` once a plan's last worktree is gone, walking up to and
+including `.worktrees/` and stopping at the first folder that holds anything. It
+removes only empty folders, never anything outside `.worktrees/`, so a worktree
+at a custom path elsewhere leaves its parent alone. The result's
+`removed_directories` lists each folder removed; one that could not be removed is
+listed in `warnings` and does not fail the command, because the worktree is
+already gone. Marking a plan done removes
 neither worktrees nor branches. Base drift does not trigger automatic rebasing,
 review, or repair loops.
 
