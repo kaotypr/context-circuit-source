@@ -590,7 +590,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			if e != nil {
 				return nil, e
 			}
-			return map[string]any{"operation": command, "workspace": s.Root, "ok": true, "repository": get("repo"), "removed": dropped}, nil
+			return map[string]any{"operation": command, "workspace": s.Root, "ok": true, "repository": get("repo"), "dropped": dropped}, nil
 		}
 		return map[string]any{"operation": command, "workspace": s.Root, "ok": err == nil}, err
 	}

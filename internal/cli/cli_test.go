@@ -743,13 +743,25 @@ func TestWorktreePrepareResumeMoveRepairRemove(t *testing.T) {
 func pruned(t *testing.T, out string) []string {
 	t.Helper()
 	var report struct {
-		Removed []workspace.Association `json:"removed"`
+		Dropped []workspace.Association `json:"dropped"`
 	}
 	if err := json.Unmarshal([]byte(out), &report); err != nil {
 		t.Fatalf("prune did not report JSON: %v: %s", err, out)
 	}
+	// Prune drops associations and never removes a worktree, so the result must
+	// not carry a field that reads as files deleted.
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(out), &fields); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := fields["removed"]; ok {
+		t.Fatalf("prune still reports removed: %s", out)
+	}
+	if _, ok := fields["dropped"]; !ok {
+		t.Fatalf("prune reports no dropped field: %s", out)
+	}
 	paths := []string{}
-	for _, assoc := range report.Removed {
+	for _, assoc := range report.Dropped {
 		paths = append(paths, assoc.Path)
 	}
 	return paths
@@ -800,6 +812,113 @@ func TestWorktreePruneDropsOnlyTheAssociationsOfGoneWorktrees(t *testing.T) {
 		t.Fatalf("pruned twice: %v", again)
 	}
 	f.fail("worktree", "prune", "--repo", "missing")
+}
+
+// A plan branch already checked out elsewhere is refused with what that place
+// is and what is safe to do, and preparation changes nothing to get past it.
+// Paths are compared as `worktree list` and `prepare` report them decoded,
+// never as a raw temporary path, which macOS resolves through /private and
+// Windows escapes inside JSON.
+func TestPreparingABranchCheckedOutElsewhereExplainsIt(t *testing.T) {
+	listed := func(f fixture, path string) workspace.Worktree {
+		t.Helper()
+		var list []workspace.Worktree
+		if err := json.Unmarshal([]byte(f.ok("worktree", "list", "--repo", "api")), &list); err != nil {
+			t.Fatal(err)
+		}
+		for _, tree := range list {
+			if path == "" && tree.Main || path != "" && tree.Path == path {
+				return tree
+			}
+		}
+		t.Fatalf("worktree list has no entry for %q: %+v", path, list)
+		return workspace.Worktree{}
+	}
+	untouched := func(t *testing.T, before workspace.Worktree, after workspace.Worktree, destination string) {
+		t.Helper()
+		if after.Head != before.Head || after.Branch != before.Branch {
+			t.Fatalf("the other checkout changed: before %+v, after %+v", before, after)
+		}
+		if _, err := os.Stat(destination); !os.IsNotExist(err) {
+			t.Fatalf("a refused preparation created %s", destination)
+		}
+	}
+
+	t.Run("a worktree prepared for the plan", func(t *testing.T) {
+		f := setup(t)
+		f.repository("api")
+		p := f.plan(f.intent("billing").ID, "api", "api")
+		w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+		before := listed(f, w.Path)
+		destination := filepath.Join(f.home, "elsewhere")
+		out := f.fail("worktree", "prepare", "--repo", "api", "--plan", p.ID, "--path", destination)
+		for _, want := range []string{
+			w.Branch, w.Path, "prepared for " + p.ID,
+			"worktree prepare --repo api --plan " + p.ID + ` --path "` + w.Path + `"`,
+			"worktree remove --repo api", "Nothing was checked out, switched, or reset.",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("refusal does not say %q: %s", want, out)
+			}
+		}
+		untouched(t, before, listed(f, w.Path), destination)
+	})
+
+	t.Run("the bound checkout", func(t *testing.T) {
+		f := setup(t)
+		api := f.repository("api")
+		p := f.plan(f.intent("billing").ID, "api", "api")
+		git(t, api, "switch", "-c", "cc/"+p.ID+"/api")
+		before := listed(f, "")
+		destination := filepath.Join(f.root, ".worktrees", p.ID, "api")
+		out := f.fail("worktree", "prepare", "--repo", "api", "--plan", p.ID)
+		for _, want := range []string{
+			"cc/" + p.ID + "/api", before.Path, "bound checkout", "Switch that checkout to another branch",
+			"Nothing was checked out, switched, or reset.",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("refusal does not say %q: %s", want, out)
+			}
+		}
+		// The primary checkout is never offered for removal.
+		if strings.Contains(out, "worktree remove") {
+			t.Errorf("refusal suggests removing the bound checkout: %s", out)
+		}
+		untouched(t, before, listed(f, ""), destination)
+		if branch := git(t, api, "branch", "--show-current"); branch != "cc/"+p.ID+"/api" {
+			t.Fatalf("the bound checkout was switched to %s", branch)
+		}
+	})
+
+	t.Run("a worktree the workspace does not know", func(t *testing.T) {
+		f := setup(t)
+		api := f.repository("api")
+		p := f.plan(f.intent("billing").ID, "api", "api")
+		git(t, api, "worktree", "add", "-b", "cc/"+p.ID+"/api", filepath.Join(f.home, "by hand"))
+		var path string
+		var list []workspace.Worktree
+		if err := json.Unmarshal([]byte(f.ok("worktree", "list", "--repo", "api")), &list); err != nil {
+			t.Fatal(err)
+		}
+		for _, tree := range list {
+			if !tree.Main {
+				path = tree.Path
+			}
+		}
+		before := listed(f, path)
+		destination := filepath.Join(f.root, ".worktrees", p.ID, "api")
+		out := f.fail("worktree", "prepare", "--repo", "api", "--plan", p.ID)
+		for _, want := range []string{
+			"cc/" + p.ID + "/api", path, "not a worktree this workspace knows for this plan",
+			"Resume the work there", "switch that checkout to another branch", "remove that worktree",
+			"unless discard is explicitly authorized", "Nothing was checked out, switched, or reset.",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("refusal does not say %q: %s", want, out)
+			}
+		}
+		untouched(t, before, listed(f, path), destination)
+	})
 }
 
 func TestWorktreeExistingBranchAndIgnoredFiles(t *testing.T) {

@@ -165,6 +165,13 @@ context-circuit-cli worktree prune --repo api
 context-circuit-cli check
 ```
 
+`worktree prune` drops the plan-to-worktree associations of one repository whose
+path Git no longer lists, such as a worktree removed with `git worktree remove` or
+by hand. It never removes a worktree, branch, or file. Its `dropped` list names
+each association it dropped, with `repository`, `plan`, `path`, `branch`, and
+`start_commit`. `worktree prepare` refuses a plan branch already checked out
+elsewhere, and says where and what is safe to do next.
+
 `check` reports findings as an `issue` and the `resolve` that discharges it:
 
 ```yaml
