@@ -692,7 +692,18 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "worktree move":
 			err = s.MoveWorktree(ctx, get("repo"), get("path"), get("to"))
 		case "worktree remove":
-			err = s.RemoveWorktree(ctx, get("repo"), get("path"), discard)
+			// The empty .worktrees/ folders the removal left are removed with it and
+			// listed, the way prune lists what it dropped. One that could not be
+			// removed is a warning, not a failure: the worktree is already gone.
+			removed, warnings, e := s.RemoveWorktree(ctx, get("repo"), get("path"), discard)
+			if e != nil {
+				return nil, e
+			}
+			result := map[string]any{"operation": command, "workspace": s.Root, "ok": true, "removed_directories": removed}
+			if len(warnings) > 0 {
+				result["warnings"] = warnings
+			}
+			return result, nil
 		case "worktree repair":
 			err = s.RepairWorktree(ctx, get("repo"), get("path"))
 		case "worktree prune":
