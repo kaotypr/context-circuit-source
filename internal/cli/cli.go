@@ -26,7 +26,7 @@ status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
 member add            --id ID --name NAME --band N [--language NAME] [--tone TEXT]
                       [--role ROLE ...]
-member band          --id ID --band N (allocation block, 0-9999; 0 is a band)
+member band           --id ID --band N (allocation block, 0-9999; 0 is a band)
 member language       --id ID --language NAME (the language this member's
                       intents and plans are written in; knowledge stays English)
 member tone           --id ID --tone TEXT | --clear (the register that language
@@ -34,7 +34,7 @@ member tone           --id ID --tone TEXT | --clear (the register that language
                       in English')
 member roles          --id ID --role ROLE ... | --clear (what this member
                       contributes, such as maintainer; informational, decides nothing)
-member use           --id ID
+member use            --id ID
 member list
 repo connect          --id ID --path PATH --base BRANCH [--url URL]
                       [--default-branch BRANCH] (--base is this machine's)
@@ -472,6 +472,27 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				return nil, fmt.Errorf("setup is incomplete, so nothing was changed: %w", err)
 			}
 		}
+		// A call its own command would refuse is refused before the split, so a
+		// mistyped command never moves a schema 2 workspace on its way to failing.
+		switch command {
+		case "member add":
+			// Nothing is written without a band the person chose, but the
+			// refusal offers one so choosing costs nothing.
+			if !provided(f, "band") {
+				suggestions, e := s.SuggestBands()
+				if e != nil {
+					return nil, fmt.Errorf("pass --band N: %w", e)
+				}
+				return nil, fmt.Errorf("pass --band N; the next free band is %d", suggestions.Next)
+			}
+		case "member roles":
+			if err := workspace.RolesCall(roles, clearRoles); err != nil {
+				return nil, err
+			}
+		}
+		if _, err := workspace.MemberRoles(roles); err != nil {
+			return nil, err
+		}
 		if splits {
 			if state, err := s.Setup(); err == nil {
 				pending, err := s.IDSplitPending()
@@ -520,15 +541,6 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member list":
 			return s.Members()
 		case "member add":
-			// Nothing is written without a band the person chose, but the
-			// refusal offers one so choosing costs nothing.
-			if !provided(f, "band") {
-				suggestions, e := s.SuggestBands()
-				if e != nil {
-					return nil, fmt.Errorf("pass --band N: %w", e)
-				}
-				return nil, fmt.Errorf("pass --band N; the next free band is %d", suggestions.Next)
-			}
 			err = s.AddMember(get("id"), get("name"), band, get("language"), get("tone"), roles)
 		case "member band":
 			err = s.SetMemberBand(get("id"), band)

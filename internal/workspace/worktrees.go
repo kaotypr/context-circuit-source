@@ -282,7 +282,9 @@ func checkedOutElsewhere(repoID, plan, branch string, tree Worktree) error {
 		text.WriteString("Resume the work there, switch that checkout to another branch, or remove that worktree (dirty work is kept unless discard is explicitly authorized), then prepare again.")
 	}
 	if tree.Prunable {
-		text.WriteString(" Git marks that worktree prunable: run `worktree repair` if it moved, or `git worktree prune` if it is gone.")
+		quoted := `"` + tree.Path + `"`
+		fmt.Fprintf(&text, " Git marks that worktree prunable: run `worktree repair --repo %s --path %s` if it moved; if it is gone, run `git worktree prune`, then `worktree prune --repo %s`.",
+			repoID, quoted, repoID)
 	}
 	text.WriteString(" Nothing was checked out, switched, or reset.")
 	return errors.New(text.String())

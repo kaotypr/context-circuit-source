@@ -132,6 +132,20 @@ func TestANestedWorkspaceReportsItsOwnPaths(t *testing.T) {
 	expectFiles(t, files, map[string]string{i.Path: "new", ".context-circuit/ids/maya.yaml": "new"})
 }
 
+// A workspace its parent repository ignores has nothing Git tracks or offers to
+// track, so the check lists nothing and has nothing to call unchecked either.
+// This is the documented behaviour, pinned rather than reported as a fault.
+func TestAWorkspaceItsParentIgnoresListsNothing(t *testing.T) {
+	f := setup(t)
+	git(t, f.home, "init", "-q", "-b", "main")
+	write(t, filepath.Join(f.home, ".gitignore"), filepath.Base(f.root)+"/\n")
+	i := f.intent("billing")
+	files, result := f.gate("record", "approve", "--id", i.ID, "--text", "Go ahead.")
+	if len(files) != 0 || result.CommitRecommended != nil || result.CommitUnchecked != "" {
+		t.Fatalf("an ignored workspace reported uncommitted records: %+v", result)
+	}
+}
+
 func TestTheGatesSucceedWhenGitCannotSay(t *testing.T) {
 	f := setup(t)
 	f.repository("api")

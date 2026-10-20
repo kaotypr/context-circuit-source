@@ -105,8 +105,8 @@ type CLIRegistry struct {
 // Roles says what a member contributes, such as maintainer or docs, so people
 // reading the roster can see who works on what. It is informational and decides
 // nothing: approval, allocation, deletion, and dispatch never read it, and it is
-// not the subagent role a dispatch names. A role is free text with no list of
-// allowed values. Roles are written only at schema 3, so a CLI too old to know
+// not the subagent role a dispatch names. A role is one line of free text with no list
+// of allowed values. Roles are written only at schema 3, so a CLI too old to know
 // the field has already refused the workspace by its schema.
 type Member struct {
 	Name     string   `yaml:"name" json:"name"`
@@ -156,6 +156,34 @@ func Name(value string) error {
 func Text(value string) error {
 	if strings.TrimSpace(value) == "" || strings.ContainsAny(value, "\r\n\x00") {
 		return errors.New("provide nonempty single-line text")
+	}
+	return nil
+}
+
+// MemberRoles checks each role like any other free-text roster field and drops
+// exact repeats, keeping the order given. A role is shown wherever the roster
+// is, so a blank or multi-line one reads as a broken roster.
+func MemberRoles(roles []string) ([]string, error) {
+	var out []string
+	for _, role := range roles {
+		if err := Text(role); err != nil {
+			return nil, fmt.Errorf("role %q: %w", role, err)
+		}
+		if !slices.Contains(out, role) {
+			out = append(out, role)
+		}
+	}
+	return out, nil
+}
+
+// RolesCall refuses a `member roles` call that names neither roles nor --clear,
+// or both. It is separate so the CLI can refuse before any change is made.
+func RolesCall(roles []string, clear bool) error {
+	if len(roles) == 0 && !clear {
+		return errors.New("name a role with --role, repeated for several, or pass --clear")
+	}
+	if len(roles) > 0 && clear {
+		return errors.New("pass --role or --clear, not both")
 	}
 	return nil
 }
@@ -476,6 +504,11 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if err := Band(band); err != nil {
 		return err
 	}
+	if cleaned, err := MemberRoles(roles); err != nil {
+		return err
+	} else {
+		roles = cleaned
+	}
 	for _, rel := range []string{"member.local.yaml", "repositories.local.yaml"} {
 		p, err := s.Path(rel)
 		if err != nil {
@@ -595,6 +628,10 @@ func (s *Store) AddMember(id, name string, band int, language, tone string, role
 	if err := Band(band); err != nil {
 		return err
 	}
+	roles, err := MemberRoles(roles)
+	if err != nil {
+		return err
+	}
 	if err := Language(language); err != nil {
 		return err
 	}
@@ -711,13 +748,15 @@ func (s *Store) SetMemberTone(id, tone string, clear bool) error {
 
 // SetMemberRoles records what a member contributes, replacing any roles already
 // recorded, or clears them. Roles are informational: nothing reads them to
-// decide who may do what, so any text is accepted as it was given.
+// decide who may do what, so any single line of text is accepted, and a role
+// given twice is kept once.
 func (s *Store) SetMemberRoles(id string, roles []string, clear bool) error {
-	if len(roles) == 0 && !clear {
-		return errors.New("name a role with --role, repeated for several, or pass --clear")
+	if err := RolesCall(roles, clear); err != nil {
+		return err
 	}
-	if len(roles) > 0 && clear {
-		return errors.New("pass --role or --clear, not both")
+	roles, err := MemberRoles(roles)
+	if err != nil {
+		return err
 	}
 	members, err := s.Members()
 	if err != nil {

@@ -2,10 +2,13 @@ package cli_test
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/kaotypr/context-circuit-source/internal/workspace"
 )
 
 // schema2 rewrites a fixture into what a 2.3.0 CLI left behind: schema 2, and
@@ -221,5 +224,122 @@ func TestTwoClonesSplittingApartLeaveADuplicateForCheck(t *testing.T) {
 	}
 	if next := alex.intent("next"); next.ID != "i201" {
 		t.Fatalf("allocation after the merge handed out %s", next.ID)
+	}
+}
+
+// A call its own command refuses must not split on its way to the refusal.
+func TestARefusedCallLeavesASchema2WorkspaceUnsplit(t *testing.T) {
+	f := setup(t)
+	schema2(t, f, []string{"i050"}, nil)
+	legacy := filepath.Join(f.root, ".context-circuit", "ids.yaml")
+	config := filepath.Join(f.root, "workspace.yaml")
+	for _, tc := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"member", "add", "--id", "alex", "--name", "Alex"}, "the next free band is"},
+		{[]string{"member", "roles", "--id", "maya"}, "--clear"},
+		{[]string{"member", "roles", "--id", "maya", "--role", "docs", "--clear"}, "not both"},
+		{[]string{"member", "roles", "--id", "maya", "--role", ""}, "single-line"},
+	} {
+		if out := f.fail(tc.args...); !strings.Contains(out, tc.want) {
+			t.Fatalf("%v: expected a refusal naming %q: %s", tc.args, tc.want, out)
+		}
+		if !exists(legacy) || !strings.Contains(read(t, config), "version: 2") || exists(filepath.Join(f.root, ".context-circuit", "ids")) {
+			t.Fatalf("%v was refused but split the ID file", tc.args)
+		}
+	}
+}
+
+// A 2.3.0 roster could hold a member whose ID is a Windows device name. Status
+// and check say so before anything fails, and the split names who is at fault
+// instead of only refusing.
+func TestADeviceNameMemberIsNamedBeforeAndAtTheSplit(t *testing.T) {
+	f := setup(t)
+	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    band: 0\n  con:\n    name: Con\n    band: 1\n")
+	write(t, filepath.Join(f.root, "intent", "i100-theirs.md"), "---\nid: i100\ncreated_by: con\ncreated_at: 2026-09-15T10:53:00Z\n---\n\n# Theirs\n")
+	write(t, filepath.Join(f.root, "intent", "i002-stray.md"), "---\nid: i002\ncreated_by: aux\ncreated_at: 2026-09-15T10:53:00Z\n---\n\n# Stray\n")
+	schema2(t, f, []string{"i002", "i100"}, nil)
+
+	for _, want := range []string{"member con is a Windows device name", "i002: created_by aux is a Windows device name"} {
+		var named bool
+		for _, item := range checkFindings(t, f.root) {
+			if strings.Contains(item.Issue, want) && strings.HasPrefix(item.Resolve, "needs a person:") {
+				named = true
+			}
+		}
+		if !named {
+			t.Errorf("check did not report %q for a person", want)
+		}
+	}
+	if issues := orientation(t, f.ok("status")).Issues; !slices.ContainsFunc(issues, func(item workspace.Finding) bool {
+		return strings.Contains(item.Issue, "member con is a Windows device name") && strings.Contains(item.Resolve, "members.yaml")
+	}) {
+		t.Errorf("status did not report the device-name member: %v", issues)
+	}
+
+	out := f.fail("record", "create", "--kind", "intent", "--slug", "next", "--title", "Next")
+	for _, want := range []string{`i002 name "aux" in created_by`, "Windows device name", "members.yaml", "nothing was changed"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("the split refusal does not name %q: %s", want, out)
+		}
+	}
+	if !exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) || exists(filepath.Join(f.root, ".context-circuit", "ids")) {
+		t.Fatal("a refused split wrote member files or removed the shared file")
+	}
+
+	// The author on the roster is named the same way once the stray one is fixed.
+	write(t, filepath.Join(f.root, "intent", "i002-stray.md"), "---\nid: i002\ncreated_by: maya\ncreated_at: 2026-09-15T10:53:00Z\n---\n\n# Stray\n")
+	if out := f.fail("record", "create", "--kind", "intent", "--slug", "next", "--title", "Next"); !strings.Contains(out, `i100 name "con" in created_by`) {
+		t.Fatalf("the split refusal does not name the roster author: %s", out)
+	}
+
+	// The member selected on this machine is named as that.
+	upgraded(t, f, "members:\n  con:\n    name: Con\n    band: 1\n")
+	f.ok("member", "use", "--id", "con")
+	if out := f.fail("record", "create", "--kind", "intent", "--slug", "next", "--title", "Next"); !strings.Contains(out, `the member selected on this machine, "con"`) {
+		t.Fatalf("the split refusal does not name the selected member: %s", out)
+	}
+}
+
+// The split writes every author's file, not only the file of the member making
+// it. Two clones that each make their first change before pulling the other's
+// split therefore both add the same member files with different content, and
+// Git stops the merge with an add/add conflict. That is expected, and is why
+// one person upgrades first and pushes; this pins it and the documented
+// resolution: keep the union of both sides, and check names what both took.
+func TestTwoClonesSplittingApartConflictOnEveryAuthorsFile(t *testing.T) {
+	f := setup(t)
+	twoMembers(f)
+	mine := f.intent("mine")
+	write(t, filepath.Join(f.root, "intent", "i200-theirs.md"), "---\nid: i200\ncreated_by: alex\ncreated_at: 2026-09-15T10:53:00Z\n---\n\n# Theirs\n")
+	schema2(t, f, []string{mine.ID, "i200", "i050"}, nil)
+	origin := published(t, f)
+	maya, alex := member(t, f, origin, "maya"), member(t, f, origin, "alex")
+	for _, g := range []fixture{maya, alex} {
+		g.intent("work")
+		commitAll(t, g, "docs(records): split and add work")
+	}
+
+	for _, file := range []string{".context-circuit/ids/maya.yaml", ".context-circuit/ids/alex.yaml"} {
+		if read(t, filepath.Join(maya.root, file)) == read(t, filepath.Join(alex.root, file)) {
+			t.Fatalf("both clones wrote %s alike, so nothing here conflicts", file)
+		}
+	}
+
+	git(t, maya.root, "push", "origin", "main")
+	merge := exec.Command("git", "-C", alex.root, "-c", "commit.gpgsign=false", "-c", "pull.rebase=false", "pull", "--no-edit", "origin", "main")
+	data, err := merge.CombinedOutput()
+	if err == nil || !strings.Contains(string(data), "CONFLICT (add/add)") {
+		t.Fatalf("expected an add/add conflict in the member files: %v %s", err, data)
+	}
+
+	// The documented resolution: each member file keeps both sides' entries.
+	write(t, filepath.Join(alex.root, ".context-circuit", "ids", "maya.yaml"), read(t, filepath.Join(maya.root, ".context-circuit", "ids", "maya.yaml")))
+	write(t, filepath.Join(alex.root, ".context-circuit", "ids", "alex.yaml"), "intents:\n  - i200\n  - i050\n  - i201\nplans: []\n")
+	commitAll(t, alex, "docs(records): merge the ID split")
+	found := idFindings(t, alex.root)
+	if len(found) != 1 || !strings.Contains(found[0].Issue, "i050 is reserved in more than one ID file") {
+		t.Fatalf("check did not report exactly the number both splits took: %v", found)
 	}
 }

@@ -129,6 +129,7 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 		if cfg.Version < CurrentSchema {
 			result.Issues = append(result.Issues, schema2Roles(members)...)
 		}
+		result.Issues = append(result.Issues, deviceNameMembers(members)...)
 	}
 	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
 		result.Issues = append(result.Issues, found("workspace repository: "+err.Error(),
@@ -222,6 +223,20 @@ func schema2Roles(members Members) []Finding {
 	return out
 }
 
+// deviceNameMembers reports roster IDs that are Windows device names. A 2.3.0
+// roster could hold one, and no clone on Windows can check out the ID file it
+// would name, so the split refuses it and every change waits on a rename.
+func deviceNameMembers(members Members) []Finding {
+	var out []Finding
+	for _, id := range members.IDs() {
+		if windowsDevice.MatchString(id) {
+			out = append(out, found("member "+id+" is a Windows device name, which cannot name an ID file",
+				needsAPerson+renameMemberByHand))
+		}
+	}
+	return out
+}
+
 // Check is an explicitly invoked diagnostic, not an execution admission gate.
 func recordKind(prefix string) string {
 	if prefix == "i" {
@@ -300,7 +315,13 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		// workspace had no roster, and stays valid.
 		if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" && rosterErr == nil {
 			issues = append(issues, found(record.ID+": unknown created_by member",
-				"add them with `member add --id ID --name NAME`, or correct the record's created_by to a member the roster carries"))
+				"add them with `member add --id ID --name NAME --band N`, or correct the record's created_by to a member the roster carries"))
+		}
+		// A roster member with such an ID is reported by status; an author the
+		// roster does not carry still stops the split.
+		if _, ok := state.Members.Members[record.CreatedBy]; !ok && windowsDevice.MatchString(record.CreatedBy) {
+			issues = append(issues, found(record.ID+": created_by "+record.CreatedBy+" is a Windows device name, which cannot name an ID file",
+				needsAPerson+"correct the record's created_by to a member the roster carries whose ID is not a Windows device name"))
 		}
 		// An instant that no longer parses is reported rather than read as an event
 		// that never happened. Each gate belongs to one kind of record: nothing

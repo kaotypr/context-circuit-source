@@ -19,8 +19,9 @@ import (
 const LegacyIDFile = ".context-circuit/ids.yaml"
 
 // IDFilesDir holds one reservation file per member. A member's record creation
-// writes only to that member's file, so two members' clones change different
-// files and merge without conflict.
+// writes only to that member's file, so once the split is shared, two members'
+// clones change different files. The split itself writes every author's file,
+// which is why one person makes it and pushes before the others change anything.
 const IDFilesDir = ".context-circuit/ids"
 
 // CurrentSchema is the workspace schema this CLI writes. Schema 3 is the
@@ -51,6 +52,11 @@ func MemberID(id string) error {
 	}
 	return nil
 }
+
+// renameMemberByHand is the remedy for a member ID that cannot name an ID file.
+// No command renames a member, so it is an edit, and choosing the new ID is the
+// person's.
+const renameMemberByHand = "rename that member by hand to an ID that is not a Windows device name: its key in members.yaml, the created_by of every record they authored, and member.local.yaml on each machine that selected them; then run the command again"
 
 // IDFilePath names a member's ID file relative to the workspace root.
 func IDFilePath(member string) (string, error) {
@@ -354,8 +360,8 @@ func (s *Store) IDSplitPending() (bool, error) {
 // in a member file is skipped, never added twice. Interrupted anywhere, running
 // it again finishes the job.
 func (s *Store) SplitIDLedger(member string) (*IDSplit, error) {
-	if _, err := IDFilePath(member); err != nil {
-		return nil, err
+	if err := MemberID(member); err != nil {
+		return nil, fmt.Errorf("the member selected on this machine, %q, cannot have an ID file: %w; %s", member, err, renameMemberByHand)
 	}
 	cfg, err := s.Config()
 	if err != nil {
@@ -422,6 +428,14 @@ func (s *Store) SplitIDLedger(member string) (*IDSplit, error) {
 			names = append(names, owner)
 		}
 		sort.Strings(names)
+		// Every author is checked before anything is written, so a name that
+		// cannot be a file stops the split whole and is named with its records.
+		for _, owner := range names {
+			if err := MemberID(owner); err != nil {
+				held := append(append([]string{}, owners[owner].intents...), owners[owner].plans...)
+				return nil, fmt.Errorf("%s name %q in created_by, which cannot name an ID file: %w; %s", strings.Join(held, ", "), owner, err, renameMemberByHand)
+			}
+		}
 		for _, owner := range names {
 			if err := s.reserve(owner, owners[owner].intents, owners[owner].plans); err != nil {
 				return nil, err
