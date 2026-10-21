@@ -7,7 +7,9 @@ against a workspace pinning another version.
 
 Use `context-circuit-cli --workspace PATH --json COMMAND ...` for structured output.
 The global flags `--workspace PATH` and `--json` may precede the command or follow
-it, as in `context-circuit-cli status --workspace PATH --json`. Run
+the full command, as in `context-circuit-cli status --workspace PATH --json` or
+`context-circuit-cli member list --json`; they do not go between a group such as
+`member` and its subcommand. Run
 `context-circuit-cli help` for the full surface, and `help` with a command name for
 that command's signatures and what it decides, refuses, or leaves to the caller. A
 fully resolved command also takes `--help`, which prints that same help; a flag it
@@ -137,8 +139,10 @@ for with their author, path, and status; `blocked_by`, each record outside the
 selection that points at one of them, with its `id`, `created_by`, `path`,
 `status`, and `link` (such as `belongs to intent i100`, `depends on p1000`, or
 `links plan p1000`); `refused`, the reason; and, by `--id`, `add_ids`, the IDs to
-add. The reason is also printed on stderr, nothing is deleted or released, and
-the exit status is 1. A plan its intent lists that no record file holds
+add. A worktree on this machine prepared for a selected plan is named in
+`refused` only, so a refusal caused by such a worktree alone has no `blocked_by`.
+The reason is also printed on stderr, nothing is deleted or released, and the
+exit status is 1. A plan its intent lists that no record file holds
 any more is unlinked the same way. In every mode, `warnings` also lists what each
 bound checkout still holds for a deleted plan number — local and remote-tracking
 `cc/pNNNN/*` branches, worktrees on such a branch, and a leftover
@@ -289,7 +293,7 @@ elsewhere, and says where and what is safe to do next.
 
 A prepared worktree reports `start`, what it actually started from: `--start` as
 given, the base branch or `origin/<base>` it fell back to, or the existing branch
-`--reuse` checked out. `base_branch` stays this machine's base, the branch the
+it checked out with `--reuse` or resumed, for which `reused` is also true. `base_branch` stays this machine's base, the branch the
 work is delivered to, which a worktree started elsewhere need not share. Neither
 form of start fetches. A start derived from a base behind its fetched remote is
 reported in `sync_required`, and so is an explicit `--start` naming a local branch

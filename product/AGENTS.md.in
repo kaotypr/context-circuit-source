@@ -393,7 +393,10 @@ Show the person the whole list, any warnings about leftover branches, and say
 that the numbers become reusable, and run it with `--confirm` only once they
 agree to that list. A refusal naming a record outside the selection, or a
 worktree on this machine, is resolved by whoever owns it or by the person naming
-those records too, not by editing around it. Deletion is a
+those records too, not by editing around it. A refusal exits 1 and still
+returns the preview: show the person the `records` they asked for and each
+`blocked_by` record with its `link`, and the reason, and add the `add_ids` it
+names only once they agree. Deletion is a
 change in this checkout: committing and pushing it are separate authorizations,
 and until every clone pulls it, another clone still holds those records. On
 another machine, after pulling a deletion, run `check` before creating plans:

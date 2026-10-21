@@ -34,7 +34,7 @@ preparation for the same existing association returns its actual Git state.
 
 The result's `start` names what the worktree actually started from: the
 `--start` given, the base branch or `origin/<base>` it fell back to, or the
-existing branch it checked out. `base_branch` is this machine's base, where the
+existing branch it checked out or resumed. `base_branch` is this machine's base, where the
 work is delivered, and does not change with `--start`. A local start branch that
 is behind its fetched remote-tracking branch, or has diverged from it, is used as
 asked and named in `sync_required` with the counts and the remedies: prepare
