@@ -515,8 +515,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			// The preview writes nothing and reads either ID-file layout, so a
 			// deletion it refuses is refused before the split.
 			if confirm {
-				if _, err := s.DeleteRecords(ctx, get("member"), all, recordIDs, false); err != nil {
-					return nil, err
+				if preview, err := s.DeleteRecords(ctx, get("member"), all, recordIDs, false); err != nil {
+					return preview, err
 				}
 			}
 		}
@@ -756,7 +756,13 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		fmt.Fprint(errOut, split.Notice())
 	}
 	fmt.Fprint(errOut, splitWarning)
-	if err != nil {
+	// A refused deletion still shows its preview: the records asked for and the
+	// ones blocking them, which is what the person needs to decide what to add.
+	// It deleted nothing and stays a failure.
+	var refused *workspace.DeletionRefused
+	if errors.As(err, &refused) {
+		result = refused.Preview
+	} else if err != nil {
 		fmt.Fprintln(errOut, err)
 		return 1
 	}
@@ -783,6 +789,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	if err != nil {
 		fmt.Fprintln(errOut, err)
+		return 1
+	}
+	if refused != nil {
+		fmt.Fprintln(errOut, refused)
 		return 1
 	}
 	if checkFailed {

@@ -1,12 +1,15 @@
 package cli_test
 
 import (
+	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/kaotypr/context-circuit-source/internal/cli"
 	"github.com/kaotypr/context-circuit-source/internal/workspace"
 )
 
@@ -174,6 +177,54 @@ func TestDeletingByIDRefusesWhatItCannotFinish(t *testing.T) {
 	}
 	if listed := record(t, f.ok("record", "show", "--id", intent.ID)); len(listed.Plans) != 0 {
 		t.Fatalf("the intent still lists deleted plans: %v", listed.Plans)
+	}
+}
+
+// A refused deletion still shows the preview: the records asked for, the ones
+// blocking them and how they link, the reason, and the IDs to add. It deletes
+// nothing and exits 1, with --confirm or without, in JSON and in YAML.
+func TestARefusedDeletionStillShowsItsPreview(t *testing.T) {
+	f := team(t)
+	intent := f.intent("billing")
+	plan := f.plan(intent.ID, "billing-api", "api")
+	f.ok("record", "approve", "--id", intent.ID, "--text", "yes")
+	before := idFiles(t, f)
+
+	for _, confirm := range [][]string{nil, {"--confirm"}} {
+		code, out, errOut := call(f.root, append([]string{"record", "delete", "--id", intent.ID}, confirm...)...)
+		if code != 1 {
+			t.Fatalf("%v: a refusal must exit 1: exit=%d %s %s", confirm, code, out, errOut)
+		}
+		d := deletion(t, out)
+		if d.Deleted || len(d.Released) != 0 || d.ConfirmationRequired != "" {
+			t.Fatalf("%v: a refusal must not read as a deletion or a preview to confirm: %+v", confirm, d)
+		}
+		if r := deletedRecord(t, d, intent.ID); r.CreatedBy != "maya" || r.Status != "approved" || r.Path != intent.Path {
+			t.Fatalf("%v: the requested record is not shown: %+v", confirm, r)
+		}
+		want := workspace.BlockingRecord{ID: plan.ID, CreatedBy: "maya", Path: filepath.ToSlash(filepath.Dir(plan.Path)) + "/", Status: "open", Link: "belongs to intent " + intent.ID}
+		if !slices.Equal(d.BlockedBy, []workspace.BlockingRecord{want}) {
+			t.Fatalf("%v: the blocking record is not shown: %+v", confirm, d.BlockedBy)
+		}
+		if !slices.Equal(d.AddIDs, []string{plan.ID}) || !strings.Contains(d.Refused, "--id "+plan.ID+" to this call") {
+			t.Fatalf("%v: the refusal does not name what to add: %+v", confirm, d)
+		}
+		if !strings.Contains(errOut, "nothing was deleted") {
+			t.Fatalf("%v: the reason is not on the error stream: %s", confirm, errOut)
+		}
+	}
+
+	// A person reading YAML sees the same preview.
+	var out, errOut bytes.Buffer
+	code := cli.Run(context.Background(), []string{"--workspace", f.root, "record", "delete", "--id", intent.ID}, &out, &errOut, "2.0.0-test")
+	for _, want := range []string{"blocked_by:", "id: " + plan.ID, "link: belongs to intent " + intent.ID, "add_ids:", "refused:", "status: approved"} {
+		if code != 1 || !strings.Contains(out.String(), want) {
+			t.Fatalf("the YAML preview lacks %q: exit=%d %s %s", want, code, out.String(), errOut.String())
+		}
+	}
+
+	if idFiles(t, f) != before || !exists(filepath.Join(f.root, intent.Path)) || !exists(filepath.Join(f.root, plan.Path)) {
+		t.Fatal("a refused deletion changed something")
 	}
 }
 
