@@ -64,7 +64,9 @@ is a Windows device name is refused, because it is a file name on every clone.
 
 A workspace written before this layout is at schema 2 and keeps every
 reservation in one shared file. The first changing command run once setup is
-complete **splits** it:
+complete **splits** it, and when setup is incomplete that is the setup step that
+completes it, which splits right after it succeeds rather than leaving a silent
+split to whatever command comes next:
 
 - each number goes to the file of its record's author;
 - one with no author or no record goes to the member selected on that machine,
@@ -74,7 +76,10 @@ complete **splits** it:
 
 A shared file merged back later from a clone that had not pulled the split is
 split again, skipping numbers a member file already holds. Reading commands and
-a deletion preview never split, because neither may change anything.
+a deletion preview never split, because neither may change anything. The notice
+reporting a split names the shared files the command actually changed, the
+roster included when a band or member was written, because those are what the
+person commits and a list written ahead of time leaves one out.
 
 Two clones that each split before pulling the other give the same authorless
 numbers to two different members. That race is accepted: nothing is handed out
@@ -107,7 +112,8 @@ record outside the selection would be left naming a deleted one, or while a
 worktree on this machine was prepared for a deleted plan. A released number is
 about to mean something else, and a stale pointer to it would then be silently
 wrong. Naming records is not access control, so any member's record can be
-named.
+named. A refusal still shows the preview, with the records blocking it and how
+each links, so the person can decide what to name next from one answer.
 
 The one link edited rather than refused is a named plan's entry in its own
 intent's plan list, since nearly every plan made from an intent is listed there.

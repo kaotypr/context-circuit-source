@@ -12,7 +12,7 @@ task. The CLI performs the corresponding Git mechanics.
 | Existing work | Report branch, changes, and Git worktree inventory | Preserve unrelated work; resume an existing location or select a new one |
 | Starting point | Resolve selected ref to a commit | Choose this machine's base or a dependency branch; fetch if needed |
 | Branch and path | Validate names and collisions; create/reuse using Git | Honor explicit choices and repository conventions |
-| Result | Return path, branch, HEAD, starting commit, association | Use the returned directory for work |
+| Result | Return path, branch, HEAD, the start used and its commit, base branch, association | Use the returned directory for work |
 | Environment setup | Supply location and Git facts | Follow setup instructions; install dependencies and prepare services |
 | Recovery | List, inspect, move, or repair through Git; prune associations of worktrees Git no longer lists | Compare plan notes to real changes and decide next steps |
 | Cleanup | Remove a selected worktree only when invoked | Obtain or reuse authorization; preserve work; handle branch deletion separately |
@@ -31,6 +31,15 @@ Preparation never resets an existing branch. Use `--reuse` when explicitly
 selecting an existing branch or adopting another worktree association. Repeating
 preparation for the same existing association returns its actual Git state.
 `--start` applies to new branches; reused branches retain their existing commits.
+
+The result's `start` names what the worktree actually started from: the
+`--start` given, the base branch or `origin/<base>` it fell back to, or the
+existing branch it checked out. `base_branch` is this machine's base, where the
+work is delivered, and does not change with `--start`. A local start branch that
+is behind its fetched remote-tracking branch, or has diverged from it, is used as
+asked and named in `sync_required` with the counts and the remedies: prepare
+again with `--start origin/<branch>`, or bring the local branch up to date first.
+The remote ref is only as recent as the last `repo fetch`.
 
 A plan branch already checked out in another working copy is refused, because Git
 checks a branch out in one place at a time. The refusal names the branch, where it

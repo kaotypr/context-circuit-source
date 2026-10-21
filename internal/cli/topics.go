@@ -47,8 +47,10 @@ and the member is recorded only as created_by. Add requires --band and, without
 it, names the next free band. Until the roster lists this machine's selected
 member and every member holds a band, status reports identity_required or
 band_required with band_suggestions, and every changing command except these
-setup steps is refused. Selection is taken as given: nothing verifies who a
-person is.
+setup steps is refused. The step that completes setup also moves a workspace
+from before 2.4.0 to one ID file per member, and its notice names every file to
+commit, members.yaml included. Selection is taken as given: nothing verifies who
+a person is.
 
 Roles are free text saying what a member contributes, such as maintainer or
 docs, shown wherever the roster is. They are informational and decide nothing:
@@ -97,7 +99,9 @@ and is the only operation that releases a reserved ID. Without --confirm it
 previews what would go, with each record's author and status, and deletes
 nothing. It refuses while a record outside the selection, or a worktree on this
 machine, still points at one of them; by ID, a deleted plan is taken out of its
-own intent's plans list instead. Leftover cc/pNNNN branches and worktree
+own intent's plans list instead. A refusal still prints the preview, with the
+records blocking it as blocked_by and, by ID, the add_ids to name too, and exits
+1. Leftover cc/pNNNN branches and worktree
 directories are warned about rather than refused. IDs are released only after
 the files are gone, so a deletion that stops part-way names the --id call that
 finishes it. Order derives
@@ -122,7 +126,10 @@ branch already checked out elsewhere, says where and what is safe to do next, an
 changes nothing. Without --reuse it also refuses a worktree or branch left from an
 earlier plan that held the same number, judged by the plan's created_at, and a
 worktree from before 2.4.0 holding no commits unless it is clean and at the base
-tip; preparing again for the same plan resumes its worktree.`,
+tip; preparing again for the same plan resumes its worktree. A new worktree
+reports start, what it actually started from, beside base_branch, where its work
+is delivered; a local --start branch behind or diverged from its fetched remote
+is used as asked and named in sync_required. Nothing is fetched.`,
 
 	"template": `Exports blank workspace files to a new directory, for seeding a workspace that
 init will complete. It never writes over an existing directory.`,

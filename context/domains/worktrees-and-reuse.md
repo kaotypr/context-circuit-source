@@ -26,6 +26,14 @@ implies neither rebase nor reset. An explicit start may be another plan's branch
 or a commit, resolved before the worktree is created; it applies to new branches
 only, since a reused branch keeps its commits.
 
+The result says what the worktree started from apart from the base branch,
+because the base is where the work is delivered and an explicit start is often
+somewhere else; reporting the base as the start hid exactly the case where they
+differ. Either start is compared with its fetched remote-tracking branch when it
+is a local branch, and one behind or diverged is used as asked but named with
+the counts and how to start from the remote instead. That keeps the no-fetch
+rule: the comparison is only as fresh as the last fetch, and says so.
+
 A dependent plan therefore needs its start named, and preparation refuses rather
 than guessing: a plan recording a dependency in the same repository cannot be
 prepared without a start, and the refusal names the predecessor branch to pass,

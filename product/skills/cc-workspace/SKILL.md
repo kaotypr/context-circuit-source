@@ -75,7 +75,8 @@ connect`.
 
 On a workspace already at schema 3, `members.yaml` is the only shared file
 joining changes. On one still at schema 2 the joiner's first changing command,
-such as `workspace connect`, also splits the ID file: it writes
+which is `member use` itself when that completes setup, also splits the ID
+file: it writes
 `.context-circuit/ids/`, moves `workspace.yaml` to schema 3, and gives every
 reservation with no author to the joiner. That split is the one-person-first
 upgrade described under the members section below, so before it, confirm nobody
@@ -203,9 +204,11 @@ to their request.
 
 A workspace an earlier CLI wrote is at schema 2, with one shared
 `.context-circuit/ids.yaml`, and the first changing command a 2.4.0 CLI runs
-there splits it into a file for every author. Only one person on a team
-upgrades first. Before that first change, tell the person so: they make it,
-then commit and push it, and everyone else pulls before changing anything. A
+there splits it into a file for every author. When setup is incomplete, that is
+the `member band`, `member add`, or `member use` that completes it. Only one
+person on a team upgrades first. Before that first change, tell the person so:
+they make it, then commit and push the files its notice names, and everyone else
+pulls before changing anything. A
 teammate who upgraded at the same time gets a Git conflict in
 `.context-circuit/ids/*.yaml`. That is theirs to resolve by hand, not yours to
 pick: suggest keeping the union of both sides' entries in each member file, then

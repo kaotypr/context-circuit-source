@@ -99,9 +99,10 @@ describes that machine and nobody else.
   interruption still leaves the numbers counted as taken.
 - **The ID split is the one rewrite nobody asked for.** A schema 2 workspace's
   shared ID file is split into member files, and the schema moved to 3, by the
-  first changing command once setup is complete. It is reported on the error
-  stream so no result changes shape, and committing it stays the person's
-  decision. Interrupted anywhere, running it again finishes it.
+  first changing command once setup is complete, or by the setup step that
+  completes it. It is reported on the error stream so no result changes shape,
+  naming the shared files the command changed, and committing them stays the
+  person's decision. Interrupted anywhere, running it again finishes it.
 
 ## Dates
 
