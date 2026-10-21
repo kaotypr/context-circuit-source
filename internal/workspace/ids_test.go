@@ -170,6 +170,26 @@ func TestSplitMovesEveryReservationToItsOwner(t *testing.T) {
 	}
 }
 
+// A split that finished is reported as finished even when listing the files
+// it changed fails: the notice falls back to naming none rather than the split
+// reading as undone.
+func TestAFinishedSplitSurvivesAFailedChangeListing(t *testing.T) {
+	store := legacy(t, Ledger{Intents: []string{"i100"}, Plans: []string{}}, "i100:maya")
+	original := changedSince
+	changedSince = func(*Store, SharedSnapshot) ([]string, error) { return nil, os.ErrPermission }
+	t.Cleanup(func() { changedSince = original })
+	split, err := store.SplitIDLedger("maya")
+	if err != nil || split == nil {
+		t.Fatalf("a finished split was reported as failed: %v", err)
+	}
+	if len(split.Files) != 0 || !strings.Contains(split.Notice(), "Commit and push the changed workspace files") {
+		t.Fatalf("the notice did not fall back: %+v\n%s", split, split.Notice())
+	}
+	if pending, err := store.IDSplitPending(); err != nil || pending {
+		t.Fatalf("the split did not finish: %v %v", pending, err)
+	}
+}
+
 func fmtLedger(l Ledger) string {
 	return "{[" + strings.Join(l.Intents, " ") + "] [" + strings.Join(l.Plans, " ") + "]}"
 }

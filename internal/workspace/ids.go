@@ -343,6 +343,10 @@ func (s *Store) ChangedSince(before SharedSnapshot) ([]string, error) {
 	return changed, nil
 }
 
+// changedSince is ChangedSince as the split calls it. Tests replace it to make
+// the listing fail after a split has finished.
+var changedSince = (*Store).ChangedSince
+
 // IDSplit reports what moving the legacy shared ID file into member files did.
 type IDSplit struct {
 	Moved         map[string][]string `json:"moved"`
@@ -534,8 +538,11 @@ func (s *Store) SplitIDLedger(member string) (*IDSplit, error) {
 		}
 		split.LegacyRemoved = true
 	}
-	if split.Files, err = s.ChangedSince(before); err != nil {
-		return nil, err
+	// The split is finished here. Failing to list what it changed must not
+	// read as the split failing, so Files stays empty and the notice falls
+	// back to naming no files.
+	if files, err := changedSince(s, before); err == nil {
+		split.Files = files
 	}
 	return split, nil
 }
