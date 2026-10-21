@@ -51,6 +51,30 @@ func behindRemote(ctx context.Context, repo, branch string) (int, string) {
 	return n, remote
 }
 
+// aheadBehind compares a local branch with its remote-tracking counterpart as
+// last fetched: the commits only the branch holds, and the commits only the
+// remote holds. Nothing is fetched, so a stale remote ref reads as up to date.
+func aheadBehind(ctx context.Context, repo, branch string) (int, int, string) {
+	remote := remoteCounterpart(ctx, repo, branch)
+	if remote == "" {
+		return 0, 0, ""
+	}
+	counts, err := Git(ctx, repo, "rev-list", "--left-right", "--count", "--end-of-options", "refs/heads/"+branch+"..."+"refs/remotes/"+remote)
+	if err != nil {
+		return 0, 0, ""
+	}
+	fields := strings.Fields(counts)
+	if len(fields) != 2 {
+		return 0, 0, ""
+	}
+	ahead, errAhead := strconv.Atoi(fields[0])
+	behind, errBehind := strconv.Atoi(fields[1])
+	if errAhead != nil || errBehind != nil {
+		return 0, 0, ""
+	}
+	return ahead, behind, remote
+}
+
 func Git(ctx context.Context, path string, args ...string) (string, error) {
 	command := exec.CommandContext(ctx, "git", append([]string{"-C", path}, args...)...)
 	// A coding host may itself be running inside a Git operation. Its checkout

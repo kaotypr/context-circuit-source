@@ -72,6 +72,59 @@ func TestPreparingFromACurrentBaseIsSilent(t *testing.T) {
 	}
 }
 
+// An explicit --start is reported as what the worktree started from, not as the
+// base branch, and a local start branch behind its fetched remote is named
+// rather than used in silence. Nothing is fetched to find out.
+func TestPreparingFromAnExplicitStaleStartSaysSo(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	behind(t, f.home, api, "main")
+	git(t, api, "branch", "release")
+	f.ok("repo", "base", "--id", "api", "--branch", "release")
+	remote := git(t, api, "rev-parse", "origin/main")
+	local := git(t, api, "rev-parse", "main")
+	i := f.intent("billing")
+
+	stale := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", f.plan(i.ID, "stale", "api").ID, "--start", "main"))
+	if stale.Start != "main" || stale.BaseBranch != "release" || stale.StartCommit != local {
+		t.Fatalf("the start used is not reported apart from the base: %+v", stale)
+	}
+	for _, want := range []string{"--start main", "1 commit(s) behind origin/main", "--start origin/main", "repo fetch --id api", stale.Branch} {
+		if !strings.Contains(stale.SyncRequired, want) {
+			t.Errorf("sync_required omits %q: %s", want, stale.SyncRequired)
+		}
+	}
+
+	fresh := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", f.plan(i.ID, "fresh", "api").ID, "--start", "origin/main"))
+	if fresh.Start != "origin/main" || fresh.StartCommit != remote || fresh.SyncRequired != "" {
+		t.Fatalf("a remote-tracking start is used as given and not questioned: %+v", fresh)
+	}
+
+	git(t, api, "checkout", "main")
+	commitIn(t, api, "local.txt", "test: local work on main")
+	git(t, api, "checkout", "release")
+	diverged := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", f.plan(i.ID, "diverged", "api").ID, "--start", "main"))
+	if !strings.Contains(diverged.SyncRequired, "diverged from origin/main: 1 commit(s) ahead and 1 behind") {
+		t.Errorf("a diverged start was not named: %+v", diverged)
+	}
+
+	// A start ahead of its remote is local work, and a derived start reports the
+	// base it fell back to.
+	git(t, api, "checkout", "main")
+	git(t, api, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "merge", "--no-edit", "origin/main")
+	git(t, api, "push", "origin", "main")
+	commitIn(t, api, "ahead.txt", "test: more local work")
+	git(t, api, "checkout", "release")
+	derived := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", f.plan(i.ID, "derived", "api").ID))
+	if derived.Start != "release" || derived.BaseBranch != "release" {
+		t.Fatalf("a derived start is not reported: %+v", derived)
+	}
+	ahead := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", f.plan(i.ID, "ahead", "api").ID, "--start", "main"))
+	if ahead.SyncRequired != "" {
+		t.Errorf("a start ahead of its remote was questioned: %s", ahead.SyncRequired)
+	}
+}
+
 // Bands separate members, not one member's own clones. The ledger that would
 // show the collision is the file that was not pulled, so the number is reported
 // where it is handed out rather than by `check` after both records exist.

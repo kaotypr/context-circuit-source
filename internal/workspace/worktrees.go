@@ -13,14 +13,20 @@ import (
 )
 
 type Worktree struct {
-	Path        string       `json:"path"`
-	Branch      string       `json:"branch"`
-	Head        string       `json:"head"`
-	Main        bool         `json:"main"`
-	Locked      bool         `json:"locked"`
-	Prunable    bool         `json:"prunable"`
-	Plan        string       `json:"plan,omitempty"`
-	StartCommit string       `json:"start_commit,omitempty"`
+	Path        string `json:"path"`
+	Branch      string `json:"branch"`
+	Head        string `json:"head"`
+	Main        bool   `json:"main"`
+	Locked      bool   `json:"locked"`
+	Prunable    bool   `json:"prunable"`
+	Plan        string `json:"plan,omitempty"`
+	StartCommit string `json:"start_commit,omitempty"`
+
+	// Start is what a new worktree actually started from: --start as given, the
+	// base branch or origin/<base> it fell back to, or the existing branch it
+	// checked out. BaseBranch is this machine's base, the branch work on it is
+	// delivered to, which is not always where it started.
+	Start       string       `json:"start,omitempty"`
 	BaseBranch  string       `json:"base_branch,omitempty"`
 	Reused      bool         `json:"reused,omitempty"`
 	Environment []ReuseEntry `json:"environment,omitempty"`
@@ -212,9 +218,10 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if _, err := os.Lstat(path); !os.IsNotExist(err) {
 		return Worktree{}, fmt.Errorf("destination already exists: %s", path)
 	}
-	var commit, stale, unmerged string
+	var commit, stale, unmerged, started string
 	derived := false
 	if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err == nil {
+		started = branch
 		if !reuse {
 			// A clone with only origin's base branch would otherwise date the
 			// branch's whole history.
@@ -248,9 +255,9 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 			if dependency := s.dependencyStart(record, repoID); dependency.Base != "" {
 				return Worktree{}, dependencyStartError(ctx, repo, plan, dependency)
 			}
-			start = "refs/heads/" + checkout.BaseBranch
+			start, started = "refs/heads/"+checkout.BaseBranch, checkout.BaseBranch
 			if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}"); err != nil {
-				start = "refs/remotes/origin/" + checkout.BaseBranch
+				start, started = "refs/remotes/origin/"+checkout.BaseBranch, "origin/"+checkout.BaseBranch
 			} else if n, remote := behindRemote(ctx, repo, checkout.BaseBranch); n > 0 {
 				// A local base branch nobody synchronized is the quietest way to
 				// get a worktree missing work that already exists: preparation
@@ -259,10 +266,15 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 				stale = fmt.Sprintf("%s is %d commit(s) behind %s and this worktree starts from it, so that work is not here. Fast-forward %s in the bound checkout and rebase %s onto it, or remove this worktree and prepare again.",
 					checkout.BaseBranch, n, remote, checkout.BaseBranch, branch)
 			}
+		} else {
+			started = start
 		}
 		commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}")
 		if err != nil {
 			return Worktree{}, fmt.Errorf("cannot resolve starting point %s (new repositories need a first commit): %w", start, err)
+		}
+		if !derived {
+			stale = staleStart(ctx, repo, repoID, start, commit, branch)
 		}
 		// An explicit --start is the coordinator saying what they meant, so only
 		// a start this command derived is questioned.
@@ -279,12 +291,41 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if err != nil {
 		return Worktree{}, err
 	}
-	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch, SyncRequired: stale, UnmergedPlans: unmerged, planCreatedAt: string(record.CreatedAt)}
+	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, Start: started, BaseBranch: checkout.BaseBranch, SyncRequired: stale, UnmergedPlans: unmerged, planCreatedAt: string(record.CreatedAt)}
 	if err := s.saveAssociation(repoID, result); err != nil {
 		return result, fmt.Errorf("worktree exists at %s but local association could not be saved: %w", actual, err)
 	}
 	result.Environment, err = ReuseEnvironment(ctx, repo, result.Path, options)
 	return result, err
+}
+
+// staleStart questions an explicit --start that names a local branch behind its
+// remote-tracking branch, or diverged from it. The worktree still starts where
+// the caller said, since that is what they asked for and nothing here fetches;
+// the report says what is missing and how to start from the remote instead,
+// the way a stale derived base is reported. A start that is not a local
+// branch, such as origin/main or a commit, is not questioned.
+func staleStart(ctx context.Context, repo, repoID, start, commit, branch string) string {
+	local := strings.TrimPrefix(start, "refs/heads/")
+	if local == "" || strings.HasPrefix(local, "-") {
+		return ""
+	}
+	// Only when the start resolved to that local branch: a tag of the same name
+	// would have won, and then the branch is not what was used.
+	head, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", "refs/heads/"+local+"^{commit}")
+	if err != nil || head != commit {
+		return ""
+	}
+	ahead, behind, remote := aheadBehind(ctx, repo, local)
+	if behind == 0 {
+		return ""
+	}
+	state := fmt.Sprintf("is %d commit(s) behind %s", behind, remote)
+	if ahead > 0 {
+		state = fmt.Sprintf("has diverged from %s: %d commit(s) ahead and %d behind", remote, ahead, behind)
+	}
+	return fmt.Sprintf("--start %s names the local branch, which %s, and this worktree starts from the local branch, so that work is not here. To start from %s, remove this worktree and prepare again with --start %s; or bring %s up to date in the bound checkout and rebase %s onto it. %s is as recent as the last fetch, which this command never makes; `repo fetch --id %s` updates it.",
+		local, state, remote, remote, local, branch, remote, repoID)
 }
 
 // checkedOutElsewhere explains a plan branch Git already has checked out in
