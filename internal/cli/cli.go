@@ -18,6 +18,7 @@ import (
 const Help = `Context Circuit — shared workspace operations
 
 Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
+The global options --workspace PATH and --json may also follow the command.
 
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
                       [--member-band N] [--member-role ROLE ...] (the first member,
@@ -350,10 +351,26 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 		return 2
 	}
+	// The global options are accepted after the command as well as before it,
+	// because a caller adding --json or --workspace to a command line they
+	// already typed puts it at the end. A command defining a flag of the same
+	// name keeps its own meaning; none does today.
+	if f.Lookup("workspace") == nil {
+		f.StringVar(root, "workspace", *root, "workspace root")
+	}
+	if f.Lookup("json") == nil {
+		f.BoolVar(asJSON, "json", *asJSON, "structured JSON output")
+	}
+	// The flag package still reports the faulty flag itself; the usage that
+	// follows is this command's, printed below.
+	f.Usage = func() {}
 	if err := f.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
+			text, _ := CommandHelp(command)
+			fmt.Fprint(out, text)
 			return 0
 		}
+		fmt.Fprint(errOut, commandUsage(command))
 		return 2
 	}
 	if f.NArg() != 0 {

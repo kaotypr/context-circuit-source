@@ -156,6 +156,24 @@ func CommandHelp(topic string) (string, bool) {
 	if topic == "" {
 		return "", false
 	}
+	lines := signatures(topic)
+	detail := Topics[strings.Fields(topic)[0]]
+	if len(lines) == 0 && detail == "" {
+		return "", false
+	}
+	var text strings.Builder
+	if len(lines) > 0 {
+		text.WriteString(strings.Join(lines, "\n") + "\n")
+	}
+	if detail != "" {
+		text.WriteString("\n" + detail + "\n")
+	}
+	return text.String(), true
+}
+
+// signatures returns the lines Help lists for a command or group, each with its
+// continuation lines, exactly as the full help prints them.
+func signatures(topic string) []string {
 	var lines []string
 	keep := false
 	for _, line := range strings.Split(Help, "\n") {
@@ -171,16 +189,20 @@ func CommandHelp(topic string) (string, bool) {
 			lines = append(lines, strings.TrimRight(line, " "))
 		}
 	}
-	detail := Topics[strings.Fields(topic)[0]]
-	if len(lines) == 0 && detail == "" {
-		return "", false
-	}
+	return lines
+}
+
+// commandUsage answers a call its command could not parse: the command's own
+// signature, where the global options may go, and the topic to read. The flag
+// package's own usage listed only flag names, and nothing at all for a command
+// that takes none, which read as a command with no usage.
+func commandUsage(command string) string {
 	var text strings.Builder
-	if len(lines) > 0 {
+	text.WriteString("usage: context-circuit-cli [--workspace PATH] [--json] " + command + " [OPTIONS]\n")
+	if lines := signatures(command); len(lines) > 0 {
 		text.WriteString(strings.Join(lines, "\n") + "\n")
 	}
-	if detail != "" {
-		text.WriteString("\n" + detail + "\n")
-	}
-	return text.String(), true
+	text.WriteString("--workspace PATH and --json may also follow the command.\n")
+	text.WriteString("try: context-circuit-cli help " + command + "\n")
+	return text.String()
 }
