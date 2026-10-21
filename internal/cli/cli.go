@@ -18,6 +18,8 @@ import (
 const Help = `Context Circuit — shared workspace operations
 
 Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
+The global options --workspace PATH and --json may also follow the full command,
+as in member list --json, but not sit between a group and its subcommand.
 
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
                       [--member-band N] [--member-role ROLE ...] (the first member,
@@ -350,10 +352,26 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 		return 2
 	}
+	// The global options are accepted after the command as well as before it,
+	// because a caller adding --json or --workspace to a command line they
+	// already typed puts it at the end. A command defining a flag of the same
+	// name keeps its own meaning; none does today.
+	if f.Lookup("workspace") == nil {
+		f.StringVar(root, "workspace", *root, "workspace root")
+	}
+	if f.Lookup("json") == nil {
+		f.BoolVar(asJSON, "json", *asJSON, "structured JSON output")
+	}
+	// The flag package still reports the faulty flag itself; the usage that
+	// follows is this command's, printed below.
+	f.Usage = func() {}
 	if err := f.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
+			text, _ := CommandHelp(command)
+			fmt.Fprint(out, text)
 			return 0
 		}
+		fmt.Fprint(errOut, commandUsage(command))
 		return 2
 	}
 	if f.NArg() != 0 {
@@ -466,7 +484,27 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// reservations. Init writes the new layout itself, and a deletion preview
 	// promises to write nothing.
 	splits := !readOnly && command != "init" && !(command == "record delete" && !confirm)
-	splitNotice := ""
+	var split *workspace.IDSplit
+	splitWarning := ""
+	// trySplit makes the split once setup is complete and it is still pending.
+	// It is tried before the command, so a change lands in the per-member layout,
+	// and again after it, so the setup step that completed setup makes the split
+	// itself rather than leaving it to whichever command comes next.
+	trySplit := func() error {
+		if !splits || split != nil {
+			return nil
+		}
+		state, err := s.Setup()
+		if err != nil {
+			return nil
+		}
+		pending, err := s.IDSplitPending()
+		if err != nil || !pending {
+			return err
+		}
+		split, err = s.SplitIDLedger(state.Active)
+		return err
+	}
 	checkFailed := false
 	action := func() (any, error) {
 		if !readOnly && !setupStep {
@@ -495,28 +533,16 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			// The preview writes nothing and reads either ID-file layout, so a
 			// deletion it refuses is refused before the split.
 			if confirm {
-				if _, err := s.DeleteRecords(ctx, get("member"), all, recordIDs, false); err != nil {
-					return nil, err
+				if preview, err := s.DeleteRecords(ctx, get("member"), all, recordIDs, false); err != nil {
+					return preview, err
 				}
 			}
 		}
 		if _, err := workspace.MemberRoles(roles); err != nil {
 			return nil, err
 		}
-		if splits {
-			if state, err := s.Setup(); err == nil {
-				pending, err := s.IDSplitPending()
-				if err != nil {
-					return nil, err
-				}
-				if pending {
-					split, err := s.SplitIDLedger(state.Active)
-					if err != nil {
-						return nil, fmt.Errorf("the ID files could not be moved to one file per member, so nothing was changed: %w", err)
-					}
-					splitNotice = split.Notice()
-				}
-			}
+		if err := trySplit(); err != nil {
+			return nil, fmt.Errorf("the ID files could not be moved to one file per member, so nothing was changed: %w", err)
 		}
 		var err error
 		switch command {
@@ -719,15 +745,42 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	if readOnly {
 		result, err = action()
 	} else {
-		result, err = s.WithLock(ctx, action)
+		result, err = s.WithLock(ctx, func() (any, error) {
+			// Taken before anything is written, so the notice can name every
+			// shared file this command changed, members.yaml included, rather
+			// than the files a split is expected to touch.
+			before, snapErr := s.SharedFiles()
+			result, err := action()
+			if err == nil {
+				// The command did what it was asked, so a split it could not make
+				// afterwards is a warning: the next changing command refuses with
+				// the same reason until a person fixes it.
+				if e := trySplit(); e != nil {
+					splitWarning = fmt.Sprintf("warning: %s was done, but the ID files could not be moved to one file per member yet: %v\n", command, e)
+				}
+			}
+			if split != nil && snapErr == nil {
+				if changed, e := s.ChangedSince(before); e == nil {
+					split.Files = changed
+				}
+			}
+			return result, err
+		})
 	}
 	// The split is reported on the error stream in both output modes, the way
 	// the pinned-version warning is, so no command's result changes shape. It
 	// is reported even when the command then failed, because it still happened.
-	if splitNotice != "" {
-		fmt.Fprint(errOut, splitNotice)
+	if split != nil {
+		fmt.Fprint(errOut, split.Notice())
 	}
-	if err != nil {
+	fmt.Fprint(errOut, splitWarning)
+	// A refused deletion still shows its preview: the records asked for and the
+	// ones blocking them, which is what the person needs to decide what to add.
+	// It deleted nothing and stays a failure.
+	var refused *workspace.DeletionRefused
+	if errors.As(err, &refused) {
+		result = refused.Preview
+	} else if err != nil {
 		fmt.Fprintln(errOut, err)
 		return 1
 	}
@@ -754,6 +807,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	if err != nil {
 		fmt.Fprintln(errOut, err)
+		return 1
+	}
+	if refused != nil {
+		fmt.Fprintln(errOut, refused)
 		return 1
 	}
 	if checkFailed {

@@ -44,7 +44,33 @@ type Deletion struct {
 	// checkout alone, and a clone that has not pulled it still holds the
 	// records and may hand their released numbers out again.
 	SyncRequired string `json:"sync_required,omitempty"`
+
+	// BlockedBy, Refused, and AddIDs are set only on a refusal. The records
+	// asked for are still listed above, so the person sees what they asked for
+	// and what stands in the way in one answer rather than a bare error.
+	BlockedBy []BlockingRecord `json:"blocked_by,omitempty"`
+	Refused   string           `json:"refused,omitempty"`
+	AddIDs    []string         `json:"add_ids,omitempty"`
 }
+
+// BlockingRecord is a record outside the selection that still points at one
+// inside it, and how.
+type BlockingRecord struct {
+	ID        string `json:"id"`
+	CreatedBy string `json:"created_by,omitempty"`
+	Path      string `json:"path,omitempty"`
+	Status    string `json:"status"`
+	Link      string `json:"link"`
+}
+
+// DeletionRefused is a deletion that would leave something pointing at a
+// deleted record. It carries the preview, so a caller can show it beside the
+// reason; nothing was deleted.
+type DeletionRefused struct {
+	Preview Deletion
+}
+
+func (e *DeletionRefused) Error() string { return e.Preview.Refused }
 
 type DeletedRecord struct {
 	ID        string `json:"id"`
@@ -58,6 +84,15 @@ type DeletedRecord struct {
 }
 
 const reservationOnly = "reservation only"
+
+// deletionPath names a record the way deletion removes it: a folder plan as its
+// folder, anything else as its file.
+func deletionPath(record Record) string {
+	if folderPlan(record) {
+		return filepath.ToSlash(filepath.Dir(record.Path)) + "/"
+	}
+	return record.Path
+}
 
 func deletedStatus(record Record) string {
 	switch {
@@ -143,11 +178,7 @@ func (s *Store) DeleteRecords(ctx context.Context, member string, all bool, ids 
 	for _, record := range records {
 		if all || byID && slices.Contains(ids, record.ID) || !byID && record.CreatedBy == member {
 			selected[record.ID] = true
-			path := record.Path
-			if folderPlan(record) {
-				path = filepath.ToSlash(filepath.Dir(record.Path)) + "/"
-			}
-			result.Records = append(result.Records, DeletedRecord{record.ID, record.CreatedBy, path, deletedStatus(record)})
+			result.Records = append(result.Records, DeletedRecord{record.ID, record.CreatedBy, deletionPath(record), deletedStatus(record)})
 		}
 	}
 	if byID {
@@ -181,6 +212,7 @@ func (s *Store) DeleteRecords(ctx context.Context, member string, all bool, ids 
 	// something else. A plan listed by its own intent is the one link that is
 	// edited out instead, and only for records named by ID.
 	var blockers []string
+	var blocking []BlockingRecord
 	unlink := map[string][]string{}
 	addIDs := map[string]bool{}
 	for _, record := range records {
@@ -191,14 +223,17 @@ func (s *Store) DeleteRecords(ctx context.Context, member string, all bool, ids 
 		if owner == "" {
 			owner = "no recorded author"
 		}
-		if selected[record.Intent] {
-			blockers = append(blockers, fmt.Sprintf("%s (%s) belongs to intent %s", record.ID, owner, record.Intent))
+		block := func(link string) {
+			blockers = append(blockers, fmt.Sprintf("%s (%s) %s", record.ID, owner, link))
+			blocking = append(blocking, BlockingRecord{record.ID, record.CreatedBy, deletionPath(record), deletedStatus(record), link})
 			addIDs[record.ID] = true
+		}
+		if selected[record.Intent] {
+			block("belongs to intent " + record.Intent)
 		}
 		for _, dep := range record.DependsOn {
 			if selected[dep] {
-				blockers = append(blockers, fmt.Sprintf("%s (%s) depends on %s", record.ID, owner, dep))
-				addIDs[record.ID] = true
+				block("depends on " + dep)
 			}
 		}
 		for _, plan := range record.Plans {
@@ -211,8 +246,7 @@ func (s *Store) DeleteRecords(ctx context.Context, member string, all bool, ids 
 				unlink[record.ID] = append(unlink[record.ID], plan)
 				continue
 			}
-			blockers = append(blockers, fmt.Sprintf("%s (%s) links plan %s", record.ID, owner, plan))
-			addIDs[record.ID] = true
+			block("links plan " + plan)
 		}
 	}
 	local, err := s.associations()
@@ -231,10 +265,14 @@ func (s *Store) DeleteRecords(ctx context.Context, member string, all bool, ids 
 			var more []string
 			for _, id := range slices.Sorted(maps.Keys(addIDs)) {
 				more = append(more, "--id "+id)
+				result.AddIDs = append(result.AddIDs, id)
 			}
 			message += fmt.Sprintf(", or delete them together by adding %s to this call", strings.Join(more, " "))
 		}
-		return Deletion{}, errors.New(message)
+		sort.SliceStable(blocking, func(i, j int) bool { return blocking[i].ID < blocking[j].ID })
+		result.BlockedBy = blocking
+		result.Refused = message
+		return result, &DeletionRefused{Preview: result}
 	}
 	unlinkFrom := slices.Sorted(maps.Keys(unlink))
 	for _, id := range unlinkFrom {

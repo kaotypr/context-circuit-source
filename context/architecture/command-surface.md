@@ -19,8 +19,12 @@ agent settings|configure|setup|dispatch
 version
 ```
 
-Global flags precede the command: a workspace root and a structured-output
-switch. Every command accepts its own help.
+Global flags — a workspace root and a structured-output switch — go before the
+command or after it, because a caller adding one to a line already typed puts it
+at the end; a command defining a flag of the same name would keep its own
+meaning, and none does. Every command accepts its own help, and a flag it does
+not take is answered with that command's signature and help topic rather than
+the bare flag list a parser prints.
 
 ## Properties that make it usable by an agent
 
@@ -37,7 +41,9 @@ the agent's job, in the open.
 **Refusals are explicit and typed.** An ambiguous binding, a dependency cycle,
 an unknown repository, a branch already holding work, a symlink inside the
 knowledge tree, a reuse path pointing at control files — each is an error naming
-its reason, never a silent best-effort substitution.
+its reason, never a silent best-effort substitution. A refusal whose answer is a
+list the person must read, such as a deletion blocked by linked records, still
+returns that list as its result beside the reason, and still exits nonzero.
 
 **Read-only commands take no lock.** Inspection, listing, settings, dispatch
 specification, export, and the diagnostic run without serializing the workspace;

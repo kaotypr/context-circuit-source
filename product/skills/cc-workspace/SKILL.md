@@ -75,7 +75,8 @@ connect`.
 
 On a workspace already at schema 3, `members.yaml` is the only shared file
 joining changes. On one still at schema 2 the joiner's first changing command,
-such as `workspace connect`, also splits the ID file: it writes
+which is `member use` itself when that completes setup, also splits the ID
+file: it writes
 `.context-circuit/ids/`, moves `workspace.yaml` to schema 3, and gives every
 reservation with no author to the joiner. That split is the one-person-first
 upgrade described under the members section below, so before it, confirm nobody
@@ -191,9 +192,11 @@ by `record delete --id ID`, repeatable: it removes exactly the named records,
 whoever wrote them, and releases their numbers so the lowest free one in the
 author's band comes next. It previews first, showing each record's author and
 status; show the person that list and any warnings about leftover `cc/pNNNN/*`
-branches, and run `--confirm` only once they agree. A refusal naming a record
-outside the list is resolved by adding the IDs it names, if the person wants
-those gone too, or by leaving the records in place.
+branches, and run `--confirm` only once they agree. A refusal exits 1 but still
+returns the preview on stdout: show the person the `records` they asked for, each
+`blocked_by` record with its `link`, and the reason in one answer. It is resolved
+by adding the `add_ids` it names, only if the person agrees to those going too,
+or by leaving the records in place.
 
 A roster written by an earlier version may hold members with no band. `status`
 then reports `band_required` and a `band_suggestions` entry for each of them,
@@ -203,9 +206,11 @@ to their request.
 
 A workspace an earlier CLI wrote is at schema 2, with one shared
 `.context-circuit/ids.yaml`, and the first changing command a 2.4.0 CLI runs
-there splits it into a file for every author. Only one person on a team
-upgrades first. Before that first change, tell the person so: they make it,
-then commit and push it, and everyone else pulls before changing anything. A
+there splits it into a file for every author. When setup is incomplete, that is
+the `member band`, `member add`, or `member use` that completes it. Only one
+person on a team upgrades first. Before that first change, tell the person so:
+they make it, then commit and push the files its notice names, and everyone else
+pulls before changing anything. A
 teammate who upgraded at the same time gets a Git conflict in
 `.context-circuit/ids/*.yaml`. That is theirs to resolve by hand, not yours to
 pick: suggest keeping the union of both sides' entries in each member file, then

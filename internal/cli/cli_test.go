@@ -33,7 +33,10 @@ func setup(t *testing.T) fixture {
 	// host instead. Without that guard a commit-creating call that forgot its
 	// identity passes on a developer machine Git can guess on and fails only on
 	// CI, which is where this was first noticed.
-	write(t, config, "[user]\n\tname = Fixture\n\temail = fixture@example.invalid\n\tuseConfigOnly = true\n")
+	// Automatic gc and maintenance are off as well: a commit may otherwise leave
+	// a detached Git process writing .git/objects while the temporary directory
+	// is being removed, which fails the test in cleanup rather than in its body.
+	write(t, config, "[user]\n\tname = Fixture\n\temail = fixture@example.invalid\n\tuseConfigOnly = true\n[gc]\n\tauto = 0\n\tautoDetach = false\n[maintenance]\n\tauto = false\n")
 	t.Setenv("GIT_CONFIG_GLOBAL", config)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
 	f := fixture{t, filepath.Join(home, "workspace"), home}
