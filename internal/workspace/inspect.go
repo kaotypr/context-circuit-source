@@ -252,6 +252,48 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	}
 	issues := state.Issues
 	issues = append(issues, s.workspaceRepositoryIssues(ctx, state)...)
+	issues = append(issues, s.planFolderIssues()...)
+	records, err := s.ListRecords(false)
+	if err != nil {
+		return append(issues, found(err.Error(),
+			needsAPerson+"the records could not be listed; inspect intent/ and plans/ for an unreadable file")), nil
+	}
+	issues, reserved, err := s.checkIDFiles(issues)
+	if err != nil {
+		return nil, err
+	}
+	paths, err := s.RecordPaths(true)
+	if err != nil {
+		return nil, err
+	}
+	// One walk serves every lookup below; without it each reference re-walked
+	// intent/ and plans/, so a check cost records times the tree.
+	index := s.indexRecordPaths(paths)
+	issues = append(issues, s.idIssues(paths, reserved)...)
+	// An unreadable roster is already reported; reading every author as unknown
+	// against it would bury that finding under ones that are not true.
+	_, rosterErr := s.Members()
+	for _, record := range records {
+		issues = append(issues, s.recordIssues(state, index, record, rosterErr == nil)...)
+	}
+	issues = append(issues, dependencyIssues(index, records)...)
+	issues = append(issues, relationshipIssues(state)...)
+	issues = append(issues, s.associationIssues(ctx, index)...)
+	knowledge, err := s.knowledgeIssues()
+	if err != nil {
+		issues = append(issues, found(err.Error(),
+			needsAPerson+"the context tree could not be walked; inspect context/ for an unreadable file or a symlink"))
+	} else {
+		issues = append(issues, knowledge...)
+	}
+	issues = append(issues, borrowedIssues(state.Knowledge)...)
+	issues = append(issues, s.reviewIssues(ctx)...)
+	return uniqueFindings(issues), nil
+}
+
+// planFolderIssues reports plan folders whose plan.md is missing or unusable.
+func (s *Store) planFolderIssues() []Finding {
+	var issues []Finding
 	for _, baseRel := range []string{"plans", "plans/archive"} {
 		base, err := s.Path(baseRel)
 		if err != nil {
@@ -278,26 +320,15 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 			}
 		}
 	}
-	records, err := s.ListRecords(false)
-	if err != nil {
-		return append(issues, found(err.Error(),
-			needsAPerson+"the records could not be listed; inspect intent/ and plans/ for an unreadable file")), nil
-	}
-	issues, reserved, err := s.checkIDFiles(issues)
-	if err != nil {
-		return nil, err
-	}
-	paths, err := s.RecordPaths(true)
-	if err != nil {
-		return nil, err
-	}
+	return issues
+}
+
+// idIssues reports duplicate record IDs and records no ID file reserves.
+func (s *Store) idIssues(paths []string, reserved map[string]bool) []Finding {
+	var issues []Finding
 	seen := map[string]bool{}
 	for _, path := range paths {
-		name := filepath.Base(path)
-		if name == "plan.md" {
-			name = filepath.Base(filepath.Dir(path))
-		}
-		id := strings.SplitN(name, "-", 2)[0]
+		id := recordPathID(path)
 		if seen[id] {
 			issues = append(issues, found("duplicate record ID: "+id,
 				needsAPerson+"two clones allocated the same number; renumber one record and every reference to it before either is shared, and keep both reservations"))
@@ -314,95 +345,119 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 				needsAPerson+"add the ID to "+IDFilesDir+"/"+owner+".yaml, the file of the record's created_by or, when it has none, of the local member, so nothing allocates it again"))
 		}
 	}
-	// An unreadable roster is already reported; reading every author as unknown
-	// against it would bury that finding under ones that are not true.
-	_, rosterErr := s.Members()
-	for _, record := range records {
-		// A record with no author was written by an earlier version while the
-		// workspace had no roster, and stays valid.
-		if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" && rosterErr == nil {
-			issues = append(issues, found(record.ID+": unknown created_by member",
-				"add them with `member add --id ID --name NAME --band N`, or correct the record's created_by to a member the roster carries"))
-		}
-		// A roster member with such an ID is reported by status; an author the
-		// roster does not carry still stops the split.
-		if _, ok := state.Members.Members[record.CreatedBy]; !ok && windowsDevice.MatchString(record.CreatedBy) {
-			issues = append(issues, found(record.ID+": created_by "+record.CreatedBy+" is a Windows device name, which cannot name an ID file",
-				needsAPerson+"correct the record's created_by to a member the roster carries whose ID is not a Windows device name"))
-		}
-		// An instant that no longer parses is reported rather than read as an event
-		// that never happened. Each gate belongs to one kind of record: nothing
-		// approves a plan, and an intent is never the thing that completes.
-		if record.CreatedAt == "" {
-			issues = append(issues, found(record.ID+": created_at is missing; a record written before 2.0.0-rc.4 is not readable by this CLI",
-				needsAPerson+"add the instant this record was created to its frontmatter; a record from an earlier version is not migrated for you"))
-		} else if _, err := time.Parse(TimeLayout, string(record.CreatedAt)); err != nil {
-			issues = append(issues, found(record.ID+": created_at is not a canonical ISO 8601 UTC timestamp: "+string(record.CreatedAt),
-				needsAPerson+"rewrite it in frontmatter as 2026-09-15T10:53:00Z; only a person knows which instant was meant"))
-		}
-		for _, gate := range []struct {
-			field, prefix string
-			value         ISOTime
-		}{{"approved_at", "i", record.ApprovedAt}, {"completed_at", "p", record.CompletedAt}} {
-			if value := string(gate.value); value == "" {
-				continue
-			} else if !strings.HasPrefix(record.ID, gate.prefix) {
-				issues = append(issues, found(record.ID+": "+gate.field+" belongs to "+recordKind(gate.prefix),
-					needsAPerson+"remove the field from this record; a gate stamped on the wrong kind of record claims a decision that was never made"))
-			} else if _, err := time.Parse(TimeLayout, value); err != nil {
-				issues = append(issues, found(record.ID+": "+gate.field+" is not a canonical ISO 8601 UTC timestamp: "+value,
-					needsAPerson+"rewrite it in frontmatter as 2026-09-15T10:53:00Z, or remove it if the decision it claims was never taken"))
-			}
-		}
-		if strings.HasPrefix(record.ID, "p") {
-			if !folderPlan(record) && record.RequiredFiles != nil {
-				issues = append(issues, found(record.ID+": legacy plan cannot assign required_files", "remove required_files from the single-file plan"))
-			}
-			if record.Intent != "" {
-				parent, err := s.FindRecord(record.Intent)
-				if err != nil || !strings.HasPrefix(record.Intent, "i") {
-					issues = append(issues, found(record.ID+": invalid intent reference",
-						needsAPerson+"correct the intent ID and its backlink, or remove the field for a standalone plan"))
-				} else if !slices.Contains(parent.Plans, record.ID) {
-					issues = append(issues, found(record.ID+": not linked from intent "+parent.ID,
-						needsAPerson+"add this plan to that intent's plans; the link is written at creation and nothing relinks it afterwards"))
-				}
-			}
-			if folderPlan(record) {
-				full, err := s.readRecord(record.Path)
-				if err == nil {
-					issues = append(issues, s.planFileIssues(full)...)
-				}
-			}
-			if len(record.Repositories) == 0 {
-				issues = append(issues, found(record.ID+": no repositories",
-					needsAPerson+"name the repositories this plan changes in its frontmatter; a plan with none cannot be prepared or ordered"))
-			}
-			for _, repo := range record.Repositories {
-				if _, ok := state.Workspace.Repositories[repo]; !ok {
-					issues = append(issues, found(record.ID+": unknown repository "+repo,
-						"register it with `repo connect --id "+repo+" --path PATH --base BRANCH`, or correct the plan to name a repository the workspace describes"))
-				}
-			}
-		} else {
-			for _, id := range record.Plans {
-				plan, err := s.FindRecord(id)
-				if err != nil || plan.Intent != record.ID {
-					issues = append(issues, found(record.ID+": broken plan link "+id,
-						needsAPerson+"the linked plan is not there; correct the link, or restore the record if it was moved"))
-				}
-			}
+	return issues
+}
+
+// recordIssues reports everything wrong with one record. rosterReadable is
+// false when the roster itself could not be read.
+func (s *Store) recordIssues(state Orientation, index *recordIndex, record Record, rosterReadable bool) []Finding {
+	var issues []Finding
+	// A record with no author was written by an earlier version while the
+	// workspace had no roster, and stays valid.
+	if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" && rosterReadable {
+		issues = append(issues, found(record.ID+": unknown created_by member",
+			"add them with `member add --id ID --name NAME --band N`, or correct the record's created_by to a member the roster carries"))
+	}
+	// A roster member with such an ID is reported by status; an author the
+	// roster does not carry still stops the split.
+	if _, ok := state.Members.Members[record.CreatedBy]; !ok && windowsDevice.MatchString(record.CreatedBy) {
+		issues = append(issues, found(record.ID+": created_by "+record.CreatedBy+" is a Windows device name, which cannot name an ID file",
+			needsAPerson+"correct the record's created_by to a member the roster carries whose ID is not a Windows device name"))
+	}
+	// An instant that no longer parses is reported rather than read as an event
+	// that never happened. Each gate belongs to one kind of record: nothing
+	// approves a plan, and an intent is never the thing that completes.
+	if record.CreatedAt == "" {
+		issues = append(issues, found(record.ID+": created_at is missing; a record written before 2.0.0-rc.4 is not readable by this CLI",
+			needsAPerson+"add the instant this record was created to its frontmatter; a record from an earlier version is not migrated for you"))
+	} else if _, err := time.Parse(TimeLayout, string(record.CreatedAt)); err != nil {
+		issues = append(issues, found(record.ID+": created_at is not a canonical ISO 8601 UTC timestamp: "+string(record.CreatedAt),
+			needsAPerson+"rewrite it in frontmatter as 2026-09-15T10:53:00Z; only a person knows which instant was meant"))
+	}
+	for _, gate := range []struct {
+		field, prefix string
+		value         ISOTime
+	}{{"approved_at", "i", record.ApprovedAt}, {"completed_at", "p", record.CompletedAt}} {
+		if value := string(gate.value); value == "" {
+			continue
+		} else if !strings.HasPrefix(record.ID, gate.prefix) {
+			issues = append(issues, found(record.ID+": "+gate.field+" belongs to "+recordKind(gate.prefix),
+				needsAPerson+"remove the field from this record; a gate stamped on the wrong kind of record claims a decision that was never made"))
+		} else if _, err := time.Parse(TimeLayout, value); err != nil {
+			issues = append(issues, found(record.ID+": "+gate.field+" is not a canonical ISO 8601 UTC timestamp: "+value,
+				needsAPerson+"rewrite it in frontmatter as 2026-09-15T10:53:00Z, or remove it if the decision it claims was never taken"))
 		}
 	}
+	if strings.HasPrefix(record.ID, "p") {
+		return append(issues, s.planIssues(state, index, record)...)
+	}
+	return append(issues, intentIssues(index, record)...)
+}
+
+func (s *Store) planIssues(state Orientation, index *recordIndex, record Record) []Finding {
+	var issues []Finding
+	if !folderPlan(record) && record.RequiredFiles != nil {
+		issues = append(issues, found(record.ID+": legacy plan cannot assign required_files", "remove required_files from the single-file plan"))
+	}
+	if record.Intent != "" {
+		parent, err := index.Find(record.Intent)
+		if err != nil || !strings.HasPrefix(record.Intent, "i") {
+			issues = append(issues, found(record.ID+": invalid intent reference",
+				needsAPerson+"correct the intent ID and its backlink, or remove the field for a standalone plan"))
+		} else if !slices.Contains(parent.Plans, record.ID) {
+			issues = append(issues, found(record.ID+": not linked from intent "+parent.ID,
+				needsAPerson+"add this plan to that intent's plans; the link is written at creation and nothing relinks it afterwards"))
+		}
+	}
+	if folderPlan(record) {
+		if full, err := s.readRecord(record.Path); err == nil {
+			issues = append(issues, s.planFileIssues(full)...)
+		}
+	}
+	if len(record.Repositories) == 0 {
+		issues = append(issues, found(record.ID+": no repositories",
+			needsAPerson+"name the repositories this plan changes in its frontmatter; a plan with none cannot be prepared or ordered"))
+	}
+	for _, repo := range record.Repositories {
+		if _, ok := state.Workspace.Repositories[repo]; !ok {
+			issues = append(issues, found(record.ID+": unknown repository "+repo,
+				"register it with `repo connect --id "+repo+" --path PATH --base BRANCH`, or correct the plan to name a repository the workspace describes"))
+		}
+	}
+	return issues
+}
+
+func intentIssues(index *recordIndex, record Record) []Finding {
+	var issues []Finding
+	for _, id := range record.Plans {
+		plan, err := index.Find(id)
+		if err != nil || plan.Intent != record.ID {
+			issues = append(issues, found(record.ID+": broken plan link "+id,
+				needsAPerson+"the linked plan is not there; correct the link, or restore the record if it was moved"))
+		}
+	}
+	return issues
+}
+
+// dependencyIssues reports dependency cycles and dangling dependencies. sound
+// is shared so each plan is walked once however many plans reach it.
+func dependencyIssues(index *recordIndex, records []Record) []Finding {
+	var issues []Finding
 	sound := map[string]bool{}
 	for _, record := range records {
-		if strings.HasPrefix(record.ID, "p") {
-			if err := s.walkDependencies(record.ID, map[string]bool{}, sound); err != nil {
-				issues = append(issues, found(err.Error(),
-					"break the cycle with `record dependencies --id PLAN --depends-on ID ...`, naming only the plans that truly precede it; omit --depends-on to clear them"))
-			}
+		if !strings.HasPrefix(record.ID, "p") {
+			continue
+		}
+		if err := index.walkDependencies(record.ID, map[string]bool{}, sound); err != nil {
+			issues = append(issues, found(err.Error(),
+				"break the cycle with `record dependencies --id PLAN --depends-on ID ...`, naming only the plans that truly precede it; omit --depends-on to clear them"))
 		}
 	}
+	return issues
+}
+
+func relationshipIssues(state Orientation) []Finding {
+	var issues []Finding
 	for _, relation := range state.Workspace.Relationships {
 		for _, id := range []string{relation.From, relation.To} {
 			if _, ok := state.Workspace.Repositories[id]; !ok {
@@ -411,6 +466,11 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 			}
 		}
 	}
+	return issues
+}
+
+func (s *Store) associationIssues(ctx context.Context, index *recordIndex) []Finding {
+	var issues []Finding
 	local, err := s.associations()
 	if err != nil {
 		issues = append(issues, found(err.Error(),
@@ -426,7 +486,7 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 					"`worktree repair --repo "+assoc.Repository+" --path "+assoc.Path+"` where the checkout moved; Git's own inventory is authoritative, and this association is only a convenience"))
 			}
 			if assoc.Plan != "" {
-				if plan, err := s.FindRecord(assoc.Plan); err != nil {
+				if plan, err := index.Find(assoc.Plan); err != nil {
 					issues = append(issues, found("worktree has missing plan: "+assoc.Plan,
 						needsAPerson+"the plan this worktree was prepared for is gone; the worktree and its branch are untouched, and removing one is a separate authorized request"))
 				} else if assoc.PlanCreatedAt != "" && assoc.PlanCreatedAt != plan.CreatedAt {
@@ -438,16 +498,7 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 			}
 		}
 	}
-	knowledge, err := s.knowledgeIssues()
-	if err != nil {
-		issues = append(issues, found(err.Error(),
-			needsAPerson+"the context tree could not be walked; inspect context/ for an unreadable file or a symlink"))
-	} else {
-		issues = append(issues, knowledge...)
-	}
-	issues = append(issues, borrowedIssues(state.Knowledge)...)
-	issues = append(issues, s.reviewIssues(ctx)...)
-	return uniqueFindings(issues), nil
+	return issues
 }
 
 // Context notes describe the project, not the workspace machinery that produced

@@ -119,23 +119,65 @@ func (s *Store) RecordPaths(archived bool) ([]string, error) {
 }
 
 func (s *Store) FindRecord(id string) (Record, error) {
+	return s.newRecordIndex().Find(id)
+}
+
+// recordIndex walks the record tree once so a command that resolves many IDs
+// pays for one walk, not one per lookup. Records are read on first use and kept.
+type recordIndex struct {
+	store *Store
+	paths map[string][]string // nil until the first lookup walks the tree
+	read  map[string]Record
+}
+
+// newRecordIndex walks nothing yet. The tree is walked on the first lookup, so
+// a call refused for its own arguments, or one that never resolves an ID, does
+// not read it, exactly as when every lookup walked it.
+func (s *Store) newRecordIndex() *recordIndex {
+	return &recordIndex{store: s, read: map[string]Record{}}
+}
+
+func (s *Store) indexRecordPaths(paths []string) *recordIndex {
+	index := s.newRecordIndex()
+	index.paths = recordPathsByID(paths)
+	return index
+}
+
+func recordPathsByID(paths []string) map[string][]string {
+	byID := map[string][]string{}
+	for _, path := range paths {
+		id := recordPathID(path)
+		byID[id] = append(byID[id], path)
+	}
+	return byID
+}
+
+// Find resolves one ID exactly as FindRecord documents: an invalid ID, or one
+// matching no record or several (a duplicate), is an error.
+func (x *recordIndex) Find(id string) (Record, error) {
 	if !recordPattern.MatchString(id) {
 		return Record{}, fmt.Errorf("invalid record ID: %s", id)
 	}
-	paths, err := s.RecordPaths(true)
-	if err != nil {
-		return Record{}, err
-	}
-	var matches []string
-	for _, path := range paths {
-		if strings.HasPrefix(filepath.Base(path), id+"-") || filepath.Base(path) == "plan.md" && strings.HasPrefix(filepath.Base(filepath.Dir(path)), id+"-") {
-			matches = append(matches, path)
+	if x.paths == nil {
+		paths, err := x.store.RecordPaths(true)
+		if err != nil {
+			return Record{}, err
 		}
+		x.paths = recordPathsByID(paths)
 	}
+	matches := x.paths[id]
 	if len(matches) != 1 {
 		return Record{}, fmt.Errorf("expected one record for %s; found %d", id, len(matches))
 	}
-	return s.readRecord(matches[0])
+	if record, ok := x.read[id]; ok {
+		return record, nil
+	}
+	record, err := x.store.readRecord(matches[0])
+	if err != nil {
+		return Record{}, err
+	}
+	x.read[id] = record
+	return record, nil
 }
 
 func (s *Store) readRecord(path string) (Record, error) {
@@ -303,30 +345,9 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	}
 	var parent Record
 	if kind == "plan" {
-		if intent != "" {
-			if !strings.HasPrefix(intent, "i") {
-				return Record{}, errors.New("--intent needs an intent ID")
-			}
-			parent, err = s.FindRecord(intent)
-			if err != nil {
-				return Record{}, err
-			}
-		}
-		if len(repos) == 0 {
-			return Record{}, errors.New("plan needs at least one repository")
-		}
-		for _, repo := range repos {
-			if _, ok := cfg.Repositories[repo]; !ok {
-				return Record{}, fmt.Errorf("unknown plan repository: %s", repo)
-			}
-		}
-		for _, dep := range dependencies {
-			if !strings.HasPrefix(dep, "p") {
-				return Record{}, errors.New("plan dependencies must be plan IDs")
-			}
-			if _, err := s.FindRecord(dep); err != nil {
-				return Record{}, err
-			}
+		parent, err = s.planInputs(cfg, intent, repos, dependencies)
+		if err != nil {
+			return Record{}, err
 		}
 	}
 	id, err := s.allocate(kind, author)
@@ -420,10 +441,46 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	return record, nil
 }
 
+// planInputs validates a new plan's intent, repositories, and dependencies and
+// returns the parent intent, if any.
+func (s *Store) planInputs(cfg Config, intent string, repos, dependencies []string) (Record, error) {
+	var parent Record
+	var err error
+	index := s.newRecordIndex()
+	if intent != "" {
+		if !strings.HasPrefix(intent, "i") {
+			return Record{}, errors.New("--intent needs an intent ID")
+		}
+		parent, err = index.Find(intent)
+		if err != nil {
+			return Record{}, err
+		}
+	}
+	if len(repos) == 0 {
+		return Record{}, errors.New("plan needs at least one repository")
+	}
+	for _, repo := range repos {
+		if _, ok := cfg.Repositories[repo]; !ok {
+			return Record{}, fmt.Errorf("unknown plan repository: %s", repo)
+		}
+	}
+	for _, dep := range dependencies {
+		if !strings.HasPrefix(dep, "p") {
+			return Record{}, errors.New("plan dependencies must be plan IDs")
+		}
+		if _, err := index.Find(dep); err != nil {
+			return Record{}, err
+		}
+	}
+	return parent, nil
+}
+
 func unique(values []string) []string {
 	out := []string{}
+	seen := make(map[string]bool, len(values))
 	for _, value := range values {
-		if !slices.Contains(out, value) {
+		if !seen[value] {
+			seen[value] = true
 			out = append(out, value)
 		}
 	}
@@ -585,7 +642,8 @@ func (s *Store) CatalogEntriesFor(repositories []string) ([]string, error) {
 }
 
 func (s *Store) SetDependencies(id string, dependencies []string) error {
-	record, err := s.FindRecord(id)
+	index := s.newRecordIndex()
+	record, err := index.Find(id)
 	if err != nil {
 		return err
 	}
@@ -596,7 +654,7 @@ func (s *Store) SetDependencies(id string, dependencies []string) error {
 	// The plan being edited sits on the trail, so any path back to it is a cycle.
 	trail, sound := map[string]bool{id: true}, map[string]bool{}
 	for _, dep := range dependencies {
-		if err := s.walkDependencies(dep, trail, sound); err != nil {
+		if err := index.walkDependencies(dep, trail, sound); err != nil {
 			return err
 		}
 	}
@@ -607,7 +665,7 @@ func (s *Store) SetDependencies(id string, dependencies []string) error {
 // from id. sound remembers plans already walked without fault, so each plan is
 // read once; without it a graph where plans share ancestors is walked once per
 // path, which doubles with every rung of a ladder of plans.
-func (s *Store) walkDependencies(id string, trail, sound map[string]bool) error {
+func (x *recordIndex) walkDependencies(id string, trail, sound map[string]bool) error {
 	if sound[id] {
 		return nil
 	}
@@ -617,13 +675,13 @@ func (s *Store) walkDependencies(id string, trail, sound map[string]bool) error 
 	if !strings.HasPrefix(id, "p") {
 		return fmt.Errorf("invalid plan dependency: %s", id)
 	}
-	record, err := s.FindRecord(id)
+	record, err := x.Find(id)
 	if err != nil {
 		return err
 	}
 	trail[id] = true
 	for _, dep := range record.DependsOn {
-		if err := s.walkDependencies(dep, trail, sound); err != nil {
+		if err := x.walkDependencies(dep, trail, sound); err != nil {
 			return err
 		}
 	}
