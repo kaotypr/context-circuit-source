@@ -163,7 +163,7 @@ func packageFixture(t *testing.T, root, version string, reported ...string) (str
 		t.Fatal(err)
 	}
 	sums := filepath.Join(dir, "SHA256SUMS")
-	if err := os.WriteFile(sums, []byte(fmt.Sprintf("%x  ./%s\n", sha256.Sum256(data), filepath.Base(archive))), 0600); err != nil {
+	if err := os.WriteFile(sums, fmt.Appendf(nil, "%x  ./%s\n", sha256.Sum256(data), filepath.Base(archive)), 0600); err != nil {
 		t.Fatal(err)
 	}
 	return archive, sums

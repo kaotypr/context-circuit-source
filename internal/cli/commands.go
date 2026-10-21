@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 
@@ -589,13 +590,13 @@ func runContextFind(ctx context.Context, s *workspace.Store, in *input) (any, er
 	// for the same candidates and is told the same act is outstanding.
 	query, repository := in.get("query"), in.get("repo")
 	if query == "" && repository == "" {
-		return nil, fmt.Errorf("pass --query to search, or --repo for the entries claiming one repository")
+		return nil, errors.New("pass --query to search, or --repo for the entries claiming one repository")
 	}
 	if repository == "" {
 		return s.FindContext(ctx, query)
 	}
 	if query != "" {
-		return nil, fmt.Errorf("pass --query or --repo, not both")
+		return nil, errors.New("pass --query or --repo, not both")
 	}
 	cfg, err := s.Config()
 	if err != nil {
