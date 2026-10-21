@@ -28,6 +28,7 @@ func TestGlobalOptionsAfterTheCommand(t *testing.T) {
 		{"--json", "status", "--workspace", f.root},
 		{"--workspace", f.root, "status", "--json"},
 		{"member", "list", "--json", "--workspace", f.root},
+		{"status", "--workspace=" + f.root, "--json=true"},
 	} {
 		code, out, errOut := run(args...)
 		var decoded map[string]any
@@ -59,7 +60,7 @@ func TestAnUnknownFlagPrintsTheCommandsUsage(t *testing.T) {
 	} {
 		code, out, errOut := run(append([]string{"--workspace", f.root}, c.args...)...)
 		command := strings.Join(c.args[:len(c.args)-1], " ")
-		for _, want := range []string{"flag provided but not defined: -nope", c.want, "may also follow the command", "try: context-circuit-cli help " + command} {
+		for _, want := range []string{"flag provided but not defined: -nope", c.want, "may also follow the full command", "try: context-circuit-cli help " + command} {
 			if code != 2 || !strings.Contains(errOut, want) {
 				t.Fatalf("%v: want %q: exit=%d %s %s", c.args, want, code, out, errOut)
 			}

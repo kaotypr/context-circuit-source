@@ -49,7 +49,7 @@ member and every member holds a band, status reports identity_required or
 band_required with band_suggestions, and every changing command except these
 setup steps is refused. The step that completes setup also moves a workspace
 from before 2.4.0 to one ID file per member, and its notice names every file to
-commit, members.yaml included. Selection is taken as given: nothing verifies who
+commit, members.yaml included when the step changed it. Selection is taken as given: nothing verifies who
 a person is.
 
 Roles are free text saying what a member contributes, such as maintainer or
@@ -209,7 +209,7 @@ func commandUsage(command string) string {
 	if lines := signatures(command); len(lines) > 0 {
 		text.WriteString(strings.Join(lines, "\n") + "\n")
 	}
-	text.WriteString("--workspace PATH and --json may also follow the command.\n")
+	text.WriteString("--workspace PATH and --json may also follow the full command.\n")
 	text.WriteString("try: context-circuit-cli help " + command + "\n")
 	return text.String()
 }

@@ -18,7 +18,8 @@ import (
 const Help = `Context Circuit — shared workspace operations
 
 Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
-The global options --workspace PATH and --json may also follow the command.
+The global options --workspace PATH and --json may also follow the full command,
+as in member list --json, but not sit between a group and its subcommand.
 
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
                       [--member-band N] [--member-role ROLE ...] (the first member,

@@ -59,7 +59,9 @@ func aheadBehind(ctx context.Context, repo, branch string) (int, int, string) {
 	if remote == "" {
 		return 0, 0, ""
 	}
-	counts, err := Git(ctx, repo, "rev-list", "--left-right", "--count", "--end-of-options", "refs/heads/"+branch+"..."+"refs/remotes/"+remote)
+	// The counterpart is named as behindRemote names it, so an upstream that is
+	// another local branch (branch.X.remote = .) resolves here as it does there.
+	counts, err := Git(ctx, repo, "rev-list", "--left-right", "--count", "--end-of-options", "refs/heads/"+branch+"..."+remote)
 	if err != nil {
 		return 0, 0, ""
 	}

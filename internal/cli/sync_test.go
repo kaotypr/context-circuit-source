@@ -125,6 +125,42 @@ func TestPreparingFromAnExplicitStaleStartSaysSo(t *testing.T) {
 	}
 }
 
+// A local start with no remote counterpart is not questioned; one whose
+// upstream is another local branch is compared with that branch; and a resumed
+// or reused worktree reports its own branch as its start.
+func TestExplicitStartsWithoutARemoteAndReusedWorktrees(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	git(t, api, "branch", "lonely")
+	git(t, api, "branch", "feature")
+	git(t, api, "branch", "--set-upstream-to=main", "feature")
+	commitIn(t, api, "main.txt", "test: advance main past feature")
+	i := f.intent("billing")
+
+	lonely := f.plan(i.ID, "lonely", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", lonely.ID, "--start", "lonely"))
+	if w.Start != "lonely" || w.SyncRequired != "" {
+		t.Fatalf("a local start with no remote was questioned or not reported: %+v", w)
+	}
+	again := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", lonely.ID))
+	if !again.Reused || again.Start != w.Branch {
+		t.Fatalf("a resumed worktree does not report its branch as its start: %+v", again)
+	}
+
+	feature := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", f.plan(i.ID, "feature", "api").ID, "--start", "feature"))
+	if !strings.Contains(feature.SyncRequired, "1 commit(s) behind main") {
+		t.Errorf("a start behind its local upstream was not named: %+v", feature)
+	}
+
+	reusedPlan := f.plan(i.ID, "reused", "api")
+	branch := "cc/" + reusedPlan.ID + "/api"
+	git(t, api, "branch", branch)
+	reused := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", reusedPlan.ID, "--reuse"))
+	if reused.Start != branch {
+		t.Fatalf("--reuse does not report the branch it checked out as its start: %+v", reused)
+	}
+}
+
 // Bands separate members, not one member's own clones. The ledger that would
 // show the collision is the file that was not pulled, so the number is reported
 // where it is handed out rather than by `check` after both records exist.

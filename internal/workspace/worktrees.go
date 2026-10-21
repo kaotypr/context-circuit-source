@@ -24,7 +24,7 @@ type Worktree struct {
 
 	// Start is what a new worktree actually started from: --start as given, the
 	// base branch or origin/<base> it fell back to, or the existing branch it
-	// checked out. BaseBranch is this machine's base, the branch work on it is
+	// checked out or resumed. BaseBranch is this machine's base, the branch work on it is
 	// delivered to, which is not always where it started.
 	Start       string       `json:"start,omitempty"`
 	BaseBranch  string       `json:"base_branch,omitempty"`
@@ -207,7 +207,9 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 					return tree, err
 				}
 			}
-			tree.Reused = true
+			// A resumed worktree carries on from its own branch, which is what it
+			// starts from now whatever it was first prepared from.
+			tree.Reused, tree.Start = true, tree.Branch
 			tree.Environment, err = ReuseEnvironment(ctx, repo, tree.Path, options)
 			return tree, err
 		}
