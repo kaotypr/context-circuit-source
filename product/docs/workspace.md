@@ -335,9 +335,13 @@ reservation goes to the file of the member its record names in `created_by`,
 and one with no author, or whose record file is gone, goes to the member
 selected on this machine. The shared file is removed and `workspace.yaml` moves
 to `version: 3`. CLIs before 2.4.0 refuse a schema 3 workspace with "requires a
-newer CLI", so every member needs 2.4.0 from then on. Reading commands, a
-`record delete` preview, and a command that refuses its own arguments never
-split.
+newer CLI", so every member needs 2.4.0 from then on. The setup step that
+completes setup — giving the last member a band, adding the last member with
+one, or selecting a member — makes the split itself, right after it succeeds.
+Reading commands, a `record delete` preview, and a command that refuses its own
+arguments never split. The split's notice names every shared file the command
+changed, `members.yaml` included when the command changed it, and those are the
+files to commit.
 
 Because the split writes a file for every author, only one person on a team
 upgrades first. That person makes the first changing command, which splits the

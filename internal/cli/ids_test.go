@@ -84,18 +84,101 @@ func TestTheFirstChangeSplitsASchema2Workspace(t *testing.T) {
 }
 
 // A workspace that cannot say who is working has nobody to give authorless
-// reservations to, so nothing splits until it can.
+// reservations to, so nothing splits until it can. The selection that completes
+// setup then splits it itself, rather than leaving it to the next command.
 func TestTheSplitWaitsForSetup(t *testing.T) {
 	f := setup(t)
 	schema2(t, f, []string{"i050"}, nil)
 	upgraded(t, f, "members:\n  maya:\n    name: Maya\n    band: 0\n")
-	f.ok("member", "use", "--id", "maya")
-	if !exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) {
+	legacy := filepath.Join(f.root, ".context-circuit", "ids.yaml")
+	f.fail("record", "create", "--kind", "intent", "--slug", "early", "--title", "Early")
+	if !exists(legacy) {
 		t.Fatal("the split ran before a member was selected")
 	}
-	f.intent("next")
-	if exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) {
-		t.Fatal("the first change after setup did not split")
+	code, out, errOut := call(f.root, "member", "use", "--id", "maya")
+	if code != 0 {
+		t.Fatalf("exit=%d %s %s", code, out, errOut)
+	}
+	if exists(legacy) || !strings.Contains(errOut, "notice: moved this workspace's ID reservations") {
+		t.Fatalf("the selection that completed setup did not split: %s", errOut)
+	}
+	// member.local.yaml is this machine's alone and is never offered for commit.
+	if strings.Contains(errOut, "member.local.yaml") || strings.Contains(errOut, "members.yaml") {
+		t.Fatalf("the notice named a file the selection did not change for commit: %s", errOut)
+	}
+	if l := idFile(t, f, ".context-circuit/ids/maya.yaml"); !slices.Equal(l.Intents, []string{"i050"}) {
+		t.Fatalf("maya's file does not hold the reservation: %+v", l)
+	}
+}
+
+// The band that completes setup makes the split in the same command, and the
+// notice names every shared file that command changed: the roster it banded, as
+// well as what the split wrote and removed. A second call has nothing to split.
+func TestTheBandThatCompletesSetupSplits(t *testing.T) {
+	f := setup(t)
+	schema2(t, f, []string{"i050"}, nil)
+	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    band: 0\n  alex:\n    name: Alex\n")
+	legacy := filepath.Join(f.root, ".context-circuit", "ids.yaml")
+
+	code, out, errOut := call(f.root, "member", "band", "--id", "alex", "--band", "2")
+	if code != 0 {
+		t.Fatalf("exit=%d %s %s", code, out, errOut)
+	}
+	if exists(legacy) || !strings.Contains(read(t, filepath.Join(f.root, "workspace.yaml")), "version: 3") {
+		t.Fatal("the band that completed setup did not split")
+	}
+	want := "Commit and push .context-circuit/ids.yaml, .context-circuit/ids/maya.yaml, members.yaml and workspace.yaml so every clone sees the same reservations"
+	if !strings.Contains(errOut, "notice: moved this workspace's ID reservations") || !strings.Contains(errOut, "from 2 to 3") || !strings.Contains(errOut, want) {
+		t.Fatalf("the notice does not name every file the command changed:\n%s", errOut)
+	}
+	if l := idFile(t, f, ".context-circuit/ids/maya.yaml"); !slices.Equal(l.Intents, []string{"i050"}) {
+		t.Fatalf("maya's file does not hold the reservation: %+v", l)
+	}
+
+	code, out, errOut = call(f.root, "member", "band", "--id", "alex", "--band", "3")
+	if code != 0 || strings.Contains(errOut, "notice:") {
+		t.Fatalf("a second band change split again: exit=%d %s %s", code, out, errOut)
+	}
+	f.ok("check")
+}
+
+// Adding the last member with a band completes setup the same way.
+func TestAddingABandedMemberSplitsWhenItCompletesSetup(t *testing.T) {
+	f := setup(t)
+	schema2(t, f, []string{"i050"}, nil)
+	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    band: 0\n  alex:\n    name: Alex\n")
+	// Refused: alex still has no band, and a refused call splits nothing.
+	f.fail("member", "add", "--id", "sam", "--name", "Sam")
+	if !exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) {
+		t.Fatal("a refused add split the ID file")
+	}
+	// Setup is still incomplete after this add, so it does not split either.
+	_, _, errOut := call(f.root, "member", "add", "--id", "sam", "--name", "Sam", "--band", "3")
+	if strings.Contains(errOut, "notice:") || !exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) {
+		t.Fatalf("an add that left setup incomplete split: %s", errOut)
+	}
+	code, out, errOut := call(f.root, "member", "band", "--id", "alex", "--band", "2")
+	if code != 0 || !strings.Contains(errOut, "members.yaml") || exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) {
+		t.Fatalf("the band completing setup did not split: exit=%d %s %s", code, out, errOut)
+	}
+}
+
+// A roster complete except for the member being added splits on that add.
+func TestAnAddThatCompletesSetupSplits(t *testing.T) {
+	f := setup(t)
+	schema2(t, f, []string{"i050"}, nil)
+	upgraded(t, f, "members:\n  maya:\n    name: Maya\n    band: 0\n")
+	write(t, filepath.Join(f.root, "member.local.yaml"), "member: alex\n")
+	code, out, errOut := call(f.root, "member", "add", "--id", "alex", "--name", "Alex", "--band", "2")
+	if code != 0 {
+		t.Fatalf("exit=%d %s %s", code, out, errOut)
+	}
+	if exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) || !strings.Contains(errOut, "members.yaml") || !strings.Contains(errOut, ".context-circuit/ids/alex.yaml") {
+		t.Fatalf("the add that completed setup did not split and name its files: %s", errOut)
+	}
+	// The authorless reservation goes to the member selected here.
+	if l := idFile(t, f, ".context-circuit/ids/alex.yaml"); !slices.Equal(l.Intents, []string{"i050"}) {
+		t.Fatalf("alex's file does not hold the reservation: %+v", l)
 	}
 }
 
@@ -326,7 +409,11 @@ func TestADeviceNameMemberIsNamedBeforeAndAtTheSplit(t *testing.T) {
 
 	// The member selected on this machine is named as that.
 	upgraded(t, f, "members:\n  con:\n    name: Con\n    band: 1\n")
-	f.ok("member", "use", "--id", "con")
+	// The selection completes setup and is kept; the split it cannot make is a
+	// warning, and the next changing command refuses with the reason.
+	if code, out, errOut := call(f.root, "member", "use", "--id", "con"); code != 0 || !strings.Contains(errOut, "warning: member use was done") || !strings.Contains(errOut, `"con"`) {
+		t.Fatalf("the selection was refused or did not warn: exit=%d %s %s", code, out, errOut)
+	}
 	if out := f.fail("record", "create", "--kind", "intent", "--slug", "next", "--title", "Next"); !strings.Contains(out, `the member selected on this machine, "con"`) {
 		t.Fatalf("the split refusal does not name the selected member: %s", out)
 	}

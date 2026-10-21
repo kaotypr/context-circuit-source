@@ -6,12 +6,17 @@ install side by side, so the shared command on PATH may select a different one; 
 against a workspace pinning another version.
 
 Use `context-circuit-cli --workspace PATH --json COMMAND ...` for structured output.
-Global flags precede the command. Run `context-circuit-cli help` for the full
-surface, and `help` with a command name for that command's signatures and what it
-decides, refuses, or leaves to the caller. A fully resolved command also takes
-`--help` for its flags; a group such as `member` needs its subcommand first, and
-reports which option it could not take. Errors go to stderr with a nonzero exit
-status.
+The global flags `--workspace PATH` and `--json` may precede the command or follow
+the full command, as in `context-circuit-cli status --workspace PATH --json` or
+`context-circuit-cli member list --json`; they do not go between a group such as
+`member` and its subcommand. Run
+`context-circuit-cli help` for the full surface, and `help` with a command name for
+that command's signatures and what it decides, refuses, or leaves to the caller. A
+fully resolved command also takes `--help`, which prints that same help; a flag it
+does not take is named, followed by the command's signature and the `help` topic
+to read, with exit status 2. A group such as `member` needs its subcommand first,
+and reports which option it could not take. Errors go to stderr with a nonzero
+exit status.
 Normal output is readable YAML; `--json` gives the agent structured values.
 The examples assume the current directory is the initialized workspace.
 
@@ -128,7 +133,16 @@ worktree on this machine was prepared for a deleted plan. With `--id`, links
 between the named records do not block, and a deleted plan is taken out of its
 own intent's `plans:` list and reported under `unlinked` instead of refusing;
 any other link refuses and the refusal names the `--id` values to add so the
-records are deleted together. A plan its intent lists that no record file holds
+records are deleted together. A refusal, with or without `--confirm`, still
+returns the preview on the result stream, in YAML or `--json`: the records asked
+for with their author, path, and status; `blocked_by`, each record outside the
+selection that points at one of them, with its `id`, `created_by`, `path`,
+`status`, and `link` (such as `belongs to intent i100`, `depends on p1000`, or
+`links plan p1000`); `refused`, the reason; and, by `--id`, `add_ids`, the IDs to
+add. A worktree on this machine prepared for a selected plan is named in
+`refused` only, so a refusal caused by such a worktree alone has no `blocked_by`.
+The reason is also printed on stderr, nothing is deleted or released, and the
+exit status is 1. A plan its intent lists that no record file holds
 any more is unlinked the same way. In every mode, `warnings` also lists what each
 bound checkout still holds for a deleted plan number — local and remote-tracking
 `cc/pNNNN/*` branches, worktrees on such a branch, and a leftover
@@ -147,14 +161,21 @@ reserved and the same finishing call, or says nothing is left when none is.
 
 A workspace written by a CLI before 2.4.0 is at schema 2, with every reservation
 in one shared `.context-circuit/ids.yaml`. The first changing command run once
-setup is complete splits it into one file per member: each reservation goes to
+setup is complete splits it into one file per member, and so does the setup step
+that completes setup — `member band`, `member add --band`, or `member use` —
+right after it succeeds, rather than leaving the split to the next command. A
+split that setup step cannot make is a warning, not a failure of the step, and
+the next changing command refuses with the reason. Each reservation goes to
 the file of its record's `created_by`, and one with no author or no record file
 goes to the member selected on this machine. The shared file is removed and
 `workspace.yaml` moves to `version: 3`. A shared file that comes back later, from
 a clone that had not pulled the split, is split again on the next changing
 command, skipping numbers a member file already holds. The split is reported as
 one `notice:` paragraph on the error stream, in `--json` mode too, so no
-command's result changes shape. `status`, `check`, the other reading commands,
+command's result changes shape. The notice names every shared file the command
+changed, from what actually changed: `workspace.yaml`, the ID files written or
+removed, and `members.yaml` when the command changed it, as `member band` does.
+Records the command writes are in its own result. `status`, `check`, the other reading commands,
 and `record delete` without `--confirm` never split. Nor do a few refusals
 checked before the split: `member add` without `--band`, a malformed `member
 roles` call, and a confirmed `record delete` its preview would refuse. A refusal
@@ -166,8 +187,8 @@ The split is the one time a CLI rewrites an existing workspace's files on its
 own, and it is a cut-over: CLIs before 2.4.0 refuse a schema 3 workspace with
 "requires a newer CLI", so every member needs 2.4.0 before they pull it. It
 writes a file for every author, so only one person on a team upgrades first:
-they make the first changing command, then commit and push `workspace.yaml` and
-`.context-circuit/`; committing is the person's decision. Everyone else pulls
+they make the first changing command, then commit and push the files the notice
+names; committing is the person's decision. Everyone else pulls
 before making any change. Teammates who upgrade at the same time get a Git
 conflict in `.context-circuit/ids/*.yaml`, which is theirs to resolve by hand:
 keep the union of both sides' entries in each member file, then run `check`,
@@ -269,6 +290,18 @@ that the removal left empty, up to and including `.worktrees/`, and lists them a
 alone, and one that could not be removed is a warning rather than a failure.
 `worktree prepare` refuses a plan branch already checked out
 elsewhere, and says where and what is safe to do next.
+
+A prepared worktree reports `start`, what it actually started from: `--start` as
+given, the base branch or `origin/<base>` it fell back to, or the existing branch
+it checked out with `--reuse` or resumed, for which `reused` is also true. `base_branch` stays this machine's base, the branch the
+work is delivered to, which a worktree started elsewhere need not share. Neither
+form of start fetches. A start derived from a base behind its fetched remote is
+reported in `sync_required`, and so is an explicit `--start` naming a local branch
+that is behind its remote-tracking branch or has diverged from it: the worktree
+still starts from the local branch, and `sync_required` gives the counts, how to
+start from the remote instead (`--start origin/<branch>`), and that `repo fetch`
+updates the remote ref. A start ahead of its remote, a remote-tracking ref, or a
+commit is not questioned.
 
 `check` reports findings as an `issue` and the `resolve` that discharges it:
 

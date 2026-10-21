@@ -294,6 +294,59 @@ func idFileHeader(member string) string {
 		"# records add to this file, and only `record delete` takes a number out of it.\n"
 }
 
+// SharedSnapshot holds the content of the shared files a setup step or the ID
+// split can change, keyed by workspace-relative slash path. A file absent when
+// it was taken has no key.
+type SharedSnapshot map[string][]byte
+
+// SharedFiles snapshots workspace.yaml, members.yaml, and every ID file, so
+// what a command changed among them can be named from what actually changed
+// rather than from what it was expected to touch.
+func (s *Store) SharedFiles() (SharedSnapshot, error) {
+	files, err := s.IDFiles()
+	if err != nil {
+		return nil, err
+	}
+	snapshot := SharedSnapshot{}
+	for _, rel := range append([]string{"workspace.yaml", "members.yaml"}, files...) {
+		data, err := s.Read(rel)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		snapshot[rel] = data
+	}
+	return snapshot, nil
+}
+
+// ChangedSince lists, sorted, the shared files added, modified, or removed
+// since the snapshot was taken.
+func (s *Store) ChangedSince(before SharedSnapshot) ([]string, error) {
+	after, err := s.SharedFiles()
+	if err != nil {
+		return nil, err
+	}
+	changed := []string{}
+	for rel, data := range after {
+		if old, ok := before[rel]; !ok || !bytes.Equal(old, data) {
+			changed = append(changed, rel)
+		}
+	}
+	for rel := range before {
+		if _, ok := after[rel]; !ok {
+			changed = append(changed, rel)
+		}
+	}
+	sort.Strings(changed)
+	return changed, nil
+}
+
+// changedSince is ChangedSince as the split calls it. Tests replace it to make
+// the listing fail after a split has finished.
+var changedSince = (*Store).ChangedSince
+
 // IDSplit reports what moving the legacy shared ID file into member files did.
 type IDSplit struct {
 	Moved         map[string][]string `json:"moved"`
@@ -301,7 +354,23 @@ type IDSplit struct {
 	LegacyRemoved bool                `json:"legacy_removed"`
 	FromSchema    int                 `json:"from_schema"`
 	ToSchema      int                 `json:"to_schema"`
-	Commit        string              `json:"commit_recommended"`
+
+	// Files names every shared file changed, removed ones included. The split
+	// fills it with its own changes; a command that split on its way through
+	// widens it to everything it changed, such as members.yaml for a band.
+	Files []string `json:"files"`
+}
+
+// commitSentence names the files to commit, in the order Files holds them.
+func (split IDSplit) commitSentence() string {
+	files := split.Files
+	switch len(files) {
+	case 0:
+		return "Commit and push the changed workspace files so every clone sees the same reservations; committing is the person's decision."
+	case 1:
+		return "Commit and push " + files[0] + " so every clone sees the same reservations; committing is the person's decision."
+	}
+	return "Commit and push " + strings.Join(files[:len(files)-1], ", ") + " and " + files[len(files)-1] + " so every clone sees the same reservations; committing is the person's decision."
 }
 
 // Notice is the one paragraph a person reads on the error stream when a
@@ -331,7 +400,7 @@ func (split IDSplit) Notice() string {
 	if split.LegacyRemoved {
 		b.WriteString(" Removed " + LegacyIDFile + ".")
 	}
-	b.WriteString(" " + split.Commit + "\n")
+	b.WriteString(" " + split.commitSentence() + "\n")
 	return b.String()
 }
 
@@ -364,6 +433,10 @@ func (s *Store) SplitIDLedger(member string) (*IDSplit, error) {
 		return nil, fmt.Errorf("the member selected on this machine, %q, cannot have an ID file: %w; %s", member, err, renameMemberByHand)
 	}
 	cfg, err := s.Config()
+	if err != nil {
+		return nil, err
+	}
+	before, err := s.SharedFiles()
 	if err != nil {
 		return nil, err
 	}
@@ -465,6 +538,11 @@ func (s *Store) SplitIDLedger(member string) (*IDSplit, error) {
 		}
 		split.LegacyRemoved = true
 	}
-	split.Commit = "Commit and push workspace.yaml and .context-circuit/ so every clone sees the same reservations; committing is the person's decision."
+	// The split is finished here. Failing to list what it changed must not
+	// read as the split failing, so Files stays empty and the notice falls
+	// back to naming no files.
+	if files, err := changedSince(s, before); err == nil {
+		split.Files = files
+	}
 	return split, nil
 }
