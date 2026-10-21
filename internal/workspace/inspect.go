@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 )
@@ -47,16 +47,13 @@ func wrap(issues []string, resolve string) []Finding {
 	return out
 }
 
+// uniqueFindings sorts findings by issue and keeps the first of each. The sort
+// is stable so "first" stays the earliest reported, and the copy starts non-nil
+// so an empty result still encodes as [] rather than null.
 func uniqueFindings(values []Finding) []Finding {
-	out, seen := []Finding{}, map[string]bool{}
-	for _, value := range values {
-		if !seen[value.Issue] {
-			seen[value.Issue] = true
-			out = append(out, value)
-		}
-	}
-	sort.Slice(out, func(a, b int) bool { return out[a].Issue < out[b].Issue })
-	return out
+	out := append([]Finding{}, values...)
+	slices.SortStableFunc(out, func(a, b Finding) int { return strings.Compare(a.Issue, b.Issue) })
+	return slices.CompactFunc(out, func(a, b Finding) bool { return a.Issue == b.Issue })
 }
 
 type Orientation struct {
@@ -689,7 +686,7 @@ type ContextSearch struct {
 
 func matchLines(source string, borrowed bool, data []byte, query string) []ContextMatch {
 	var found []ContextMatch
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		if strings.TrimSpace(line) != "" && strings.Contains(strings.ToLower(line), strings.ToLower(query)) {
 			found = append(found, ContextMatch{Source: source, Borrowed: borrowed, Entry: line})
 		}
@@ -714,11 +711,7 @@ func (s *Store) FindContext(ctx context.Context, query string) (ContextSearch, e
 	if err != nil {
 		return result, err
 	}
-	ids := make([]string, 0, len(cfg.KnowledgeRepositories))
-	for id := range cfg.KnowledgeRepositories {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(cfg.KnowledgeRepositories))
 	for _, id := range ids {
 		index, data, err := s.KnowledgeIndex(ctx, id)
 		if err != nil {

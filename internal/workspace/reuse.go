@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/kaotypr/context-circuit-source/internal/cow"
@@ -29,7 +30,7 @@ func (options ReuseOptions) Validate() error {
 		if path == "." || !filepath.IsLocal(path) || strings.Contains(path, "\\") {
 			return fmt.Errorf("reuse path must be repository-relative: %s", path)
 		}
-		for _, part := range strings.Split(path, "/") {
+		for part := range strings.SplitSeq(path, "/") {
 			if part == ".git" || part == ".context-circuit" {
 				return fmt.Errorf("cannot reuse control files: %s", path)
 			}
@@ -62,7 +63,7 @@ func ReuseEnvironment(ctx context.Context, source, destination string, options R
 		return nil, err
 	}
 	selected := map[string]bool{}
-	for _, path := range strings.Split(ignored, "\x00") {
+	for path := range strings.SplitSeq(ignored, "\x00") {
 		path = strings.TrimSuffix(path, "/")
 		base := filepath.Base(path)
 		if base == "node_modules" || base == ".env" || strings.HasPrefix(base, ".env.") {
@@ -73,11 +74,7 @@ func ReuseEnvironment(ctx context.Context, source, destination string, options R
 		path = filepath.ToSlash(path)
 		selected[path] = true
 	}
-	paths := make([]string, 0, len(selected))
-	for path := range selected {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
+	paths := slices.Sorted(maps.Keys(selected))
 	srcStore, err := Open(source)
 	if err != nil {
 		return nil, err
@@ -199,7 +196,7 @@ func compareDependencyInputs(ctx context.Context, source, destination string) (s
 		if err != nil {
 			return "", err
 		}
-		for _, name := range strings.Split(list, "\x00") {
+		for name := range strings.SplitSeq(list, "\x00") {
 			switch filepath.Base(name) {
 			case "package.json", "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "pnpm-workspace.yaml", "bun.lock", "bun.lockb", ".nvmrc", ".node-version":
 				names[name] = true

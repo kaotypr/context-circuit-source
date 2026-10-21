@@ -3,6 +3,7 @@ package workspace
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -125,5 +126,18 @@ func TestGlossaryIsExemptFromNoteShape(t *testing.T) {
 		if strings.Contains(issue.Issue, "readability:") {
 			t.Fatalf("the glossary is not a note: %v", issues)
 		}
+	}
+}
+
+// Findings are sorted by issue, a repeated issue keeps the one reported first,
+// and no findings still encode as an empty list for `check --json`.
+func TestUniqueFindingsKeepsTheFirstOfEachIssue(t *testing.T) {
+	got := uniqueFindings([]Finding{{"b", "first b"}, {"a", "only a"}, {"b", "second b"}})
+	want := []Finding{{"a", "only a"}, {"b", "first b"}}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	if empty := uniqueFindings(nil); empty == nil || len(empty) != 0 {
+		t.Fatalf("no findings must be an empty, non-nil list: %#v", empty)
 	}
 }

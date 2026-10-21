@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -352,7 +351,7 @@ func (b *blockers) addWorktrees(local Associations, selected map[string]bool) {
 
 // refuse turns the blockers into the refusal that carries the preview.
 func refuse(result Deletion, b *blockers, byID bool) (Deletion, error) {
-	sort.Strings(b.messages)
+	slices.Sort(b.messages)
 	message := fmt.Sprintf("nothing was deleted, because these would be left pointing at deleted records: %s. Resolve each first: its author edits the link out or deletes the record", strings.Join(b.messages, "; "))
 	if byID && len(b.addIDs) > 0 {
 		add := slices.Sorted(maps.Keys(b.addIDs))
@@ -363,7 +362,7 @@ func refuse(result Deletion, b *blockers, byID bool) (Deletion, error) {
 		}
 		message += fmt.Sprintf(", or delete them together by adding %s to this call", strings.Join(more, " "))
 	}
-	sort.SliceStable(b.records, func(i, j int) bool { return b.records[i].ID < b.records[j].ID })
+	slices.SortStableFunc(b.records, func(x, y BlockingRecord) int { return strings.Compare(x.ID, y.ID) })
 	result.BlockedBy = b.records
 	result.Refused = message
 	return result, &DeletionRefused{Preview: result}
@@ -383,7 +382,7 @@ func releasedIDs(idFiles []string, ledgers map[string]Ledger, selected map[strin
 			}
 		}
 	}
-	sort.Strings(released)
+	slices.Sort(released)
 	return released
 }
 
@@ -591,8 +590,8 @@ func (s *Store) unfinished(path string, records []DeletedRecord, reserved map[st
 	// Only plan.md makes a folder a record, so once it is gone no re-run
 	// reaches what is left of the folder.
 	folder := ""
-	if strings.HasSuffix(path, "/") {
-		if p, err := s.Path(strings.TrimSuffix(path, "/")); err == nil {
+	if before, ok := strings.CutSuffix(path, "/"); ok {
+		if p, err := s.Path(before); err == nil {
 			if _, err := os.Lstat(filepath.Join(p, "plan.md")); os.IsNotExist(err) {
 				folder = fmt.Sprintf(", then remove the folder %s by hand: it no longer holds plan.md, so no re-run reaches it", path)
 			}
@@ -640,7 +639,7 @@ func branchLeftovers(ctx context.Context, repo, path string, plans []string) []s
 	if err != nil {
 		warnings = append(warnings, fmt.Sprintf("%s was not inspected for leftover branches: %v", repo, err))
 	}
-	for _, ref := range strings.Fields(refs) {
+	for ref := range strings.FieldsSeq(refs) {
 		for _, plan := range plans {
 			switch {
 			case strings.HasPrefix(ref, "refs/heads/cc/"+plan+"/"):

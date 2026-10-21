@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -146,7 +145,7 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 		plans[record.ID] = record
 		ids = append(ids, record.ID)
 	}
-	sort.Strings(ids)
+	slices.Sort(ids)
 	if len(selectedSet) > 0 && len(ids) != len(selectedSet) {
 		return Order{}, errors.New("selected plan is not active")
 	}
@@ -342,7 +341,7 @@ func startFrom(find func(string) (Record, error), plans map[string]Record, plan 
 			predecessors = append(predecessors, dep)
 		}
 	}
-	sort.Strings(predecessors)
+	slices.Sort(predecessors)
 	if len(predecessors) == 0 {
 		return OrderStart{Base: baseBranch}
 	}

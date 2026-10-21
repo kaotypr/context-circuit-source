@@ -87,11 +87,11 @@ func (s *Store) Worktrees(ctx context.Context, repoID string) ([]Worktree, error
 	}
 	list := []Worktree{}
 	var current *Worktree
-	for _, field := range strings.Split(text, "\x00") {
-		if strings.HasPrefix(field, "worktree ") {
+	for field := range strings.SplitSeq(text, "\x00") {
+		if after, ok := strings.CutPrefix(field, "worktree "); ok {
 			// Git prints forward slashes on Windows. Return the same canonical
 			// native path for a new worktree, listing, and later reuse.
-			path := filepath.Clean(strings.TrimPrefix(field, "worktree "))
+			path := filepath.Clean(after)
 			if resolved, err := filepath.EvalSymlinks(path); err == nil {
 				path = resolved
 			}
@@ -426,7 +426,7 @@ func earlierPlan(ctx context.Context, repo string, plan Record, recorded, start,
 	if err != nil {
 		return ""
 	}
-	for _, field := range strings.Fields(times) {
+	for field := range strings.FieldsSeq(times) {
 		if at, err := strconv.ParseInt(field, 10, 64); err == nil && at < created.Unix() {
 			return fmt.Sprintf("it holds commits made before this %s was created at %s", plan.ID, plan.CreatedAt)
 		}
@@ -448,7 +448,7 @@ func unprovenWorktree(ctx context.Context, repo, base string, plan Record, tree 
 		return ""
 	}
 	if len(snapshot.Changes) > 0 {
-		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and its uncommitted changes are tied to no %s", plan.ID)
+		return "its association predates 2.4.0, it holds no commit to date it by, and its uncommitted changes are tied to no " + plan.ID
 	}
 	if ref, commit := baseRef(ctx, repo, base); ref == "" || snapshot.Head != tree.StartCommit || commit != snapshot.Head {
 		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and it is not at the tip of %s, where a fresh prepare for this %s would start", base, plan.ID)

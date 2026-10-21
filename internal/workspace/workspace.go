@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"regexp"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -312,11 +312,7 @@ func (s *Store) Members() (Members, error) {
 
 // IDs lists the roster's member IDs in order.
 func (m Members) IDs() []string {
-	ids := make([]string, 0, len(m.Members))
-	for id := range m.Members {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(m.Members))
 	return ids
 }
 
@@ -880,10 +876,8 @@ func (s *Store) Relate(from, to, description string) error {
 		return err
 	}
 	relation := Relationship{from, to, description}
-	for _, existing := range cfg.Relationships {
-		if existing == relation {
-			return nil
-		}
+	if slices.Contains(cfg.Relationships, relation) {
+		return nil
 	}
 	return s.Update("workspace.yaml", []string{"relationships"}, append(cfg.Relationships, relation), 0644)
 }

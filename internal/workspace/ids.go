@@ -3,10 +3,11 @@ package workspace
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -93,7 +94,7 @@ func (s *Store) IDFiles() ([]string, error) {
 			files = append(files, IDFilesDir+"/"+entry.Name())
 		}
 	}
-	sort.Strings(files)
+	slices.Sort(files)
 	return files, nil
 }
 
@@ -183,7 +184,7 @@ func (s *Store) reservedIDs() (map[string][]string, error) {
 		}
 	}
 	for id := range reserved {
-		sort.Strings(reserved[id])
+		slices.Sort(reserved[id])
 	}
 	return reserved, nil
 }
@@ -270,11 +271,7 @@ func (s *Store) checkIDFiles(issues []Finding) ([]Finding, map[string]bool, erro
 			}
 		}
 	}
-	ids := make([]string, 0, len(holders))
-	for id := range holders {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(holders))
 	for _, id := range ids {
 		if len(holders[id]) > 1 {
 			issues = append(issues, found(id+" is reserved in more than one ID file: "+strings.Join(holders[id], ", "),
@@ -339,7 +336,7 @@ func (s *Store) ChangedSince(before SharedSnapshot) ([]string, error) {
 			changed = append(changed, rel)
 		}
 	}
-	sort.Strings(changed)
+	slices.Sort(changed)
 	return changed, nil
 }
 
@@ -376,11 +373,7 @@ func (split IDSplit) commitSentence() string {
 // Notice is the one paragraph a person reads on the error stream when a
 // command split the ID file before doing what it was asked.
 func (split IDSplit) Notice() string {
-	files := make([]string, 0, len(split.Moved))
-	for rel := range split.Moved {
-		files = append(files, rel)
-	}
-	sort.Strings(files)
+	files := slices.Sorted(maps.Keys(split.Moved))
 	parts := make([]string, 0, len(files))
 	for _, rel := range files {
 		parts = append(parts, fmt.Sprintf("%s to %s", strings.Join(split.Moved[rel], ", "), rel))
@@ -528,11 +521,7 @@ func (s *Store) moveLegacy(memberFiles []string, member string, split *IDSplit) 
 			owners[owner].plans = append(owners[owner].plans, id)
 		}
 	}
-	names := make([]string, 0, len(owners))
-	for owner := range owners {
-		names = append(names, owner)
-	}
-	sort.Strings(names)
+	names := slices.Sorted(maps.Keys(owners))
 	// Every author is checked before anything is written, so a name that
 	// cannot be a file stops the split whole and is named with its records.
 	for _, owner := range names {

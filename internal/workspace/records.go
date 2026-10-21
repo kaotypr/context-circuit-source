@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -114,7 +113,7 @@ func (s *Store) RecordPaths(archived bool) ([]string, error) {
 			return nil, err
 		}
 	}
-	sort.Strings(paths)
+	slices.Sort(paths)
 	return paths, nil
 }
 
@@ -627,7 +626,7 @@ func (s *Store) CatalogEntriesFor(repositories []string) ([]string, error) {
 	entries := []string{}
 	for _, repository := range repositories {
 		needle := strings.ToLower("{" + repository + "}")
-		for _, line := range strings.Split(string(data), "\n") {
+		for line := range strings.SplitSeq(string(data), "\n") {
 			if !strings.Contains(strings.ToLower(line), needle) {
 				continue
 			}
@@ -637,7 +636,7 @@ func (s *Store) CatalogEntriesFor(repositories []string) ([]string, error) {
 			}
 		}
 	}
-	sort.Strings(entries)
+	slices.Sort(entries)
 	return entries, nil
 }
 

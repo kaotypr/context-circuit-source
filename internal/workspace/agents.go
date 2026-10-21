@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -69,7 +69,7 @@ Do not write or reconcile durable project knowledge; report what the coordinator
 
 func validHost(host string) error {
 	if host != "codex" && host != "claude-code" && host != "cursor" {
-		return fmt.Errorf("host must be codex, claude-code, or cursor")
+		return errors.New("host must be codex, claude-code, or cursor")
 	}
 	return nil
 }
@@ -78,11 +78,11 @@ func validateSetting(host string, setting AgentSetting) error {
 		return err
 	}
 	if strings.ContainsAny(setting.Model, "\t[] ") {
-		return fmt.Errorf("use a plain model ID or inherit; effort has its own field")
+		return errors.New("use a plain model ID or inherit; effort has its own field")
 	}
 	for _, r := range setting.Model {
 		if unicode.IsControl(r) || unicode.IsSpace(r) {
-			return fmt.Errorf("invalid model ID")
+			return errors.New("invalid model ID")
 		}
 	}
 	switch setting.Effort {
@@ -91,10 +91,10 @@ func validateSetting(host string, setting AgentSetting) error {
 		return fmt.Errorf("unsupported effort: %s", setting.Effort)
 	}
 	if host == "claude-code" && (setting.Effort == "none" || setting.Effort == "minimal" || setting.Effort == "ultra") {
-		return fmt.Errorf("Claude Code does not expose this effort setting")
+		return errors.New("Claude Code does not expose this effort setting")
 	}
 	if host == "cursor" && setting.Model == "inherit" && setting.Effort != "inherit" {
-		return fmt.Errorf("Cursor effort selection needs an explicit model ID")
+		return errors.New("Cursor effort selection needs an explicit model ID")
 	}
 	return nil
 }
@@ -149,7 +149,7 @@ func (s *Store) agentTiering() (RoleTiering, []string, error) {
 			overrides = append(overrides, host+"/"+role)
 		}
 	}
-	sort.Strings(overrides)
+	slices.Sort(overrides)
 	for host, settings := range cfg.Hosts {
 		if err := validHost(host); err != nil {
 			return cfg, nil, err
@@ -527,7 +527,7 @@ func recordBody(record Record, kind string) string {
 
 func longestRun(text string, char byte) int {
 	longest, run := 0, 0
-	for i := 0; i < len(text); i++ {
+	for i := range len(text) {
 		if text[i] == char {
 			run++
 			longest = max(longest, run)
@@ -557,7 +557,7 @@ func checkDispatchArgs(role, task, plan, intent, repo string, shared, reviewRequ
 		}
 	}
 	if role == "reviewer" && !reviewRequested {
-		return fmt.Errorf("independent review requires an explicit user request; use --review-requested only to represent that request")
+		return errors.New("independent review requires an explicit user request; use --review-requested only to represent that request")
 	}
 	if shared && role != "worker" {
 		return errors.New("--shared describes workers sharing one worktree")
@@ -621,10 +621,7 @@ func (s *Store) workerAssignment(record Record, repo string) (string, error) {
 	}
 	brief := "\n\nRepository assignment: " + repo
 	if len(files) > 0 {
-		brief += "\n\n# Required files relative to workspace root\n\n"
-		for _, file := range files {
-			brief += "- " + file + "\n"
-		}
+		brief += "\n\n# Required files relative to workspace root\n\n- " + strings.Join(files, "\n- ") + "\n"
 		brief += "\nResolve these paths against the workspace root above and read every required file before editing."
 	}
 	return brief + "\n\nWork only in your assigned repository worktree. Links in the plan body to other repositories' files are for human review; do not open them unless assigned here.", nil

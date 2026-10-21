@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -376,11 +377,7 @@ func (s *Store) KnowledgeStates(ctx context.Context) ([]KnowledgeState, error) {
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]string, 0, len(cfg.KnowledgeRepositories))
-	for id := range cfg.KnowledgeRepositories {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(cfg.KnowledgeRepositories))
 	states := make([]KnowledgeState, 0, len(ids))
 	for _, id := range ids {
 		repo := cfg.KnowledgeRepositories[id]

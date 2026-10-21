@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -47,7 +47,7 @@ func (s *Store) Path(rel string) (string, error) {
 		return "", fmt.Errorf("invalid workspace path: %s", rel)
 	}
 	current := s.Root
-	for _, part := range strings.Split(filepath.ToSlash(rel), "/") {
+	for part := range strings.SplitSeq(filepath.ToSlash(rel), "/") {
 		current = filepath.Join(current, part)
 		info, err := os.Lstat(current)
 		if err != nil && !os.IsNotExist(err) {
@@ -374,7 +374,7 @@ func (s *Store) Export(files map[string][]byte) error {
 		}
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	slices.Sort(names)
 	for _, name := range names {
 		p, _ := s.Path(name)
 		if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {

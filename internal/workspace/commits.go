@@ -5,7 +5,7 @@ import (
 	"errors"
 	"os/exec"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -87,7 +87,7 @@ func (s *Store) UncommittedRecords(ctx context.Context, ids ...string) (files []
 	for path, change := range changes {
 		files = append(files, UncommittedFile{Path: path, Change: change})
 	}
-	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
+	slices.SortFunc(files, func(a, b UncommittedFile) int { return strings.Compare(a.Path, b.Path) })
 	return files, ""
 }
 
