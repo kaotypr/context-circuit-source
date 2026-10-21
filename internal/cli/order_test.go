@@ -766,8 +766,8 @@ func TestDependencyChecksWalkEachPlanOnce(t *testing.T) {
 		}
 		f.ok(args...)
 	}
-	if _, out, _ := call(f.root, "check"); strings.Contains(out, "dependency cycle") {
-		t.Fatalf("a ladder has no cycle:\n%s", out)
+	if code, out, errOut := call(f.root, "check"); code != 0 || strings.Contains(out, "dependency cycle") {
+		t.Fatalf("a ladder passes check: exit=%d\n%s%s", code, out, errOut)
 	}
 	f.ok("record", "dependencies", "--id", "p0040", "--depends-on", "p0039", "--depends-on", "p0038")
 	if out := f.fail("record", "dependencies", "--id", "p0001", "--depends-on", "p0040"); !strings.Contains(out, "dependency cycle") {

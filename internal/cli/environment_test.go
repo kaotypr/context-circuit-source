@@ -193,7 +193,7 @@ func TestWorktreeSkipsAnEntryItCannotReuse(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := os.Symlink(linked, filepath.Join(repo, "node_modules", "linked")); err != nil {
-		t.Fatal(err)
+		t.Skip("symlinks unavailable:", err)
 	}
 	path := filepath.Join(f.home, "worktree")
 	out := f.ok("worktree", "prepare", "--repo", "web", "--branch", "feature", "--path", path)

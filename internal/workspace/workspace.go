@@ -518,9 +518,10 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 			return fmt.Errorf("existing local state: %s", rel)
 		}
 	}
-	// The front page is written last, after every other file; a README it may
-	// not touch has to stop initialization here, while nothing is written yet.
-	if _, err := s.Path("README.md"); err != nil {
+	// The front page is written last, after every other file. A README it could
+	// not read then (a symlink, a directory, an oversized file) has to stop
+	// initialization here, while nothing is written yet.
+	if _, err := s.Read("README.md"); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	// A previously exported blank seed is also supported, but only identical seed

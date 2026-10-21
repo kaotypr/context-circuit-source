@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -256,19 +257,62 @@ func TestInitKeepsTheRecordedCLIRegistry(t *testing.T) {
 	}
 }
 
-// The README is written last. A symlinked one used to stop initialization only
-// after every other file was written, leaving a workspace init then refused.
-func TestInitRefusesASymlinkedReadmeBeforeWriting(t *testing.T) {
+// The README is written last. One that cannot be read — a symlink or a
+// directory — used to stop initialization only after every other file was
+// written, leaving a workspace init then refused to touch again.
+func TestInitRefusesAnUnreadableReadmeBeforeWriting(t *testing.T) {
 	f := setup(t)
-	linked := filepath.Join(f.home, "linked")
-	write(t, filepath.Join(linked, "docs", "README.md"), "Keep my README")
-	if err := os.Symlink(filepath.Join("docs", "README.md"), filepath.Join(linked, "README.md")); err != nil {
+	for name, plant := range map[string]func(root string) error{
+		"symlink": func(root string) error {
+			write(t, filepath.Join(root, "docs", "README.md"), "Keep my README")
+			return os.Symlink(filepath.Join("docs", "README.md"), filepath.Join(root, "README.md"))
+		},
+		"directory": func(root string) error {
+			return os.MkdirAll(filepath.Join(root, "README.md"), 0755)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := filepath.Join(f.home, name)
+			if err := plant(root); err != nil {
+				t.Skip("symlinks unavailable:", err)
+			}
+			g := fixture{t, root, f.home}
+			out := g.fail("init", "--name", "Linked", "--purpose", "Linked", "--member", "maya", "--member-name", "Maya")
+			if !strings.Contains(out, "README.md") {
+				t.Fatalf("expected the README to be named: %s", out)
+			}
+			if _, err := os.Stat(filepath.Join(root, "members.yaml")); !os.IsNotExist(err) {
+				t.Fatal("a refused README left a partially initialized workspace")
+			}
+		})
+	}
+}
+
+// Refreshing the generated spans of an existing front page keeps the mode its
+// owner gave it; only a README initialization creates is 0644.
+func TestInitKeepsAnExistingReadmeMode(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows has no POSIX permission bits to keep")
+	}
+	f := setup(t)
+	root := filepath.Join(f.home, "private")
+	seed, err := assets.Readme()
+	if err != nil {
 		t.Fatal(err)
 	}
-	g := fixture{t, linked, f.home}
-	g.fail("init", "--name", "Linked", "--purpose", "Linked")
-	if _, err := os.Stat(filepath.Join(linked, "members.yaml")); !os.IsNotExist(err) {
-		t.Fatal("a refused README left a partially initialized workspace")
+	readme := filepath.Join(root, "README.md")
+	write(t, readme, string(seed))
+	if err := os.Chmod(readme, 0600); err != nil {
+		t.Fatal(err)
+	}
+	g := fixture{t, root, f.home}
+	g.ok("init", "--name", "Private", "--purpose", "Private", "--member", "maya", "--member-name", "Maya")
+	info, err := os.Stat(readme)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0600 || !strings.Contains(read(t, readme), "Context Circuit - Private") {
+		t.Fatalf("expected a refreshed README that kept mode 0600, got %v", info.Mode().Perm())
 	}
 }
 
