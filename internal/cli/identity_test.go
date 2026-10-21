@@ -388,6 +388,14 @@ func TestDeletionRefusesToStrandAnotherMembersWork(t *testing.T) {
 	if out := f.fail("record", "delete", "--member", "alex"); !strings.Contains(out, intent.ID+" (maya) links plan "+theirs.ID) {
 		t.Fatalf("an intent left linking a deleted plan was not named: %s", out)
 	}
+	// By member the refusal still previews, naming the blocker and how it
+	// links; there is no --id call to extend, so no add_ids.
+	code, out, _ := call(f.root, "record", "delete", "--member", "maya")
+	d := deletion(t, out)
+	if code != 1 || deletedRecord(t, d, intent.ID).CreatedBy != "maya" || len(d.BlockedBy) != 1 || d.BlockedBy[0].ID != theirs.ID ||
+		d.BlockedBy[0].CreatedBy != "alex" || d.BlockedBy[0].Link != "belongs to intent "+intent.ID || len(d.AddIDs) != 0 || d.Refused == "" {
+		t.Fatalf("a refused deletion by member did not preview: exit=%d %+v", code, d)
+	}
 }
 
 func TestDeletionRefusesAPlanThisMachineIsWorkingOn(t *testing.T) {

@@ -46,6 +46,11 @@ Fetch only when needed and covered by the task; fetching does not imply rebasing
 or resetting local work. Honor explicit branch names and paths. Use the returned
 real worktree location for all later work, not the one you asked for.
 
+The result's `start` is what the worktree actually started from, and
+`base_branch` stays where its work is delivered. A `sync_required` there means
+the start was behind its fetched remote: pass it on to the person, with its
+remedy, rather than building on that start unremarked.
+
 If a branch or path already holds work, inspect and resume it or select a new
 location. Never silently force checkout, reset, stash, or overwrite unrelated
 files.
