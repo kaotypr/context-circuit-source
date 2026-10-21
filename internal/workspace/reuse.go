@@ -87,8 +87,7 @@ func ReuseEnvironment(ctx context.Context, source, destination string, options R
 		return nil, err
 	}
 	var results []ReuseEntry
-	var dependencyReason string
-	dependenciesChecked := false
+	deps := &dependencyCheck{}
 	for _, rel := range paths {
 		if err := ctx.Err(); err != nil {
 			return results, err
@@ -103,60 +102,94 @@ func ReuseEnvironment(ctx context.Context, source, destination string, options R
 		if err != nil {
 			return results, err
 		}
-		ignorePath := rel
-		if info, err := os.Stat(src); err == nil && info.IsDir() {
-			ignorePath += "/"
-		}
-		if _, err := os.Lstat(dst); !os.IsNotExist(err) {
-			if err != nil {
-				return results, err
-			}
-			entry.Reason = "destination already exists; preserved"
-		} else if _, err := os.Lstat(src); os.IsNotExist(err) {
-			entry.Reason = "source entry is absent"
-		} else if err != nil {
+		entry.Reason, err = reuseSkipReason(ctx, source, destination, rel, src, dst, deps)
+		if err != nil {
 			return results, err
-		} else if _, err := Git(ctx, source, "check-ignore", "-q", "--", ignorePath); err != nil {
-			entry.Reason = "source path is not ignored by Git"
-		} else if _, err := Git(ctx, destination, "check-ignore", "-q", "--", ignorePath); err != nil {
-			entry.Reason = "target path is not ignored by Git"
-		} else {
-			if filepath.Base(rel) == "node_modules" {
-				if !dependenciesChecked {
-					dependencyReason, err = compareDependencyInputs(ctx, source, destination)
-					if err != nil {
-						return results, err
-					}
-					dependenciesChecked = true
-				}
-				entry.Reason = dependencyReason
-			}
-			if entry.Reason == "" {
-				entry.Stats, err = cow.Copy(ctx, src, dst, source, destination, options.Mode)
-				// Reuse is a convenience, so an entry that cannot be copied whole,
-				// such as node_modules holding an `npm link`, is reported rather
-				// than failing the prepare. Only an entry refused by design is
-				// skipped: a full disk or a permission error stays fatal. Copy
-				// stages and renames, so nothing partial is left behind.
-				if err != nil && options.Mode != "required" && errors.Is(err, cow.ErrNotReusable) {
-					entry.Stats, entry.Reason = cow.Stats{}, "not copied: "+err.Error()
-					results = append(results, entry)
-					continue
-				}
-				if err != nil {
-					return results, fmt.Errorf("reuse %s failed; existing worktree retained: %w", rel, err)
-				}
-				if info, err := os.Stat(dst); err == nil && info.Mode().IsRegular() && (filepath.Base(rel) == ".env" || strings.HasPrefix(filepath.Base(rel), ".env.")) {
-					if err := os.Chmod(dst, 0600); err != nil {
-						return results, err
-					}
-				}
-				entry.Status = "reused"
-			}
 		}
+		if entry.Reason != "" {
+			results = append(results, entry)
+			continue
+		}
+		entry.Stats, err = cow.Copy(ctx, src, dst, source, destination, options.Mode)
+		// Reuse is a convenience, so an entry that cannot be copied whole,
+		// such as node_modules holding an `npm link`, is reported rather
+		// than failing the prepare. Only an entry refused by design is
+		// skipped: a full disk or a permission error stays fatal. Copy
+		// stages and renames, so nothing partial is left behind.
+		if err != nil && options.Mode != "required" && errors.Is(err, cow.ErrNotReusable) {
+			entry.Stats, entry.Reason = cow.Stats{}, "not copied: "+err.Error()
+			results = append(results, entry)
+			continue
+		}
+		if err != nil {
+			return results, fmt.Errorf("reuse %s failed; existing worktree retained: %w", rel, err)
+		}
+		if err := restrictEnvMode(dst, rel); err != nil {
+			return results, err
+		}
+		entry.Status = "reused"
 		results = append(results, entry)
 	}
 	return results, nil
+}
+
+// reuseSkipReason returns why an entry must not be copied, or "" when it may be.
+func reuseSkipReason(ctx context.Context, source, destination, rel, src, dst string, deps *dependencyCheck) (string, error) {
+	ignorePath := rel
+	if info, err := os.Stat(src); err == nil && info.IsDir() {
+		ignorePath += "/"
+	}
+	if _, err := os.Lstat(dst); !os.IsNotExist(err) {
+		if err != nil {
+			return "", err
+		}
+		return "destination already exists; preserved", nil
+	}
+	if _, err := os.Lstat(src); os.IsNotExist(err) {
+		return "source entry is absent", nil
+	} else if err != nil {
+		return "", err
+	}
+	if _, err := Git(ctx, source, "check-ignore", "-q", "--", ignorePath); err != nil {
+		return "source path is not ignored by Git", nil
+	}
+	if _, err := Git(ctx, destination, "check-ignore", "-q", "--", ignorePath); err != nil {
+		return "target path is not ignored by Git", nil
+	}
+	if filepath.Base(rel) == "node_modules" {
+		return deps.reason(ctx, source, destination)
+	}
+	return "", nil
+}
+
+// dependencyCheck compares dependency inputs once per reuse run.
+type dependencyCheck struct {
+	checked bool
+	value   string
+}
+
+func (d *dependencyCheck) reason(ctx context.Context, source, destination string) (string, error) {
+	if d.checked {
+		return d.value, nil
+	}
+	value, err := compareDependencyInputs(ctx, source, destination)
+	if err != nil {
+		return "", err
+	}
+	d.checked, d.value = true, value
+	return value, nil
+}
+
+// restrictEnvMode keeps copied .env files private to the owner.
+func restrictEnvMode(dst, rel string) error {
+	base := filepath.Base(rel)
+	if base != ".env" && !strings.HasPrefix(base, ".env.") {
+		return nil
+	}
+	if info, err := os.Stat(dst); err == nil && info.Mode().IsRegular() {
+		return os.Chmod(dst, 0600)
+	}
+	return nil
 }
 
 func compareDependencyInputs(ctx context.Context, source, destination string) (string, error) {

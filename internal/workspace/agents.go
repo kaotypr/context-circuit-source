@@ -369,47 +369,8 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	if err != nil {
 		return Dispatch{}, err
 	}
-	// The record is the assignment. A planner is dispatched against a whole
-	// approved intent and a worker against the plan quoted in its brief, so a
-	// task on either can only restate what the brief already carries, and a
-	// required flag leaves the coordinator nothing to write but that
-	// restatement. A worker splitting one plan with others is the exception:
-	// its slice is named in the task and nowhere else.
-	if role == "planner" && intent != "" && task != "" {
-		return Dispatch{}, errors.New("an intent planner takes the whole approved intent, so it takes no --task")
-	}
-	briefed := role == "planner" || role == "worker"
-	if task != "" || !briefed {
-		if err := Text(task); err != nil {
-			return Dispatch{}, err
-		}
-	}
-	if role == "reviewer" && !reviewRequested {
-		return Dispatch{}, fmt.Errorf("independent review requires an explicit user request; use --review-requested only to represent that request")
-	}
-	if shared && role != "worker" {
-		return Dispatch{}, errors.New("--shared describes workers sharing one worktree")
-	}
-	// A planner decides the plan shape, so a plan cannot already exist to hand
-	// it: numbering one first settles the split the planner was dispatched to
-	// propose, and an intent holding several plans has no single ID to pass.
-	if role == "planner" {
-		if plan != "" {
-			return Dispatch{}, errors.New("a planner proposes the plan shape, so it is dispatched against --intent, not an already numbered --plan")
-		}
-		if intent == "" && task == "" {
-			return Dispatch{}, errors.New("a planner needs --intent or --task specifying the standalone outcome")
-		}
-	} else if intent != "" {
-		return Dispatch{}, errors.New("--intent dispatches a planner; other roles take --plan")
-	}
-	// The brief tells a worker to implement the plan above it, so a worker with
-	// neither a plan nor a task would be launched with nothing to implement.
-	if role == "worker" && plan == "" && task == "" {
-		return Dispatch{}, errors.New("a worker needs --plan, or --task naming its assignment")
-	}
-	if repo != "" && plan == "" {
-		return Dispatch{}, errors.New("--repo picks one repository of the worker's --plan; pass --plan")
+	if err := checkDispatchArgs(role, task, plan, intent, repo, shared, reviewRequested); err != nil {
+		return Dispatch{}, err
 	}
 	work, err := Open(directory)
 	if err != nil {
@@ -425,23 +386,7 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	// what to return. Every record it names is also quoted in full: an agent
 	// that has to go and find a file reads the whole repository on the way.
 	prompt := "# Working directory\n\n" + work.Root + "\n\nWorkspace root: " + s.Root
-	// A read-only role was told where its working directory is and nothing
-	// about what it may do there, which leaves how to read it an open question
-	// on a host that also offers GUI automation and web search. One planner
-	// answered it by driving an editor's interface to read a local file and
-	// searching the public web for a repository sitting on disk.
-	ownership := "You are reading, not changing. Change nothing in this working directory. Read and search the files here directly rather than driving another application, and consult no external source: what this task needs is this directory and this brief."
-	if !r.ReadOnly {
-		// Isolation differs by parallelism axis. One worker per plan owns its
-		// whole worktree; several workers inside one worktree genuinely share
-		// files. Saying the wrong one invites a worker to guess at edits it
-		// cannot see, or to overwrite edits it can.
-		if shared {
-			ownership = "Other workers are editing this same working directory. Preserve their edits, adapt your changes, and stay within your assigned paths."
-		} else {
-			ownership = "You are the sole owner of this working directory. Work only here. Do not create, switch, merge, push, or delete branches, and do not run git worktree."
-		}
-	}
+	ownership := ownershipBrief(r, shared)
 	prompt += "\n\n# Ownership\n\n" + ownership
 	// Whoever wrote the record wrote it in their own language, so the brief
 	// reports that one rather than the language of whoever is dispatching.
@@ -457,38 +402,17 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		author = record.CreatedBy
 		prompt += "\n\n" + planBrief(record, s.Root)
 		if role == "worker" {
-			if repo == "" {
-				if len(record.Repositories) != 1 {
-					return Dispatch{}, errors.New("multi-repository worker dispatch needs --repo")
-				}
-				repo = record.Repositories[0]
-			}
-			files, err := s.requiredPlanFiles(record, repo)
+			assignment, err := s.workerAssignment(record, repo)
 			if err != nil {
 				return Dispatch{}, err
 			}
-			prompt += "\n\nRepository assignment: " + repo
-			if len(files) > 0 {
-				prompt += "\n\n# Required files relative to workspace root\n\n"
-				for _, file := range files {
-					prompt += "- " + file + "\n"
-				}
-				prompt += "\nResolve these paths against the workspace root above and read every required file before editing."
-			}
-			prompt += "\n\nWork only in your assigned repository worktree. Links in the plan body to other repositories' files are for human review; do not open them unless assigned here."
+			prompt += assignment
 		}
 	}
 	if intent != "" {
-		record, err := s.FindRecord(intent)
+		record, err := s.approvedIntent(intent)
 		if err != nil {
 			return Dispatch{}, err
-		}
-		if !strings.HasPrefix(record.ID, "i") {
-			return Dispatch{}, errors.New("--intent needs an intent ID")
-		}
-		// Planning an unapproved intent plans an outcome nobody agreed to.
-		if record.ApprovedAt == "" {
-			return Dispatch{}, fmt.Errorf("intent %s is not approved; approve it before planning it", record.ID)
 		}
 		author = record.CreatedBy
 		prompt += "\n\n" + intentBrief(record, s.Root)
@@ -612,4 +536,112 @@ func longestRun(text string, char byte) int {
 		}
 	}
 	return longest
+}
+
+// checkDispatchArgs rejects flag combinations that do not describe one agent's
+// assignment.
+func checkDispatchArgs(role, task, plan, intent, repo string, shared, reviewRequested bool) error {
+	// The record is the assignment. A planner is dispatched against a whole
+	// approved intent and a worker against the plan quoted in its brief, so a
+	// task on either can only restate what the brief already carries, and a
+	// required flag leaves the coordinator nothing to write but that
+	// restatement. A worker splitting one plan with others is the exception:
+	// its slice is named in the task and nowhere else.
+	if role == "planner" && intent != "" && task != "" {
+		return errors.New("an intent planner takes the whole approved intent, so it takes no --task")
+	}
+	briefed := role == "planner" || role == "worker"
+	if task != "" || !briefed {
+		if err := Text(task); err != nil {
+			return err
+		}
+	}
+	if role == "reviewer" && !reviewRequested {
+		return fmt.Errorf("independent review requires an explicit user request; use --review-requested only to represent that request")
+	}
+	if shared && role != "worker" {
+		return errors.New("--shared describes workers sharing one worktree")
+	}
+	// A planner decides the plan shape, so a plan cannot already exist to hand
+	// it: numbering one first settles the split the planner was dispatched to
+	// propose, and an intent holding several plans has no single ID to pass.
+	if role == "planner" {
+		if plan != "" {
+			return errors.New("a planner proposes the plan shape, so it is dispatched against --intent, not an already numbered --plan")
+		}
+		if intent == "" && task == "" {
+			return errors.New("a planner needs --intent or --task specifying the standalone outcome")
+		}
+	} else if intent != "" {
+		return errors.New("--intent dispatches a planner; other roles take --plan")
+	}
+	// The brief tells a worker to implement the plan above it, so a worker with
+	// neither a plan nor a task would be launched with nothing to implement.
+	if role == "worker" && plan == "" && task == "" {
+		return errors.New("a worker needs --plan, or --task naming its assignment")
+	}
+	if repo != "" && plan == "" {
+		return errors.New("--repo picks one repository of the worker's --plan; pass --plan")
+	}
+	return nil
+}
+
+// ownershipBrief says what a role may do in its working directory.
+func ownershipBrief(r Role, shared bool) string {
+	// A read-only role was told where its working directory is and nothing
+	// about what it may do there, which leaves how to read it an open question
+	// on a host that also offers GUI automation and web search. One planner
+	// answered it by driving an editor's interface to read a local file and
+	// searching the public web for a repository sitting on disk.
+	if r.ReadOnly {
+		return "You are reading, not changing. Change nothing in this working directory. Read and search the files here directly rather than driving another application, and consult no external source: what this task needs is this directory and this brief."
+	}
+	// Isolation differs by parallelism axis. One worker per plan owns its
+	// whole worktree; several workers inside one worktree genuinely share
+	// files. Saying the wrong one invites a worker to guess at edits it
+	// cannot see, or to overwrite edits it can.
+	if shared {
+		return "Other workers are editing this same working directory. Preserve their edits, adapt your changes, and stay within your assigned paths."
+	}
+	return "You are the sole owner of this working directory. Work only here. Do not create, switch, merge, push, or delete branches, and do not run git worktree."
+}
+
+// workerAssignment names the repository a worker owns and the files it must
+// read before editing.
+func (s *Store) workerAssignment(record Record, repo string) (string, error) {
+	if repo == "" {
+		if len(record.Repositories) != 1 {
+			return "", errors.New("multi-repository worker dispatch needs --repo")
+		}
+		repo = record.Repositories[0]
+	}
+	files, err := s.requiredPlanFiles(record, repo)
+	if err != nil {
+		return "", err
+	}
+	brief := "\n\nRepository assignment: " + repo
+	if len(files) > 0 {
+		brief += "\n\n# Required files relative to workspace root\n\n"
+		for _, file := range files {
+			brief += "- " + file + "\n"
+		}
+		brief += "\nResolve these paths against the workspace root above and read every required file before editing."
+	}
+	return brief + "\n\nWork only in your assigned repository worktree. Links in the plan body to other repositories' files are for human review; do not open them unless assigned here.", nil
+}
+
+// approvedIntent finds an intent a planner may be dispatched against.
+func (s *Store) approvedIntent(intent string) (Record, error) {
+	record, err := s.FindRecord(intent)
+	if err != nil {
+		return Record{}, err
+	}
+	if !strings.HasPrefix(record.ID, "i") {
+		return Record{}, errors.New("--intent needs an intent ID")
+	}
+	// Planning an unapproved intent plans an outcome nobody agreed to.
+	if record.ApprovedAt == "" {
+		return Record{}, fmt.Errorf("intent %s is not approved; approve it before planning it", record.ID)
+	}
+	return record, nil
 }
