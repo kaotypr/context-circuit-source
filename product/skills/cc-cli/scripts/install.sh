@@ -2,7 +2,7 @@
 # Install an exact CLI release without requiring a language runtime or root.
 set -eu
 fail() { printf 'CLI installation failed: %s\n' "$1" >&2; exit 1; }
-version= bin_dir=${HOME:?}/.local/bin archive= checksums=
+version= bin_dir=${CONTEXT_CIRCUIT_BIN_DIR:-${HOME:?}/.local/bin} archive= checksums=
 token=${CONTEXT_CIRCUIT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}
 source=${CONTEXT_CIRCUIT_SOURCE:-github}
 repo=${CONTEXT_CIRCUIT_REPO:-}
@@ -12,7 +12,8 @@ usage() {
 Usage: install.sh --version <2.x.y> [options]
 
   --version     exact CLI version to install, without a v prefix (required)
-  --bin-dir     user-writable command directory (default: $HOME/.local/bin)
+  --bin-dir     user-writable command directory (default: CONTEXT_CIRCUIT_BIN_DIR,
+                else $HOME/.local/bin)
   --source      github (default) or gitlab; also read from CONTEXT_CIRCUIT_SOURCE
   --repo        owner/repo (github) or group/project (gitlab); also read from
                 CONTEXT_CIRCUIT_REPO. Defaults to kaotypr/context-circuit-source
@@ -62,10 +63,25 @@ case "$version" in 2.*) ;; *) fail 'supply an exact compatible v2 CLI version wi
 case "$version" in *[!A-Za-z0-9.+-]*|*..*) fail 'invalid version' ;; esac
 case "$(uname -s)" in Darwin) platform=darwin ;; Linux) platform=linux ;; *) fail 'use install.ps1 on native Windows' ;; esac
 case "$(uname -m)" in arm64|aarch64) arch=arm64 ;; x86_64|amd64) arch=amd64 ;; *) fail 'unsupported architecture' ;; esac
-# The release is tagged `cli-v<version>`; the assets under it keep the
-# CLI's own name, so a downloaded archive still says what it holds.
+# A variant version X.Y.Z-<label>.N installs under its own command name, so it
+# never repoints the public command. The binary in the version store keeps the
+# public name. The same rule is in build-cli.sh and install.ps1.
+# Read by a Go test; keep each on one line.
+reserved_labels='alpha beta rc dev test pre preview snapshot'
+label_pattern='^[a-z]{1,20}$'
+name=context-circuit-cli
+base=${version%%-*} rest=${version#*-}
+if [ "$rest" != "$version" ] && printf '%s\n' "$base" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+  label=${rest%%.*} counter=${rest#*.}
+  if [ "$label.$counter" = "$rest" ] && printf '%s\n' "$label" | grep -Eq "$label_pattern" &&
+    printf '%s\n' "$counter" | grep -Eq '^[1-9][0-9]*$'; then
+    case " $reserved_labels " in *" $label "*) ;; *) name=$label-context-circuit-cli ;; esac
+  fi
+fi
+# The release is tagged `cli-v<version>`; the assets under it carry the
+# command's name, so a downloaded archive still says what it holds.
 release_tag="cli-v$version"
-package="context-circuit-cli-v$version-$platform-$arch.tar.gz"
+package="$name-v$version-$platform-$arch.tar.gz"
 mkdir -p "$bin_dir"
 bin_dir=$(CDPATH= cd -- "$bin_dir" && pwd -P)
 versions="$bin_dir/.context-circuit-versions"
@@ -76,7 +92,7 @@ mkdir "$lock" 2>/dev/null || fail "another install is running (or inspect a stal
 work=$(mktemp -d "$versions/.install-XXXXXX")
 cleanup() { rm -rf "$work"; rmdir "$lock"; }
 trap cleanup EXIT HUP INT TERM
-command_path="$bin_dir/context-circuit-cli"
+command_path="$bin_dir/$name"
 if [ -e "$command_path" ] || [ -L "$command_path" ]; then
   [ -L "$command_path" ] || fail 'existing command is not managed by this installer; use another --bin-dir'
   case "$(readlink "$command_path")" in "$versions"/*/context-circuit-cli) ;; *) fail 'existing command points outside managed versions' ;; esac
@@ -127,10 +143,10 @@ else
         }
       ' "$work/release.json"
     }
-    for name in "$package" SHA256SUMS; do
-      url=$(asset_url "$name")
-      [ -n "$url" ] || fail "release $release_tag publishes no asset named $name"
-      fetch_private_token "$url" -o "$work/$name"
+    for asset in "$package" SHA256SUMS; do
+      url=$(asset_url "$asset")
+      [ -n "$url" ] || fail "release $release_tag publishes no asset named $asset"
+      fetch_private_token "$url" -o "$work/$asset"
     done
     ;;
   github|*)
@@ -155,10 +171,10 @@ else
         --header 'X-GitHub-Api-Version: 2022-11-28' \
         "$api/repos/$repo/releases/tags/$release_tag" -o "$work/release.json" ||
         fail "cannot read release $release_tag; confirm it exists and the token grants access"
-      for name in "$package" SHA256SUMS; do
-        url=$(asset_url "$name")
-        [ -n "$url" ] || fail "release $release_tag publishes no asset named $name"
-        fetch_bearer --header 'Accept: application/octet-stream' "$url" -o "$work/$name"
+      for asset in "$package" SHA256SUMS; do
+        url=$(asset_url "$asset")
+        [ -n "$url" ] || fail "release $release_tag publishes no asset named $asset"
+        fetch_bearer --header 'Accept: application/octet-stream' "$url" -o "$work/$asset"
       done
     else
       base="https://github.com/$repo/releases/download/$release_tag"
@@ -188,8 +204,8 @@ if [ -e "$target" ] || [ -L "$target" ]; then
 else
   mv "$work/package" "$target"
 fi
-ln -s "$target/context-circuit-cli" "$work/context-circuit-cli"
-mv -f "$work/context-circuit-cli" "$command_path"
+ln -s "$target/context-circuit-cli" "$work/$name"
+mv -f "$work/$name" "$command_path"
 # Report the version-specific command as well. Workspaces pin their own CLI
 # version, so a caller serving several workspaces invokes that path directly
 # instead of relying on which version the shared command currently selects.

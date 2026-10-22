@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory=$true)][string]$Version,
-  [string]$BinDir = (Join-Path $env:LOCALAPPDATA 'ContextCircuit\bin'),
+  [string]$BinDir = $(if ($env:CONTEXT_CIRCUIT_BIN_DIR) { $env:CONTEXT_CIRCUIT_BIN_DIR } else { Join-Path $env:LOCALAPPDATA 'ContextCircuit\bin' }),
   [string]$Archive,
   [string]$Checksums,
   [string]$Token,
@@ -26,10 +26,28 @@ if ($Version -notmatch '^2\.[A-Za-z0-9.+-]+$' -or $Version.Contains('..')) { thr
 if ($env:OS -ne 'Windows_NT') { throw 'Use install.sh on macOS/Linux.' }
 $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 $arch = switch ($architecture) { 'x64' { 'amd64' }; 'arm64' { 'arm64' }; default { throw "Unsupported architecture: $_" } }
-# The release is tagged `cli-v<version>`; the assets under it keep the
-# CLI's own name, so a downloaded archive still says what it holds.
+# A variant version X.Y.Z-<label>.N installs under its own command name, so it
+# never repoints the public command. The binary in the version store keeps the
+# public name. The same rule is in build-cli.sh and install.sh; matching is
+# case-sensitive, as there.
+# Read by a Go test; keep each on one line.
+$reservedLabels = 'alpha beta rc dev test pre preview snapshot'
+$labelPattern = '^[a-z]{1,20}$'
+$name = 'context-circuit-cli'
+$dash = $Version.IndexOf('-')
+if ($dash -ge 0 -and $Version.Substring(0, $dash) -cmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+  $rest = $Version.Substring($dash + 1)
+  $dot = $rest.IndexOf('.')
+  if ($dot -ge 0) {
+    $label = $rest.Substring(0, $dot)
+    $counter = $rest.Substring($dot + 1)
+    if ($label -cmatch $labelPattern -and $counter -cmatch '^[1-9][0-9]*$' -and ($reservedLabels -split ' ') -cnotcontains $label) { $name = "$label-context-circuit-cli" }
+  }
+}
+# The release is tagged `cli-v<version>`; the assets under it carry the
+# command's name, so a downloaded archive still says what it holds.
 $releaseTag = "cli-v$Version"
-$package = "context-circuit-cli-v$Version-windows-$arch.zip"
+$package = "$name-v$Version-windows-$arch.zip"
 [void](New-Item -ItemType Directory -Force -Path $BinDir)
 $BinDir = (Resolve-Path -LiteralPath $BinDir).Path
 $versions = Join-Path $BinDir '.context-circuit-versions'
@@ -40,9 +58,11 @@ $lock = [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]:
 $work = Join-Path $versions ('.install-' + [Guid]::NewGuid().ToString('N'))
 try {
   [void](New-Item -ItemType Directory -Path $work)
-  $commandPath = Join-Path $BinDir 'context-circuit-cli.cmd'
-  $commandHash = Join-Path $versions 'launcher.sha256'
-  if (Test-Path -LiteralPath (Join-Path $BinDir 'context-circuit-cli.exe')) { throw 'An existing CLI executable would shadow the launcher; use another -BinDir.' }
+  $commandPath = Join-Path $BinDir "$name.cmd"
+  # The public command keeps the file older installers read, so they still
+  # accept the .cmd they wrote; a label command keeps its own beside it.
+  $commandHash = Join-Path $versions $(if ($name -eq 'context-circuit-cli') { 'launcher.sha256' } else { "$name.launcher.sha256" })
+  if (Test-Path -LiteralPath (Join-Path $BinDir "$name.exe")) { throw 'An existing CLI executable would shadow the launcher; use another -BinDir.' }
   if (Test-Path -LiteralPath $commandPath) {
     if (!(Test-Path -LiteralPath $commandHash) -or ((Get-FileHash -Algorithm SHA256 -LiteralPath $commandPath).Hash -ne (Get-Content -Raw -LiteralPath $commandHash).Trim())) { throw 'Existing command is unmanaged or modified; preserved.' }
   }
@@ -109,13 +129,13 @@ try {
     if ((Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $target 'context-circuit-cli.exe')).Hash -ne (Get-FileHash -Algorithm SHA256 -LiteralPath $binary).Hash) { throw 'Existing version differs; preserved.' }
   } else { Move-Item -LiteralPath $staged -Destination $target }
   # A small command shim allows updates while an older CLI is in use.
-  $launcher = Join-Path $work 'context-circuit-cli.cmd'
+  $launcher = Join-Path $work "$name.cmd"
   $content = '@"%~dp0.context-circuit-versions\' + "$Version-windows-$arch" + '\context-circuit-cli.exe" %*' + "`r`n"
   [IO.File]::WriteAllText($launcher, $content, [Text.Encoding]::ASCII)
   # Replace needs a real backup path: PowerShell binds $null to a string
   # parameter as an empty string, which is not a legal path. The backup stays in
   # the working directory and is discarded with it.
-  $backup = Join-Path $work 'context-circuit-cli.cmd.backup'
+  $backup = Join-Path $work "$name.cmd.backup"
   if (Test-Path -LiteralPath $commandPath) { [IO.File]::Replace($launcher, $commandPath, $backup) }
   else { [IO.File]::Move($launcher, $commandPath) }
   [IO.File]::WriteAllText($commandHash, (Get-FileHash -Algorithm SHA256 -LiteralPath $commandPath).Hash)

@@ -67,7 +67,7 @@ func runTokenInstall(t *testing.T, indent bool) {
 	root := t.TempDir()
 	const token = "ghp_fixture_TOKEN-0123456789"
 	version := "2.0.0-token"
-	archive, sums := packageFixture(t, root, version)
+	archive, sums := packageFixture(t, root, publicCommand, version)
 	packageName := filepath.Base(archive)
 
 	var served, unauthorized int
