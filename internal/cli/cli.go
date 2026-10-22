@@ -138,24 +138,6 @@ func writeYAML(out io.Writer, value any) error {
 	return err
 }
 
-// pinnedVersionWarning reports when the running CLI differs from the version a
-// workspace pins in .context-circuit/CLI_VERSION. Workspaces are installed and
-// pinned independently, so a mismatch is a caller mistake rather than a
-// workspace fault: warn on the error stream and continue, leaving structured
-// output on the result stream untouched.
-func pinnedVersionWarning(s *workspace.Store, running string) string {
-	data, err := s.Read(".context-circuit/CLI_VERSION")
-	if err != nil {
-		return ""
-	}
-	pinned := strings.TrimSpace(string(data))
-	if pinned == "" || pinned == running {
-		return ""
-	}
-	return fmt.Sprintf("warning: this workspace pins CLI %s but %s is running; "+
-		"run the version this workspace pins, or ask the cc-cli skill to install it\n", pinned, running)
-}
-
 // commitRecommendation names the records and ID files a gate leaves
 // uncommitted. Until they are committed and pushed no other clone sees them,
 // and an ID file left behind is how two people reserve the same number.
@@ -297,27 +279,32 @@ func (in *input) missingFlag(cmd command) string {
 }
 
 // openStore opens the workspace a command works on, creating its root first for
-// the commands that make one, and warns when it pins another CLI version.
-func openStore(cmd command, in *input, root *string, errOut io.Writer, version string) (*workspace.Store, error) {
+// the commands that make one, and applies the workspace's CLI pin. stop is true
+// when the run is over before the command, with the exit code to return: the
+// pinned CLI ran instead, the pin step refused, or the workspace did not open.
+func openStore(cmd command, in *input, root *string, original []string, out, errOut io.Writer, version string) (s *workspace.Store, code int, stop bool) {
 	if cmd.makeRoot {
 		if cmd.fromPath {
 			*root = in.get("path")
 		}
 		if err := os.MkdirAll(*root, 0755); err != nil {
-			return nil, err
+			fmt.Fprintln(errOut, err)
+			return nil, 1, true
 		}
 	}
 	s, err := workspace.Open(*root)
 	if err != nil {
-		return nil, err
+		fmt.Fprintln(errOut, err)
+		return nil, 1, true
 	}
 	s.Command = commandName(version)
+	// An exported blank seed is no workspace yet, so --path names no pin.
 	if !cmd.fromPath {
-		if warning := pinnedVersionWarning(s, version); warning != "" {
-			fmt.Fprint(errOut, warning)
+		if code, stop := applyPin(s, cmd, in, original, version, out, errOut); stop {
+			return nil, code, true
 		}
 	}
-	return s, nil
+	return s, 0, false
 }
 
 // splitter makes the ID split a changing command owes the workspace.
@@ -373,9 +360,15 @@ func (p *splitter) locked(ctx context.Context, name string, action func() (any, 
 	})
 }
 
+// splitEnabled reports whether this call tries the ID split: it changes the
+// workspace, and its command does not say the split is no part of it.
+func splitEnabled(cmd command, in *input) bool {
+	return !cmd.readOnly && (cmd.splits == nil || cmd.splits(in))
+}
+
 // execute runs the command, under the write lock unless it only reads.
 func execute(ctx context.Context, s *workspace.Store, cmd command, in *input, errOut io.Writer) (any, error) {
-	p := &splitter{s: s, enabled: !cmd.readOnly && (cmd.splits == nil || cmd.splits(in))}
+	p := &splitter{s: s, enabled: splitEnabled(cmd, in)}
 	action := func() (any, error) {
 		if !cmd.readOnly && !cmd.setup {
 			if err := s.RequireSetup(); err != nil {
@@ -449,6 +442,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	root := global.String("workspace", ".", "workspace root")
 	asJSON := global.Bool("json", false, "structured JSON output")
 	versionFlag := global.Bool("version", false, "show version")
+	// A hand-off to the pinned CLI passes the line on exactly as it was given.
+	original := slices.Clone(args)
 	if err := global.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			fmt.Fprint(out, usage(cliCommand))
@@ -476,10 +471,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		fmt.Fprintf(errOut, "missing --%s\n", key)
 		return 2
 	}
-	s, err := openStore(cmd, in, root, errOut, version)
-	if err != nil {
-		fmt.Fprintln(errOut, err)
-		return 1
+	s, code, stop := openStore(cmd, in, root, original, out, errOut, version)
+	if stop {
+		return code
 	}
 	result, err := execute(ctx, s, cmd, in, errOut)
 	// A refused deletion still shows its preview: the records asked for and the

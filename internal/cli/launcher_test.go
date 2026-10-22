@@ -20,6 +20,13 @@ import (
 // the exit code was passed through rather than made up.
 var launcherStub string
 
+// builtCLI is this repository's CLI built as builtVersion, which the switch
+// tests install into a version store and run as a separate process: a switch
+// inside the test process would replace the test.
+var builtCLI string
+
+const builtVersion = "2.5.1"
+
 const launcherStubSource = `package main
 
 import (
@@ -31,7 +38,7 @@ import (
 func main() {
 	stdin, _ := io.ReadAll(os.Stdin)
 	cwd, _ := os.Getwd()
-	data, _ := json.Marshal(map[string]any{"args": os.Args[1:], "cwd": cwd, "stdin": string(stdin)})
+	data, _ := json.Marshal(map[string]any{"args": os.Args[1:], "cwd": cwd, "stdin": string(stdin), "switched_from": os.Getenv("CC_CLI_SWITCHED_FROM")})
 	if err := os.WriteFile(os.Getenv("CC_LAUNCHER_STUB_RECORD"), data, 0600); err != nil {
 		os.Exit(100)
 	}
@@ -55,6 +62,12 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "build launcher stub: %v %s\n", err, data)
 		os.Exit(1)
 	}
+	builtCLI = filepath.Join(dir, "context-circuit-cli"+exeSuffix())
+	build := exec.Command("go", "build", "-ldflags", "-X main.version="+builtVersion, "-o", builtCLI, "github.com/kaotypr/context-circuit-source/cmd/context-circuit")
+	if data, err := build.CombinedOutput(); err != nil {
+		fmt.Fprintf(os.Stderr, "build CLI: %v %s\n", err, data)
+		os.Exit(1)
+	}
 	code := m.Run()
 	os.RemoveAll(dir)
 	os.Exit(code)
@@ -68,9 +81,10 @@ func exeSuffix() string {
 }
 
 type stubRecord struct {
-	Args  []string `json:"args"`
-	Cwd   string   `json:"cwd"`
-	Stdin string   `json:"stdin"`
+	Args         []string `json:"args"`
+	Cwd          string   `json:"cwd"`
+	Stdin        string   `json:"stdin"`
+	SwitchedFrom string   `json:"switched_from"`
 }
 
 // launcherFixture is an initialized workspace carrying the seed's launcher, and a

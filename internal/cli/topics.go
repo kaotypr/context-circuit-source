@@ -151,8 +151,9 @@ read an entry there as somewhere work happens. No command commits, pushes, or
 merges the workspace.`,
 
 	"version": `Prints the running CLI version. A workspace pins its own in
-.context-circuit/CLI_VERSION, and the two need not match; the CLI warns when they
-differ.`,
+.context-circuit/CLI_VERSION. When they differ, the CLI hands off to the pinned
+version where it is installed beside this one; otherwise it warns, and refuses a
+change that would move the workspace's schema or cross release lines.`,
 }
 
 // CommandHelp answers a question about one command. It returns the command's

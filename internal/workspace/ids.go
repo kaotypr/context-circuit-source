@@ -414,6 +414,23 @@ func (s *Store) IDSplitPending() (bool, error) {
 	return cfg.Version < CurrentSchema, nil
 }
 
+// RecordedSchema reads only the schema version workspace.yaml records, 0 when
+// it records none. A blank seed fails Config, which needs a name, so this is
+// the one way to tell what initializing that seed would move it from.
+func (s *Store) RecordedSchema() (int, error) {
+	data, err := s.Read("workspace.yaml")
+	if err != nil {
+		return 0, err
+	}
+	var recorded struct {
+		Version int `yaml:"version"`
+	}
+	if err := yaml.Unmarshal(data, &recorded); err != nil {
+		return 0, fmt.Errorf("workspace.yaml: %w", err)
+	}
+	return recorded.Version, nil
+}
+
 // SplitIDLedger moves every reservation in the legacy shared file into the file
 // of the member whose record holds it, gives a reservation with no author or no
 // record to the local member, moves the schema to 3, and removes the shared
