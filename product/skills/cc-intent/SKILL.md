@@ -65,7 +65,7 @@ is for.
 Create the record through the CLI, which reserves the ID:
 
 ```sh
-context-circuit-cli --workspace <root> record create --kind intent --slug SLUG --title TITLE
+sh <root>/.context-circuit/cli record create --kind intent --slug SLUG --title TITLE
 ```
 
 Then write its body from that grounding: goal, non-goals, constraints,

@@ -11,7 +11,7 @@ one exception is a person asking to work directly in a bound checkout: work
 there, and preserve everything it already holds.
 
 ```sh
-context-circuit-cli --workspace <root> worktree prepare --repo api --plan p0001
+sh <root>/.context-circuit/cli worktree prepare --repo api --plan p0001
 ```
 
 Preparing again for a plan whose worktree already exists resumes it without a
@@ -31,7 +31,7 @@ Preparation defaults to the recorded base branch and derives no order, so a plan
 that depends on another needs its start named explicitly:
 
 ```sh
-context-circuit-cli --workspace <root> worktree prepare --repo api --plan p0002 --start cc/p0001/api
+sh <root>/.context-circuit/cli worktree prepare --repo api --plan p0002 --start cc/p0001/api
 ```
 
 It refuses rather than guessing, and the refusal names the branch to pass. Where

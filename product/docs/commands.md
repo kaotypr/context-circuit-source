@@ -1,16 +1,24 @@
 # Agent-facing commands
 
-Run the CLI version this workspace pins in `.context-circuit/CLI_VERSION`. Versions
-install side by side, so the shared command on PATH may select a different one; the
-`cc-cli` skill resolves the pinned path. The CLI warns on stderr when it is run
-against a workspace pinning another version.
+Run every command through this workspace's launcher:
+`sh .context-circuit/cli COMMAND ...` from the workspace root, or
+`sh <root>/.context-circuit/cli COMMAND ...` from anywhere else. In Windows
+PowerShell or cmd, use
+`powershell -NoProfile -ExecutionPolicy Bypass -File <root>/.context-circuit/cli.ps1 COMMAND ...`.
+The launcher runs exactly the version `.context-circuit/CLI_VERSION` pins from the
+installer's version store, passing its own workspace root, so an example needs no
+`--workspace`; a `--workspace` naming another workspace is refused. When the
+pinned version is not installed, it refuses, runs nothing, and names the install
+step. Versions install side by side, so the shared command on PATH may be a
+different one. For a version store installed with `--bin-dir`, set
+`CONTEXT_CIRCUIT_BIN_DIR` to that directory.
 
-Use `context-circuit-cli --workspace PATH --json COMMAND ...` for structured output.
+Use `sh .context-circuit/cli --json COMMAND ...` for structured output.
 The global flags `--workspace PATH` and `--json` may precede the command or follow
-the full command, as in `context-circuit-cli status --workspace PATH --json` or
-`context-circuit-cli member list --json`; they do not go between a group such as
-`member` and its subcommand. Run
-`context-circuit-cli help` for the full surface, and `help` with a command name for
+the full command, as in `sh .context-circuit/cli status --json` or
+`sh .context-circuit/cli member list --json`; they do not go between a group such
+as `member` and its subcommand. Run
+`sh .context-circuit/cli help` for the full surface, and `help` with a command name for
 that command's signatures and what it decides, refuses, or leaves to the caller. A
 fully resolved command also takes `--help`, which prints that same help; a flag it
 does not take is named, followed by the command's signature and the `help` topic
@@ -21,33 +29,33 @@ Normal output is readable YAML; `--json` gives the agent structured values.
 The examples assume the current directory is the initialized workspace.
 
 ```sh
-context-circuit-cli status
-context-circuit-cli member add --id alex --name Alex --band 2
-context-circuit-cli member band --id alex --band 3
-context-circuit-cli member language --id alex --language 'Bahasa Indonesia'
-context-circuit-cli member tone --id alex --tone 'semi-formal; keep technical terms in English'
-context-circuit-cli member roles --id alex --role maintainer --role docs
-context-circuit-cli member use --id alex
-context-circuit-cli member list
-context-circuit-cli repo connect --id api --path ../api --base main
-context-circuit-cli repo clone --id web --path repositories/web --base main --url GIT_URL
-context-circuit-cli repo clone --id api --path repositories/api --base main
-context-circuit-cli repo init --id docs --path repositories/docs --base main
-context-circuit-cli repo base --id api --branch development
-context-circuit-cli repo remote --id api --url GIT_URL --default-branch main
-context-circuit-cli repo relate --from web --to api --description 'Consumes the API'
-context-circuit-cli repo inspect --id api
-context-circuit-cli repo fetch --id api --remote origin
-context-circuit-cli workspace connect --base main
-context-circuit-cli workspace base --branch development
-context-circuit-cli workspace remote --url GIT_URL --default-branch main
-context-circuit-cli knowledge clone --id core-service-knowledge --url GIT_URL
-context-circuit-cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge --index index.md
-context-circuit-cli knowledge sync --id core-service-knowledge
-context-circuit-cli knowledge remote --id core-service-knowledge --index docs/index.md
-context-circuit-cli knowledge list
-context-circuit-cli context find --query billing
-context-circuit-cli context find --repo api
+sh .context-circuit/cli status
+sh .context-circuit/cli member add --id alex --name Alex --band 2
+sh .context-circuit/cli member band --id alex --band 3
+sh .context-circuit/cli member language --id alex --language 'Bahasa Indonesia'
+sh .context-circuit/cli member tone --id alex --tone 'semi-formal; keep technical terms in English'
+sh .context-circuit/cli member roles --id alex --role maintainer --role docs
+sh .context-circuit/cli member use --id alex
+sh .context-circuit/cli member list
+sh .context-circuit/cli repo connect --id api --path ../api --base main
+sh .context-circuit/cli repo clone --id web --path repositories/web --base main --url GIT_URL
+sh .context-circuit/cli repo clone --id api --path repositories/api --base main
+sh .context-circuit/cli repo init --id docs --path repositories/docs --base main
+sh .context-circuit/cli repo base --id api --branch development
+sh .context-circuit/cli repo remote --id api --url GIT_URL --default-branch main
+sh .context-circuit/cli repo relate --from web --to api --description 'Consumes the API'
+sh .context-circuit/cli repo inspect --id api
+sh .context-circuit/cli repo fetch --id api --remote origin
+sh .context-circuit/cli workspace connect --base main
+sh .context-circuit/cli workspace base --branch development
+sh .context-circuit/cli workspace remote --url GIT_URL --default-branch main
+sh .context-circuit/cli knowledge clone --id core-service-knowledge --url GIT_URL
+sh .context-circuit/cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge --index index.md
+sh .context-circuit/cli knowledge sync --id core-service-knowledge
+sh .context-circuit/cli knowledge remote --id core-service-knowledge --index docs/index.md
+sh .context-circuit/cli knowledge list
+sh .context-circuit/cli context find --query billing
+sh .context-circuit/cli context find --repo api
 ```
 
 A knowledge repository is one this workspace reads and never owns. It records no
@@ -64,25 +72,25 @@ improvements go upstream from a separate checkout.
 Records:
 
 ```sh
-context-circuit-cli record create --kind intent --slug add-billing --title 'Add billing'
-context-circuit-cli record approve --id i100 --text 'User approved the billing outcome'
-context-circuit-cli record create --kind plan --slug billing-api --title 'Billing API' \
+sh .context-circuit/cli record create --kind intent --slug add-billing --title 'Add billing'
+sh .context-circuit/cli record approve --id i100 --text 'User approved the billing outcome'
+sh .context-circuit/cli record create --kind plan --slug billing-api --title 'Billing API' \
   --intent i100 --repo api
-context-circuit-cli record create --kind plan --slug billing-web --title 'Billing UI' \
+sh .context-circuit/cli record create --kind plan --slug billing-web --title 'Billing UI' \
   --intent i100 --repo web --depends-on p1000
-context-circuit-cli record create --kind plan --slug specified-change --title 'Specified change' \
+sh .context-circuit/cli record create --kind plan --slug specified-change --title 'Specified change' \
   --repo api
-context-circuit-cli record show --id p1000
-context-circuit-cli record list
-context-circuit-cli record dependencies --id p1001 --depends-on p1000
-context-circuit-cli record complete --id p1000 --text 'User requested completion.'
-context-circuit-cli record order --intent i100 --mode waves
-context-circuit-cli record order --plan p1002 --mode waves
-context-circuit-cli record delete --member alex
-context-circuit-cli record delete --member alex --confirm
-context-circuit-cli record delete --all
-context-circuit-cli record delete --id p1002
-context-circuit-cli record delete --id i101 --id p1003 --confirm
+sh .context-circuit/cli record show --id p1000
+sh .context-circuit/cli record list
+sh .context-circuit/cli record dependencies --id p1001 --depends-on p1000
+sh .context-circuit/cli record complete --id p1000 --text 'User requested completion.'
+sh .context-circuit/cli record order --intent i100 --mode waves
+sh .context-circuit/cli record order --plan p1002 --mode waves
+sh .context-circuit/cli record delete --member alex
+sh .context-circuit/cli record delete --member alex --confirm
+sh .context-circuit/cli record delete --all
+sh .context-circuit/cli record delete --id p1002
+sh .context-circuit/cli record delete --id i101 --id p1003 --confirm
 ```
 
 `context find` takes one of the two: a query searches this workspace's catalog
@@ -270,15 +278,15 @@ branch is gone. The report is advice: it runs, merges, and reserves nothing, and
 Worktrees:
 
 ```sh
-context-circuit-cli worktree prepare --repo api --plan p0001 --copy-mode auto
-context-circuit-cli worktree prepare --repo web --plan p0002 --start origin/main
-context-circuit-cli worktree list --repo api
-context-circuit-cli worktree inspect --repo api --path .worktrees/p0001/api
-context-circuit-cli worktree move --repo api --path .worktrees/p0001/api --to ../api-billing
-context-circuit-cli worktree repair --repo api --path ../api-billing
-context-circuit-cli worktree remove --repo api --path ../api-billing
-context-circuit-cli worktree prune --repo api
-context-circuit-cli check
+sh .context-circuit/cli worktree prepare --repo api --plan p0001 --copy-mode auto
+sh .context-circuit/cli worktree prepare --repo web --plan p0002 --start origin/main
+sh .context-circuit/cli worktree list --repo api
+sh .context-circuit/cli worktree inspect --repo api --path .worktrees/p0001/api
+sh .context-circuit/cli worktree move --repo api --path .worktrees/p0001/api --to ../api-billing
+sh .context-circuit/cli worktree repair --repo api --path ../api-billing
+sh .context-circuit/cli worktree remove --repo api --path ../api-billing
+sh .context-circuit/cli worktree prune --repo api
+sh .context-circuit/cli check
 ```
 
 `worktree prune` drops the plan-to-worktree associations of one repository whose
@@ -355,16 +363,16 @@ It cannot migrate an existing v1 or reinitialize an active v2 workspace.
 Subagent setup and dispatch:
 
 ```sh
-context-circuit-cli agent settings
-context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit-cli agent setup
-context-circuit-cli --json agent dispatch --host codex --role planner \
+sh .context-circuit/cli agent settings
+sh .context-circuit/cli agent configure --host codex --role worker --model MODEL_ID --effort high
+sh .context-circuit/cli agent setup
+sh .context-circuit/cli --json agent dispatch --host codex --role planner \
   --intent i001 --path /actual/repository
-context-circuit-cli --json agent dispatch --host codex --role planner \
+sh .context-circuit/cli --json agent dispatch --host codex --role planner \
   --task 'Plan the specified outcome' --path /actual/repository
-context-circuit-cli --json agent dispatch --host codex --role worker \
+sh .context-circuit/cli --json agent dispatch --host codex --role worker \
   --plan p0001 --repo api --path /actual/worktree
-context-circuit-cli --json agent dispatch --host codex --role explorer \
+sh .context-circuit/cli --json agent dispatch --host codex --role explorer \
   --path /actual/repository --task 'Which module owns invoice voiding?'
 ```
 

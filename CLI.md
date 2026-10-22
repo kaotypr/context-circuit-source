@@ -18,8 +18,13 @@ version; `.context-circuit/VERSION` in a workspace records its separate template
 version. CLI v2 supports workspace schema 2. Each workspace pins its CLI version
 in `.context-circuit/CLI_VERSION`; a compatible CLI update does not change it.
 Versions install side by side under one version store, so workspaces pinning
-different versions coexist on a machine. The CLI warns when it is run against a
-workspace that pins another version.
+different versions coexist on a machine, and a variant build installs as
+`<label>-context-circuit-cli`. A workspace runs its pinned version through its
+launcher, `sh .context-circuit/cli` (or `.context-circuit/cli.ps1` in
+PowerShell), which refuses and names the install step when that version is not
+installed. A CLI called another way hands off to the pinned version when it is
+installed in the same store, and otherwise warns, and refuses a change from
+another release line or one that would migrate the workspace schema.
 
 The CLI also embeds a workspace seed for `init` and `template export`. An existing
 blank schema-2 template can be initialized independently of its template version.

@@ -22,7 +22,7 @@ Initialization installs role definitions for every host. Run setup again after
 settings change, or in a clone, where the ignored definitions never arrived:
 
 ```sh
-context-circuit-cli --workspace <root> agent setup
+sh <root>/.context-circuit/cli agent setup
 ```
 
 With no `--host` it covers every host, since one workspace is opened in several.
@@ -35,7 +35,7 @@ spawn tool with the full resolved role prompt and settings, where supported.
 For each bounded task, obtain its dispatch specification:
 
 ```sh
-context-circuit-cli --workspace <root> --json agent dispatch \
+sh <root>/.context-circuit/cli --json agent dispatch \
   --host <host> --role <explorer|planner|worker|reviewer> \
   --plan <plan-id> --repo <repo-id> --path <actual-working-directory>
 ```

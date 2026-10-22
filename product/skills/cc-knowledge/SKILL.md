@@ -16,7 +16,7 @@ Run the diagnostic after editing notes — it reports any line that crosses the
 boundaries below:
 
 ```sh
-context-circuit-cli --workspace <root> check
+sh <root>/.context-circuit/cli check
 ```
 
 ## A note describes the project, not the machinery

@@ -26,10 +26,10 @@ values in force and names what this machine overrode; `agent configure --local`
 writes there instead of the shared file.
 
 ```sh
-context-circuit-cli agent settings
-context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit-cli agent configure --host codex --role worker --model MY_MODEL --effort low --local
-context-circuit-cli agent setup
+sh .context-circuit/cli agent settings
+sh .context-circuit/cli agent configure --host codex --role worker --model MODEL_ID --effort high
+sh .context-circuit/cli agent configure --host codex --role worker --model MY_MODEL --effort low --local
+sh .context-circuit/cli agent setup
 ```
 
 Configure the actual host (`codex`, `claude-code`, or `cursor`) and verify that its
