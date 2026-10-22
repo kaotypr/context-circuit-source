@@ -16,7 +16,12 @@ release_output=${1:-$work/dist}
 mkdir -p "$release_output"
 sh scripts/build-dist.sh "$version" "$release_output/workspace"
 cli_version=$(sh scripts/release-version.sh cli)
-sh scripts/build-cli.sh "$cli_version" "$release_output/cli"
+sh scripts/build-cli.sh "$cli_version" "$release_output/cli" > "$work/build-cli.log"
+cat "$work/build-cli.log"
+# A variant version builds and installs under its own command name; the build
+# says which, so this check never derives it separately.
+cli_command=$(sed -n 's/^cli_command: //p' "$work/build-cli.log")
+[ -n "$cli_command" ] || { printf 'FAIL: build-cli.sh reported no cli_command\n' >&2; exit 1; }
 release_output=$(CDPATH= cd -- "$release_output" && pwd -P)
 (
   cd "$release_output/workspace"
@@ -38,7 +43,7 @@ for archive in "$release_output/cli"/*-windows-*.zip; do
   cmp "$work/windows-inventory" "$work/inventory"
 done
 mkdir "$work/native"
-tar -xzf "$release_output/cli/context-circuit-cli-v$cli_version-$(go env GOOS)-$(go env GOARCH).tar.gz" -C "$work/native"
+tar -xzf "$release_output/cli/$cli_command-v$cli_version-$(go env GOOS)-$(go env GOARCH).tar.gz" -C "$work/native"
 cc_binary="$work/native/context-circuit-cli"
 [ "$("$cc_binary" version)" = "$cli_version" ]
 "$cc_binary" --workspace "$work/workspace" init --name Release --purpose 'Release fixture' --member fixture --member-name Fixture >/dev/null
@@ -53,9 +58,9 @@ tar -xzf "$release_output/workspace/context-circuit-$version.tar.gz" -C "$work/s
 # Exercise the shipped installer with the real native CLI archive in isolation.
 sh "$work/seed/.agents/skills/cc-cli/scripts/install.sh" --version "$cli_version" \
   --bin-dir "$work/installed" \
-  --archive "$release_output/cli/context-circuit-cli-v$cli_version-$(go env GOOS)-$(go env GOARCH).tar.gz" \
+  --archive "$release_output/cli/$cli_command-v$cli_version-$(go env GOOS)-$(go env GOARCH).tar.gz" \
   --checksums "$release_output/cli/SHA256SUMS"
-"$work/installed/context-circuit-cli" --workspace "$work/seed" --json check
+"$work/installed/$cli_command" --workspace "$work/seed" --json check
 # Building into an existing output must fail without deleting its contents.
 mkdir "$work/protected-dist"
 printf 'preserve me\n' > "$work/protected-dist/sentinel"

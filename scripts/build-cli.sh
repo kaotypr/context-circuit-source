@@ -11,6 +11,21 @@ if [ -z "${1:-}" ]; then
 else
   version=$1
 fi
+# A variant version X.Y.Z-<label>.N builds and installs under its own command
+# name, so it never shares a PATH command with the public CLI. The binary inside
+# each package keeps the public name. The same rule is in the cc-cli installers.
+# Read by a Go test; keep each on one line.
+reserved_labels='alpha beta rc dev test pre preview snapshot'
+label_pattern='^[a-z]{1,20}$'
+name=context-circuit-cli
+base=${version%%-*} rest=${version#*-}
+if [ "$rest" != "$version" ] && printf '%s\n' "$base" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+  label=${rest%%.*} counter=${rest#*.}
+  if [ "$label.$counter" = "$rest" ] && printf '%s\n' "$label" | grep -Eq "$label_pattern" &&
+    printf '%s\n' "$counter" | grep -Eq '^[1-9][0-9]*$'; then
+    case " $reserved_labels " in *" $label "*) ;; *) name=$label-context-circuit-cli ;; esac
+  fi
+fi
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid CLI version: $version" ;; esac
 if [ "$#" -ge 2 ]; then
   output_dir=$2
@@ -26,7 +41,7 @@ output_dir=$(CDPATH= cd -- "$output_dir" && pwd)
 staging_dir=$(mktemp -d)
 trap 'rm -rf "$staging_dir"' EXIT HUP INT TERM
 cd "$source_root"
-artifact_name="context-circuit-cli-v$version"
+artifact_name="$name-v$version"
 # Include the licenses for dependencies and the Go runtime in each binary asset.
 # The CLI's own license ships beside them: Apache-2.0 asks a redistributor
 # to pass the License on with the work, and an archive is read wherever it was
@@ -83,3 +98,4 @@ done
 ) > "$output_dir/SHA256SUMS"
 printf 'cli_version: %s\n' "$version"
 printf 'cli_assets_dir: %s\n' "$output_dir"
+printf 'cli_command: %s\n' "$name"
