@@ -97,7 +97,7 @@ as concerns earn them, each with its own scope line.*
 is built is `architecture/`.*
 
 - [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, planning request, coordination · reviewed 2026-10-20
-- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, publication target, publication order, release request, release repository, precedence, behind, outdated cli, schema 3, cut-over, template delta · reviewed 2026-10-20
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, publication target, publication order, release request, release repository, precedence, behind, outdated cli, schema 3, cut-over, template delta, launcher, release line, variant label, GitLab, pin switch, pin guard, command name · reviewed 2026-10-23
 - [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the CLI, which cover a workspace, and why a workspace holds no license file · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge, export-ignore, gitattributes · reviewed 2026-09-19
 
 ### Architecture
@@ -139,5 +139,5 @@ it does that for is `actors/`.*
 *How this checkout is laid out, validated, and released. Not what the product
 does once installed.*
 
-- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-09-19
+- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-10-23
 - [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, destination-owned, knowledge tree, unverified · reviewed 2026-09-19
