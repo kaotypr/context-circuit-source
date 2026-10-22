@@ -61,7 +61,7 @@ A completion names this work for a plan. A change made without a plan has no
 record to name it, so ask the repository:
 
 ```sh
-context-circuit-cli --workspace <root> context find --repo REPO
+sh <root>/.context-circuit/cli context find --repo REPO
 ```
 
 It returns the catalog entries claiming that repository and names the judging as

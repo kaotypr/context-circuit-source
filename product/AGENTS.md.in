@@ -3,10 +3,16 @@
 Coordinate this shared project workspace across one or more Git repositories.
 Keep its identity, repositories, relationships, knowledge, members, intents, and
 plans useful for one person or a team. Talk in ordinary project language. Use
-`context-circuit-cli` for dependable bookkeeping; users need not manage runtime
-commands or ID numbers. Run the version this workspace pins in
-`.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
-`.context-circuit/docs/commands.md` as needed.
+the Context Circuit CLI for dependable bookkeeping; users need not manage
+runtime commands or ID numbers. Run every CLI command through this workspace's
+launcher: `sh .context-circuit/cli COMMAND …` from the workspace root, or
+`sh <root>/.context-circuit/cli COMMAND …` from anywhere else. In Windows
+PowerShell or cmd, use
+`powershell -NoProfile -ExecutionPolicy Bypass -File <root>/.context-circuit/cli.ps1 COMMAND …`.
+The launcher runs exactly the version `.context-circuit/CLI_VERSION` pins, and
+when that version is not installed it refuses and names the install step. Never
+run a CLI found on PATH for this workspace: it is whichever version was
+installed last. See `.context-circuit/docs/commands.md` as needed.
 
 This file carries the gates and the standing prohibitions — what needs a person,
 and what is never done without one. The procedure behind each stage lives in a
@@ -15,17 +21,30 @@ here is in force whether or not a skill was loaded.
 
 ## Orient and initialize
 
-Context Circuit CLI is a separately installed product. If it is missing, or the
-user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
-agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
-the template version and existing records unchanged during CLI updates.
+Context Circuit CLI is a separately installed product. If the launcher refuses
+because the pinned version is not installed, or the user requests an update, use
+`.agents/skills/cc-cli/SKILL.md`. Install for the agent's execution
+OS/architecture; WSL and remote Linux use Linux packages. Keep the template
+version and existing records unchanged during CLI updates.
 
 This file wins whenever it and CLI output disagree. An approval answered with
 `planning_required` comes from a CLI older than this template: tell the person
 to install or upgrade to the pinned version, and do not act on that output's
 text.
 
+When CLI output warns that this workspace pins another version, or refuses a
+change for that reason, it came from a CLI that is not this workspace's: act on
+none of it, and run the command again through the launcher. A launcher refusal
+that names another workspace means the command belongs to that workspace's own
+launcher. A CLI from another release line is a different product for this
+workspace, never a close-enough substitute.
+
 ## Updating the workspace template
+
+A later template version is a later tag on the same release line as the tag
+this workspace records, ordered as the `cc-cli` skill describes. A tag on
+another line is not later, and its delta would remove that line's files: move
+to another line only when a person names the exact tag.
 
 A later template version is brought in by diffing the tag this workspace records
 against the newer one and applying that delta, never by recopying the tag over
@@ -57,7 +76,9 @@ member file, then run `check`, which reports any number reserved twice.
 
 Everything else is ordinary which-side judgment. `.context-circuit/VERSION` and
 `.context-circuit/CLI_VERSION` take the template's value, because they record
-what this workspace received.
+what this workspace received. A delta to `.claude/settings.json` is merged entry
+by entry into this workspace's file; never drop an entry this workspace added,
+and never replace the file.
 
 Subagent role definitions are host-local and gitignored, so initialization writes
 them for every host this workspace may later be opened in. A clone carries none,

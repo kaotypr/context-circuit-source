@@ -8,7 +8,7 @@ description: Run several Context Circuit plans at once — deriving the dependen
 To execute several plans at once, derive the order instead of guessing it:
 
 ```sh
-context-circuit-cli --workspace <root> --json record order --mode auto
+sh <root>/.context-circuit/cli --json record order --mode auto
 ```
 
 For an explicitly selected run, pass each plan with repeatable `--plan ID`.

@@ -37,7 +37,7 @@ Once planning is requested for an approved intent, inspect real code and create
 linked plan folders:
 
 ```sh
-context-circuit-cli --workspace <root> record create --kind plan --slug SLUG --title TITLE --intent i001 --repo api
+sh <root>/.context-circuit/cli record create --kind plan --slug SLUG --title TITLE --intent i001 --repo api
 ```
 
 For a person's explicit request for a detailed plan of an already specified
@@ -55,7 +55,7 @@ Where plans depend on each other, record it, so the order can be derived rather
 than guessed:
 
 ```sh
-context-circuit-cli --workspace <root> record dependencies --id p0001 --depends-on p0002
+sh <root>/.context-circuit/cli record dependencies --id p0001 --depends-on p0002
 ```
 
 ## What a plan holds

@@ -26,8 +26,13 @@ func productFile(t *testing.T, rel string) string {
 	return strings.ReplaceAll(string(data), "\r\n", "\n")
 }
 
-// documentedCommands returns every complete `context-circuit-cli ...` invocation in
-// fenced examples, rejoining the backslash continuations the docs wrap with.
+// launcherCall is the workspace launcher as the examples run it: from the root
+// as `sh .context-circuit/cli`, or as `sh <root>/.context-circuit/cli`.
+var launcherCall = regexp.MustCompile(`^sh \S*\.context-circuit/cli `)
+
+// documentedCommands returns every complete `context-circuit-cli ...` or launcher
+// invocation in fenced examples, rejoining the backslash continuations the docs
+// wrap with.
 func documentedCommands(text string) []string {
 	var commands []string
 	var pending string
@@ -41,7 +46,7 @@ func documentedCommands(text string) []string {
 			continue
 		}
 		line = strings.TrimSpace(line)
-		if pending == "" && !strings.HasPrefix(line, "context-circuit-cli ") {
+		if pending == "" && !strings.HasPrefix(line, "context-circuit-cli ") && !launcherCall.MatchString(line) {
 			continue
 		}
 		if before, ok := strings.CutSuffix(line, "\\"); ok {
@@ -78,7 +83,11 @@ func TestDocumentedCommandsExist(t *testing.T) {
 			if isTemplate(command) {
 				continue
 			}
+			// The launcher form is two tokens, `sh` and the launcher's path.
 			args := strings.Fields(command)[1:]
+			if launcherCall.MatchString(command) {
+				args = args[1:]
+			}
 			// Drop a documented --workspace so every example runs against the
 			// fixture; the rest of the line is checked exactly as written.
 			for i := 0; i+1 < len(args); i++ {
@@ -108,6 +117,43 @@ func TestDocumentedCommandsExist(t *testing.T) {
 	}
 	if checked < 20 {
 		t.Fatalf("expected the docs to teach a real command surface, only found %d", checked)
+	}
+}
+
+// The command on PATH is whichever version was installed last, so an
+// instruction that runs it can run the wrong CLI for the workspace. Every
+// instruction runs the launcher instead. Naming the installed command, as the
+// cc-cli skill does, is not running it; the installers are not instructions.
+func TestNoInstructionRunsTheBareCommand(t *testing.T) {
+	commands := []string{"help"}
+	for name := range cli.Topics {
+		commands = append(commands, regexp.QuoteMeta(name))
+	}
+	bare := regexp.MustCompile("context-circuit-cli\\s+(-|(" + strings.Join(commands, "|") + ")\\b)")
+	if !bare.MatchString("context-circuit-cli --workspace . status") ||
+		!bare.MatchString("context-circuit-cli\nrecord list") ||
+		bare.MatchString("installs the command `context-circuit-cli`; a") {
+		t.Fatal("the bare-command pattern no longer tells a call from a mention")
+	}
+	sources := []string{"AGENTS.md.in", "CLAUDE.md.in", "CURSOR.md.in", "cursor.mdc.in"}
+	for _, doc := range shippedDocs(t) {
+		sources = append(sources, filepath.Join("docs", doc))
+	}
+	for _, name := range shippedSkills(t) {
+		for _, file := range []string{"SKILL.md", "route.md"} {
+			rel := filepath.Join("skills", name, file)
+			if _, err := os.Stat(filepath.Join("..", "..", "product", rel)); err == nil {
+				sources = append(sources, rel)
+			}
+		}
+	}
+	for _, source := range sources {
+		text := productFile(t, source)
+		for _, at := range bare.FindAllStringIndex(text, -1) {
+			line := strings.Count(text[:at[0]], "\n") + 1
+			t.Errorf("%s:%d runs the command on PATH instead of the workspace launcher: %q",
+				source, line, text[at[0]:at[1]])
+		}
 	}
 }
 

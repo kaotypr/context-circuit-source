@@ -11,7 +11,7 @@ record, **and** reconcile the durable product knowledge those plans changed. The
 request is finished only when both are done.
 
 ```sh
-context-circuit-cli --workspace <root> --json record complete --id p0001 --text 'User requested completion.'
+sh <root>/.context-circuit/cli --json record complete --id p0001 --text 'User requested completion.'
 ```
 
 Write the note in the words the person used, including their language. It
@@ -44,7 +44,7 @@ Keep implementation-specific evidence in the plan, and keep those plans' own
 identifiers out of every note reconciled from them. Run the diagnostic afterwards:
 
 ```sh
-context-circuit-cli --workspace <root> check
+sh <root>/.context-circuit/cli check
 ```
 
 Other work need not wait for unrelated knowledge updates.
