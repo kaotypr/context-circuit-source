@@ -32,7 +32,7 @@ func documentedCommands(text string) []string {
 	var commands []string
 	var pending string
 	fenced := false
-	for _, line := range strings.Split(text, "\n") {
+	for line := range strings.SplitSeq(text, "\n") {
 		if strings.HasPrefix(strings.TrimSpace(line), "```") {
 			fenced = !fenced
 			continue
@@ -44,8 +44,8 @@ func documentedCommands(text string) []string {
 		if pending == "" && !strings.HasPrefix(line, "context-circuit-cli ") {
 			continue
 		}
-		if strings.HasSuffix(line, "\\") {
-			pending += strings.TrimSuffix(line, "\\") + " "
+		if before, ok := strings.CutSuffix(line, "\\"); ok {
+			pending += before + " "
 			continue
 		}
 		commands = append(commands, strings.TrimSpace(pending+line))
@@ -57,7 +57,7 @@ func documentedCommands(text string) []string {
 // A usage template teaches shape, not a runnable line; its metavariables stand
 // in for arguments rather than naming a command.
 func isTemplate(command string) bool {
-	for _, token := range strings.Fields(command) {
+	for token := range strings.FieldsSeq(command) {
 		if token == "COMMAND" || token == "help" {
 			return true
 		}
@@ -152,10 +152,11 @@ var humanFacingDocs = map[string]bool{"how-it-works.md": true}
 // reachable too, from the README that person actually opens.
 func TestEverythingShippedIsReachableFromItsReader(t *testing.T) {
 	agents := productFile(t, "AGENTS.md.in")
-	reachable := agents
+	var reachable strings.Builder
+	reachable.WriteString(agents)
 	for _, name := range shippedSkills(t) {
 		if strings.Contains(agents, "`.agents/skills/"+name+"/SKILL.md`") {
-			reachable += productFile(t, filepath.Join("skills", name, "SKILL.md"))
+			reachable.WriteString(productFile(t, filepath.Join("skills", name, "SKILL.md")))
 		}
 	}
 	for _, name := range shippedSkills(t) {
@@ -164,7 +165,7 @@ func TestEverythingShippedIsReachableFromItsReader(t *testing.T) {
 		}
 	}
 	for _, doc := range shippedDocs(t) {
-		named := strings.Contains(reachable, "`.context-circuit/docs/"+doc+"`")
+		named := strings.Contains(reachable.String(), "`.context-circuit/docs/"+doc+"`")
 		if humanFacingDocs[doc] {
 			if named {
 				t.Errorf("%s is written for a person, so naming it in the entry instruction "+
@@ -289,7 +290,7 @@ func TestApprovalRecommendsPlanningEverywhere(t *testing.T) {
 		if !strings.Contains(text, "plan") {
 			t.Errorf("%s no longer mentions planning", rel)
 		}
-		for _, paragraph := range strings.Split(text, "\n\n") {
+		for paragraph := range strings.SplitSeq(text, "\n\n") {
 			if strings.Contains(paragraph, "planning_required") &&
 				!strings.Contains(paragraph, "older") && !strings.Contains(paragraph, "behind") {
 				t.Errorf("%s names planning_required other than as an old CLI's output:\n%s", rel, paragraph)
@@ -379,7 +380,7 @@ func TestGroupWithOptionReportsTheOption(t *testing.T) {
 // describe commands that exist, or one side has drifted from the other.
 func TestEveryCommandHasATopic(t *testing.T) {
 	seen := map[string]bool{}
-	for _, line := range strings.Split(cli.Help, "\n") {
+	for line := range strings.SplitSeq(cli.Help, "\n") {
 		if line == "" || strings.HasPrefix(line, " ") || !strings.Contains(line, "  ") && line != "version" {
 			continue
 		}
@@ -440,7 +441,7 @@ func TestTheProductGuideStaysWithTheRepositoryThatShowsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, line := range strings.Split(string(manifest), "\n") {
+	for line := range strings.SplitSeq(string(manifest), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) != 2 {
 			continue
@@ -496,7 +497,7 @@ func TestTheTwoLicensesStaySeparate(t *testing.T) {
 	// else's project with this one's terms; under .context-circuit it would be a
 	// second copy of terms that ask nothing, in a directory nobody reads for
 	// them.
-	for _, line := range strings.Split(manifest, "\n") {
+	for line := range strings.SplitSeq(manifest, "\n") {
 		if fields := strings.Fields(line); len(fields) == 2 && fields[0] == "product/LICENSE" {
 			t.Errorf("a license installs into a workspace: %s", line)
 		}

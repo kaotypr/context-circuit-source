@@ -183,7 +183,7 @@ func CommandHelp(topic string) (string, bool) {
 func signatures(topic string) []string {
 	var lines []string
 	keep := false
-	for _, line := range strings.Split(Help, "\n") {
+	for line := range strings.SplitSeq(Help, "\n") {
 		switch {
 		case line == topic || strings.HasPrefix(line, topic+" "):
 			keep = true

@@ -29,7 +29,7 @@ func Files() (map[string][]byte, error) {
 		return nil, err
 	}
 	files := map[string][]byte{}
-	for _, line := range strings.Split(string(manifest), "\n") {
+	for line := range strings.SplitSeq(string(manifest), "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue

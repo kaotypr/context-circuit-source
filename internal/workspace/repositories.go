@@ -250,26 +250,8 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 	if err != nil {
 		return err
 	}
-	for other, binding := range bindings.Bindings {
-		if other == id {
-			continue
-		}
-		otherPath, err := s.LocalPath(binding.Path)
-		if err != nil {
-			return err
-		}
-		otherCommon, err := Git(ctx, otherPath, "rev-parse", "--path-format=absolute", "--git-common-dir")
-		if err == nil && otherCommon == common {
-			return fmt.Errorf("this repository is already connected as %s", other)
-		}
-	}
-	// A worktree of the workspace's repository sits outside the workspace, so
-	// the containment check above does not see it, but it shares the object
-	// store and every commit made in it lands in the workspace's history.
-	if selfPath, err := s.selfPath(bindings.Workspace); err == nil && bindings.Workspace != nil {
-		if selfCommon, err := Git(ctx, selfPath, "rev-parse", "--path-format=absolute", "--git-common-dir"); err == nil && selfCommon == common {
-			return errors.New("this checkout belongs to the workspace's own repository; describe it with workspace connect")
-		}
+	if err := s.rejectDuplicateCheckout(ctx, bindings, id, common); err != nil {
+		return err
 	}
 	if existing, registered := cfg.Repositories[id]; registered {
 		if remote != "" && remote != existing.URL {
@@ -278,26 +260,8 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 		if defaultBranch != "" && defaultBranch != existing.DefaultBranch {
 			return fmt.Errorf("%s already records another default branch; use repo remote to change it explicitly", id)
 		}
-	} else {
-		if defaultBranch == "" {
-			defaultBranch = base
-		}
-		if err := checkBranch(ctx, path, defaultBranch); err != nil {
-			return err
-		}
-		if remote == "" {
-			// Git already records where this checkout came from. A repository
-			// with no origin simply has no shared URL to record.
-			remote, _ = Git(ctx, path, "remote", "get-url", "origin")
-		}
-		if remote != "" {
-			if err := checkRemote(remote); err != nil {
-				return err
-			}
-		}
-		if err := s.Update("workspace.yaml", []string{"repositories", id}, Repository{remote, defaultBranch}, 0644); err != nil {
-			return err
-		}
+	} else if err := s.registerRepository(ctx, id, path, base, remote, defaultBranch); err != nil {
+		return err
 	}
 	binding := Binding{path, base}
 	if _, err := s.Read("repositories.local.yaml"); os.IsNotExist(err) {
@@ -483,4 +447,53 @@ func ParseStatus(text string) []StatusEntry {
 		entries = append(entries, entry)
 	}
 	return entries
+}
+
+// rejectDuplicateCheckout refuses a checkout that shares an object store with
+// another bound repository or with the workspace's own repository.
+func (s *Store) rejectDuplicateCheckout(ctx context.Context, bindings Bindings, id, common string) error {
+	for other, binding := range bindings.Bindings {
+		if other == id {
+			continue
+		}
+		otherPath, err := s.LocalPath(binding.Path)
+		if err != nil {
+			return err
+		}
+		otherCommon, err := Git(ctx, otherPath, "rev-parse", "--path-format=absolute", "--git-common-dir")
+		if err == nil && otherCommon == common {
+			return fmt.Errorf("this repository is already connected as %s", other)
+		}
+	}
+	// A worktree of the workspace's repository sits outside the workspace, so
+	// the containment check above does not see it, but it shares the object
+	// store and every commit made in it lands in the workspace's history.
+	if selfPath, err := s.selfPath(bindings.Workspace); err == nil && bindings.Workspace != nil {
+		if selfCommon, err := Git(ctx, selfPath, "rev-parse", "--path-format=absolute", "--git-common-dir"); err == nil && selfCommon == common {
+			return errors.New("this checkout belongs to the workspace's own repository; describe it with workspace connect")
+		}
+	}
+	return nil
+}
+
+// registerRepository writes the shared record for a repository new to this
+// workspace, defaulting what the caller left out from the checkout.
+func (s *Store) registerRepository(ctx context.Context, id, path, base, remote, defaultBranch string) error {
+	if defaultBranch == "" {
+		defaultBranch = base
+	}
+	if err := checkBranch(ctx, path, defaultBranch); err != nil {
+		return err
+	}
+	if remote == "" {
+		// Git already records where this checkout came from. A repository
+		// with no origin simply has no shared URL to record.
+		remote, _ = Git(ctx, path, "remote", "get-url", "origin")
+	}
+	if remote != "" {
+		if err := checkRemote(remote); err != nil {
+			return err
+		}
+	}
+	return s.Update("workspace.yaml", []string{"repositories", id}, Repository{remote, defaultBranch}, 0644)
 }

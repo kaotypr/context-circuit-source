@@ -3,10 +3,11 @@ package workspace
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -93,7 +94,7 @@ func (s *Store) IDFiles() ([]string, error) {
 			files = append(files, IDFilesDir+"/"+entry.Name())
 		}
 	}
-	sort.Strings(files)
+	slices.Sort(files)
 	return files, nil
 }
 
@@ -183,7 +184,7 @@ func (s *Store) reservedIDs() (map[string][]string, error) {
 		}
 	}
 	for id := range reserved {
-		sort.Strings(reserved[id])
+		slices.Sort(reserved[id])
 	}
 	return reserved, nil
 }
@@ -270,11 +271,7 @@ func (s *Store) checkIDFiles(issues []Finding) ([]Finding, map[string]bool, erro
 			}
 		}
 	}
-	ids := make([]string, 0, len(holders))
-	for id := range holders {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(holders))
 	for _, id := range ids {
 		if len(holders[id]) > 1 {
 			issues = append(issues, found(id+" is reserved in more than one ID file: "+strings.Join(holders[id], ", "),
@@ -339,7 +336,7 @@ func (s *Store) ChangedSince(before SharedSnapshot) ([]string, error) {
 			changed = append(changed, rel)
 		}
 	}
-	sort.Strings(changed)
+	slices.Sort(changed)
 	return changed, nil
 }
 
@@ -376,12 +373,8 @@ func (split IDSplit) commitSentence() string {
 // Notice is the one paragraph a person reads on the error stream when a
 // command split the ID file before doing what it was asked.
 func (split IDSplit) Notice() string {
-	var parts []string
-	files := make([]string, 0, len(split.Moved))
-	for rel := range split.Moved {
-		files = append(files, rel)
-	}
-	sort.Strings(files)
+	files := slices.Sorted(maps.Keys(split.Moved))
+	parts := make([]string, 0, len(files))
 	for _, rel := range files {
 		parts = append(parts, fmt.Sprintf("%s to %s", strings.Join(split.Moved[rel], ", "), rel))
 	}
@@ -447,74 +440,8 @@ func (s *Store) SplitIDLedger(member string) (*IDSplit, error) {
 	}
 	hasLegacy := len(files) > 0 && files[0] == LegacyIDFile
 	if hasLegacy {
-		legacy, err := s.readIDFile(LegacyIDFile)
-		if err != nil {
-			return nil, fmt.Errorf("%w; resolve the merge in %s first, keeping every entry, then run the command again", err, LegacyIDFile)
-		}
-		if problems := ledgerProblems(LegacyIDFile, legacy); len(problems) > 0 {
-			return nil, fmt.Errorf("%s; correct %s by hand without dropping a reservation, then run the command again", strings.Join(problems, "; "), LegacyIDFile)
-		}
-		existing := map[string]bool{}
-		for _, rel := range files[1:] {
-			ledger, err := s.readIDFile(rel)
-			if err != nil {
-				return nil, err
-			}
-			for _, id := range append(append([]string{}, ledger.Intents...), ledger.Plans...) {
-				existing[id] = true
-			}
-		}
-		authors := map[string]string{}
-		paths, err := s.RecordPaths(true)
-		if err != nil {
+		if err := s.moveLegacy(files[1:], member, split); err != nil {
 			return nil, err
-		}
-		for _, path := range paths {
-			record, err := s.readRecord(path)
-			if err != nil {
-				return nil, err
-			}
-			authors[record.ID] = record.CreatedBy
-		}
-		type pending struct{ intents, plans []string }
-		owners := map[string]*pending{}
-		for _, id := range append(append([]string{}, legacy.Intents...), legacy.Plans...) {
-			if existing[id] {
-				split.Skipped = append(split.Skipped, id)
-				continue
-			}
-			owner := authors[id]
-			if owner == "" {
-				owner = member
-			}
-			if owners[owner] == nil {
-				owners[owner] = &pending{}
-			}
-			if strings.HasPrefix(id, "i") {
-				owners[owner].intents = append(owners[owner].intents, id)
-			} else {
-				owners[owner].plans = append(owners[owner].plans, id)
-			}
-		}
-		names := make([]string, 0, len(owners))
-		for owner := range owners {
-			names = append(names, owner)
-		}
-		sort.Strings(names)
-		// Every author is checked before anything is written, so a name that
-		// cannot be a file stops the split whole and is named with its records.
-		for _, owner := range names {
-			if err := MemberID(owner); err != nil {
-				held := append(append([]string{}, owners[owner].intents...), owners[owner].plans...)
-				return nil, fmt.Errorf("%s name %q in created_by, which cannot name an ID file: %w; %s", strings.Join(held, ", "), owner, err, renameMemberByHand)
-			}
-		}
-		for _, owner := range names {
-			if err := s.reserve(owner, owners[owner].intents, owners[owner].plans); err != nil {
-				return nil, err
-			}
-			rel, _ := IDFilePath(owner)
-			split.Moved[rel] = append(append([]string{}, owners[owner].intents...), owners[owner].plans...)
 		}
 	}
 	// The member running the split always has a file afterwards, so a workspace
@@ -545,4 +472,87 @@ func (s *Store) SplitIDLedger(member string) (*IDSplit, error) {
 		split.Files = files
 	}
 	return split, nil
+}
+
+// pendingIDs is what the legacy file holds for one member's file.
+type pendingIDs struct{ intents, plans []string }
+
+// moveLegacy reserves every number in the legacy shared file in the file of
+// the member whose record holds it, recording each move in split. memberFiles
+// are the per-member ID files already present.
+func (s *Store) moveLegacy(memberFiles []string, member string, split *IDSplit) error {
+	legacy, err := s.readIDFile(LegacyIDFile)
+	if err != nil {
+		return fmt.Errorf("%w; resolve the merge in %s first, keeping every entry, then run the command again", err, LegacyIDFile)
+	}
+	if problems := ledgerProblems(LegacyIDFile, legacy); len(problems) > 0 {
+		return fmt.Errorf("%s; correct %s by hand without dropping a reservation, then run the command again", strings.Join(problems, "; "), LegacyIDFile)
+	}
+	existing := map[string]bool{}
+	for _, rel := range memberFiles {
+		ledger, err := s.readIDFile(rel)
+		if err != nil {
+			return err
+		}
+		for _, id := range append(append([]string{}, ledger.Intents...), ledger.Plans...) {
+			existing[id] = true
+		}
+	}
+	authors, err := s.recordAuthors()
+	if err != nil {
+		return err
+	}
+	owners := map[string]*pendingIDs{}
+	for _, id := range append(append([]string{}, legacy.Intents...), legacy.Plans...) {
+		if existing[id] {
+			split.Skipped = append(split.Skipped, id)
+			continue
+		}
+		owner := authors[id]
+		if owner == "" {
+			owner = member
+		}
+		if owners[owner] == nil {
+			owners[owner] = &pendingIDs{}
+		}
+		if strings.HasPrefix(id, "i") {
+			owners[owner].intents = append(owners[owner].intents, id)
+		} else {
+			owners[owner].plans = append(owners[owner].plans, id)
+		}
+	}
+	names := slices.Sorted(maps.Keys(owners))
+	// Every author is checked before anything is written, so a name that
+	// cannot be a file stops the split whole and is named with its records.
+	for _, owner := range names {
+		if err := MemberID(owner); err != nil {
+			held := append(append([]string{}, owners[owner].intents...), owners[owner].plans...)
+			return fmt.Errorf("%s name %q in created_by, which cannot name an ID file: %w; %s", strings.Join(held, ", "), owner, err, renameMemberByHand)
+		}
+	}
+	for _, owner := range names {
+		if err := s.reserve(owner, owners[owner].intents, owners[owner].plans); err != nil {
+			return err
+		}
+		rel, _ := IDFilePath(owner)
+		split.Moved[rel] = append(append([]string{}, owners[owner].intents...), owners[owner].plans...)
+	}
+	return nil
+}
+
+// recordAuthors maps every record ID, active or archived, to its author.
+func (s *Store) recordAuthors() (map[string]string, error) {
+	paths, err := s.RecordPaths(true)
+	if err != nil {
+		return nil, err
+	}
+	authors := map[string]string{}
+	for _, path := range paths {
+		record, err := s.readRecord(path)
+		if err != nil {
+			return nil, err
+		}
+		authors[record.ID] = record.CreatedBy
+	}
+	return authors, nil
 }

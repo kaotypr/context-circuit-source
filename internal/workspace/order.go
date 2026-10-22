@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -88,9 +87,11 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 	if len(selectedPlans) != len(unique(selectedPlans)) {
 		return Order{}, errors.New("duplicate --plan ID")
 	}
+	// One walk of the record tree, on the first lookup, serves every one below.
+	index := s.newRecordIndex()
 	selectedSet := map[string]bool{}
 	for _, id := range selectedPlans {
-		record, err := s.FindRecord(id)
+		record, err := index.Find(id)
 		if err != nil {
 			return Order{}, err
 		}
@@ -107,7 +108,7 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 		return Order{}, errors.New("order mode must be auto, waves, or linear")
 	}
 	if intent != "" {
-		parent, err := s.FindRecord(intent)
+		parent, err := index.Find(intent)
 		if err != nil {
 			return Order{}, err
 		}
@@ -144,7 +145,7 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 		plans[record.ID] = record
 		ids = append(ids, record.ID)
 	}
-	sort.Strings(ids)
+	slices.Sort(ids)
 	if len(selectedSet) > 0 && len(ids) != len(selectedSet) {
 		return Order{}, errors.New("selected plan is not active")
 	}
@@ -176,7 +177,7 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 			if _, ok := plans[dep]; ok {
 				continue
 			}
-			external, err := s.FindRecord(dep)
+			external, err := index.Find(dep)
 			if err != nil {
 				return Order{}, fmt.Errorf("%s: %w", id, err)
 			}
@@ -216,24 +217,9 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 	}
 	result.Remaining = len(remaining)
 
-	var waves [][]string
-	for len(remaining) > 0 {
-		var ready, rest []string
-		for _, id := range remaining {
-			if slices.ContainsFunc(plans[id].DependsOn, func(dep string) bool { return !satisfied[dep] }) {
-				rest = append(rest, id)
-				continue
-			}
-			ready = append(ready, id)
-		}
-		if len(ready) == 0 {
-			return Order{}, fmt.Errorf("unsatisfiable or cyclic plan dependencies among: %s", strings.Join(remaining, ", "))
-		}
-		waves = append(waves, ready)
-		for _, id := range ready {
-			satisfied[id] = true
-		}
-		remaining = rest
+	waves, err := readyWaves(plans, remaining, satisfied)
+	if err != nil {
+		return Order{}, err
 	}
 
 	repositories := map[string]bool{}
@@ -262,7 +248,7 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 				Deliver:      ends[id],
 			}
 			for _, repo := range plan.Repositories {
-				start := s.startFor(plans, plan, repo, bindings.BaseBranch(cfg, repo))
+				start := startFrom(index.Find, plans, plan, repo, bindings.BaseBranch(cfg, repo))
 				item.Start[repo] = start
 				if len(start.Merge) > 0 {
 					result.Strategy.FanIns++
@@ -305,16 +291,47 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 	return result, nil
 }
 
+// readyWaves groups the remaining plans into layers whose dependencies are all
+// satisfied by an earlier layer; a plan that never becomes ready is a cycle.
+func readyWaves(plans map[string]Record, remaining []string, satisfied map[string]bool) ([][]string, error) {
+	var waves [][]string
+	for len(remaining) > 0 {
+		var ready, rest []string
+		for _, id := range remaining {
+			if slices.ContainsFunc(plans[id].DependsOn, func(dep string) bool { return !satisfied[dep] }) {
+				rest = append(rest, id)
+				continue
+			}
+			ready = append(ready, id)
+		}
+		if len(ready) == 0 {
+			return nil, fmt.Errorf("unsatisfiable or cyclic plan dependencies among: %s", strings.Join(remaining, ", "))
+		}
+		waves = append(waves, ready)
+		for _, id := range ready {
+			satisfied[id] = true
+		}
+		remaining = rest
+	}
+	return waves, nil
+}
+
 // startFor resolves one repository's starting point. A predecessor that also
 // includes the repository supplies real Git ancestry; several predecessors need
 // an integration merge, which the coordinator performs with ordinary Git. The
 // base is the lowest predecessor ID so the same graph always resolves alike.
 func (s *Store) startFor(plans map[string]Record, plan Record, repo, baseBranch string) OrderStart {
+	return startFrom(s.FindRecord, plans, plan, repo, baseBranch)
+}
+
+// startFrom is startFor with the lookup of a plan outside the selection
+// supplied, so Order can answer every plan from one walk of the records.
+func startFrom(find func(string) (Record, error), plans map[string]Record, plan Record, repo, baseBranch string) OrderStart {
 	var predecessors []string
 	for _, dep := range plan.DependsOn {
 		record, ok := plans[dep]
 		if !ok {
-			external, err := s.FindRecord(dep)
+			external, err := find(dep)
 			if err != nil {
 				continue
 			}
@@ -324,7 +341,7 @@ func (s *Store) startFor(plans map[string]Record, plan Record, repo, baseBranch 
 			predecessors = append(predecessors, dep)
 		}
 	}
-	sort.Strings(predecessors)
+	slices.Sort(predecessors)
 	if len(predecessors) == 0 {
 		return OrderStart{Base: baseBranch}
 	}
@@ -339,8 +356,17 @@ func (s *Store) startFor(plans map[string]Record, plan Record, repo, baseBranch 
 // repository. A topological order guarantees each link already contains its own
 // dependencies, so a chain never needs an integration merge.
 func (s *Store) linearChain(plans map[string]Record, order []string, cfg Config, bindings Bindings) []OrderPlan {
-	var chain []OrderPlan
-	for position, id := range order {
+	chain := make([]OrderPlan, 0, len(order))
+	// A repository's chain ends at its last holder and each member stacks on the
+	// previous holder, so one pass tracks both rather than rescanning the order.
+	lastHolder := map[string]string{}
+	for _, id := range order {
+		for _, repo := range plans[id].Repositories {
+			lastHolder[repo] = id
+		}
+	}
+	previous := map[string]string{}
+	for _, id := range order {
 		plan := plans[id]
 		item := OrderPlan{
 			ID:           id,
@@ -350,26 +376,19 @@ func (s *Store) linearChain(plans map[string]Record, order []string, cfg Config,
 		}
 		for _, repo := range plan.Repositories {
 			base := bindings.BaseBranch(cfg, repo)
-			for earlier := position - 1; earlier >= 0; earlier-- {
-				if slices.Contains(plans[order[earlier]].Repositories, repo) {
-					base = PlanBranch(order[earlier], repo)
-					break
-				}
+			if earlier, ok := previous[repo]; ok {
+				base = PlanBranch(earlier, repo)
 			}
 			item.Start[repo] = OrderStart{Base: base}
 			// A linear chain stacks on the previous member sharing the
 			// repository whatever the records declare, so the last member
 			// holding a repository is where that repository's chain ends.
-			last := true
-			for later := position + 1; later < len(order); later++ {
-				if slices.Contains(plans[order[later]].Repositories, repo) {
-					last = false
-					break
-				}
-			}
-			if last {
+			if lastHolder[repo] == id {
 				item.Deliver = append(item.Deliver, repo)
 			}
+		}
+		for _, repo := range plan.Repositories {
+			previous[repo] = id
 		}
 		chain = append(chain, item)
 	}
@@ -386,14 +405,24 @@ func (s *Store) linearChain(plans map[string]Record, order []string, cfg Config,
 // readiness, so a plan nothing depends on sits in wave 1 and still ends its
 // chain; delivering the last wave would drop it without saying so.
 func deliverable(plans map[string]Record, selected []string) map[string][]string {
+	// covered[plan, repo] holds when another selected plan depends on plan and
+	// holds repo, so plan's branch there is not the end of the chain.
+	type branch struct{ plan, repo string }
+	covered := map[branch]bool{}
+	for _, other := range selected {
+		for _, dep := range plans[other].DependsOn {
+			if dep == other {
+				continue
+			}
+			for _, repo := range plans[other].Repositories {
+				covered[branch{dep, repo}] = true
+			}
+		}
+	}
 	result := map[string][]string{}
 	for _, id := range selected {
 		for _, repo := range plans[id].Repositories {
-			covered := slices.ContainsFunc(selected, func(other string) bool {
-				return other != id && slices.Contains(plans[other].Repositories, repo) &&
-					slices.Contains(plans[other].DependsOn, id)
-			})
-			if !covered {
+			if !covered[branch{id, repo}] {
 				result[id] = append(result[id], repo)
 			}
 		}

@@ -1212,7 +1212,7 @@ func TestConcurrentAllocation(t *testing.T) {
 	var wg sync.WaitGroup
 	errors := make(chan string, 12)
 	ids := make(chan string, 12)
-	for n := 0; n < 12; n++ {
+	for n := range 12 {
 		wg.Add(1)
 		go func(n int) {
 			defer wg.Done()

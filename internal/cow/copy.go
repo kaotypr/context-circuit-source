@@ -47,13 +47,7 @@ func Copy(ctx context.Context, source, destination, sourceRoot, targetRoot, mode
 	if err != nil {
 		return stats, err
 	}
-	if _, err := os.Lstat(destination); !os.IsNotExist(err) {
-		return stats, fmt.Errorf("destination already exists: %s", destination)
-	}
-	if err := os.MkdirAll(filepath.Dir(destination), 0700); err != nil {
-		return stats, err
-	}
-	stage, err := os.MkdirTemp(filepath.Dir(destination), ".cc-copy-*")
+	stage, err := newStage(destination)
 	if err != nil {
 		return stats, err
 	}
@@ -79,34 +73,7 @@ func Copy(ctx context.Context, source, destination, sourceRoot, targetRoot, mode
 			return err
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
-			link, err := os.Readlink(path)
-			if err != nil {
-				return err
-			}
-			resolved := link
-			if !filepath.IsAbs(link) {
-				resolved = filepath.Join(filepath.Dir(path), link)
-			}
-			inside, err := filepath.Rel(sourceRoot, resolved)
-			if err != nil || inside == ".." || strings.HasPrefix(inside, ".."+string(filepath.Separator)) {
-				return fmt.Errorf("%w: external symlink cannot be reused: %s", ErrNotReusable, path)
-			}
-			// Reject chains that look internal lexically but resolve outside.
-			if real, err := filepath.EvalSymlinks(path); err == nil {
-				actual, err := filepath.Rel(realSourceRoot, real)
-				if err != nil || actual == ".." || strings.HasPrefix(actual, ".."+string(filepath.Separator)) {
-					return fmt.Errorf("%w: external symlink chain cannot be reused: %s", ErrNotReusable, path)
-				}
-			} else if !os.IsNotExist(err) {
-				return err
-			}
-			// Convert even absolute internal links into portable relative links.
-			finalPath := filepath.Join(destination, rel)
-			link, err = filepath.Rel(filepath.Dir(finalPath), filepath.Join(targetRoot, inside))
-			if err != nil {
-				return err
-			}
-			if err := os.Symlink(link, dest); err != nil {
+			if err := copySymlink(path, dest, filepath.Join(destination, rel), sourceRoot, realSourceRoot, targetRoot); err != nil {
 				return err
 			}
 			stats.Links++
@@ -136,6 +103,51 @@ func Copy(ctx context.Context, source, destination, sourceRoot, targetRoot, mode
 		return stats, fmt.Errorf("destination appeared during copy: %s", destination)
 	}
 	return stats, os.Rename(staged, destination)
+}
+
+// newStage refuses an occupied destination and makes the temporary directory
+// beside it that the entry is built in before being renamed into place.
+func newStage(destination string) (string, error) {
+	if _, err := os.Lstat(destination); !os.IsNotExist(err) {
+		return "", fmt.Errorf("destination already exists: %s", destination)
+	}
+	if err := os.MkdirAll(filepath.Dir(destination), 0700); err != nil {
+		return "", err
+	}
+	return os.MkdirTemp(filepath.Dir(destination), ".cc-copy-*")
+}
+
+// copySymlink recreates an internal link as a portable relative link at dest,
+// rejecting any that point or resolve outside the source checkout. finalPath is
+// where the link will live once the staged entry is renamed into place.
+func copySymlink(path, dest, finalPath, sourceRoot, realSourceRoot, targetRoot string) error {
+	link, err := os.Readlink(path)
+	if err != nil {
+		return err
+	}
+	resolved := link
+	if !filepath.IsAbs(link) {
+		resolved = filepath.Join(filepath.Dir(path), link)
+	}
+	inside, err := filepath.Rel(sourceRoot, resolved)
+	if err != nil || inside == ".." || strings.HasPrefix(inside, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("%w: external symlink cannot be reused: %s", ErrNotReusable, path)
+	}
+	// Reject chains that look internal lexically but resolve outside.
+	if real, err := filepath.EvalSymlinks(path); err == nil {
+		actual, err := filepath.Rel(realSourceRoot, real)
+		if err != nil || actual == ".." || strings.HasPrefix(actual, ".."+string(filepath.Separator)) {
+			return fmt.Errorf("%w: external symlink chain cannot be reused: %s", ErrNotReusable, path)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	// Convert even absolute internal links into portable relative links.
+	link, err = filepath.Rel(filepath.Dir(finalPath), filepath.Join(targetRoot, inside))
+	if err != nil {
+		return err
+	}
+	return os.Symlink(link, dest)
 }
 
 func copyFile(source, destination string, mode fs.FileMode, strategy string) (bool, error) {

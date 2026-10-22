@@ -3,10 +3,10 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"maps"
 	"path"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -135,11 +135,7 @@ func (s *Store) reviewIssues(ctx context.Context) []Finding {
 			}
 			continue
 		}
-		ids := make([]string, 0, len(anchors))
-		for id := range anchors {
-			ids = append(ids, id)
-		}
-		sort.Strings(ids)
+		ids := slices.Sorted(maps.Keys(anchors))
 		var evidence []string
 		for _, id := range ids {
 			if missing[id] {
@@ -156,7 +152,7 @@ func (s *Store) reviewIssues(ctx context.Context) []Finding {
 				revisions[id] = logRevision(ctx, checkout)
 			}
 			paths := anchors[id]
-			sort.Strings(paths)
+			slices.Sort(paths)
 			if moved := movedSince(ctx, checkout, revisions[id], reviewed, paths); moved > 0 {
 				evidence = append(evidence, fmt.Sprintf("%s@%s has %s since", id, paths[0], plural(moved, "commit")))
 			}

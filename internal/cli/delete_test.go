@@ -336,7 +336,7 @@ func TestPreparingAReusedPlanNumberRefusesTheOldWorktree(t *testing.T) {
 	// made before the new plan existed, say the same.
 	assocs := filepath.Join(f.root, ".context-circuit", "local", "worktrees.yaml")
 	lines := []string{}
-	for _, line := range strings.Split(read(t, assocs), "\n") {
+	for line := range strings.SplitSeq(read(t, assocs), "\n") {
 		if !strings.Contains(line, "plan_created_at") {
 			lines = append(lines, line)
 		}
@@ -374,7 +374,7 @@ func legacyAssociations(t *testing.T, f fixture) {
 	t.Helper()
 	path := filepath.Join(f.root, ".context-circuit", "local", "worktrees.yaml")
 	lines := []string{}
-	for _, line := range strings.Split(read(t, path), "\n") {
+	for line := range strings.SplitSeq(read(t, path), "\n") {
 		if !strings.Contains(line, "plan_created_at") {
 			lines = append(lines, line)
 		}

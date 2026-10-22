@@ -797,3 +797,25 @@ func TestIntentRefusesPlanFlags(t *testing.T) {
 		t.Fatalf("an intent accepted --repo: %s", out)
 	}
 }
+
+// One index serves every lookup in a command, but it reads the record tree no
+// earlier and no more than looking each ID up did: a call refused for its own
+// arguments reports that, and an order needing no lookup never enters archives.
+func TestRecordLookupsReadTheTreeOnlyWhenTheyResolveAnID(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	archive := filepath.Join(f.root, "plans", "archive")
+	if err := os.MkdirAll(archive, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(f.home, filepath.Join(archive, "elsewhere")); err != nil {
+		t.Fatal(err)
+	}
+	f.ok("record", "order")
+	if out := f.fail("record", "order", "--mode", "bogus"); !strings.Contains(out, "mode") || strings.Contains(out, "symlink") {
+		t.Fatalf("expected the mode to be refused: %s", out)
+	}
+	if out := f.fail("record", "show", "--id", "BAD"); !strings.Contains(out, "invalid record ID") {
+		t.Fatalf("expected the ID to be refused: %s", out)
+	}
+}

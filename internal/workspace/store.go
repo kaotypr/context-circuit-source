@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -47,7 +47,7 @@ func (s *Store) Path(rel string) (string, error) {
 		return "", fmt.Errorf("invalid workspace path: %s", rel)
 	}
 	current := s.Root
-	for _, part := range strings.Split(filepath.ToSlash(rel), "/") {
+	for part := range strings.SplitSeq(filepath.ToSlash(rel), "/") {
 		current = filepath.Join(current, part)
 		info, err := os.Lstat(current)
 		if err != nil && !os.IsNotExist(err) {
@@ -160,56 +160,16 @@ func Edit(data []byte, keys []string, value any) ([]byte, error) {
 	path := builder.Build()
 	node, err := path.FilterFile(doc)
 	if err == nil && node != nil {
-		encoded, e := yaml.Marshal(value)
-		if e != nil {
-			return nil, e
-		}
-		if e = replaceYAMLNode(doc, path, node, encoded); e != nil {
-			return nil, e
-		}
-	} else {
-		if err != nil && !yaml.IsNotFoundNodeError(err) {
+		if err := replaceEditedNode(doc, path, node, value); err != nil {
 			return nil, err
 		}
-		parent := (&yaml.PathBuilder{}).Root()
-		for _, key := range keys[:len(keys)-1] {
-			parent = parent.Child(key)
-		}
-		encoded, e := yaml.Marshal(map[string]any{keys[len(keys)-1]: value})
-		if e != nil {
-			return nil, e
-		}
-		parentPath := parent.Build()
-		parentNode, e := parentPath.FilterFile(doc)
-		if e != nil {
-			return nil, e
-		}
-		mapping, isMapping := parentNode.(*ast.MappingNode)
-		flow := isMapping && mapping.IsFlowStyle
-		// A seed writes an empty container as `{}`. It carries no entries to
-		// stay consistent with, so rebuild it in block style through the node
-		// that holds it instead of letting every later entry extend one line.
-		if flow && len(mapping.Values) == 0 {
-			rebuilt, e := rebuildEmptyContainer(doc, keys, value)
-			if e != nil {
-				return nil, e
-			}
-			if rebuilt {
-				return serializeYAML(doc)
-			}
-		}
-		// A populated flow container must receive a flow value. Mixing styles
-		// through MergeFromReader produces malformed YAML in v1.19.2.
-		if flow {
-			encoded, e = yaml.MarshalWithOptions(map[string]any{keys[len(keys)-1]: value}, yaml.Flow(true))
-			if e != nil {
-				return nil, e
-			}
-		}
-		e = parentPath.MergeFromReader(doc, bytes.NewReader(encoded))
-		if e != nil {
-			return nil, e
-		}
+		return serializeYAML(doc)
+	}
+	if err != nil && !yaml.IsNotFoundNodeError(err) {
+		return nil, err
+	}
+	if err := addMissingNode(doc, keys, value); err != nil {
+		return nil, err
 	}
 	return serializeYAML(doc)
 }
@@ -414,7 +374,7 @@ func (s *Store) Export(files map[string][]byte) error {
 		}
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	slices.Sort(names)
 	for _, name := range names {
 		p, _ := s.Path(name)
 		if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
@@ -434,4 +394,54 @@ func (s *Store) Export(files map[string][]byte) error {
 		}
 	}
 	return nil
+}
+
+// replaceEditedNode overwrites a node that already exists.
+func replaceEditedNode(doc *ast.File, path *yaml.Path, node ast.Node, value any) error {
+	encoded, err := yaml.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return replaceYAMLNode(doc, path, node, encoded)
+}
+
+// addMissingNode adds the last key under its parent, matching the parent's
+// block or flow style.
+func addMissingNode(doc *ast.File, keys []string, value any) error {
+	parent := (&yaml.PathBuilder{}).Root()
+	for _, key := range keys[:len(keys)-1] {
+		parent = parent.Child(key)
+	}
+	encoded, err := yaml.Marshal(map[string]any{keys[len(keys)-1]: value})
+	if err != nil {
+		return err
+	}
+	parentPath := parent.Build()
+	parentNode, err := parentPath.FilterFile(doc)
+	if err != nil {
+		return err
+	}
+	mapping, isMapping := parentNode.(*ast.MappingNode)
+	flow := isMapping && mapping.IsFlowStyle
+	// A seed writes an empty container as `{}`. It carries no entries to
+	// stay consistent with, so rebuild it in block style through the node
+	// that holds it instead of letting every later entry extend one line.
+	if flow && len(mapping.Values) == 0 {
+		rebuilt, err := rebuildEmptyContainer(doc, keys, value)
+		if err != nil {
+			return err
+		}
+		if rebuilt {
+			return nil
+		}
+	}
+	// A populated flow container must receive a flow value. Mixing styles
+	// through MergeFromReader produces malformed YAML in v1.19.2.
+	if flow {
+		encoded, err = yaml.MarshalWithOptions(map[string]any{keys[len(keys)-1]: value}, yaml.Flow(true))
+		if err != nil {
+			return err
+		}
+	}
+	return parentPath.MergeFromReader(doc, bytes.NewReader(encoded))
 }
