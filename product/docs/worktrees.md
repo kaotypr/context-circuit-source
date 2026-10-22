@@ -124,7 +124,8 @@ block cloning on Windows. Filesystem and volume capabilities determine success.
 The default `--copy-mode auto` falls back to independent copies, avoiding a package
 reinstall when source dependencies are usable. `required` fails if a regular file
 cannot be cloned; `copy` forces copies; `off` disables environment reuse.
-Windows files without complete cloneable clusters use the copy fallback.
+On Windows a file smaller than one cluster cannot be block-cloned: `auto` copies
+it, and `required` fails preparation.
 
 Select additional ignored runtime entries with repeatable `--copy-path PATH`.
 Only repository-relative paths ignored in both source and target are eligible.
@@ -137,8 +138,11 @@ symlinks are translated to the new checkout; external symlinks (such as an
 `npm link` inside node_modules) and special files are rejected. Outside
 `required`, a rejected entry is skipped and reported with its reason while the
 rest are reused; under `required` it fails preparation. Hard links to the source
-are never created. A failure preserves the Git worktree and previously completed
-entries; rerun preparation to resume.
+are never created. A skipped entry leaves nothing at its destination, so a rerun
+tries it again and skips it again until its source changes. Any other failure,
+such as a full disk or a permission error, stops preparation and keeps the Git
+worktree and the entries already finished; rerun preparation to resume from
+there.
 The report names entries and counts cloned/copied files without printing content.
 
 Before reusing node_modules, compare tracked package manifests, lockfiles, workspace
