@@ -221,7 +221,10 @@ var commands = map[string]command{
 	},
 	"repo fetch": {
 		flags: []string{"id", "remote"},
-		run:   runRepoFetch,
+		// A fetch changes only Git refs in a bound checkout, so it is no
+		// change to the workspace's own files and leaves the ID split alone.
+		splits: noSplit,
+		run:    runRepoFetch,
 	},
 	"repo inspect": {
 		flags:    []string{"id"},
@@ -371,6 +374,7 @@ var commands = map[string]command{
 			in.values["mode"] = in.f.String("mode", "auto", "auto, waves, or linear")
 		},
 		optional: []string{"intent"},
+		readOnly: true,
 		run: func(_ context.Context, s *workspace.Store, in *input) (any, error) {
 			return s.Order(in.get("intent"), in.get("mode"), in.plans...)
 		},

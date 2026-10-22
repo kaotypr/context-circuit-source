@@ -77,6 +77,21 @@ func TestOrderRecommendsLinearForSingleRepositoryFanIn(t *testing.T) {
 	}
 }
 
+// An order only reads records and bindings, so it works while setup is
+// incomplete, the way status and record list do.
+func TestOrderNeedsNoSetup(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	upgraded(t, f, "members:\n  maya:\n    name: Maya\n    band: 0\n")
+	f.fail("record", "create", "--kind", "intent", "--slug", "x", "--title", "X")
+	if result := order(t, f.ok("record", "order", "--intent", "i001")); len(result.Chain) != 5 {
+		t.Fatalf("an order before setup did not cover every plan: %+v", result)
+	}
+	if result := order(t, f.ok("record", "order", "--plan", "p0001", "--plan", "p0002")); len(result.PlanIDs) != 2 {
+		t.Fatalf("an order of selected plans before setup did not cover them: %+v", result)
+	}
+}
+
 func TestOrderWavesReportIntegrationPoints(t *testing.T) {
 	f := setup(t)
 	diamond(f)

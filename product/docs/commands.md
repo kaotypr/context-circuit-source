@@ -176,7 +176,8 @@ command's result changes shape. The notice names every shared file the command
 changed, from what actually changed: `workspace.yaml`, the ID files written or
 removed, and `members.yaml` when the command changed it, as `member band` does.
 Records the command writes are in its own result. `status`, `check`, the other reading commands,
-and `record delete` without `--confirm` never split. Nor do a few refusals
+`repo fetch`, which changes only Git refs in a bound checkout, and `record delete`
+without `--confirm` never split. Nor do a few refusals
 checked before the split: `member add` without `--band`, a malformed `member
 roles` call, and a confirmed `record delete` its preview would refuse. A refusal
 found while the command runs, such as an unknown member or record ID, comes
