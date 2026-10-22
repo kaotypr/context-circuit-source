@@ -3,6 +3,7 @@ package workspace
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -134,9 +135,10 @@ func ReuseEnvironment(ctx context.Context, source, destination string, options R
 				entry.Stats, err = cow.Copy(ctx, src, dst, source, destination, options.Mode)
 				// Reuse is a convenience, so an entry that cannot be copied whole,
 				// such as node_modules holding an `npm link`, is reported rather
-				// than failing the prepare. Copy stages and renames, so nothing
-				// partial is left behind.
-				if err != nil && options.Mode != "required" && ctx.Err() == nil {
+				// than failing the prepare. Only an entry refused by design is
+				// skipped: a full disk or a permission error stays fatal. Copy
+				// stages and renames, so nothing partial is left behind.
+				if err != nil && options.Mode != "required" && errors.Is(err, cow.ErrNotReusable) {
 					entry.Stats, entry.Reason = cow.Stats{}, "not copied: "+err.Error()
 					results = append(results, entry)
 					continue

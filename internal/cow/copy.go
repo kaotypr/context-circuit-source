@@ -18,6 +18,13 @@ type Stats struct {
 	Links  int `json:"links"`
 }
 
+// ErrNotReusable marks an entry this package refuses to copy by design: nested
+// Git metadata, a symlink leading outside the checkout, or a special file. It is
+// a property of the entry, not a failure of the machine, so a caller whose reuse
+// is optional can skip such an entry while still failing on a full disk or a
+// permission error.
+var ErrNotReusable = errors.New("entry cannot be reused")
+
 func Mode(mode string) error {
 	if mode != "auto" && mode != "required" && mode != "copy" && mode != "off" {
 		return fmt.Errorf("copy mode must be auto, required, copy, or off: %q", mode)
@@ -64,7 +71,7 @@ func Copy(ctx context.Context, source, destination, sourceRoot, targetRoot, mode
 			return err
 		}
 		if entry.Name() == ".git" {
-			return errors.New("cannot copy nested Git metadata")
+			return fmt.Errorf("%w: cannot copy nested Git metadata", ErrNotReusable)
 		}
 		dest := filepath.Join(staged, rel)
 		info, err := entry.Info()
@@ -82,13 +89,13 @@ func Copy(ctx context.Context, source, destination, sourceRoot, targetRoot, mode
 			}
 			inside, err := filepath.Rel(sourceRoot, resolved)
 			if err != nil || inside == ".." || strings.HasPrefix(inside, ".."+string(filepath.Separator)) {
-				return fmt.Errorf("external symlink cannot be reused: %s", path)
+				return fmt.Errorf("%w: external symlink cannot be reused: %s", ErrNotReusable, path)
 			}
 			// Reject chains that look internal lexically but resolve outside.
 			if real, err := filepath.EvalSymlinks(path); err == nil {
 				actual, err := filepath.Rel(realSourceRoot, real)
 				if err != nil || actual == ".." || strings.HasPrefix(actual, ".."+string(filepath.Separator)) {
-					return fmt.Errorf("external symlink chain cannot be reused: %s", path)
+					return fmt.Errorf("%w: external symlink chain cannot be reused: %s", ErrNotReusable, path)
 				}
 			} else if !os.IsNotExist(err) {
 				return err
@@ -109,7 +116,7 @@ func Copy(ctx context.Context, source, destination, sourceRoot, targetRoot, mode
 			return os.Mkdir(dest, 0700)
 		}
 		if !info.Mode().IsRegular() {
-			return fmt.Errorf("cannot reuse special file: %s", path)
+			return fmt.Errorf("%w: cannot reuse special file: %s", ErrNotReusable, path)
 		}
 		cloned, err := copyFile(path, dest, info.Mode().Perm(), mode)
 		if err != nil {
