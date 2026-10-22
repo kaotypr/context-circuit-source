@@ -76,7 +76,8 @@ split to whatever command comes next:
 
 A shared file merged back later from a clone that had not pulled the split is
 split again, skipping numbers a member file already holds. Reading commands and
-a deletion preview never split, because neither may change anything. The notice
+a deletion preview never split, because neither may change anything, and nor
+does `repo fetch`, which changes only Git refs in a bound checkout. The notice
 reporting a split names the shared files the command actually changed, the
 roster included when a band or member was written, because those are what the
 person commits and a list written ahead of time leaves one out.

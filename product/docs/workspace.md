@@ -338,8 +338,9 @@ to `version: 3`. CLIs before 2.4.0 refuse a schema 3 workspace with "requires a
 newer CLI", so every member needs 2.4.0 from then on. The setup step that
 completes setup — giving the last member a band, adding the last member with
 one, or selecting a member — makes the split itself, right after it succeeds.
-Reading commands, a `record delete` preview, and a command that refuses its own
-arguments never split. The split's notice names every shared file the command
+Reading commands, `repo fetch`, which changes only Git refs in a bound checkout,
+a `record delete` preview, and a command that refuses its own arguments never
+split. The split's notice names every shared file the command
 changed, `members.yaml` included when the command changed it, and those are the
 files to commit.
 
