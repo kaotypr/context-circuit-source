@@ -499,7 +499,7 @@ func TestTheSwitchRunsThePinnedCLI(t *testing.T) {
 	}
 
 	invoke(running)
-	link := filepath.Join(v.bin, "context-circuit-cli")
+	link := filepath.Join(v.bin, "context-circuit-cli"+exeSuffix())
 	if err := os.Symlink(running, link); err != nil {
 		t.Logf("PATH symlink case skipped, this system cannot create one: %v", err)
 		return
