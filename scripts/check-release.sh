@@ -4,7 +4,7 @@ set -eu
 [ "$#" -le 1 ] || { printf 'usage: check-release.sh [new-release-output-dir]\n' >&2; exit 2; }
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$source_root"
-for script in scripts/*.sh product/skills/cc-cli/scripts/*.sh; do sh -n "$script"; done
+for script in scripts/*.sh product/skills/cc-cli/scripts/*.sh product/launcher/cli.sh; do sh -n "$script"; done
 go test ./...
 go vet ./...
 sh scripts/check-release-version.sh
@@ -61,6 +61,9 @@ sh "$work/seed/.agents/skills/cc-cli/scripts/install.sh" --version "$cli_version
   --archive "$release_output/cli/$cli_command-v$cli_version-$(go env GOOS)-$(go env GOARCH).tar.gz" \
   --checksums "$release_output/cli/SHA256SUMS"
 "$work/installed/$cli_command" --workspace "$work/seed" --json check
+# The shipped launcher finds the store the shipped installer just filled, for the
+# version the seed pins.
+CONTEXT_CIRCUIT_BIN_DIR="$work/installed" sh "$work/seed/.context-circuit/cli" --json check
 # Building into an existing output must fail without deleting its contents.
 mkdir "$work/protected-dist"
 printf 'preserve me\n' > "$work/protected-dist/sentinel"
