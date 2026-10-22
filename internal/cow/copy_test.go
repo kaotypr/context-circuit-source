@@ -1,12 +1,111 @@
 package cow
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 )
+
+// volumeCluster reports the cluster size of the volume holding dir. It is set
+// only on Windows, where block cloning works in whole clusters.
+var volumeCluster func(t *testing.T, dir string) int64
+
+// TestNativeCloneOnCapableVolume runs cloneFile itself. It needs a directory on
+// a clone-capable volume in CC_COW_NATIVE_DIR, and once given one it fails
+// rather than skips when a clone does not happen.
+func TestNativeCloneOnCapableVolume(t *testing.T) {
+	dir := os.Getenv("CC_COW_NATIVE_DIR")
+	if dir == "" {
+		t.Skip("CC_COW_NATIVE_DIR does not name a clone-capable directory")
+	}
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		t.Fatalf("CC_COW_NATIVE_DIR is not a directory: %s (%v)", dir, err)
+	}
+	// prepare writes data as source/module.js in a fresh directory under dir and
+	// returns the source and the target Copy must create.
+	prepare := func(t *testing.T, data []byte) (string, string) {
+		t.Helper()
+		root, err := os.MkdirTemp(dir, "cow-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { os.RemoveAll(root) })
+		source, target := filepath.Join(root, "source"), filepath.Join(root, "target")
+		if err := os.Mkdir(source, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(source, "module.js"), data, 0600); err != nil {
+			t.Fatal(err)
+		}
+		return source, target
+	}
+	patterned := func(size int64) []byte {
+		data := make([]byte, size)
+		for i := range data {
+			data[i] = byte(i % 251)
+		}
+		return data
+	}
+	windowsOnly := func(t *testing.T) {
+		t.Helper()
+		if runtime.GOOS != "windows" {
+			t.Skip("ReFS cluster alignment applies only on Windows")
+		}
+	}
+
+	t.Run("clone is independent", func(t *testing.T) {
+		original := patterned(128 * 1024)
+		source, target := prepare(t, original)
+		stats, err := Copy(context.Background(), source, target, source, target, "required")
+		if err != nil || stats.Cloned != 1 {
+			t.Fatalf("required mode did not clone: %+v %v", stats, err)
+		}
+		clone, err := os.OpenFile(filepath.Join(target, "module.js"), os.O_WRONLY, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, writeErr := clone.WriteAt(bytes.Repeat([]byte{0xff}, len(original)), 0)
+		if err := errors.Join(writeErr, clone.Close()); err != nil {
+			t.Fatal(err)
+		}
+		data, err := os.ReadFile(filepath.Join(source, "module.js"))
+		if err != nil || !bytes.Equal(data, original) {
+			t.Fatal("overwriting the clone changed the source", err)
+		}
+	})
+
+	t.Run("aligned body and copied tail", func(t *testing.T) {
+		windowsOnly(t)
+		original := patterned(volumeCluster(t, dir) + 100)
+		source, target := prepare(t, original)
+		stats, err := Copy(context.Background(), source, target, source, target, "required")
+		if err != nil || stats.Cloned != 1 {
+			t.Fatalf("required mode did not clone: %+v %v", stats, err)
+		}
+		data, err := os.ReadFile(filepath.Join(target, "module.js"))
+		if err != nil || !bytes.Equal(data, original) {
+			t.Fatal("clone differs from its source", err)
+		}
+	})
+
+	t.Run("file below one cluster", func(t *testing.T) {
+		windowsOnly(t)
+		source, target := prepare(t, patterned(100))
+		if _, err := Copy(context.Background(), source, target, source, target, "required"); err == nil || !strings.Contains(err.Error(), "filesystem CoW unavailable") {
+			t.Fatalf("required mode must refuse a file below one cluster, got %v", err)
+		}
+		source, target = prepare(t, patterned(100))
+		stats, err := Copy(context.Background(), source, target, source, target, "auto")
+		if err != nil || stats.Copied != 1 {
+			t.Fatalf("auto mode did not fall back to copying: %+v %v", stats, err)
+		}
+	})
+}
 
 func TestCopyIsolationAndFallback(t *testing.T) {
 	for _, mode := range []string{"copy", "auto", "required"} {
