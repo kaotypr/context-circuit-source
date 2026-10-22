@@ -9,6 +9,8 @@ defines the change. Product instructions apply only to generated workspaces.
 - product/docs/: workspace files, agent-facing commands, and worktree guidance.
 - internal/workspace/: Go bookkeeping, YAML edits, Git and worktree operations.
 - internal/cli/: the command surface and human/JSON output.
+  - internal/cli/pin.go: the pin switch and guard: hands off to the pinned CLI
+    when it is installed, and otherwise refuses a migrating or cross-line change.
 - cmd/context-circuit/: CLI entry point.
 - template/: blank workspace files, embedded with the product instruction.
 - scripts/release-manifest.txt: exact source-to-output file mapping.
@@ -31,6 +33,11 @@ defines the change. Product instructions apply only to generated workspaces.
   and artwork; restored at publication and shipped to no workspace.
 - product/workspace-README.md: the front page initialization writes; not
   exported, because a blank seed has no workspace to name.
+- product/launcher/: the workspace launcher, which runs exactly the pinned CLI.
+- product/host/: host settings the template ships.
+- scripts/release-version.sh: the effective version of each product; plain
+  here, because release/variant.env is absent here, and a downstream variant
+  supplies it with `CC_VERSION_SUFFIX`.
 - release/template-repo/: landing-page files and the .gitattributes that keeps
   every repository-owned path out of the archive a project is created from.
 

@@ -13,6 +13,8 @@ generated workspaces, not this one.
 | `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus CLI installation and subagent dispatch |
 | `context-circuit-source@product/README.md`, `product/assets/readme/` | The published template repository's guide and the artwork it renders; restored at publication, shipped to no workspace |
 | `context-circuit-source@product/workspace-README.md` | The front page initialization writes into a new workspace |
+| `context-circuit-source@product/launcher/` | The workspace launcher, which runs exactly the CLI version the workspace pins |
+| `context-circuit-source@product/host/` | Host settings the template ships into a new workspace |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
