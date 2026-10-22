@@ -102,6 +102,10 @@ It also tests publication guards and commit/tag behavior in disposable fixtures.
 An optional new output directory retains the checked release assets.
 CI runs native tests, including installer upgrade/rollback fixtures, on Linux, macOS, and Windows. Cross-compilation alone is not
 proof of behavior on another operating system.
+The runners' default volumes cannot clone, so the native-clone job mounts an XFS
+reflink volume on Linux and a ReFS VHDX on Windows and runs
+TestNativeCloneOnCapableVolume there with CC_COW_NATIVE_DIR; without that
+variable the test skips.
 
 Validate Markdown scenarios against the shared entry instruction. Deterministic
 tests establish file and Git behavior, not whether a coding host loads or follows
