@@ -200,6 +200,8 @@ jobs:
           # The clone URL the published quick start tells a reader to use, which
           # is this forge's address for the repository being published to.
           TEMPLATE_REPO_URL: ${{ github.server_url }}/${{ vars.TEMPLATE_REPO }}.git
+          # The published README's CLI release badge and link read this project.
+          CLI_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           out=$(sh scripts/publish-template.sh "$RELEASE_VERSION" .template-repo "$TEMPLATE_REPO_URL")
           printf '%s\n' "$out"
