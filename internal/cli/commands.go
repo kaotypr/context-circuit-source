@@ -61,6 +61,10 @@ type command struct {
 	// command makes it. The split is a change of its own, so a deletion preview
 	// and init (which writes the new layout itself) must say they do not.
 	splits func(in *input) bool
+	// previews reports a call of a changing command that only shows what it
+	// would do. Such a call writes nothing, so a CLI other than the pinned one
+	// runs it with a warning rather than being judged as a change.
+	previews func(in *input) bool
 	// requiredNumber names a number flag that must be passed even when zero is
 	// a real value. The string-flag check cannot see an omitted number.
 	requiredNumber string
@@ -344,7 +348,8 @@ var commands = map[string]command{
 		// pair where it can say why.
 		optional: []string{"member"},
 		// A deletion preview promises to write nothing.
-		splits: func(in *input) bool { return in.confirm },
+		splits:   func(in *input) bool { return in.confirm },
+		previews: func(in *input) bool { return !in.confirm },
 		// The preview writes nothing and reads either ID-file layout, so a
 		// deletion it refuses is refused before the split.
 		precheck: func(ctx context.Context, s *workspace.Store, in *input) error {

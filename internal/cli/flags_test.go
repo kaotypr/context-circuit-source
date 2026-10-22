@@ -14,7 +14,7 @@ import (
 // global options is the test's to choose.
 func run(args ...string) (int, string, string) {
 	var out, errOut bytes.Buffer
-	code := cli.Run(context.Background(), args, &out, &errOut, "2.0.0-test")
+	code := cli.Run(context.Background(), args, &out, &errOut, testVersion)
 	return code, out.String(), errOut.String()
 }
 
