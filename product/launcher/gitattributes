@@ -1,0 +1,2 @@
+cli text eol=lf
+cli.ps1 text eol=crlf

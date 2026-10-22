@@ -18,6 +18,9 @@ template/plans/README.md plans/README.md
 template/sources/README.md sources/README.md
 VERSION .context-circuit/VERSION
 CLI_VERSION .context-circuit/CLI_VERSION
+product/launcher/cli.sh .context-circuit/cli
+product/launcher/cli.ps1 .context-circuit/cli.ps1
+product/launcher/gitattributes .context-circuit/.gitattributes
 template/role-tiering.yaml .context-circuit/role-tiering.yaml
 product/docs/agents.md .context-circuit/docs/agents.md
 product/skills/cc-cli/SKILL.md .agents/skills/cc-cli/SKILL.md

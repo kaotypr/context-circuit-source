@@ -311,6 +311,7 @@ func openStore(cmd command, in *input, root *string, errOut io.Writer, version s
 	if err != nil {
 		return nil, err
 	}
+	s.Command = commandName(version)
 	if !cmd.fromPath {
 		if warning := pinnedVersionWarning(s, version); warning != "" {
 			fmt.Fprint(errOut, warning)
