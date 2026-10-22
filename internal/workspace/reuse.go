@@ -3,6 +3,7 @@ package workspace
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -132,6 +133,16 @@ func ReuseEnvironment(ctx context.Context, source, destination string, options R
 			}
 			if entry.Reason == "" {
 				entry.Stats, err = cow.Copy(ctx, src, dst, source, destination, options.Mode)
+				// Reuse is a convenience, so an entry that cannot be copied whole,
+				// such as node_modules holding an `npm link`, is reported rather
+				// than failing the prepare. Only an entry refused by design is
+				// skipped: a full disk or a permission error stays fatal. Copy
+				// stages and renames, so nothing partial is left behind.
+				if err != nil && options.Mode != "required" && errors.Is(err, cow.ErrNotReusable) {
+					entry.Stats, entry.Reason = cow.Stats{}, "not copied: "+err.Error()
+					results = append(results, entry)
+					continue
+				}
 				if err != nil {
 					return results, fmt.Errorf("reuse %s failed; existing worktree retained: %w", rel, err)
 				}
@@ -162,9 +173,15 @@ func compareDependencyInputs(ctx context.Context, source, destination string) (s
 			}
 		}
 	}
+	leftStore, err := Open(source)
+	if err != nil {
+		return "", err
+	}
+	rightStore, err := Open(destination)
+	if err != nil {
+		return "", err
+	}
 	for name := range names {
-		leftStore, _ := Open(source)
-		rightStore, _ := Open(destination)
 		left, leftErr := leftStore.Read(name)
 		right, rightErr := rightStore.Read(name)
 		if os.IsNotExist(leftErr) || os.IsNotExist(rightErr) {

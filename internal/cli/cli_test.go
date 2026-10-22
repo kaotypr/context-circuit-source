@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -256,6 +257,65 @@ func TestInitKeepsTheRecordedCLIRegistry(t *testing.T) {
 	}
 }
 
+// The README is written last. One that cannot be read — a symlink or a
+// directory — used to stop initialization only after every other file was
+// written, leaving a workspace init then refused to touch again.
+func TestInitRefusesAnUnreadableReadmeBeforeWriting(t *testing.T) {
+	f := setup(t)
+	for name, plant := range map[string]func(root string) error{
+		"symlink": func(root string) error {
+			write(t, filepath.Join(root, "docs", "README.md"), "Keep my README")
+			return os.Symlink(filepath.Join("docs", "README.md"), filepath.Join(root, "README.md"))
+		},
+		"directory": func(root string) error {
+			return os.MkdirAll(filepath.Join(root, "README.md"), 0755)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := filepath.Join(f.home, name)
+			if err := plant(root); err != nil {
+				t.Skip("symlinks unavailable:", err)
+			}
+			g := fixture{t, root, f.home}
+			out := g.fail("init", "--name", "Linked", "--purpose", "Linked", "--member", "maya", "--member-name", "Maya")
+			if !strings.Contains(out, "README.md") {
+				t.Fatalf("expected the README to be named: %s", out)
+			}
+			if _, err := os.Stat(filepath.Join(root, "members.yaml")); !os.IsNotExist(err) {
+				t.Fatal("a refused README left a partially initialized workspace")
+			}
+		})
+	}
+}
+
+// Refreshing the generated spans of an existing front page keeps the mode its
+// owner gave it; only a README initialization creates is 0644.
+func TestInitKeepsAnExistingReadmeMode(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows has no POSIX permission bits to keep")
+	}
+	f := setup(t)
+	root := filepath.Join(f.home, "private")
+	seed, err := assets.Readme()
+	if err != nil {
+		t.Fatal(err)
+	}
+	readme := filepath.Join(root, "README.md")
+	write(t, readme, string(seed))
+	if err := os.Chmod(readme, 0600); err != nil {
+		t.Fatal(err)
+	}
+	g := fixture{t, root, f.home}
+	g.ok("init", "--name", "Private", "--purpose", "Private", "--member", "maya", "--member-name", "Maya")
+	info, err := os.Stat(readme)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0600 || !strings.Contains(read(t, readme), "Context Circuit - Private") {
+		t.Fatalf("expected a refreshed README that kept mode 0600, got %v", info.Mode().Perm())
+	}
+}
+
 func TestYAMLEditTrial(t *testing.T) {
 	f := setup(t)
 	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n    band: 0\n")
@@ -265,6 +325,20 @@ func TestYAMLEditTrial(t *testing.T) {
 		if !strings.Contains(updated, text) {
 			t.Fatalf("lost %s:\n%s", text, updated)
 		}
+	}
+	// Setting one field of a member must keep that member's own comments too.
+	f.ok("member", "language", "--id", "maya", "--language", "Bahasa Indonesia")
+	f.ok("member", "tone", "--id", "maya", "--tone", "semi-formal")
+	f.ok("member", "band", "--id", "maya", "--band", "2")
+	updated = read(t, filepath.Join(f.root, "members.yaml"))
+	for _, text := range []string{"# display name", `"Maya"`, "language: Bahasa Indonesia", "tone: semi-formal", "band: 2"} {
+		if !strings.Contains(updated, text) {
+			t.Fatalf("member edit lost %s:\n%s", text, updated)
+		}
+	}
+	f.ok("member", "tone", "--id", "maya", "--clear")
+	if updated = read(t, filepath.Join(f.root, "members.yaml")); strings.Contains(updated, "tone:") {
+		t.Fatalf("clearing left the field behind:\n%s", updated)
 	}
 	f.ok("member", "use", "--id", "alex")
 	r := f.intent("first")
@@ -1316,5 +1390,37 @@ func TestInitializationTitlesTheWorkspaceReadme(t *testing.T) {
 	g.ok("init", "--name", `R&D <b>`, "--purpose", "p", "--member", "a", "--member-name", "A")
 	if escaped := read(t, filepath.Join(g.root, "README.md")); !strings.Contains(escaped, "R&amp;D &lt;b&gt;") {
 		t.Error("the workspace name reached the heading unescaped")
+	}
+}
+
+// Flags are checked in name order, so a call missing several of them is told
+// the same one on every run rather than whichever a map happened to yield.
+func TestMissingFlagsAreReportedInAStableOrder(t *testing.T) {
+	f := setup(t)
+	for range 5 {
+		if out := f.fail("repo", "connect"); !strings.Contains(out, "missing --base") {
+			t.Fatalf("expected the first missing flag by name: %s", out)
+		}
+	}
+}
+
+// repo remote and workspace remote check every value before the first write, as
+// knowledge remote does: a refused branch must not leave the new URL recorded.
+func TestSharedRemotesWriteNothingWhenAValueIsRefused(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	git(t, f.root, "init", "-b", "main")
+	f.ok("workspace", "connect", "--base", "main")
+	workspaceYAML := filepath.Join(f.root, "workspace.yaml")
+	before := read(t, workspaceYAML)
+	for _, args := range [][]string{
+		{"repo", "remote", "--id", "api"},
+		{"workspace", "remote"},
+	} {
+		args = append(args, "--url", "https://example.com/new.git", "--default-branch", "bad..branch")
+		f.fail(args...)
+		if after := read(t, workspaceYAML); after != before {
+			t.Fatalf("%v: a refused call changed the shared record:\n%s", args[:2], after)
+		}
 	}
 }

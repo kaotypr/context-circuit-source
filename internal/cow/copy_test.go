@@ -2,6 +2,7 @@ package cow
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -78,10 +79,31 @@ func TestSymlinksAreIndependentAndExternalLinksRejected(t *testing.T) {
 		t.Fatal(err)
 	}
 	bad := filepath.Join(root, "bad")
-	if _, err := Copy(context.Background(), filepath.Join(source, "node_modules"), bad, source, filepath.Join(root, "new"), "auto"); err == nil {
-		t.Fatal("accepted external link")
+	if _, err := Copy(context.Background(), filepath.Join(source, "node_modules"), bad, source, filepath.Join(root, "new"), "auto"); !errors.Is(err, ErrNotReusable) {
+		t.Fatalf("an external link must be refused as not reusable, got %v", err)
 	}
 	if _, err := os.Lstat(bad); !os.IsNotExist(err) {
 		t.Fatal("published a partial entry")
+	}
+}
+
+// A failure of the machine is not a property of the entry: it must not read as
+// "not reusable", or a caller skipping such entries would swallow a full disk.
+func TestAnIOFailureIsNotReportedAsNotReusable(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	if err := os.Mkdir(source, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(source, "module.js"), []byte("x"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(root, "target")
+	if err := os.WriteFile(target, []byte("a file where the destination's parent must be"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Copy(context.Background(), source, filepath.Join(target, "entry"), source, root, "auto")
+	if err == nil || errors.Is(err, ErrNotReusable) {
+		t.Fatalf("expected an ordinary I/O error, got %v", err)
 	}
 }

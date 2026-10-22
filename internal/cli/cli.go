@@ -7,7 +7,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -398,7 +400,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// Either half of the shared record is a whole call; an empty one is refused
 	// below, where the alternative can be named.
 	if command == "workspace remote" {
-		optional["url"], optional["default-branch"] = true, true
+		optional["default-branch"] = true
 	}
 	// A borrowed repository names its own index, and a layout this product
 	// recognizes is detected rather than demanded. Obtaining one lands under
@@ -431,7 +433,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// so the command accepts both as optional and refuses the wrong pairing by
 	// role, where the reason can be stated.
 	if command == "agent dispatch" {
-		optional["plan"], optional["intent"], optional["repo"] = true, true, true
+		optional["plan"], optional["repo"] = true, true
 		// A planner and a whole-plan worker are assigned by the record quoted
 		// in the brief; only a role without one, or a worker taking a slice of
 		// a shared plan, has something left to say.
@@ -442,8 +444,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	if command == "agent setup" {
 		optional["host"] = true
 	}
-	for key, value := range values {
-		if *value == "" && !optional[key] {
+	// Sorted, so a call missing several flags is told the same one every time.
+	for _, key := range slices.Sorted(maps.Keys(values)) {
+		if *values[key] == "" && !optional[key] {
 			fmt.Fprintf(errOut, "missing --%s\n", key)
 			return 2
 		}

@@ -286,16 +286,12 @@ func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, erro
 	}
 	result.Strategy.Waves.Layers = len(waves)
 
-	var flat []string
-	for _, wave := range waves {
-		flat = append(flat, wave...)
-	}
-	chain := s.linearChain(plans, flat, cfg, bindings)
+	chain := s.linearChain(plans, selected, cfg, bindings)
 	linearPeak := 0
-	if len(flat) > 0 {
+	if len(selected) > 0 {
 		linearPeak = 1
 	}
-	result.Strategy.Linear = OrderOption{Layers: len(flat), ParallelPeak: linearPeak}
+	result.Strategy.Linear = OrderOption{Layers: len(selected), ParallelPeak: linearPeak}
 	result.Strategy.ConflictSurface = conflictSurface(result.Strategy.Repositories, result.Layers)
 	result.Strategy.Recommended, result.Strategy.Reason = recommend(result.Strategy)
 

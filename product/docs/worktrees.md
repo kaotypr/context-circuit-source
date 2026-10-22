@@ -133,9 +133,12 @@ entry explicitly if its parent hides it from Git's ignored-file inventory.
 
 Each entry is staged and published only when complete. Existing destination files
 or directories are preserved, including changes made during previous work. Internal
-symlinks are translated to the new checkout; external symlinks and special files
-are rejected. Hard links to the source are never created. A failure preserves the
-Git worktree and previously completed entries; rerun preparation to resume.
+symlinks are translated to the new checkout; external symlinks (such as an
+`npm link` inside node_modules) and special files are rejected. Outside
+`required`, a rejected entry is skipped and reported with its reason while the
+rest are reused; under `required` it fails preparation. Hard links to the source
+are never created. A failure preserves the Git worktree and previously completed
+entries; rerun preparation to resume.
 The report names entries and counts cloned/copied files without printing content.
 
 Before reusing node_modules, compare tracked package manifests, lockfiles, workspace

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -394,21 +395,33 @@ func (s *Store) SetRemote(ctx context.Context, id, remote, defaultBranch string)
 	if _, ok := cfg.Repositories[id]; !ok {
 		return fmt.Errorf("unknown repository: %s", id)
 	}
+	return s.writeSharedRemote(ctx, []string{"repositories", id}, remote, defaultBranch)
+}
+
+// writeSharedRemote records a repository's URL and default branch under the
+// workspace.yaml entry named by entry. Every value is checked before the first
+// write, so a refused call leaves the shared record exactly as it was rather
+// than keeping the URL of a call that failed on its branch.
+func (s *Store) writeSharedRemote(ctx context.Context, entry []string, remote, defaultBranch string) error {
 	if remote != "" {
 		if err := checkRemote(remote); err != nil {
 			return err
 		}
-		if err := s.Update("workspace.yaml", []string{"repositories", id, "url"}, remote, 0644); err != nil {
+	}
+	if defaultBranch != "" {
+		if err := checkBranch(ctx, s.Root, defaultBranch); err != nil {
+			return err
+		}
+	}
+	if remote != "" {
+		if err := s.Update("workspace.yaml", append(slices.Clone(entry), "url"), remote, 0644); err != nil {
 			return err
 		}
 	}
 	if defaultBranch == "" {
 		return nil
 	}
-	if err := checkBranch(ctx, s.Root, defaultBranch); err != nil {
-		return err
-	}
-	return s.Update("workspace.yaml", []string{"repositories", id, "default_branch"}, defaultBranch, 0644)
+	return s.Update("workspace.yaml", append(slices.Clone(entry), "default_branch"), defaultBranch, 0644)
 }
 
 // A snapshot says which branch is checked out now; BaseBranch says which branch

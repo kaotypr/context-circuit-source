@@ -123,8 +123,11 @@ Safety properties, each one a refusal that makes copying safe to automate:
 - Entries are staged and published only when complete, so a failure preserves
   the worktree and the finished entries, and a rerun resumes.
 - Existing destination files are preserved and never overwritten.
-- Internal symlinks are translated; external symlinks and special files are
-  rejected.
+- Internal symlinks are translated; an entry holding an external symlink (an
+  `npm link` inside `node_modules`) or a special file is rejected whole. Outside
+  the required mode that entry is skipped and reported with its reason while
+  the others are reused, because reuse is a convenience; under the required
+  mode it fails preparation.
 - Hard links to the source are never created.
 - Paths naming control directories are refused.
 - Environment contents are copied opaquely — never printed, never placed in a

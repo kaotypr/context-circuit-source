@@ -403,6 +403,14 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	} else if intent != "" {
 		return Dispatch{}, errors.New("--intent dispatches a planner; other roles take --plan")
 	}
+	// The brief tells a worker to implement the plan above it, so a worker with
+	// neither a plan nor a task would be launched with nothing to implement.
+	if role == "worker" && plan == "" && task == "" {
+		return Dispatch{}, errors.New("a worker needs --plan, or --task naming its assignment")
+	}
+	if repo != "" && plan == "" {
+		return Dispatch{}, errors.New("--repo picks one repository of the worker's --plan; pass --plan")
+	}
 	work, err := Open(directory)
 	if err != nil {
 		return Dispatch{}, err

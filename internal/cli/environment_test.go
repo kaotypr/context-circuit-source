@@ -177,3 +177,31 @@ func TestIndependentTemplateVersionAndCopyOptionPreflight(t *testing.T) {
 		}
 	}
 }
+
+// `npm link` leaves node_modules holding a link outside the checkout, which
+// reuse refuses to copy. Reuse is a convenience, so prepare reports the entry
+// and still returns the worktree, unless the caller required the copy.
+func TestWorktreeSkipsAnEntryItCannotReuse(t *testing.T) {
+	f := setup(t)
+	repo := f.repository("web")
+	write(t, filepath.Join(repo, ".gitignore"), "node_modules/\n")
+	git(t, repo, "add", ".gitignore")
+	git(t, repo, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "test: ignore modules")
+	linked := filepath.Join(f.home, "linked-package")
+	write(t, filepath.Join(linked, "index.js"), "linked")
+	if err := os.MkdirAll(filepath.Join(repo, "node_modules"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(linked, filepath.Join(repo, "node_modules", "linked")); err != nil {
+		t.Skip("symlinks unavailable:", err)
+	}
+	path := filepath.Join(f.home, "worktree")
+	out := f.ok("worktree", "prepare", "--repo", "web", "--branch", "feature", "--path", path)
+	if !strings.Contains(out, "external symlink") {
+		t.Fatalf("the skipped entry was not reported: %s", out)
+	}
+	if _, err := os.Lstat(filepath.Join(path, "node_modules")); !os.IsNotExist(err) {
+		t.Fatal("a refused entry was partly copied")
+	}
+	f.fail("worktree", "prepare", "--repo", "web", "--branch", "strict", "--path", filepath.Join(f.home, "strict"), "--copy-mode", "required")
+}

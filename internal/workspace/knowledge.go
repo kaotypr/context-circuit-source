@@ -329,6 +329,11 @@ func (s *Store) SyncKnowledge(ctx context.Context, id string) (KnowledgeState, e
 		return state, nil
 	}
 	before := snapshot.Head
+	// A branch the fetch pruned is not divergence; say what git said instead.
+	if _, err := Git(ctx, path, "rev-parse", "--verify", "--quiet", "--end-of-options", "refs/remotes/origin/"+repo.DefaultBranch); err != nil {
+		state.Status, state.Detail = "unreachable", fmt.Sprintf("origin has no branch %q; nothing was changed. Point the workspace at the branch the repository now uses with `knowledge remote --id %s --default-branch BRANCH`", repo.DefaultBranch, id)
+		return state, nil
+	}
 	if _, err := Git(ctx, path, "merge", "--ff-only", "--quiet", "--end-of-options", "refs/remotes/origin/"+repo.DefaultBranch); err != nil {
 		state.Status = "diverged"
 		state.Detail = fmt.Sprintf("this checkout holds commits that are not on origin/%s; nothing was changed or discarded. Push them from a separate checkout of %s, then sync again", repo.DefaultBranch, id)
@@ -453,21 +458,8 @@ func (s *Store) SetKnowledgeRemote(ctx context.Context, id, url, defaultBranch, 
 	if _, ok := cfg.KnowledgeRepositories[id]; !ok {
 		return fmt.Errorf("unknown knowledge repository: %s", id)
 	}
-	if url != "" {
-		if err := checkRemote(url); err != nil {
-			return err
-		}
-		if err := s.Update("workspace.yaml", []string{"knowledge_repositories", id, "url"}, url, 0644); err != nil {
-			return err
-		}
-	}
-	if defaultBranch != "" {
-		if err := checkBranch(ctx, s.Root, defaultBranch); err != nil {
-			return err
-		}
-		if err := s.Update("workspace.yaml", []string{"knowledge_repositories", id, "default_branch"}, defaultBranch, 0644); err != nil {
-			return err
-		}
+	if err := s.writeSharedRemote(ctx, []string{"knowledge_repositories", id}, url, defaultBranch); err != nil {
+		return err
 	}
 	if index == "" {
 		return nil

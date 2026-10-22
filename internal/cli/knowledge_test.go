@@ -178,3 +178,30 @@ func TestCheckReportsBorrowedKnowledgeThisMachineLacks(t *testing.T) {
 		t.Fatalf("expected the finding to name what to run:\n%s", out)
 	}
 }
+
+// A branch the upstream renamed is pruned by the fetch, so the fast-forward has
+// nothing to merge. That is not local work diverging, and saying so sent people
+// looking for commits that do not exist.
+func TestKnowledgeSyncNamesABranchTheUpstreamDropped(t *testing.T) {
+	f := setup(t)
+	origin := f.upstream("core-service-knowledge", map[string]string{"index.md": "# Knowledge\n"})
+	f.ok("knowledge", "clone", "--id", "core-service-knowledge", "--url", origin)
+	git(t, origin, "branch", "-m", "main", "trunk")
+	out := f.ok("knowledge", "sync", "--id", "core-service-knowledge")
+	if !strings.Contains(out, `"status": "unreachable"`) || !strings.Contains(out, `origin has no branch \"main\"`) {
+		t.Fatalf("expected the dropped branch to be named:\n%s", out)
+	}
+}
+
+// Every value is checked before the first write, so a refused branch does not
+// leave the new URL recorded beside the old branch.
+func TestKnowledgeRemoteWritesNothingWhenAValueIsRefused(t *testing.T) {
+	f := setup(t)
+	origin := f.upstream("core-service-knowledge", map[string]string{"index.md": "# Knowledge\n"})
+	f.ok("knowledge", "clone", "--id", "core-service-knowledge", "--url", origin)
+	before := read(t, filepath.Join(f.root, "workspace.yaml"))
+	f.fail("knowledge", "remote", "--id", "core-service-knowledge", "--url", "https://example.com/knowledge.git", "--default-branch", "bad..branch")
+	if after := read(t, filepath.Join(f.root, "workspace.yaml")); after != before {
+		t.Fatalf("a refused call changed the shared record:\n%s", after)
+	}
+}

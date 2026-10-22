@@ -518,6 +518,12 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 			return fmt.Errorf("existing local state: %s", rel)
 		}
 	}
+	// The front page is written last, after every other file. A README it could
+	// not read then (a symlink, a directory, an oversized file) has to stop
+	// initialization here, while nothing is written yet.
+	if _, err := s.Read("README.md"); err != nil && !os.IsNotExist(err) {
+		return err
+	}
 	// A previously exported blank seed is also supported, but only identical seed
 	// text files may already occupy generated destinations. Treat Git's CRLF/LF
 	// checkout conversion as equivalent, but never overwrite content edits.
@@ -606,8 +612,10 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	// records, which a later version reads as a customization and refuses to
 	// replace. These carry the shipped inherit settings; `agent configure`
 	// still needs `agent setup` afterwards.
-	_, err := s.SetupAgents("")
-	return err
+	if _, err := s.SetupAgents(""); err != nil {
+		return fmt.Errorf("workspace initialized, but agent setup failed: %w; resolve it, then run `agent setup`", err)
+	}
+	return nil
 }
 
 func (s *Store) AddMember(id, name string, band int, language, tone string, roles []string) error {
@@ -713,12 +721,11 @@ func (s *Store) SetMemberLanguage(id, language string) error {
 	if err != nil {
 		return err
 	}
-	member, ok := members.Members[id]
-	if !ok {
+	if _, ok := members.Members[id]; !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
-	member.Language = language
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	// Only the field changes, so the rest of the entry keeps its comments.
+	return s.Update("members.yaml", []string{"members", id, "language"}, language, 0644)
 }
 
 // SetMemberTone records the register a member's intents and plans are written
@@ -742,8 +749,12 @@ func (s *Store) SetMemberTone(id, tone string, clear bool) error {
 	if !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
-	member.Tone = tone
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	if clear {
+		// Clearing removes the key, which only a rewrite of the entry can do.
+		member.Tone = ""
+		return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	}
+	return s.Update("members.yaml", []string{"members", id, "tone"}, tone, 0644)
 }
 
 // SetMemberRoles records what a member contributes, replacing any roles already
@@ -766,13 +777,16 @@ func (s *Store) SetMemberRoles(id string, roles []string, clear bool) error {
 	if !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
-	if len(roles) > 0 {
-		if err := s.requireRolesSchema(); err != nil {
-			return err
-		}
+	if len(roles) == 0 {
+		// Clearing removes the key, which only a rewrite of the entry can do.
+		member.Roles = nil
+		return s.Update("members.yaml", []string{"members", id}, member, 0644)
 	}
-	member.Roles = roles
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	if err := s.requireRolesSchema(); err != nil {
+		return err
+	}
+	// Only the field changes, so the rest of the entry keeps its comments.
+	return s.Update("members.yaml", []string{"members", id, "roles"}, roles, 0644)
 }
 
 // SetMemberBand assigns or moves an existing member's allocation band. There is
@@ -787,15 +801,13 @@ func (s *Store) SetMemberBand(id string, band int) error {
 	if err != nil {
 		return err
 	}
-	member, ok := members.Members[id]
-	if !ok {
+	if _, ok := members.Members[id]; !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
 	}
-	member.Band = BandOf(band)
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	return s.Update("members.yaml", []string{"members", id, "band"}, band, 0644)
 }
 
 func (s *Store) freeBand(members Members, id string, band int) error {
