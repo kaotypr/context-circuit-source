@@ -308,6 +308,43 @@ func TestLauncherAcceptsOnlyItsOwnWorkspace(t *testing.T) {
 	}
 }
 
+// Every spelling of the launcher's own directory is its own workspace, however
+// the launcher itself was reached: a symlinked temporary directory, a trailing
+// separator, and on Windows another case, forward slashes, and the 8.3 short
+// name TEMP hands out (C:\Users\RUNNER~1).
+func TestLauncherKnowsItsWorkspaceByAnySpelling(t *testing.T) {
+	for _, kind := range launcherKinds(t) {
+		t.Run(kind, func(t *testing.T) {
+			f := newLauncherFixture(t, kind)
+			long, err := filepath.EvalSymlinks(f.root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			launchers := []string{f.root, long}
+			workspaces := []string{f.root, long, long + "/"}
+			if runtime.GOOS == "windows" {
+				workspaces = append(workspaces, strings.ToUpper(long), filepath.ToSlash(long))
+				if short, ok := shortPath(long); ok {
+					launchers = append(launchers, short)
+					workspaces = append(workspaces, short)
+				} else {
+					t.Logf("no 8.3 short name for %s; short spellings skipped", long)
+				}
+			}
+			parent := filepath.Dir(f.root)
+			for _, launcher := range launchers {
+				g := f
+				g.root = launcher
+				for _, workspace := range workspaces {
+					args := []string{"--workspace", f.path(workspace), "check"}
+					code, stderr, seen := g.launch(parent, "", args...)
+					g.ran(code, stderr, seen, parent, args...)
+				}
+			}
+		})
+	}
+}
+
 func TestLauncherRefusesWhatItCannotTrust(t *testing.T) {
 	for _, kind := range launcherKinds(t) {
 		t.Run(kind, func(t *testing.T) {

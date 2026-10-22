@@ -39,9 +39,14 @@ if [ ! -f "$cli" ] || [ -L "$cli" ]; then
   exit 1
 fi
 # The pin belongs to this workspace. Another workspace has its own launcher.
+# On Windows, pwd keeps an 8.3 short name (RUNNER~1) as it was typed, and case
+# does not tell directories apart.
+key() {
+  if [ "$os" = windows ]; then cygpath -m -l "$1" | tr '[:upper:]' '[:lower:]'; else printf '%s\n' "$1"; fi
+}
 same() {
   dir=$(CDPATH= cd -- "$1" 2>/dev/null && pwd -P) || refuse "--workspace $1 is not a directory"
-  [ "$dir" = "$root" ] || refuse "--workspace $1 is another workspace; run $1/.context-circuit/cli for it"
+  [ "$(key "$dir")" = "$(key "$root")" ] || refuse "--workspace $1 is another workspace; run $1/.context-circuit/cli for it"
 }
 want=
 for arg in "$@"; do

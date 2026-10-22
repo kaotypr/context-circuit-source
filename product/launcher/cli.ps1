@@ -4,7 +4,7 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File <workspace>/.context-circuit/cli.ps1 ARGS...
 $ErrorActionPreference = 'Stop'
 function Refuse([string]$why) { [Console]::Error.WriteLine("refused: $why; nothing was run"); exit 1 }
-$here = (Resolve-Path -LiteralPath $PSScriptRoot).Path
+$here = (Resolve-Path -LiteralPath $PSScriptRoot).ProviderPath
 $root = Split-Path -Parent $here
 $pinFile = Join-Path $here 'CLI_VERSION'
 if (-not (Test-Path -LiteralPath $pinFile -PathType Leaf)) { Refuse "$pinFile is missing" }
@@ -26,13 +26,17 @@ if (-not $item -or $item.PSIsContainer -or ($item.Attributes -band [IO.FileAttri
   exit 1
 }
 # The pin belongs to this workspace. Another workspace has its own launcher.
+# GetFullPath expands 8.3 short names (C:\Users\RUNNER~1) of an existing path,
+# on .NET Framework and .NET alike, and turns / into \; -ne ignores case.
+function Key([string]$path) { [IO.Path]::GetFullPath($path).TrimEnd('\') }
+$rootKey = Key $root
 for ($i = 0; $i -lt $args.Count; $i++) {
   $value = $null
   if ($args[$i] -in '-workspace', '--workspace') { if ($i + 1 -lt $args.Count) { $value = $args[$i + 1] } }
   elseif ($args[$i] -match '^--?workspace=(.*)$') { $value = $Matches[1] }
   if ($null -ne $value) {
     $resolved = Resolve-Path -LiteralPath $value -ErrorAction SilentlyContinue
-    if (-not $resolved -or $resolved.Path.TrimEnd('\') -ne $root.TrimEnd('\')) {
+    if (-not $resolved -or (Key $resolved.ProviderPath) -ne $rootKey) {
       Refuse "--workspace $value is another workspace; run its own .context-circuit\cli.ps1"
     }
   }
