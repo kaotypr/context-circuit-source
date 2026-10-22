@@ -183,37 +183,43 @@ func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]
 	}
 }
 
+// usage is the full help with its usage line naming the command this build is
+// installed as. Help itself stays the public text, which signatures reads.
+func usage(cliCommand string) string {
+	return strings.Replace(Help, "Usage: "+publicCommand+" ", "Usage: "+cliCommand+" ", 1)
+}
+
 // helpTopic answers `help` and `help TOPIC`.
-func helpTopic(args []string, out, errOut io.Writer) int {
+func helpTopic(args []string, out, errOut io.Writer, cliCommand string) int {
 	if len(args) > 1 {
 		topic := strings.Join(args[1:], " ")
 		text, ok := CommandHelp(topic)
 		if !ok {
 			// Printing the whole manual for a question about one command
 			// answers something the caller did not ask and reads as success.
-			fmt.Fprintf(errOut, "no help topic: %s\ntry: context-circuit-cli help\n", topic)
+			fmt.Fprintf(errOut, "no help topic: %s\ntry: %s help\n", topic, cliCommand)
 			return 2
 		}
 		fmt.Fprint(out, text)
 		return 0
 	}
-	fmt.Fprint(out, Help)
+	fmt.Fprint(out, usage(cliCommand))
 	return 0
 }
 
 // resolve names the command a line asks for, joining a group to its
 // subcommand. ok is false when it printed why not, with the exit code to use.
-func resolve(args []string, errOut io.Writer) (name string, cmd command, rest []string, code int, ok bool) {
+func resolve(args []string, errOut io.Writer, cliCommand string) (name string, cmd command, rest []string, code int, ok bool) {
 	name, rest = args[0], args[1:]
 	if groups[name] {
 		if len(rest) == 0 {
-			fmt.Fprint(errOut, Help)
+			fmt.Fprint(errOut, usage(cliCommand))
 			return "", command{}, nil, 2, false
 		}
 		// A group with an option where its subcommand belongs is a caller
 		// looking for help, not an unknown command. Name the real fault.
 		if strings.HasPrefix(rest[0], "-") {
-			fmt.Fprintf(errOut, "unknown option for %s: %s\ntry: context-circuit-cli help %s\n", name, rest[0], name)
+			fmt.Fprintf(errOut, "unknown option for %s: %s\ntry: %s help %s\n", name, rest[0], cliCommand, name)
 			return "", command{}, nil, 2, false
 		}
 		name += " " + rest[0]
@@ -226,7 +232,7 @@ func resolve(args []string, errOut io.Writer) (name string, cmd command, rest []
 		// is no group to offer a topic for. Reporting it is still right; going
 		// looking for its first word is what crashes.
 		if topic := strings.Fields(name); len(topic) > 0 && groups[topic[0]] {
-			fmt.Fprintf(errOut, "try: context-circuit-cli help %s\n", topic[0])
+			fmt.Fprintf(errOut, "try: %s help %s\n", cliCommand, topic[0])
 		}
 		return "", command{}, nil, 2, false
 	}
@@ -259,14 +265,14 @@ func newInput(name string, cmd command, errOut io.Writer, root *string, asJSON *
 
 // parse reads the command's options. stop is true when the run is over, with
 // the exit code to return.
-func (in *input) parse(args []string, out, errOut io.Writer) (code int, stop bool) {
+func (in *input) parse(args []string, out, errOut io.Writer, cliCommand string) (code int, stop bool) {
 	if err := in.f.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			text, _ := CommandHelp(in.name)
 			fmt.Fprint(out, text)
 			return 0, true
 		}
-		fmt.Fprint(errOut, commandUsage(in.name))
+		fmt.Fprint(errOut, commandUsage(cliCommand, in.name))
 		return 2, true
 	}
 	if in.f.NArg() != 0 {
@@ -434,14 +440,17 @@ func render(out io.Writer, asJSON bool, name string, result any) error {
 }
 
 func Run(ctx context.Context, args []string, out, errOut io.Writer, version string) int {
-	global := flag.NewFlagSet("context-circuit-cli", flag.ContinueOnError)
+	// Hints name the command this version is installed as, so a variant build
+	// never points its caller at the public command.
+	cliCommand := commandName(version)
+	global := flag.NewFlagSet(cliCommand, flag.ContinueOnError)
 	global.SetOutput(errOut)
 	root := global.String("workspace", ".", "workspace root")
 	asJSON := global.Bool("json", false, "structured JSON output")
 	versionFlag := global.Bool("version", false, "show version")
 	if err := global.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
-			fmt.Fprint(out, Help)
+			fmt.Fprint(out, usage(cliCommand))
 			return 0
 		}
 		return 2
@@ -452,14 +461,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		return 0
 	}
 	if len(args) == 0 || args[0] == "help" {
-		return helpTopic(args, out, errOut)
+		return helpTopic(args, out, errOut, cliCommand)
 	}
-	name, cmd, args, code, ok := resolve(args, errOut)
+	name, cmd, args, code, ok := resolve(args, errOut, cliCommand)
 	if !ok {
 		return code
 	}
 	in := newInput(name, cmd, errOut, root, asJSON)
-	if code, stop := in.parse(args, out, errOut); stop {
+	if code, stop := in.parse(args, out, errOut, cliCommand); stop {
 		return code
 	}
 	if key := in.missingFlag(cmd); key != "" {
