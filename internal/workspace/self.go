@@ -213,19 +213,5 @@ func (s *Store) SetWorkspaceRemote(ctx context.Context, remote, defaultBranch st
 	if cfg.WorkspaceRepository == nil {
 		return errors.New("describe the workspace repository first with workspace connect")
 	}
-	if remote != "" {
-		if err := checkRemote(remote); err != nil {
-			return err
-		}
-		if err := s.Update("workspace.yaml", []string{"workspace_repository", "url"}, remote, 0644); err != nil {
-			return err
-		}
-	}
-	if defaultBranch == "" {
-		return nil
-	}
-	if err := checkBranch(ctx, s.Root, defaultBranch); err != nil {
-		return err
-	}
-	return s.Update("workspace.yaml", []string{"workspace_repository", "default_branch"}, defaultBranch, 0644)
+	return s.writeSharedRemote(ctx, []string{"workspace_repository"}, remote, defaultBranch)
 }

@@ -1403,3 +1403,24 @@ func TestMissingFlagsAreReportedInAStableOrder(t *testing.T) {
 		}
 	}
 }
+
+// repo remote and workspace remote check every value before the first write, as
+// knowledge remote does: a refused branch must not leave the new URL recorded.
+func TestSharedRemotesWriteNothingWhenAValueIsRefused(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	git(t, f.root, "init", "-b", "main")
+	f.ok("workspace", "connect", "--base", "main")
+	workspaceYAML := filepath.Join(f.root, "workspace.yaml")
+	before := read(t, workspaceYAML)
+	for _, args := range [][]string{
+		{"repo", "remote", "--id", "api"},
+		{"workspace", "remote"},
+	} {
+		args = append(args, "--url", "https://example.com/new.git", "--default-branch", "bad..branch")
+		f.fail(args...)
+		if after := read(t, workspaceYAML); after != before {
+			t.Fatalf("%v: a refused call changed the shared record:\n%s", args[:2], after)
+		}
+	}
+}

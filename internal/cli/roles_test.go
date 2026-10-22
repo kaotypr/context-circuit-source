@@ -180,3 +180,19 @@ func TestRolesCanBeSetInAFlowStyleRoster(t *testing.T) {
 		t.Fatalf("expected the roles to read back from a flow-style roster: %v", got)
 	}
 }
+
+// Setting roles updates only the roles field, so the member's own comments and
+// quoting survive; only --clear rewrites the entry, because only that removes a key.
+func TestSettingRolesKeepsTheMembersComments(t *testing.T) {
+	f := setup(t)
+	roster := filepath.Join(f.root, "members.yaml")
+	write(t, roster, "members:\n  maya:\n    name: \"Maya\" # display name, keep\n    band: 0\n")
+	f.ok("member", "roles", "--id", "maya", "--role", "maintainer")
+	if body := read(t, roster); !strings.Contains(body, `"Maya" # display name, keep`) || !strings.Contains(body, "- maintainer") {
+		t.Fatalf("setting roles dropped the member's comment:\n%s", body)
+	}
+	f.ok("member", "roles", "--id", "maya", "--role", "docs")
+	if body := read(t, roster); !strings.Contains(body, "# display name, keep") || strings.Contains(body, "maintainer") {
+		t.Fatalf("replacing roles dropped the comment or kept the old role:\n%s", body)
+	}
+}

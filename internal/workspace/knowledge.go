@@ -458,27 +458,8 @@ func (s *Store) SetKnowledgeRemote(ctx context.Context, id, url, defaultBranch, 
 	if _, ok := cfg.KnowledgeRepositories[id]; !ok {
 		return fmt.Errorf("unknown knowledge repository: %s", id)
 	}
-	// Every value is checked before the first write, so a refused call leaves
-	// the shared record exactly as it was.
-	if url != "" {
-		if err := checkRemote(url); err != nil {
-			return err
-		}
-	}
-	if defaultBranch != "" {
-		if err := checkBranch(ctx, s.Root, defaultBranch); err != nil {
-			return err
-		}
-	}
-	if url != "" {
-		if err := s.Update("workspace.yaml", []string{"knowledge_repositories", id, "url"}, url, 0644); err != nil {
-			return err
-		}
-	}
-	if defaultBranch != "" {
-		if err := s.Update("workspace.yaml", []string{"knowledge_repositories", id, "default_branch"}, defaultBranch, 0644); err != nil {
-			return err
-		}
+	if err := s.writeSharedRemote(ctx, []string{"knowledge_repositories", id}, url, defaultBranch); err != nil {
+		return err
 	}
 	if index == "" {
 		return nil

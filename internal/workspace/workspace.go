@@ -777,13 +777,16 @@ func (s *Store) SetMemberRoles(id string, roles []string, clear bool) error {
 	if !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
-	if len(roles) > 0 {
-		if err := s.requireRolesSchema(); err != nil {
-			return err
-		}
+	if len(roles) == 0 {
+		// Clearing removes the key, which only a rewrite of the entry can do.
+		member.Roles = nil
+		return s.Update("members.yaml", []string{"members", id}, member, 0644)
 	}
-	member.Roles = roles
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	if err := s.requireRolesSchema(); err != nil {
+		return err
+	}
+	// Only the field changes, so the rest of the entry keeps its comments.
+	return s.Update("members.yaml", []string{"members", id, "roles"}, roles, 0644)
 }
 
 // SetMemberBand assigns or moves an existing member's allocation band. There is
