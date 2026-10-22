@@ -6,7 +6,11 @@ set -eu
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 [ "$#" -le 2 ] || fail 'usage: build-cli.sh [version-without-v] [new-output-dir]'
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-$(cat "$source_root/CLI_VERSION")}
+if [ -z "${1:-}" ]; then
+  version=$(sh "$source_root/scripts/release-version.sh" cli)
+else
+  version=$1
+fi
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid CLI version: $version" ;; esac
 if [ "$#" -ge 2 ]; then
   output_dir=$2

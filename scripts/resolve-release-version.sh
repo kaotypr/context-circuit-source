@@ -43,13 +43,15 @@ source_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail 'not a git sour
 
 case "$product" in
   template)
-    version=${INPUT_VERSION:-$(cat "$source_root/VERSION")}
+    effective=$(sh "$source_root/scripts/release-version.sh" template)
+    version=${INPUT_VERSION:-$effective}
     repository=${TEMPLATE_REPOSITORY:-}
     [ -n "$repository" ] || fail 'set TEMPLATE_REPOSITORY to the repository the template publishes to'
     tag="v$version"
     ;;
   cli)
-    version=${INPUT_VERSION:-$(cat "$source_root/CLI_VERSION")}
+    effective=$(sh "$source_root/scripts/release-version.sh" cli)
+    version=${INPUT_VERSION:-$effective}
     repository=${CLI_REPOSITORY:-}
     [ -n "$repository" ] || fail 'set CLI_REPOSITORY to the repository the CLI publishes to'
     tag="cli-v$version"
@@ -58,6 +60,11 @@ case "$product" in
 esac
 
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $version" ;; esac
+# A variant publishes only the version its own files compose; an explicit one
+# would mint a release no variant.env describes.
+if [ -n "${CC_VERSION_SUFFIX:-}" ] && [ "$version" != "$effective" ]; then
+  fail "explicit version $version is not this variant's $effective"
+fi
 
 output_file=${RESOLVE_OUTPUT:-${GITHUB_OUTPUT:-}}
 

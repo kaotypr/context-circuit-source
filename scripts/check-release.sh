@@ -7,14 +7,15 @@ cd "$source_root"
 for script in scripts/*.sh product/skills/cc-cli/scripts/*.sh; do sh -n "$script"; done
 go test ./...
 go vet ./...
+sh scripts/check-release-version.sh
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT HUP INT TERM
-version=v$(cat VERSION)
+version=v$(sh scripts/release-version.sh template)
 release_output=${1:-$work/dist}
 [ ! -e "$release_output" ] && [ ! -L "$release_output" ] || { printf 'FAIL: release output already exists\n' >&2; exit 1; }
 mkdir -p "$release_output"
 sh scripts/build-dist.sh "$version" "$release_output/workspace"
-cli_version=$(cat CLI_VERSION)
+cli_version=$(sh scripts/release-version.sh cli)
 sh scripts/build-cli.sh "$cli_version" "$release_output/cli"
 release_output=$(CDPATH= cd -- "$release_output" && pwd -P)
 (
@@ -47,6 +48,8 @@ mkdir "$work/seed"
 tar -xzf "$release_output/workspace/context-circuit-$version.tar.gz" -C "$work/seed"
 "$cc_binary" --workspace "$work/seed" init --name Seed --purpose Fixture --member fixture --member-name Fixture >/dev/null
 "$cc_binary" --workspace "$work/seed" --json check
+# The published template pins the CLI version this release built.
+[ "$(tr -d '[:space:]' < "$work/seed/.context-circuit/CLI_VERSION")" = "$cli_version" ]
 # Exercise the shipped installer with the real native CLI archive in isolation.
 sh "$work/seed/.agents/skills/cc-cli/scripts/install.sh" --version "$cli_version" \
   --bin-dir "$work/installed" \
