@@ -36,5 +36,3 @@ is a security report:
 - Anything a coding agent decides to write. The workspace constrains where an
   agent works and what it must ask about; it does not review generated code.
 - Vulnerabilities in a project you connect to a workspace.
-- Missing hardening in `sources/`, which is passive design history and is
-  never shipped.

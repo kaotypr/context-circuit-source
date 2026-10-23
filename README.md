@@ -84,7 +84,7 @@ context-circuit-source/
 │   ├── docs/                  Workspace and command documentation
 │   └── skills/                Agent procedures for each workflow stage
 ├── template/                  Blank workspace records and configuration
-├── context/                   Maintainer product knowledge; never shipped
+├── context/                   Product knowledge; never shipped
 ├── release/
 │   ├── binding.yaml           Where the workspace template publishes
 │   ├── template-repo/         Landing page and export rules that repo owns
@@ -101,9 +101,14 @@ context-circuit-source/
 `product/` and `template/` are the two shipped trees; `scripts/release-manifest.txt`
 maps every file in them to its destination in a generated workspace.
 
-`sources/` is passive maintainer design history: not the current product
-specification, and never shipped. `release/` is not history — `binding.yaml`
-names the published destination, and each product's requests live beside it.
+`context/` is the product's one knowledge tree, and it stays public on purpose:
+a generated workspace keeps its knowledge to itself, but contributors, forks,
+and the maintainer all read this one. It must always match what the code does
+and how agents behave in the generated template, so a pull request that changes
+either one updates `context/` in the same pull request.
+
+`release/` is not history — `binding.yaml` names the published destination, and
+each product's requests live beside it.
 
 This checkout is not a Context Circuit workspace and carries no workspace
 records. The product's intent and plan flow is not used here; maintainer changes
