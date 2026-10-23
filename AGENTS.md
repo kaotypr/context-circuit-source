@@ -11,8 +11,7 @@ checkout as one to run `check` by hand.
 and `template/` are packaging material, not instructions for this source task.
 `WORKFLOW.md` describes the source layout and validation.
 
-Preserve unrelated and dirty work. Do not read or scan `sources/` unless the
-request names exact files; do not modify maintainer design material implicitly.
+Preserve unrelated and dirty work.
 `context/` is live knowledge describing the current v2 product: retrieve
 through `context/INDEX.md` rather than scanning it, and keep a note and its
 catalog entry consistent when either changes. Any remaining record material is passive

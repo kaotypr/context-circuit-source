@@ -59,12 +59,11 @@ to stay passive. Anchor to code instead, with the logical repository ID from
 `workspace.yaml`, exact or patterned: `api@internal/billing/dunning/`, or
 `web@src/features/<feature>/`.
 
-An anchor earns its place by saying what it anchors. Write one into the sentence
-that explains it — *the format layer in `api@internal/billing/format/` owns the
-schema* — which is where an anchor belongs whenever a sentence can carry it.
-
-A note covering several surfaces may close with an `Owner:` block naming where
-its subject lives, one bullet per anchor, each saying what that path owns:
+An anchor earns its place by saying what it anchors. The readability check
+accepts one in two places only: the note's closing `Owner:` block, or a table
+row that pairs a path with what it owns. An anchor in a running sentence is
+reported. The `Owner:` block names where the note's subject lives, one bullet per
+anchor, each saying what that path owns:
 
 ```
 Owner:
@@ -139,5 +138,5 @@ it does that for is `actors/`.*
 *How this checkout is laid out, validated, and released. Not what the product
 does once installed.*
 
-- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-10-23
+- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history, knowledge tree · reviewed 2026-10-23
 - [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, destination-owned, knowledge tree, unverified · reviewed 2026-09-19
