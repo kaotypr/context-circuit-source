@@ -9,6 +9,8 @@ defines the change. Product instructions apply only to generated workspaces.
 - product/docs/: workspace files, agent-facing commands, and worktree guidance.
 - internal/workspace/: Go bookkeeping, YAML edits, Git and worktree operations.
 - internal/cli/: the command surface and human/JSON output.
+  - internal/cli/pin.go: the pin switch and guard: hands off to the pinned CLI
+    when it is installed, and otherwise refuses a migrating or cross-line change.
 - cmd/context-circuit/: CLI entry point.
 - template/: blank workspace files, embedded with the product instruction.
 - scripts/release-manifest.txt: exact source-to-output file mapping.
@@ -16,7 +18,8 @@ defines the change. Product instructions apply only to generated workspaces.
 - VERSION: workspace template version.
 - CLI_VERSION: independent CLI version; each file drives its own publication.
 - product/skills/: the workspace skills, including cc-system-design, which
-  authors design material under sources/system-design/ and ships from here.
+  authors design material under a workspace's sources/system-design/ and
+  ships from here.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and publication.
 - release/requests/cli/, release/requests/template/: one request per product
@@ -31,6 +34,11 @@ defines the change. Product instructions apply only to generated workspaces.
   and artwork; restored at publication and shipped to no workspace.
 - product/workspace-README.md: the front page initialization writes; not
   exported, because a blank seed has no workspace to name.
+- product/launcher/: the workspace launcher, which runs exactly the pinned CLI.
+- product/host/: host settings the template ships.
+- scripts/release-version.sh: the effective version of each product; plain
+  here, because release/variant.env is absent here, and a downstream variant
+  supplies it with `CC_VERSION_SUFFIX`.
 - release/template-repo/: landing-page files and the .gitattributes that keeps
   every repository-owned path out of the archive a project is created from.
 
@@ -43,14 +51,9 @@ required.
 
 Source context/ is live knowledge about the current product, catalogued by
 context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
-never ships. sources/ and release requests are passive maintainer history and
-never ship. The source skills under .agents/skills/ — cc-source-develop and
-cc-system-design — are maintainer tooling, excluded from the binary and the
-exported workspace. cc-system-design states the same design rubric that
-product/skills/cc-system-design/SKILL.md ships to a workspace, differing only
-where a maintainer checkout genuinely differs: the version source, how knowledge
-is written, and the absence of records. Change the layout, altitude, splitting,
-or scope-separation rules in one and change them in the other. .claude/skills is
+never ships. Release requests are passive maintainer history and never ship.
+The source skill under .agents/skills/, cc-source-develop, is maintainer
+tooling, excluded from the binary and the exported workspace. .claude/skills is
 a symlink to that directory, so a host reading either path finds the same
 skills.
 
@@ -66,11 +69,12 @@ A dist/ build is therefore the workspace only, not a preview of the published
 repository: everything in this class joins the tree at publication.
 
 The .gitattributes restored with them marks every repository-owned path
-export-ignore. tembiter creates a project with `git archive`, which honors that
-file, so a new workspace starts with no front page about Context Circuit, no
-release notes for the template, and no LICENSE at its root. A tag-to-tag sync
-reads the git tree rather than an archive and cannot see the mark, so
-product/AGENTS.md.in names the same paths for the agent performing that update.
+export-ignore. A workspace created from a template tag is extracted with
+`git archive`, which honors that file, so it starts with no front page about
+Context Circuit, no release notes for the template, and no LICENSE at its root.
+A tag-to-tag sync reads the git tree rather than an archive and cannot see the
+mark, so product/AGENTS.md.in names the same paths for the agent performing
+that update.
 
 ## How context/ is validated
 
@@ -86,22 +90,24 @@ a command or an edit discharges fails the test, and one marked `needs a person:`
 — a note to re-read against code that moved — is reported for a maintainer
 rather than blocking a contributor on somebody else's judgment.
 
-It was registered as a workspace before this, which put the same checks behind
-two gitignored files: they ran on one machine and never in CI, so a fresh clone
-got silence instead of a warning. The job that runs `go test` clones full
-history, because the reviewed-date pass counts commits under those anchors and a
-shallow clone would make it pass without looking.
+The job that runs `go test` clones full history, because the reviewed-date pass
+counts commits under those anchors and a shallow clone would make it pass
+without looking.
 
 ## Validation
 
-Run gofmt on changed Go files, go test ./..., go vet ./..., and
-sh scripts/check-release.sh. Tests use temporary directories and disposable Git
-repositories. The release check builds and exercises a native binary, verifies
-the embedded seed inventory, and cross-compiles the supported binary targets.
-It also tests publication guards and commit/tag behavior in disposable fixtures.
-An optional new output directory retains the checked release assets.
+The validation commands are in CONTRIBUTING.md. Tests use temporary directories
+and disposable Git repositories. The release check builds and exercises a
+native binary, verifies the embedded seed inventory, and cross-compiles the
+supported binary targets. It also tests publication guards and commit/tag
+behavior in disposable fixtures. An optional new output directory retains the
+checked release assets.
 CI runs native tests, including installer upgrade/rollback fixtures, on Linux, macOS, and Windows. Cross-compilation alone is not
 proof of behavior on another operating system.
+The runners' default volumes cannot clone, so the native-clone job mounts an XFS
+reflink volume on Linux and a ReFS VHDX on Windows and runs
+TestNativeCloneOnCapableVolume there with CC_COW_NATIVE_DIR; without that
+variable the test skips.
 
 Validate Markdown scenarios against the shared entry instruction. Deterministic
 tests establish file and Git behavior, not whether a coding host loads or follows

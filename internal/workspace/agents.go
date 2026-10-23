@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -437,9 +438,29 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	}
 	setup := ""
 	if !installed {
-		setup = "context-circuit-cli --workspace " + s.Root + " agent setup --host " + host
+		setup = s.agentSetupCommand(host)
 	}
 	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true, definition, installed, setup}, nil
+}
+
+// agentSetupCommand names the call that writes a host's role definitions. A
+// workspace that carries a launcher gets the launcher, which runs the version it
+// pins whichever CLI happens to be running; one without names the running CLI's
+// own command.
+func (s *Store) agentSetupCommand(host string) string {
+	if launcher, err := s.Path(".context-circuit/cli"); err == nil {
+		if info, err := os.Stat(launcher); err == nil && info.Mode().IsRegular() {
+			if runtime.GOOS == "windows" {
+				return "powershell -NoProfile -ExecutionPolicy Bypass -File " + launcher + ".ps1 agent setup --host " + host
+			}
+			return "sh " + launcher + " agent setup --host " + host
+		}
+	}
+	command := s.Command
+	if command == "" {
+		command = "context-circuit-cli"
+	}
+	return command + " --workspace " + s.Root + " agent setup --host " + host
 }
 
 // authorLanguage reports the language a record's prose is written in: the

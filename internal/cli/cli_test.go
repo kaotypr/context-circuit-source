@@ -64,9 +64,21 @@ func read(t *testing.T, path string) string {
 	}
 	return string(data)
 }
+
+// testVersion is the CLI version the seed pins, so a test runs as the pinned
+// CLI and never meets the switch or the guard; pin_test.go sets both sides of
+// the pin itself.
+var testVersion = func() string {
+	files, err := assets.Files()
+	if err != nil {
+		panic(err)
+	}
+	return strings.TrimSpace(string(files[".context-circuit/CLI_VERSION"]))
+}()
+
 func call(root string, args ...string) (int, string, string) {
 	var out, err bytes.Buffer
-	code := cli.Run(context.Background(), append([]string{"--workspace", root, "--json"}, args...), &out, &err, "2.0.0-test")
+	code := cli.Run(context.Background(), append([]string{"--workspace", root, "--json"}, args...), &out, &err, testVersion)
 	return code, out.String(), err.String()
 }
 func (f fixture) ok(args ...string) string {
@@ -83,7 +95,7 @@ func (f fixture) ok(args ...string) string {
 func (f fixture) human(args ...string) string {
 	f.t.Helper()
 	var out, errOut bytes.Buffer
-	if code := cli.Run(context.Background(), append([]string{"--workspace", f.root}, args...), &out, &errOut, "2.0.0-test"); code != 0 {
+	if code := cli.Run(context.Background(), append([]string{"--workspace", f.root}, args...), &out, &errOut, testVersion); code != 0 {
 		f.t.Fatalf("%v: exit=%d %s %s", args, code, out.String(), errOut.String())
 	}
 	return out.String()

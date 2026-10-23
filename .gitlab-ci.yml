@@ -140,6 +140,8 @@ template:
       export CLI_REGISTRY_SOURCE=gitlab
       export CLI_REGISTRY_REPOSITORY="$CI_PROJECT_PATH"
       export CLI_REGISTRY_API="$CI_API_V4_URL"
+      # The published README's CLI release badge and link read this project.
+      export CLI_REPOSITORY_URL="$CI_SERVER_URL/$CI_PROJECT_PATH"
       out=$(sh scripts/publish-template.sh "$version" .template-repo \
         "$CI_SERVER_URL/$TEMPLATE_REPOSITORY.git")
       printf '%s\n' "$out"

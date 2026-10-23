@@ -216,7 +216,7 @@ func TestARefusedDeletionStillShowsItsPreview(t *testing.T) {
 
 	// A person reading YAML sees the same preview.
 	var out, errOut bytes.Buffer
-	code := cli.Run(context.Background(), []string{"--workspace", f.root, "record", "delete", "--id", intent.ID}, &out, &errOut, "2.0.0-test")
+	code := cli.Run(context.Background(), []string{"--workspace", f.root, "record", "delete", "--id", intent.ID}, &out, &errOut, testVersion)
 	for _, want := range []string{"blocked_by:", "id: " + plan.ID, "link: belongs to intent " + intent.ID, "add_ids:", "refused:", "status: approved"} {
 		if code != 1 || !strings.Contains(out.String(), want) {
 			t.Fatalf("the YAML preview lacks %q: exit=%d %s %s", want, code, out.String(), errOut.String())

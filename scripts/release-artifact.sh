@@ -18,11 +18,16 @@ cd "$source_root"
 
 # A native helper exports its embedded blank seed. Cross-built binaries are
 # never run as evidence of native support.
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(cat CLI_VERSION)" -o "$staging_dir/native" ./cmd/context-circuit
+cli_version=$(sh scripts/release-version.sh cli)
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$cli_version" -o "$staging_dir/native" ./cmd/context-circuit
 artifact_name="context-circuit-$version"
 artifact_dir="$output_dir/$artifact_name"
 "$staging_dir/native" template export --path "$artifact_dir" >/dev/null
 printf '%s\n' "${version#v}" > "$artifact_dir/.context-circuit/VERSION"
+# The embedded seed carries the raw CLI_VERSION file, so a variant's template
+# would otherwise pin the plain base. In a public build this writes the same
+# bytes the seed already holds.
+printf '%s\n' "$cli_version" > "$artifact_dir/.context-circuit/CLI_VERSION"
 
 # Record which registry this template's workspaces install their CLI from. The
 # seed carries none, which the installer reads as its own default; a release

@@ -151,8 +151,12 @@ read an entry there as somewhere work happens. No command commits, pushes, or
 merges the workspace.`,
 
 	"version": `Prints the running CLI version. A workspace pins its own in
-.context-circuit/CLI_VERSION, and the two need not match; the CLI warns when they
-differ.`,
+.context-circuit/CLI_VERSION and runs it through .context-circuit/cli.
+A CLI that is not the pinned version runs the pinned one instead when it
+is installed in the same version store, and says so on stderr;
+CC_CLI_VERSION=local skips that for one command. When it is not
+installed, the CLI warns, and refuses a change from another release line
+or one that would migrate the workspace schema.`,
 }
 
 // CommandHelp answers a question about one command. It returns the command's
@@ -203,13 +207,13 @@ func signatures(topic string) []string {
 // signature, where the global options may go, and the topic to read. The flag
 // package's own usage listed only flag names, and nothing at all for a command
 // that takes none, which read as a command with no usage.
-func commandUsage(command string) string {
+func commandUsage(cliCommand, command string) string {
 	var text strings.Builder
-	text.WriteString("usage: context-circuit-cli [--workspace PATH] [--json] " + command + " [OPTIONS]\n")
+	text.WriteString("usage: " + cliCommand + " [--workspace PATH] [--json] " + command + " [OPTIONS]\n")
 	if lines := signatures(command); len(lines) > 0 {
 		text.WriteString(strings.Join(lines, "\n") + "\n")
 	}
 	text.WriteString("--workspace PATH and --json may also follow the full command.\n")
-	text.WriteString("try: context-circuit-cli help " + command + "\n")
+	text.WriteString("try: " + cliCommand + " help " + command + "\n")
 	return text.String()
 }

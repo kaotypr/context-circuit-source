@@ -21,7 +21,12 @@ import (
 
 // Store contains workspace-owned files. Call WithLock around a compound edit.
 // Local locks serialize one directory, not independent Git clones.
-type Store struct{ Root string }
+type Store struct {
+	Root string
+	// Command is the PATH command the running CLI is installed as, named in a
+	// remedy the workspace has no launcher for; empty means the public one.
+	Command string
+}
 
 func Open(root string) (*Store, error) {
 	abs, err := filepath.Abs(root)
