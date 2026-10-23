@@ -70,7 +70,8 @@ The project's copyright notice travels at the top of `THIRD_PARTY_NOTICES.txt`,
 read from the root `NOTICE`, rather than as a `NOTICE` file of its own. Each
 installer accepts an exact archive file list, and an installer shipped with an
 older workspace refuses an archive holding a file it does not know. Apache-2.0
-allows the attribution in any text file distributed with the work.
+section 4(d) accepts the attribution in documentation distributed with the
+work, not only in a file named NOTICE.
 
 The archive holds exactly `README.md`, `LICENSE`, `THIRD_PARTY_NOTICES.txt` and
 the binary. That inventory is asserted by the release check, so a file added or

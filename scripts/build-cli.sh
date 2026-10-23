@@ -50,10 +50,10 @@ artifact_name="$name-v$version"
 # empty directory for a module the cache holds but has not extracted. A builder
 # with a warm cache never sees it; one starting clean reads the empty directory
 # as a missing license and blames the dependency for its own environment.
+go mod download
 # The project's own NOTICE leads the file instead of shipping beside it: the
 # installers accept an exact archive file list, and an older one refuses an
 # archive holding a file it does not know.
-go mod download
 [ -s NOTICE ] || fail 'NOTICE is missing or empty'
 notices="$staging_dir/THIRD_PARTY_NOTICES.txt"
 cat NOTICE > "$notices"

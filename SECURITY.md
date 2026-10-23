@@ -19,8 +19,9 @@ intended.
 | Older minors | No: update to the latest stable minor |
 | Prereleases (`-rc`, `-beta`, `-alpha`) | The next candidate, not a backport |
 
-A variant build, one with a label such as `2.5.0-acme.1`, is its own release
-line. The fork that builds it supports it; this project does not.
+A variant build, whose version carries a label such as `acme` in
+`2.5.0-acme.1`, is on that label's own release line. The fork that builds it
+supports it; this project does not.
 
 ## What the products do and do not touch
 
