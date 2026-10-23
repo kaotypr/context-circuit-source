@@ -13,7 +13,8 @@ A workspace holds no copy of that text, which the next section explains.
 The CLI is a binary an organization installs across its machines. Apache's
 explicit patent grant is what carries that past a legal review without a
 conversation, and its notice conventions already match a product shipping
-`THIRD_PARTY_NOTICES.txt` in every archive.
+`THIRD_PARTY_NOTICES.txt` in every archive. The root `NOTICE` holds the
+project's copyright line, and each archive's notices file opens with it.
 
 The template is the side that decided the split. Those files are copied into
 somebody else's repository and edited there, which makes them theirs in every
@@ -53,11 +54,10 @@ not to apply them.
 
 ## A binary is read where it was downloaded
 
-The CLI's assets are published on the template repository, which is labeled 0BSD
-because that repository is the template. The assets are not 0BSD, and a
-repository label is the wrong thing to be answering that question — the
-misreading it invites is the permissive one, where somebody redistributes an
-Apache-2.0 binary without the notices it asks for.
+The CLI's assets are published on the source repository, under `cli-v*` tags.
+Once downloaded, an archive sits apart from any repository label, and a binary
+with nothing beside it invites the permissive misreading, where somebody
+redistributes an Apache-2.0 binary without the notices it asks for.
 
 Two things close that. Every archive carries its own `LICENSE` beside the binary,
 which Apache-2.0 asks of a redistributor and which makes the archive answer for
@@ -66,7 +66,14 @@ name the other product's. This is the same reasoning that keeps the asset filena
 long while the tag is short: a release list supplies context and a download
 directory does not.
 
-The exact archive inventory is asserted by the release check, so a file added or
+The project's copyright notice travels at the top of `THIRD_PARTY_NOTICES.txt`,
+read from the root `NOTICE`, rather than as a `NOTICE` file of its own. Each
+installer accepts an exact archive file list, and an installer shipped with an
+older workspace refuses an archive holding a file it does not know. Apache-2.0
+allows the attribution in any text file distributed with the work.
+
+The archive holds exactly `README.md`, `LICENSE`, `THIRD_PARTY_NOTICES.txt` and
+the binary. That inventory is asserted by the release check, so a file added or
 dropped there fails rather than shipping.
 
 Owner:
@@ -82,5 +89,7 @@ Owner:
   repository-owned path out of the archive a project is created from.
 - `context-circuit-source@scripts/publish-template.sh` — where those files are
   restored over the artifact and held out of the publish comparison.
+- `context-circuit-source@NOTICE` — the copyright line the CLI archives carry.
 - `context-circuit-source@scripts/build-cli.sh` — where each binary archive is
-  given its own license beside the third-party notices.
+  given its own license beside the third-party notices, which open with the
+  `NOTICE` text.
