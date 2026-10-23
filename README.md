@@ -19,7 +19,7 @@
 <p align="center">
   <a href="https://github.com/kaotypr/context-circuit">Product guide</a> ·
   <a href="WORKFLOW.md">Source workflow</a> ·
-  <a href="CLI.md">CLI architecture</a> ·
+  <a href="CLI.md">CLI package guide</a> ·
   <a href="#development">Development</a> ·
   <a href="#release-assembly">Release assembly</a> ·
   <a href="#licensing">Licensing</a>
@@ -131,14 +131,7 @@ go build -o /tmp/context-circuit-cli ./cmd/context-circuit
 /tmp/context-circuit-cli version
 ```
 
-Run the normal validation:
-
-```sh
-gofmt -w path/to/changed.go
-go test ./...
-go vet ./...
-sh scripts/check-release.sh
-```
+The validation commands are in [CONTRIBUTING.md](CONTRIBUTING.md#validating).
 
 `scripts/check-release.sh` is the full product check. In fresh temporary
 directories it tests the Go packages, builds the workspace archive, builds all
@@ -210,7 +203,7 @@ release publication, and deployment require an explicit maintainer request.
 - Do not revive retired v1 lifecycle machinery.
 
 See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
-[CLI.md](CLI.md) for the CLI boundary and packaging behavior, and the [product
+[CLI.md](CLI.md), the page every CLI archive carries as its README, and the [product
 documentation](product/docs/) for the workspace contract.
 
 ## Licensing

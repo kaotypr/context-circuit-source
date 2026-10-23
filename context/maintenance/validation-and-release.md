@@ -4,8 +4,8 @@ How a change here is proven before it ships, and what stays unproven.
 
 ## What a change here runs
 
-Format changed Go files, then the test suite, then vetting, then the release
-check. Tests use temporary directories and disposable Git repositories, so they
+The contributor guide, `CONTRIBUTING.md`, lists the commands a change here runs.
+Tests use temporary directories and disposable Git repositories, so they
 establish real file and Git behavior rather than mocked behavior.
 
 The suite also validates this project's own product knowledge with the product's

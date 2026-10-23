@@ -97,9 +97,8 @@ shallow clone would make it pass without looking.
 
 ## Validation
 
-Run gofmt on changed Go files, go test ./..., go vet ./..., and
-sh scripts/check-release.sh. Tests use temporary directories and disposable Git
-repositories. The release check builds and exercises a native binary, verifies
+The validation commands are in CONTRIBUTING.md. Tests use temporary directories
+and disposable Git repositories. The release check builds and exercises a native binary, verifies
 the embedded seed inventory, and cross-compiles the supported binary targets.
 It also tests publication guards and commit/tag behavior in disposable fixtures.
 An optional new output directory retains the checked release assets.
