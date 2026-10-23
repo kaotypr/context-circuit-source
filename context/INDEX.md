@@ -2,7 +2,7 @@
 
 This optional catalog points to durable architecture, conventions, decisions,
 terminology, domain rules, and repository relationships. Retrieve relevant
-entries instead of scanning every note. Keep task progress in the plan records.
+entries instead of scanning every note.
 
 ## Writing an entry
 

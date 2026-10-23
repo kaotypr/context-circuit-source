@@ -69,11 +69,12 @@ A dist/ build is therefore the workspace only, not a preview of the published
 repository: everything in this class joins the tree at publication.
 
 The .gitattributes restored with them marks every repository-owned path
-export-ignore. A new workspace is created from a template tag with
-`git archive`, which honors that file, so a new workspace starts with no front page about Context Circuit, no
-release notes for the template, and no LICENSE at its root. A tag-to-tag sync
-reads the git tree rather than an archive and cannot see the mark, so
-product/AGENTS.md.in names the same paths for the agent performing that update.
+export-ignore. A workspace created from a template tag is extracted with
+`git archive`, which honors that file, so it starts with no front page about
+Context Circuit, no release notes for the template, and no LICENSE at its root.
+A tag-to-tag sync reads the git tree rather than an archive and cannot see the
+mark, so product/AGENTS.md.in names the same paths for the agent performing
+that update.
 
 ## How context/ is validated
 
@@ -96,10 +97,11 @@ without looking.
 ## Validation
 
 The validation commands are in CONTRIBUTING.md. Tests use temporary directories
-and disposable Git repositories. The release check builds and exercises a native binary, verifies
-the embedded seed inventory, and cross-compiles the supported binary targets.
-It also tests publication guards and commit/tag behavior in disposable fixtures.
-An optional new output directory retains the checked release assets.
+and disposable Git repositories. The release check builds and exercises a
+native binary, verifies the embedded seed inventory, and cross-compiles the
+supported binary targets. It also tests publication guards and commit/tag
+behavior in disposable fixtures. An optional new output directory retains the
+checked release assets.
 CI runs native tests, including installer upgrade/rollback fixtures, on Linux, macOS, and Windows. Cross-compilation alone is not
 proof of behavior on another operating system.
 The runners' default volumes cannot clone, so the native-clone job mounts an XFS

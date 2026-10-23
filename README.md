@@ -117,7 +117,7 @@ are made directly on the current branch, as `AGENTS.md` sets out.
 `context/` is still validated by the product's own diagnostic. `go test` builds a
 throwaway workspace around the real tree, binds it to this checkout so each
 note's code anchors resolve, and fails on any finding a command or an edit can
-discharge. That runs for every clone and every pull request.
+discharge. CI runs it on every pull request.
 
 ## Development
 
@@ -164,8 +164,8 @@ To keep a checked build in a specific location, provide a new directory:
 
 ```sh
 sh scripts/build-dist.sh v2.0.0-dev "$(mktemp -d)/out"
-sh scripts/build-cli.sh 2.0.0-dev /tmp/context-circuit-cli
-sh scripts/check-release.sh /tmp/context-circuit-release-check
+sh scripts/build-cli.sh 2.0.0-dev "$(mktemp -d)/out"
+sh scripts/check-release.sh "$(mktemp -d)/out"
 ```
 
 Explicit output directories must not already exist. Release assembly never
@@ -202,8 +202,8 @@ release publication, and deployment require an explicit maintainer request.
 - Do not revive retired v1 lifecycle machinery.
 
 See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
-[CLI.md](CLI.md), the page every CLI archive carries as its README, and the [product
-documentation](product/docs/) for the workspace contract.
+[CLI.md](CLI.md) for the page every CLI archive carries as its README, and the
+[product documentation](product/docs/) for the workspace contract.
 
 ## Licensing
 
