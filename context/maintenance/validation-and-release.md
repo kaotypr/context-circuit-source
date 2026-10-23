@@ -23,10 +23,6 @@ Continuous integration clones full history for it, because that pass counts
 commits under those anchors and a shallow clone would let it pass without
 looking.
 
-This replaces registering the checkout as a workspace and running the diagnostic
-by hand, which put the same checks behind two machine-local files: they ran
-where someone had set them up, and nowhere else.
-
 The release check is the broad one: it builds and exercises a native binary,
 verifies the embedded seed inventory against the manifest, cross-compiles every
 supported target, and tests the publication guards and commit and tag behavior

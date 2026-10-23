@@ -89,11 +89,9 @@ a command or an edit discharges fails the test, and one marked `needs a person:`
 — a note to re-read against code that moved — is reported for a maintainer
 rather than blocking a contributor on somebody else's judgment.
 
-It was registered as a workspace before this, which put the same checks behind
-two gitignored files: they ran on one machine and never in CI, so a fresh clone
-got silence instead of a warning. The job that runs `go test` clones full
-history, because the reviewed-date pass counts commits under those anchors and a
-shallow clone would make it pass without looking.
+The job that runs `go test` clones full history, because the reviewed-date pass
+counts commits under those anchors and a shallow clone would make it pass
+without looking.
 
 ## Validation
 

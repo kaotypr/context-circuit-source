@@ -117,8 +117,7 @@ are made directly on the current branch, as `AGENTS.md` sets out.
 `context/` is still validated by the product's own diagnostic. `go test` builds a
 throwaway workspace around the real tree, binds it to this checkout so each
 note's code anchors resolve, and fails on any finding a command or an edit can
-discharge. That runs for every clone and every pull request, where registering
-this checkout by hand only ever ran on the machine that did it.
+discharge. That runs for every clone and every pull request.
 
 ## Development
 
@@ -164,7 +163,7 @@ artwork that guide renders — is restored over the artifact by
 To keep a checked build in a specific location, provide a new directory:
 
 ```sh
-sh scripts/build-dist.sh v2.0.0-dev /tmp/context-circuit-workspace
+sh scripts/build-dist.sh v2.0.0-dev "$(mktemp -d)/out"
 sh scripts/build-cli.sh 2.0.0-dev /tmp/context-circuit-cli
 sh scripts/check-release.sh /tmp/context-circuit-release-check
 ```
