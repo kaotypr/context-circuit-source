@@ -135,7 +135,7 @@ the finding, not the test.
 
 ## Review and merge
 
-- Only the maintainer merges.
+- @kaotypr is the only maintainer, and the only person who merges.
 - The repository allows merge commits only, so your commits land as you wrote
   them.
 - CI must pass, and no approval count is required. This is the maintainer's rule
