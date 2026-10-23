@@ -45,11 +45,13 @@ You need:
   anchors. A shallow clone leaves it nothing to count, so it passes without
   looking. Clone normally, without `--depth`.
 
-On macOS and Linux the usual system tools are enough.
+On macOS the system tools are enough. On Linux, install `zip` and `unzip` if
+your distribution does not have them.
 
 On **Windows**, `go test ./...` runs natively. The scripts need Git Bash or WSL,
 and Git Bash has no `zip`, so `scripts/check-release.sh` cannot finish there.
-WSL has every tool the scripts need.
+WSL can have every tool the scripts need once Go, `zip` and `unzip` are installed
+there.
 
 `.claude/skills` is a symlink to `.agents/skills`. On Windows, Git checks a
 symlink out as a small text file unless symlinks are allowed (Developer Mode)
@@ -80,13 +82,13 @@ Cross-compilation proves a binary builds for another platform, not that it
 behaves there. CI runs `go test` and `go vet` natively on Linux, macOS and
 Windows, and `check-release.sh` on Linux, for every pull request.
 
-Where this block has been run by hand:
+Where this block has been checked:
 
 | Platform | Result |
 | --- | --- |
 | macOS | both commands run and pass |
 | Linux | `check-release.sh` runs in CI; `gofmt -l .` untested |
-| Windows | `go test ./...` runs in CI; every script under Git Bash or WSL, and the symlink setting above, untested |
+| Windows | `go test ./...` and `go vet ./...` run in CI; every script under Git Bash or WSL, and the symlink setting above, untested |
 
 Which scripts are yours to run:
 
@@ -114,8 +116,8 @@ the finding, not the test.
 ## Branches and pull requests
 
 - Branch from `development/v2` and open your pull request against it.
-- `main` stays the default branch. A pull request opened against `main` is
-  retargeted to `development/v2`.
+- `main` stays the default branch. If you open a pull request against `main`,
+  the maintainer retargets it to `development/v2`.
 - Use a plain branch name that says what the change is, for example
   `fix/short-topic` or `docs/install-steps`.
 - A pull request description stands on its own: what changed, why, and which
@@ -182,7 +184,7 @@ and does not fail the test. To see these findings, run:
 go test -count=1 -v -run TestTheProjectsOwnKnowledgeIsValid ./internal/cli
 ```
 
-Each one starts `needs a maintainer's judgment:`. Most often it says a note was
+Each one reads `needs a maintainer's judgment: …`. Most often it says a note was
 last confirmed on some date and the code it is anchored to has commits since. It
 asks a person to read the note against that code, correct the note and its
 catalog entry if they are wrong, and move the note's `reviewed` date in
