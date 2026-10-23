@@ -96,7 +96,7 @@ Which scripts are yours to run:
 | --- | --- |
 | `check-release.sh`, `build-dist.sh`, `build-cli.sh` | contributors |
 | `release-artifact.sh`, `check-publication.sh`, `check-release-version.sh`, `release-version.sh` | called by the scripts above |
-| `resolve-release-version.sh`, `publish-template.sh`, `publish-gitlab-release.sh` | CI and release only |
+| `resolve-release-version.sh`, `publish-template.sh`, `publish-gitlab-release.sh` | CI and release only (the checks run them against fixtures) |
 
 A change to shipped instructions or documentation needs the same care as code.
 The test suite enforces which layer a rule belongs in and which audience a
@@ -135,7 +135,7 @@ the finding, not the test.
 
 ## Review and merge
 
-- Only the maintainer merges.
+- @kaotypr is the only maintainer, and the only person who merges.
 - The repository allows merge commits only, so your commits land as you wrote
   them.
 - CI must pass, and no approval count is required. This is the maintainer's rule

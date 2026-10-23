@@ -8,13 +8,20 @@ the maintainers. Please do not open a public issue for a suspected vulnerability
 
 Include what you did, what happened, and what you expected — a reproduction
 against a scratch workspace is more useful than a description. You will get an
-acknowledgement, and a fix or an explanation of why the behavior is intended.
+acknowledgement within 7 days, and a fix or an explanation of why the behavior is
+intended.
 
 ## Supported versions
 
-Fixes land in the current release line. Prereleases (`-rc`, `-beta`, `-alpha`)
-are candidates, and a fix for one is published as the next candidate rather than
-backported.
+| Version | Fixes |
+| --- | --- |
+| Latest stable minor (2.5.x once 2.5.0 is out) | Yes |
+| Older minors | No: update to the latest stable minor |
+| Prereleases (`-rc`, `-beta`, `-alpha`) | The next candidate, not a backport |
+
+A variant build, whose version carries a label such as `acme` in
+`2.5.0-acme.1`, is on that label's own release line. The fork that builds it
+supports it; this project does not.
 
 ## What the products do and do not touch
 

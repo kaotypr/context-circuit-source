@@ -51,8 +51,13 @@ artifact_name="$name-v$version"
 # with a warm cache never sees it; one starting clean reads the empty directory
 # as a missing license and blames the dependency for its own environment.
 go mod download
+# The project's own NOTICE leads the file instead of shipping beside it: the
+# installers accept an exact archive file list, and an older one refuses an
+# archive holding a file it does not know.
+[ -s NOTICE ] || fail 'NOTICE is missing or empty'
 notices="$staging_dir/THIRD_PARTY_NOTICES.txt"
-printf 'Context Circuit third-party notices\n\n' > "$notices"
+cat NOTICE > "$notices"
+printf '\nContext Circuit third-party notices\n\n' >> "$notices"
 for module in github.com/goccy/go-yaml github.com/gofrs/flock golang.org/x/sys; do
   module_dir=$(go list -m -f '{{.Dir}}' "$module")
   [ -n "$module_dir" ] || fail "module is not extracted in the cache: $module"
