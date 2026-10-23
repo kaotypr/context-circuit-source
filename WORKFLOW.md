@@ -69,11 +69,12 @@ A dist/ build is therefore the workspace only, not a preview of the published
 repository: everything in this class joins the tree at publication.
 
 The .gitattributes restored with them marks every repository-owned path
-export-ignore. tembiter creates a project with `git archive`, which honors that
-file, so a new workspace starts with no front page about Context Circuit, no
-release notes for the template, and no LICENSE at its root. A tag-to-tag sync
-reads the git tree rather than an archive and cannot see the mark, so
-product/AGENTS.md.in names the same paths for the agent performing that update.
+export-ignore. A workspace created from a template tag is extracted with
+`git archive`, which honors that file, so it starts with no front page about
+Context Circuit, no release notes for the template, and no LICENSE at its root.
+A tag-to-tag sync reads the git tree rather than an archive and cannot see the
+mark, so product/AGENTS.md.in names the same paths for the agent performing
+that update.
 
 ## How context/ is validated
 
@@ -89,20 +90,18 @@ a command or an edit discharges fails the test, and one marked `needs a person:`
 — a note to re-read against code that moved — is reported for a maintainer
 rather than blocking a contributor on somebody else's judgment.
 
-It was registered as a workspace before this, which put the same checks behind
-two gitignored files: they ran on one machine and never in CI, so a fresh clone
-got silence instead of a warning. The job that runs `go test` clones full
-history, because the reviewed-date pass counts commits under those anchors and a
-shallow clone would make it pass without looking.
+The job that runs `go test` clones full history, because the reviewed-date pass
+counts commits under those anchors and a shallow clone would make it pass
+without looking.
 
 ## Validation
 
-Run gofmt on changed Go files, go test ./..., go vet ./..., and
-sh scripts/check-release.sh. Tests use temporary directories and disposable Git
-repositories. The release check builds and exercises a native binary, verifies
-the embedded seed inventory, and cross-compiles the supported binary targets.
-It also tests publication guards and commit/tag behavior in disposable fixtures.
-An optional new output directory retains the checked release assets.
+The validation commands are in CONTRIBUTING.md. Tests use temporary directories
+and disposable Git repositories. The release check builds and exercises a
+native binary, verifies the embedded seed inventory, and cross-compiles the
+supported binary targets. It also tests publication guards and commit/tag
+behavior in disposable fixtures. An optional new output directory retains the
+checked release assets.
 CI runs native tests, including installer upgrade/rollback fixtures, on Linux, macOS, and Windows. Cross-compilation alone is not
 proof of behavior on another operating system.
 The runners' default volumes cannot clone, so the native-clone job mounts an XFS

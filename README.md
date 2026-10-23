@@ -19,7 +19,7 @@
 <p align="center">
   <a href="https://github.com/kaotypr/context-circuit">Product guide</a> ·
   <a href="WORKFLOW.md">Source workflow</a> ·
-  <a href="CLI.md">CLI architecture</a> ·
+  <a href="CLI.md">CLI package guide</a> ·
   <a href="#development">Development</a> ·
   <a href="#release-assembly">Release assembly</a> ·
   <a href="#licensing">Licensing</a>
@@ -117,8 +117,7 @@ are made directly on the current branch, as `AGENTS.md` sets out.
 `context/` is still validated by the product's own diagnostic. `go test` builds a
 throwaway workspace around the real tree, binds it to this checkout so each
 note's code anchors resolve, and fails on any finding a command or an edit can
-discharge. That runs for every clone and every pull request, where registering
-this checkout by hand only ever ran on the machine that did it.
+discharge. CI runs it on every pull request.
 
 ## Development
 
@@ -131,14 +130,7 @@ go build -o /tmp/context-circuit-cli ./cmd/context-circuit
 /tmp/context-circuit-cli version
 ```
 
-Run the normal validation:
-
-```sh
-gofmt -w path/to/changed.go
-go test ./...
-go vet ./...
-sh scripts/check-release.sh
-```
+The validation commands are in [CONTRIBUTING.md](CONTRIBUTING.md#validating).
 
 `scripts/check-release.sh` is the full product check. In fresh temporary
 directories it tests the Go packages, builds the workspace archive, builds all
@@ -171,9 +163,9 @@ artwork that guide renders — is restored over the artifact by
 To keep a checked build in a specific location, provide a new directory:
 
 ```sh
-sh scripts/build-dist.sh v2.0.0-dev /tmp/context-circuit-workspace
-sh scripts/build-cli.sh 2.0.0-dev /tmp/context-circuit-cli
-sh scripts/check-release.sh /tmp/context-circuit-release-check
+sh scripts/build-dist.sh v2.0.0-dev "$(mktemp -d)/out"
+sh scripts/build-cli.sh 2.0.0-dev "$(mktemp -d)/out"
+sh scripts/check-release.sh "$(mktemp -d)/out"
 ```
 
 Explicit output directories must not already exist. Release assembly never
@@ -210,8 +202,8 @@ release publication, and deployment require an explicit maintainer request.
 - Do not revive retired v1 lifecycle machinery.
 
 See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
-[CLI.md](CLI.md) for the CLI boundary and packaging behavior, and the [product
-documentation](product/docs/) for the workspace contract.
+[CLI.md](CLI.md) for the page every CLI archive carries as its README, and the
+[product documentation](product/docs/) for the workspace contract.
 
 ## Licensing
 

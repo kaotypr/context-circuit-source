@@ -23,6 +23,6 @@ guide](https://github.com/kaotypr/context-circuit-source/blob/main/CONTRIBUTING.
 describes the seam between the CLI and the coding agent, and how to validate a
 change.
 
-Releases here are tagged `v*`. The `cli-v*` tags live on the source repository,
-where the CLI is built, while its downloadable packages are published here — so
-installing the CLI never needs access to the source checkout.
+Releases here are tagged `v*`. The CLI is released on the source repository,
+under `cli-v*` tags, together with its downloadable packages, and installing it
+needs no checkout of either repository.
