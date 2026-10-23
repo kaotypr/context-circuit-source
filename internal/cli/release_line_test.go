@@ -13,7 +13,7 @@ func TestReleaseLine(t *testing.T) {
 		{"0.0.0", "stable", ""},
 		{"10.20.30", "stable", ""},
 		{"2.5.0-acme.1", "variant", "acme"},
-		{"2.5.0-sicepat.3", "variant", "sicepat"},
+		{"2.5.0-acme.3", "variant", "acme"},
 		{"2.5.0-abcdefghijklmnopqrst.12", "variant", "abcdefghijklmnopqrst"},
 		{"2.5.0-abcdefghijklmnopqrstu.1", "unknown", ""},
 		{"2.5.0-Acme.1", "unknown", ""},
