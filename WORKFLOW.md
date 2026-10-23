@@ -69,8 +69,8 @@ A dist/ build is therefore the workspace only, not a preview of the published
 repository: everything in this class joins the tree at publication.
 
 The .gitattributes restored with them marks every repository-owned path
-export-ignore. tembiter creates a project with `git archive`, which honors that
-file, so a new workspace starts with no front page about Context Circuit, no
+export-ignore. A new workspace is created from a template tag with
+`git archive`, which honors that file, so a new workspace starts with no front page about Context Circuit, no
 release notes for the template, and no LICENSE at its root. A tag-to-tag sync
 reads the git tree rather than an archive and cannot see the mark, so
 product/AGENTS.md.in names the same paths for the agent performing that update.
