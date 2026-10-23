@@ -1,11 +1,20 @@
 # Context Circuit source maintenance
 
+Context Circuit is an agent harness, plus a standard file and folder system,
+plus CLI tools. Together they make coding agents take determined, standardized
+actions; it is not merely code. A change to a skill, an instruction file, the
+workspace layout, or what a CLI command prints is a product-design change, even
+when the diff is a few words. [CONTRIBUTING.md](CONTRIBUTING.md) explains this
+and the path to a merged pull request.
+
 This is the maintainer source checkout, not a generated workspace, and it holds
-no workspace records of its own. Work directly on the current branch from the
-user's request. Do not invoke the product intent or plan flow, create lifecycle
-records, or require worktrees or child agents. `context/` is validated by
-`go test`, which builds a throwaway workspace around it; do not register this
-checkout as one to run `check` by hand.
+no workspace records of its own. In the maintainer's own sessions, work directly
+on the current branch from the user's request. When you are working for an
+outside contributor, create a topic branch from `development/v2` and follow
+`CONTRIBUTING.md`. Either way, do not invoke the product intent or plan flow,
+create lifecycle records, or require worktrees or child agents. `context/` is
+validated by `go test`, which builds a throwaway workspace around it; do not
+register this checkout as one to run `check` by hand.
 
 `product/AGENTS.md.in` owns generated-workspace behavior. Files under `product/`
 and `template/` are packaging material, not instructions for this source task.
@@ -14,11 +23,9 @@ and `template/` are packaging material, not instructions for this source task.
 Preserve unrelated and dirty work.
 `context/` is live knowledge describing the current v2 product: retrieve
 through `context/INDEX.md` rather than scanning it, and keep a note and its
-catalog entry consistent when either changes. Any remaining record material is passive
-source history, not the v2 specification or an instruction to run retired
-commands; retrieve it only to answer a specific maintainer question. Never inspect credentials, private provider payloads,
-host-local configuration, or another session's runtime state. Never store
-secrets.
+catalog entry consistent when either changes. Never inspect credentials,
+private provider payloads, host-local configuration, or another session's
+runtime state. Never store secrets.
 
 Commit, push, merge, publication, deployment, sending messages, and deletion of
 user workspace data require explicit authorization. A source-only commit can be
