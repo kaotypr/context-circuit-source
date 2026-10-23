@@ -18,7 +18,8 @@ defines the change. Product instructions apply only to generated workspaces.
 - VERSION: workspace template version.
 - CLI_VERSION: independent CLI version; each file drives its own publication.
 - product/skills/: the workspace skills, including cc-system-design, which
-  authors design material under sources/system-design/ and ships from here.
+  authors design material under a workspace's sources/system-design/ and
+  ships from here.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and publication.
 - release/requests/cli/, release/requests/template/: one request per product
@@ -50,14 +51,9 @@ required.
 
 Source context/ is live knowledge about the current product, catalogued by
 context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
-never ships. sources/ and release requests are passive maintainer history and
-never ship. The source skills under .agents/skills/ — cc-source-develop and
-cc-system-design — are maintainer tooling, excluded from the binary and the
-exported workspace. cc-system-design states the same design rubric that
-product/skills/cc-system-design/SKILL.md ships to a workspace, differing only
-where a maintainer checkout genuinely differs: the version source, how knowledge
-is written, and the absence of records. Change the layout, altitude, splitting,
-or scope-separation rules in one and change them in the other. .claude/skills is
+never ships. Release requests are passive maintainer history and never ship.
+The source skill under .agents/skills/, cc-source-develop, is maintainer
+tooling, excluded from the binary and the exported workspace. .claude/skills is
 a symlink to that directory, so a host reading either path finds the same
 skills.
 
