@@ -20,7 +20,7 @@ gofmt -l .
 sh scripts/check-release.sh "$(mktemp -d)/out"
 ```
 
-`gofmt -l .` prints nothing when the Go files are formatted. The directory passed to `check-release.sh` must not exist yet. The script runs `go test ./...` and `go vet ./...`, then builds both products.
+`gofmt -l .` prints nothing when the Go files are formatted. The directory passed to `check-release.sh` must not exist yet. The script runs `go test ./...` and `go vet ./...`, then builds both products and runs the publication and version checks.
 
 ### Cutting 2.5.1
 
@@ -83,7 +83,7 @@ Which versions receive fixes is in [SECURITY.md](SECURITY.md).
 
 A published stable tag is left as published. `scripts/resolve-release-version.sh` treats a version that already has a release as out and does not publish it again. Template publication stops when the tag `v<version>` already exists.
 
-`X.Y.Z-<label>.N` is reserved for forks. This repository publishes none of that form. Publish does not set `CC_VERSION_SUFFIX`, and this tree has no `release/variant.env`, so a public checkout prints `CLI_VERSION` or `VERSION` unchanged. A fork adds `release/variant.env`, which is the counter file `scripts/release-version.sh` reads, and sets `CC_VERSION_SUFFIX` to the label. The label is 1–20 lowercase letters, and it is not a reserved label. The base it builds on is a stable `2.Y.Z`. The composed version is `<base>-<label>.<counter>`. With `CC_VERSION_SUFFIX` set, naming a different version on a manual run is refused. A variant CLI installs as `<label>-context-circuit-cli`. `CC_VERSION_SUFFIX` carries the label.
+`X.Y.Z-<label>.N` is reserved for forks. Apart from candidates under a reserved label such as `alpha`, this repository publishes no version of that form. Publish does not set `CC_VERSION_SUFFIX`, and this tree has no `release/variant.env`, so a public checkout prints `CLI_VERSION` or `VERSION` unchanged. A fork adds `release/variant.env`, which is the counter file `scripts/release-version.sh` reads, and sets `CC_VERSION_SUFFIX` to the label. The label is 1–20 lowercase letters, and it is not a reserved label. The base it builds on is a stable `2.Y.Z`. The composed version is `<base>-<label>.<counter>`. With `CC_VERSION_SUFFIX` set, naming a different version on a manual run is refused. A variant CLI installs as `<label>-context-circuit-cli`. `CC_VERSION_SUFFIX` carries the label.
 
 ## Publish
 
