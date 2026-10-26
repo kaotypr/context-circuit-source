@@ -1,0 +1,1 @@
+- [Invoices](domains/invoices.md) {api} — when an invoice is voided rather than credited · invoices, void, credit, summary · reviewed 2026-01-15

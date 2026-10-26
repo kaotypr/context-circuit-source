@@ -1,0 +1,28 @@
+# List prices used when a host does not report a dollar cost.
+#
+# input_per_m: USD per million uncached input tokens.
+# cached_input_per_m: USD per million cache-read input tokens.
+# cache_write_per_m: USD per million cache-write input tokens.
+# output_per_m: USD per million output tokens.
+# long_context_threshold: input-token count above which the long_* rates
+# apply to the whole request. 0 means there is no second tier.
+# long_input_per_m, long_cached_input_per_m, long_cache_write_per_m,
+# long_output_per_m: rates used above that threshold.
+# source: public page the numbers were copied from.
+# checked: calendar date the source was read (YYYY-MM-DD).
+# notes: what the row does not include.
+
+prices:
+  gpt-6-sol:
+    input_per_m: 2.00
+    cached_input_per_m: 0.20
+    cache_write_per_m: 2.50
+    output_per_m: 10.00
+    long_context_threshold: 272000
+    long_input_per_m: 4.00
+    long_cached_input_per_m: 0.40
+    long_cache_write_per_m: 5.00
+    long_output_per_m: 15.00
+    source: https://developers.openai.com/api/docs/pricing
+    checked: "2026-10-26"
+    notes: "standard processing, short and long context; fast mode and regional uplift not applied"
