@@ -11,8 +11,6 @@
 5. The maintainer opens a pull request from `development/v2` into `main` and merges it.
 6. The merge to `main` runs Publish when those paths changed. The CLI job runs first, then the template job.
 
-[Check](.github/workflows/check.yml) runs on every pull request, and on pushes to `main`, `development/v2` and `development/X.Y.Z` branches.
-
 Before the release-prep pull request, from the repository root:
 
 ```sh
@@ -31,9 +29,23 @@ sh scripts/check-release.sh "$(mktemp -d)/out"
 
 Set both rows to release both products. Set one row to release that product only. The other job resolves whatever its version file still says, and when that release is already out it does nothing. Run the two checks above first. The note in the new request follows [Release notes](#release-notes).
 
+## Checks
+
+[Check](.github/workflows/check.yml) decides by the branch a pull request targets which jobs run. A job that does not apply is skipped, and a skipped job counts as passed.
+
+| Pull request into | Go tests and Filesystem clone tests | Release build | Required to merge |
+| --- | --- | --- | --- |
+| `development/v2` | run | skipped | the five test jobs: Go tests on Ubuntu, macOS and Windows, Filesystem clone tests on Ubuntu and Windows |
+| `development/X.Y.Z` | run | skipped | nothing; the results are advisory |
+| `main` | skipped | runs | Release build |
+
+A push to `development/v2` or `development/X.Y.Z` runs the tests and skips Release build. A push to `main` runs Release build and skips the tests. The pull request into `main` is the release pull request from `development/v2`, whose commits already ran the tests there, so it runs only Release build. A newer push to a pull request cancels the older run.
+
+Only `main` and `development/v2` are protected branches: a pull request is required, force-pushes and deletion are blocked, and the repository administrator can bypass the rules. `development/X.Y.Z` branches are not protected.
+
 ## Branches
 
-Delete each `development/X.Y.Z` once that release is on `main`. The maintainer deletes it by hand. Topic branches are deleted on merge; the repository deletes them automatically. The branch ruleset keeps `development/*` from that automatic deletion, so the release branch stays until the maintainer removes it after it reaches `main`.
+`development/X.Y.Z` is not protected, so it can be deleted without bypassing anything. The repository is set to delete a pull request's branch when the pull request merges, so merging `development/X.Y.Z` into `development/v2` (step 4) deletes it, and its commits are then on `development/v2`. If the branch is still there once the release is on `main`, the maintainer deletes it by hand. Topic branches are deleted on merge in the same way.
 
 ## Agent-test baseline
 
