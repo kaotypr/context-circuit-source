@@ -85,12 +85,13 @@ pull request, on your own coding-host accounts, and you pay for the runs.
    `audit-cc-skills` under `.agents/skills/`. It is a free, static check of the
    skills that starts no coding host. The agent tests below are the check that
    runs a host.
-3. If the change is larger, open an issue with the design case first and wait for
-   the maintainer's answer before you pay for any agent runs. A change is larger
-   when it adds, removes or moves shipped files; changes the shape of what a
-   skill produces; adds or changes a CLI action or a `check` rule; touches a
-   gate such as approval, commit or push; or needs existing workspaces to
-   migrate.
+3. If the change is larger, open an issue with the design case first, using the
+   [design case form](https://github.com/kaotypr/context-circuit-source/issues/new?template=design-case.yml),
+   and wait for the maintainer's answer before you pay for any agent runs. A
+   change is larger when it adds, removes or moves shipped files; changes the
+   shape of what a skill produces; adds or changes a CLI action or a `check`
+   rule; touches a gate such as approval, commit or push; or needs existing
+   workspaces to migrate.
 4. Run the scenarios `surface-diff` names, once each, on one coding host of your
    choice, plus the specific host for any host-specific file. A change to the
    shipped file list or layout runs every scenario on one host and `orient` on
@@ -180,7 +181,8 @@ the finding, not the test.
   checks you ran. A reader should not need anything outside the pull request to
   follow it.
 - The [pull request template](.github/pull_request_template.md) asks for these,
-  the linked issue, the release note and a short checklist.
+  the linked issue, the release note and a short checklist, and, for a change
+  that affects agents, the design case and the agent tests.
 
 ## Issue or pull request first
 
