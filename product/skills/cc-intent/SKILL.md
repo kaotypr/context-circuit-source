@@ -100,6 +100,10 @@ next step, and stop. Planning starts when the person asks for it, which may be
 in the same request that approved the intent; then go straight on through
 `.agents/skills/cc-plan/SKILL.md`, and do not ask for approval a second time.
 
+In a Git workspace approval also returns `commit_recommended`, naming the
+intent and ID files it left uncommitted. Pass it on, and commit them only when
+the person authorizes it.
+
 ## What belongs here and what does not
 
 A question that bears on the intended outcome returns to this record even after

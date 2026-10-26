@@ -11,7 +11,10 @@ is to recommend planning to the person and stop. A later request to plan an
 approved intent is the planning request, and so is one request that approves
 intents the person has already been shown and asks for their plans; plan each
 named intent then, without a stop and without asking for approval again. Asking
-for an intent to be written and planned in one go is not approval.
+for an intent to be written and planned in one go is not approval. In a Git
+workspace approval also returns `commit_recommended`, naming the records and ID
+files left uncommitted: pass it on, and commit them only when the person
+authorizes it.
 
 An approval answered with `planning_required` instead comes from a CLI older
 than this template. Tell the person to install or upgrade to the version the

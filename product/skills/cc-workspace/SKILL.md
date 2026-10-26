@@ -205,7 +205,7 @@ suggested band, record what the person confirms with `member band`, and return
 to their request.
 
 A workspace an earlier CLI wrote is at schema 2, with one shared
-`.context-circuit/ids.yaml`, and the first changing command a 2.4.0 CLI runs
+`.context-circuit/ids.yaml`, and the first changing command a CLI from 2.4.0 on runs
 there splits it into a file for every author. When setup is incomplete, that is
 the `member band`, `member add`, or `member use` that completes it. Only one
 person on a team upgrades first. Before that first change, tell the person so:

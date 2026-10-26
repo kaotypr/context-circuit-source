@@ -363,6 +363,10 @@ func TestCommitRecommendationNeedsAuthorizationEverywhere(t *testing.T) {
 		"AGENTS.md.in",
 		filepath.Join("docs", "commands.md"),
 		filepath.Join("skills", "cc-complete", "SKILL.md"),
+		// Approval returns it as well, so the two skills an agent follows at
+		// approval name it too.
+		filepath.Join("skills", "cc-intent", "SKILL.md"),
+		filepath.Join("skills", "cc-plan", "SKILL.md"),
 	} {
 		text := strings.Join(strings.Fields(productFile(t, rel)), " ")
 		if !strings.Contains(text, "commit_recommended") {
