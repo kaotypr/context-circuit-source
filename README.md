@@ -118,7 +118,7 @@ are made directly on the current branch, as `AGENTS.md` sets out.
 `context/` is still validated by the product's own diagnostic. `go test` builds a
 throwaway workspace around the real tree, binds it to this checkout so each
 note's code anchors resolve, and fails on any finding a command or an edit can
-discharge. CI runs it on every pull request.
+discharge. CI runs it on pull requests that do not target `main`.
 
 ## Development
 

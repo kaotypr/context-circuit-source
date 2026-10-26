@@ -79,15 +79,19 @@ installation, initialization and the publication safeguards. Its output
 directory must not exist yet; the script never overwrites one.
 
 Cross-compilation proves a binary builds for another platform, not that it
-behaves there. CI runs `go test` and `go vet` natively on Linux, macOS and
-Windows, and `check-release.sh` on Linux, for every pull request.
+behaves there. For a pull request into `development/v2`, CI runs `go test` and
+`go vet` natively on Linux, macOS and Windows, `gofmt -l .` on Linux, and the
+filesystem clone tests on Linux and Windows. These must pass before it merges.
+`check-release.sh` runs on Linux for a pull request into `main`, which is the
+release pull request from `development/v2`. [RELEASING.md](RELEASING.md) lists
+which checks run where.
 
 Where this block has been checked:
 
 | Platform | Result |
 | --- | --- |
 | macOS | both commands run and pass |
-| Linux | `check-release.sh` runs in CI; `gofmt -l .` untested |
+| Linux | `gofmt -l .` and `go test ./...` run in CI; `check-release.sh` runs in CI on pull requests into `main` |
 | Windows | `go test ./...` and `go vet ./...` run in CI; every script under Git Bash or WSL, and the symlink setting above, untested |
 
 Which scripts are yours to run:
@@ -143,8 +147,8 @@ the finding, not the test.
 - @kaotypr is the only maintainer, and the only person who merges.
 - The repository allows merge commits only, so your commits land as you wrote
   them.
-- CI must pass, and no approval count is required. This is the maintainer's rule
-  today; GitHub does not enforce it yet.
+- CI must pass, and no approval count is required. GitHub enforces the test
+  checks on `development/v2`.
 
 Publication, tagging, and deployment are separate maintainer acts and never part
 of a pull request.
