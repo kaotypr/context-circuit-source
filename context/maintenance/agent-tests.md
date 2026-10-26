@@ -60,7 +60,7 @@ decides that for free, without a host.
 ## The reversal, and how it differs from the retired harness
 
 The first version of this product had an acceptance harness that was retired,
-and for a while this repository said host behavior was simply unverified. That
+and for a while this repository said host behavior was reported as not measured. That
 is reversed on purpose. A product whose behavior lives in instructions needs
 evidence about those instructions, and saying nothing was measured left changes
 to skills and instruction files to be judged by reading alone.
