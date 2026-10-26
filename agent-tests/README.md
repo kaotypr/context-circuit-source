@@ -74,12 +74,27 @@ A failed check, a lower result than before, or more than 15% more total input to
 
 The run root is a temporary directory outside any repository. The checkout is
 read through git and is not written. The environment given to a host is an
-allowlist. Auth comes only from the environment variables named in
-`hosts.yaml`. Nothing is read from or written to the real home, the real
-workspace, or user config. The one shared place is the Go module cache: building the
+allowlist. Without `--subscription-auth`, auth comes only from the
+environment variables named in `hosts.yaml`, and no login file is read.
+With `--subscription-auth codex`, the runner copies that host's
+subscription login file into the run's private `CODEX_HOME` and deletes
+the copy when the host process ends. Nothing else is read from or written
+to the real home, the real workspace, or user config. The one shared place is the Go module cache: building the
 CLI uses the cache that `go env GOMODCACHE` reports, and may download a missing module
 into it. Scenario setup commands run as `sh -c` in the fixture workspace, so only run
 scenarios from a checkout you trust.
+
+## Subscription login (Codex)
+
+API keys are not required.
+
+For Claude, create a token yourself with `claude setup-token` and export `CLAUDE_CODE_OAUTH_TOKEN` in the shell that starts the run. The runner passes only that variable. Cursor keeps its login in the macOS keychain. The runner does not use that login. Cursor runs only with `CURSOR_API_KEY`.
+
+Codex can use its subscription login file instead of `OPENAI_API_KEY`. Pass `--subscription-auth codex` to `run` or `probe` (a comma list is accepted only when every name is `codex`). The runner copies `auth.json` from `CODEX_HOME` when that variable is set, otherwise from `HOME/.codex/auth.json`, into the run's private `CODEX_HOME` as mode 0600. The copy is removed when the host process ends, including a non-zero exit, a timeout, a panic, a cancelled run, and a run root that is kept. A copy left in this tool's temporary `agent-test-*` directory by a crashed process is removed at the next `run` or `probe` that starts a host. The sweep does not read the caller's home. Errors name that file only as "subscription login file".
+
+Do not start Codex this way while a Codex session is open, and run Codex alone. The copy can refresh its token, and that refresh can invalidate the login on disk.
+
+A live Codex run with the copied login is not proven. Offline tests use a fake login file and a stub host. They do not show that Codex accepts the copy when started with `--ignore-user-config`.
 
 ## Scenarios
 
@@ -128,5 +143,7 @@ skipped inside the run.
 ## What it does not prove
 
 Permission prompts. A headless run cannot measure them.
+
+A live Codex run that signs in from the copied subscription login file.
 
 Live runs support Unix-like systems. On Windows a timed-out host is stopped, but its child processes may keep running.

@@ -120,6 +120,8 @@ func TestBundleRefusesSecret(t *testing.T) {
 		{name: "stream", rel: "runs/intent/claude/branch/r1/stream.jsonl", body: "token " + sk + "\n"},
 		{name: "reply", rel: "runs/intent/claude/branch/r1/reply.md", body: ghp + "\n"},
 		{name: "file", rel: "runs/intent/claude/branch/r1/artifacts/files/note.md", body: "Authorization: " + bearer + "\n"},
+		{name: "jwt", rel: "runs/intent/codex/branch/r1/artifacts/files/note.md", body: "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0.signatureXXXX\n"},
+		{name: "refresh", rel: "runs/intent/codex/branch/r1/artifacts/files/note.md", body: "rt_" + strings.Repeat("q", 24) + "\n"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -137,8 +139,8 @@ func TestBundleRefusesSecret(t *testing.T) {
 			if !strings.Contains(err.Error(), base) {
 				t.Fatalf("error does not name the file: %v", err)
 			}
-			for _, secret := range []string{sk, ghp, bearer} {
-				if strings.Contains(err.Error(), secret) {
+			for _, secret := range []string{sk, ghp, bearer, strings.TrimSpace(tc.body)} {
+				if secret != "" && strings.Contains(err.Error(), secret) {
 					t.Fatalf("error contains the secret: %v", err)
 				}
 			}
@@ -150,6 +152,27 @@ func TestBundleRefusesSecret(t *testing.T) {
 				t.Fatalf("partial zip %v", matches)
 			}
 		})
+	}
+}
+
+func TestBundleDropsCodexDirectory(t *testing.T) {
+	dir := t.TempDir()
+	token := "rt_" + strings.Repeat("b", 20)
+	mustWrite(t, filepath.Join(dir, "codex", "session.txt"), token+"\n")
+	mustWrite(t, filepath.Join(dir, "codex", "auth.json"), token+"\n")
+	mustWrite(t, filepath.Join(dir, "runs.jsonl"), "ok\n")
+	dest := filepath.Join(dir, "bundle.zip")
+	if err := WriteBundle(BundleOptions{RunDir: dir, Dest: dest}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := readZip(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, text := range got {
+		if strings.Contains(name, "codex/") || strings.Contains(name, "auth.json") || strings.Contains(text, token) {
+			t.Fatalf("kept %s %q", name, text)
+		}
 	}
 }
 

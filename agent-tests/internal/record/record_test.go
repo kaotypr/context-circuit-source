@@ -144,6 +144,10 @@ func TestRedact(t *testing.T) {
 		{name: "github pat", in: "token " + longPat, want: "token [redacted]"},
 		{name: "akia", in: longAKIA, want: "[redacted]"},
 		{name: "bearer", in: "Authorization: " + longBearer, want: "Authorization: Bearer [redacted]"},
+		{name: "jwt", in: "tok " + loginJWTFixture(), want: "tok [redacted]"},
+		{name: "refresh", in: loginRefreshFixture(), want: "[redacted]"},
+		{name: "prose", in: "The contributor updated the glossary and the reviewer read it.", want: "The contributor updated the glossary and the reviewer read it."},
+		{name: "git sha", in: "commit 0123456789abcdef0123456789abcdef01234567", want: "commit 0123456789abcdef0123456789abcdef01234567"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -190,6 +194,12 @@ func TestLooksLikeSecret(t *testing.T) {
 		{in: "Bearer " + strings.Repeat("c", 20), want: true},
 		{in: "Bearer short", want: false},
 		{in: "hello", want: false},
+		{in: loginJWTFixture(), want: true},
+		{in: loginRefreshFixture(), want: true},
+		{in: "eyJabc.def.ghi", want: false},
+		{in: "rt_too_short", want: false},
+		{in: "The contributor updated the glossary and the reviewer read it.", want: false},
+		{in: "0123456789abcdef0123456789abcdef01234567", want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
@@ -198,4 +208,12 @@ func TestLooksLikeSecret(t *testing.T) {
 			}
 		})
 	}
+}
+
+func loginJWTFixture() string {
+	return "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0In0.signatureXXXX"
+}
+
+func loginRefreshFixture() string {
+	return "rt_" + strings.Repeat("q", 24)
 }

@@ -8,6 +8,31 @@ import (
 	"testing"
 )
 
+func TestSubscriptionAuthFlag(t *testing.T) {
+	if code := runCmd([]string{"--subscription-auth", "cursor"}, map[string]string{}); code != 2 {
+		t.Fatalf("run %d", code)
+	}
+	if code := probeCmd([]string{"--subscription-auth", "claude"}, map[string]string{}); code != 2 {
+		t.Fatalf("probe %d", code)
+	}
+	names, err := subscriptionNames("codex")
+	if err != nil || len(names) != 1 || names[0] != "codex" {
+		t.Fatalf("%v %v", names, err)
+	}
+	names, err = subscriptionNames("")
+	if err != nil || names != nil {
+		t.Fatalf("%v %v", names, err)
+	}
+	if _, err := subscriptionNames("codex,cursor"); err == nil || !strings.Contains(err.Error(), "codex") {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	usage(&buf)
+	if !strings.Contains(buf.String(), "--subscription-auth") {
+		t.Fatalf("%s", buf.String())
+	}
+}
+
 func TestUsageMentionsSurfaceDiff(t *testing.T) {
 	var buf bytes.Buffer
 	usage(&buf)

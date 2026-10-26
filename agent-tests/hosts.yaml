@@ -12,8 +12,12 @@
 # max_budget_usd: Claude Code runaway guard. 0 selects the adapter default.
 # price_row: key in prices.yaml. Empty when the host reports its own cost
 # or the model cannot be priced.
-# auth_env: credential variable names taken from the caller. Auth files are
-# never read.
+# auth_env: credential variable names taken from the caller when auth is
+#   env, the default. Without --subscription-auth the login file is not read.
+# auth: optional. env (default) or subscription. subscription is accepted
+#   only for codex. The field does not start that mode: the login file is
+#   copied only when run or probe is passed --subscription-auth codex.
+#   The codex entry below leaves auth unset, so the default stays env.
 
 hosts:
   claude:
@@ -35,6 +39,8 @@ hosts:
     provisional: true
     timeout_seconds: 1800
     price_row: gpt-6-sol
+    # auth: subscription is valid for this host. Leave it unset so a run
+    # without --subscription-auth codex keeps using auth_env only.
     auth_env:
       - OPENAI_API_KEY
   cursor:

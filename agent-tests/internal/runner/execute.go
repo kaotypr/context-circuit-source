@@ -26,10 +26,26 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	var drops []string
 	var runRoot string
 	var graded *scenario.CheckContext
+	var loginPaths []string
+	loginNoted := false
+	noteLoginRemoval := func(derr error) {
+		if derr == nil || loginNoted {
+			return
+		}
+		loginNoted = true
+		drops = append(drops, errLoginRemove.Error())
+	}
+	rt.loginSecrets = nil
 	runDir := filepath.Join(rt.opts.OutDir, rt.id, "runs", item.Scenario.ID, item.Host, item.Side, fmt.Sprintf("r%d", item.RunN))
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = fmt.Errorf("panic: %v", rec)
+		}
+		if derr := removeLoginFiles(loginPaths); derr != nil {
+			noteLoginRemoval(derr)
+			if err == nil {
+				err = derr
+			}
 		}
 		if err != nil {
 			verdict = scenario.Verdict(nil, err, false)
@@ -49,7 +65,11 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	if err = os.MkdirAll(runDir, 0o755); err != nil {
 		return err
 	}
-	if err = writeText(filepath.Join(runDir, "reproduce.txt"), reproduceLine(item, rt.opts.Ref, rt.opts.BaseRef, time.Now().UTC().Format("2006-01-02")), rt.redact()); err != nil {
+	sub := ""
+	if containsHost(rt.opts.SubscriptionAuth, item.Host) {
+		sub = item.Host
+	}
+	if err = writeText(filepath.Join(runDir, "reproduce.txt"), reproduceLine(item, rt.opts.Ref, rt.opts.BaseRef, time.Now().UTC().Format("2006-01-02"), sub), rt.redact()); err != nil {
 		return err
 	}
 
@@ -114,15 +134,16 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	}
 	prompt := expandPrompt(item.Scenario.Prompt, w)
 	launch, err := adapter.Build(hosts.LaunchInput{
-		Prompt:    prompt,
-		Model:     item.Config.Model,
-		Effort:    item.Config.Effort,
-		Workspace: w.WS,
-		RunRoot:   w.RunRoot,
-		SessionID: newSessionID(),
-		Cfg:       item.Config,
-		Caller:    rt.opts.Caller,
-		DecoyDir:  w.Decoy,
+		Prompt:           prompt,
+		Model:            item.Config.Model,
+		Effort:           item.Config.Effort,
+		Workspace:        w.WS,
+		RunRoot:          w.RunRoot,
+		SessionID:        newSessionID(),
+		Cfg:              item.Config,
+		Caller:           rt.opts.Caller,
+		DecoyDir:         w.Decoy,
+		SubscriptionAuth: containsHost(rt.opts.SubscriptionAuth, item.Host),
 	})
 	if err != nil {
 		return err
@@ -132,6 +153,24 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		if err = os.MkdirAll(dir, 0o755); err != nil {
 			return err
 		}
+	}
+	loginPaths = loginCopyPaths(launch.CopyIn)
+	defer func() {
+		if derr := removeLoginFiles(loginPaths); derr != nil {
+			noteLoginRemoval(derr)
+			if err == nil {
+				err = derr
+			}
+		}
+	}()
+	secrets, copyErr := hosts.ApplyCopies(launch.CopyIn)
+	if copyErr != nil {
+		return copyErr
+	}
+	launch.Secrets = secrets
+	rt.loginSecrets = append(rt.loginSecrets, secrets...)
+	if len(launch.CopyIn) > 0 && afterLoginCopy != nil {
+		afterLoginCopy()
 	}
 	timeout := time.Duration(item.Config.TimeoutSeconds) * time.Second
 	for i, argv := range launch.SetupArgv {
@@ -148,7 +187,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		}
 	}
 	streamPath := filepath.Join(runRoot, "host-stream")
-	res, err := proc.Run(ctx, proc.Spec{
+	res, runErr := proc.Run(ctx, proc.Spec{
 		Argv:       launch.Argv,
 		Dir:        launch.Dir,
 		Env:        env,
@@ -156,8 +195,16 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		Timeout:    timeout,
 		StreamPath: streamPath,
 	})
-	if err != nil {
-		return fmt.Errorf("host: %w\n%s", err, res.Stderr)
+	if derr := removeLoginFiles(loginPaths); derr != nil {
+		noteLoginRemoval(derr)
+		if runErr == nil && !res.TimedOut && res.ExitCode == 0 {
+			rt.scrubFile(streamPath)
+			return derr
+		}
+	}
+	rt.scrubFile(streamPath)
+	if runErr != nil {
+		return fmt.Errorf("host: %w\n%s", runErr, res.Stderr)
 	}
 	wall = res.Wall
 	if res.TimedOut {
@@ -485,7 +532,7 @@ func (rt *runtime) execIsolated(ctx context.Context, w world.World, dir string, 
 
 // reproduceLine is the command that repeats this run. It names no local path.
 // A base-side line keeps the configured branch ref on --ref and adds --base.
-func reproduceLine(item planned, branchRef, baseRef, date string) string {
+func reproduceLine(item planned, branchRef, baseRef, date, subscription string) string {
 	ref := branchRef
 	if ref == "" {
 		ref = item.Ref
@@ -497,6 +544,9 @@ func reproduceLine(item planned, branchRef, baseRef, date string) string {
 			base = item.Ref
 		}
 		line += " --base " + base
+	}
+	if subscription != "" {
+		line += " --subscription-auth " + subscription
 	}
 	return "# " + date + "\n" + line + "\n"
 }

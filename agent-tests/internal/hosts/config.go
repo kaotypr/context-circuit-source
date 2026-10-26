@@ -20,6 +20,13 @@ type HostConfig struct {
 	MaxBudgetUSD   float64  `yaml:"max_budget_usd"`
 	PriceRow       string   `yaml:"price_row"`
 	AuthEnv        []string `yaml:"auth_env"`
+	// Auth is "env" or "subscription". Empty in the file means env.
+	// subscription is accepted only for the codex host. The runner copies
+	// a login file only when the command flag names that host.
+	Auth string `yaml:"auth"`
+	// SubscriptionAuth is set by the runner from --subscription-auth.
+	// It is not loaded from hosts.yaml.
+	SubscriptionAuth bool `yaml:"-"`
 }
 
 // PriceRow is one entry under prices: in prices.yaml.
@@ -57,6 +64,16 @@ func LoadHosts(path string) (map[string]HostConfig, error) {
 	for name, cfg := range doc.Hosts {
 		if cfg.Model == "" {
 			return nil, fmt.Errorf("host %q: model not pinned", name)
+		}
+		switch cfg.Auth {
+		case "", "env":
+			cfg.Auth = "env"
+		case "subscription":
+			if name != "codex" {
+				return nil, fmt.Errorf("host %q: auth subscription is only supported for codex", name)
+			}
+		default:
+			return nil, fmt.Errorf("host %q: unknown auth %q", name, cfg.Auth)
 		}
 		cfg.Name = name
 		doc.Hosts[name] = cfg

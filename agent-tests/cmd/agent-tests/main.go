@@ -65,9 +65,12 @@ run flags:
   --keep        keep the run root after the run
   --yes         start hosts; a live run uses model usage on your account
   --dry-run     print the plan and exit
+  --subscription-auth
+                comma-separated hosts that copy a subscription login file.
+                Only codex is accepted. Empty by default.
 
 probe flags:
-  --hosts --ref --checkout --out --yes
+  --hosts --ref --checkout --out --yes --subscription-auth
   Without --yes, probe prints the measured overhead and does not start a prompt.
 
 surface-diff flags:
@@ -99,6 +102,7 @@ func runCmd(args []string, caller map[string]string) int {
 	keep := fs.Bool("keep", false, "keep the run root")
 	yes := fs.Bool("yes", false, "start hosts")
 	dry := fs.Bool("dry-run", false, "print the plan and exit")
+	subscription := fs.String("subscription-auth", "", "hosts that copy a subscription login file (only codex)")
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "usage: agent-tests run [flags]")
 		fs.PrintDefaults()
@@ -114,6 +118,11 @@ func runCmd(args []string, caller map[string]string) int {
 		fs.Usage()
 		return 2
 	}
+	subs, err := subscriptionNames(*subscription)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
 	root, err := resolveCheckout(*checkout, caller["PATH"])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -124,21 +133,22 @@ func runCmd(args []string, caller map[string]string) int {
 		outDir = *out
 	}
 	err = runner.Run(context.Background(), runner.RunOptions{
-		Checkout:     root,
-		Ref:          *ref,
-		BaseRef:      *base,
-		ScenarioIDs:  splitList(*scenarios),
-		HostNames:    splitList(*hosts),
-		Runs:         *runs,
-		HostsFile:    hostsFile,
-		PricesFile:   pricesFile,
-		ScenariosDir: scenariosDir,
-		FixturesDir:  fixturesDir,
-		OutDir:       outDir,
-		Keep:         *keep,
-		Caller:       caller,
-		DryRun:       *dry,
-		Confirm:      *yes,
+		Checkout:         root,
+		Ref:              *ref,
+		BaseRef:          *base,
+		ScenarioIDs:      splitList(*scenarios),
+		HostNames:        splitList(*hosts),
+		Runs:             *runs,
+		HostsFile:        hostsFile,
+		PricesFile:       pricesFile,
+		ScenariosDir:     scenariosDir,
+		FixturesDir:      fixturesDir,
+		OutDir:           outDir,
+		Keep:             *keep,
+		Caller:           caller,
+		DryRun:           *dry,
+		Confirm:          *yes,
+		SubscriptionAuth: subs,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -155,6 +165,7 @@ func probeCmd(args []string, caller map[string]string) int {
 	checkout := fs.String("checkout", "", "source checkout")
 	out := fs.String("out", "", "output directory")
 	yes := fs.Bool("yes", false, "run the overhead prompt")
+	subscription := fs.String("subscription-auth", "", "hosts that copy a subscription login file (only codex)")
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "usage: agent-tests probe [flags]")
 		fs.PrintDefaults()
@@ -170,6 +181,11 @@ func probeCmd(args []string, caller map[string]string) int {
 		fs.Usage()
 		return 2
 	}
+	subs, err := subscriptionNames(*subscription)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
 	root, err := resolveCheckout(*checkout, caller["PATH"])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -180,15 +196,16 @@ func probeCmd(args []string, caller map[string]string) int {
 		outDir = *out
 	}
 	err = runner.Probe(context.Background(), runner.ProbeOptions{
-		Checkout:    root,
-		Ref:         *ref,
-		HostNames:   splitList(*hosts),
-		HostsFile:   hostsFile,
-		PricesFile:  pricesFile,
-		FixturesDir: fixturesDir,
-		OutDir:      outDir,
-		Caller:      caller,
-		Confirm:     *yes,
+		Checkout:         root,
+		Ref:              *ref,
+		HostNames:        splitList(*hosts),
+		HostsFile:        hostsFile,
+		PricesFile:       pricesFile,
+		FixturesDir:      fixturesDir,
+		OutDir:           outDir,
+		Caller:           caller,
+		Confirm:          *yes,
+		SubscriptionAuth: subs,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -346,6 +363,14 @@ func resolveCheckout(checkout, path string) (string, error) {
 		return "", fmt.Errorf("checkout: git rev-parse returned an empty path")
 	}
 	return top, nil
+}
+
+func subscriptionNames(s string) ([]string, error) {
+	names := splitList(s)
+	if err := runner.ValidateSubscriptionAuth(names); err != nil {
+		return nil, err
+	}
+	return names, nil
 }
 
 func splitList(s string) []string {

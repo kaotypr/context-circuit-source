@@ -23,23 +23,24 @@ import (
 // Confirm is the --yes flag: without it, and without DryRun, Run refuses
 // before any host starts.
 type RunOptions struct {
-	Checkout     string
-	Ref          string
-	BaseRef      string
-	ScenarioIDs  []string
-	HostNames    []string
-	Runs         int
-	HostsFile    string
-	PricesFile   string
-	ScenariosDir string
-	FixturesDir  string
-	OutDir       string
-	Keep         bool
-	Caller       map[string]string
-	ParentTemp   string
-	DryRun       bool
-	Confirm      bool
-	Stdout       io.Writer
+	Checkout         string
+	Ref              string
+	BaseRef          string
+	ScenarioIDs      []string
+	HostNames        []string
+	Runs             int
+	HostsFile        string
+	PricesFile       string
+	ScenariosDir     string
+	FixturesDir      string
+	OutDir           string
+	Keep             bool
+	Caller           map[string]string
+	ParentTemp       string
+	DryRun           bool
+	Confirm          bool
+	Stdout           io.Writer
+	SubscriptionAuth []string
 }
 
 type planned struct {
@@ -59,6 +60,9 @@ func Run(ctx context.Context, opts RunOptions) error {
 	out := opts.Stdout
 	if out == nil {
 		out = os.Stdout
+	}
+	if err := ValidateSubscriptionAuth(opts.SubscriptionAuth); err != nil {
+		return err
 	}
 	if opts.Runs < 1 {
 		return fmt.Errorf("runs must be at least 1")
@@ -142,6 +146,9 @@ func Run(ctx context.Context, opts RunOptions) error {
 		fixtureDigest: digest,
 		stdout:        out,
 	}
+	if err := sweepBeforeHosts(out, opts.ParentTemp); err != nil {
+		return err
+	}
 	var failures []string
 	for _, item := range plan {
 		if err := ctx.Err(); err != nil {
@@ -167,6 +174,29 @@ type runtime struct {
 	baseCommit    string
 	fixtureDigest string
 	stdout        io.Writer
+	// loginSecrets are values from a copied subscription login file.
+	// They stay in memory for this run and are never written out.
+	loginSecrets []string
+}
+
+// ValidateSubscriptionAuth accepts only the codex host. An empty list is
+// the default and uses environment variables.
+func ValidateSubscriptionAuth(names []string) error {
+	for _, name := range names {
+		if name != "codex" {
+			return fmt.Errorf("subscription auth is only supported for host \"codex\", not %q", name)
+		}
+	}
+	return nil
+}
+
+func containsHost(names []string, host string) bool {
+	for _, name := range names {
+		if name == host {
+			return true
+		}
+	}
+	return false
 }
 
 func selectHosts(all map[string]hosts.HostConfig, names []string) ([]hosts.HostConfig, error) {
