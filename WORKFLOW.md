@@ -52,10 +52,11 @@ required.
 Source context/ is live knowledge about the current product, catalogued by
 context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
 never ships. Release requests are passive maintainer history and never ship.
-The source skill under .agents/skills/, cc-source-develop, is maintainer
-tooling, excluded from the binary and the exported workspace. .claude/skills is
-a symlink to that directory, so a host reading either path finds the same
-skills.
+The source skills under .agents/skills/ are maintainer tooling: cc-source-develop
+for source maintenance, and audit-cc-skills, which audits the shipped cc-* skills
+and edits nothing. They are excluded from the binary and the exported
+workspace. .claude/skills is a symlink to that directory, so a host reading
+either path finds the same skills.
 
 release/template-repo/ is a fourth class: not shipped to a workspace and not
 history either. Publication restores those files over the extracted artifact and
@@ -75,6 +76,11 @@ Context Circuit, no release notes for the template, and no LICENSE at its root.
 A tag-to-tag sync reads the git tree rather than an archive and cannot see the
 mark, so product/AGENTS.md.in names the same paths for the agent performing
 that update.
+
+agent-tests/ is a fifth class: a separate Go module that is not shipped and not
+history either. It is a contributor tool that runs coding hosts against a
+fixture workspace, so it is excluded from every build, archive, and the
+manifest, and CI does not run it.
 
 ## How context/ is validated
 
@@ -109,8 +115,10 @@ reflink volume on Linux and a ReFS VHDX on Windows and runs
 TestNativeCloneOnCapableVolume there with CC_COW_NATIVE_DIR; without that
 variable the test skips.
 
-Validate Markdown scenarios against the shared entry instruction. Deterministic
-tests establish file and Git behavior, not whether a coding host loads or follows
-instructions. Report host behavior as unverified unless actually exercised. Do
-not revive the retired v1 acceptance harness or run a separate agent review
-unless the user requests one.
+Deterministic tests establish file and Git behavior, not whether a coding host
+loads or follows instructions. That is measured by the agent tests under
+agent-tests/, which run a real host and grade what it leaves behind, outside CI
+and on the contributor's own account; see agent-tests/README.md and
+context/maintenance/agent-tests.md. Report host behavior as measured on a named
+host, model, and date, and as not exercised when it was not. Do not run a
+separate agent review unless the user requests one.

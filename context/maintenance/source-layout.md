@@ -17,6 +17,7 @@ generated workspaces, not this one.
 | `context-circuit-source@product/host/` | Host settings the template ships into a new workspace |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
+| `context-circuit-source@agent-tests/` | The contributor tool that runs coding hosts against a fixture workspace and grades the result: a separate Go module, run by contributors outside CI, shipped nowhere |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
 | `context-circuit-source@internal/installer/` | Acceptance tests for the shipped install scripts; it carries no non-test source |
 | `context-circuit-source@cmd/context-circuit/` | CLI entry point |
@@ -28,14 +29,15 @@ generated workspaces, not this one.
 | `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files and export rules that repository owns |
 | `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives and shown only at the template repository's root |
 
-## Four classes of material
+## Five classes of material
 
 | Class | What it holds |
 | --- | --- |
 | Shipped instruction | The product's behavior: `context-circuit-source@product/` |
 | Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
 | Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/` plus the guide and license restored from `product/`, marked `export-ignore` so the archive a project is created from carries none of it |
-| Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, and scripts |
+| Contributor tool | The agent tests, a separate module that runs coding hosts against a fixture workspace and is run by contributors outside CI: `context-circuit-source@agent-tests/` |
+| Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer skills under `.agents/skills/` (`cc-source-develop`, `audit-cc-skills`) |
 
 Product history and maintainer data never reach a release asset. The
 destination-owned class exists because a workspace root belongs to somebody

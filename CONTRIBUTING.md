@@ -63,6 +63,58 @@ git clone -c core.symlinks=true <repository URL>
 
 Only a Claude Code session that reads the skills needs this. The tests do not.
 
+## Changes that affect agents
+
+A change affects agents when an agent in a generated workspace could read
+different files, find a different layout, or see different CLI output after it.
+[`agent-tests/README.md`](agent-tests/README.md) has the commands and the full
+guide. This is not CI and not a release gate: you run it before you open the
+pull request, on your own coding-host accounts, and you pay for the runs.
+
+1. Run `surface-diff` from `agent-tests/`, with `--base` set to the branch your
+   pull request targets:
+
+   ```sh
+   cd agent-tests
+   go run ./cmd/agent-tests surface-diff --base <target branch>
+   ```
+
+   If the report says `No agent tests needed: surface diff is empty`, nothing
+   more is needed.
+2. If you changed a shipped skill, also read the maintainer skill
+   `audit-cc-skills` under `.agents/skills/`. It is a free, static check of the
+   skills that starts no coding host. The agent tests below are the check that
+   runs a host.
+3. If the change is larger, open an issue with the design case first and wait for
+   the maintainer's answer before you pay for any agent runs. A change is larger
+   when it adds, removes or moves shipped files; changes the shape of what a
+   skill produces; adds or changes a CLI action or a `check` rule; touches a
+   gate such as approval, commit or push; or needs existing workspaces to
+   migrate.
+4. Run the scenarios `surface-diff` names, once each, on one coding host of your
+   choice, plus the specific host for any host-specific file. A change to the
+   shipped file list or layout runs every scenario on one host and `orient` on
+   all three. When your host
+   version and model match a committed baseline, that baseline is your "before".
+   Otherwise run the base and your branch alternately on the same machine. Run
+   someone else's branch only inside a container or virtual machine.
+5. In the pull request, write the design case first, then the agent tests:
+   - **Design case:** what an agent will now read, do or produce differently;
+     what the current design gets wrong, with evidence; a before and after of the
+     agent-visible output from the same scenario, host and model; what is
+     better; the catch and who pays (tokens, compliance on each host, existing
+     workspaces, forks of the template, readers, maintenance); and the
+     alternatives you considered, including leaving it as it is.
+   - **Agent tests:** the scenarios, hosts and results. From `agent-tests/`,
+     `go run ./cmd/agent-tests report` writes the tables and
+     `go run ./cmd/agent-tests report --design` writes the before and after.
+     You write the reasoning. Attach the cleaned archive of all runs.
+
+A failed check, a lower result or more than 15% more input tokens is a warning,
+not a block: explain it in the pull request and the reviewer decides. The
+reviewer may ask for more runs, scenarios or hosts. If you do not have a host the
+change needs, say so, and the maintainer, who reviews, runs it.
+
 ## Validating
 
 Run this from the repository root:
@@ -133,7 +185,9 @@ the finding, not the test.
 ## Issue or pull request first
 
 - For a behaviour change or a new command, open an issue first, so the design
-  can be agreed before you build it.
+  can be agreed before you build it. The same goes for a larger change to what
+  agents read or see, even when the diff is only documentation; see "Changes
+  that affect agents".
 - [New issue](https://github.com/kaotypr/context-circuit-source/issues/new/choose)
   offers two forms: a bug report and a proposal for a behaviour change or new
   command.

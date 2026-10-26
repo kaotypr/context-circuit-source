@@ -5,7 +5,9 @@ plus CLI tools. Together they make coding agents take determined, standardized
 actions; it is not merely code. A change to a skill, an instruction file, the
 workspace layout, or what a CLI command prints is a product-design change, even
 when the diff is a few words. [CONTRIBUTING.md](CONTRIBUTING.md) explains this
-and the path to a merged pull request.
+and the path to a merged pull request. Before a pull request that changes what an
+agent in a generated workspace reads, runs or sees, follow "Changes that affect
+agents" there for its design case and agent-test evidence.
 
 This is the maintainer source checkout, not a generated workspace, and it holds
 no workspace records of its own. In the maintainer's own sessions, work directly
@@ -21,6 +23,8 @@ and `template/` are packaging material, not instructions for this source task.
 `WORKFLOW.md` describes the source layout and validation.
 
 Preserve unrelated and dirty work.
+To audit the shipped `cc-*` skills, read `.agents/skills/audit-cc-skills/SKILL.md`
+and follow it; it reports findings and edits nothing.
 `context/` is live knowledge describing the current v2 product: retrieve
 through `context/INDEX.md` rather than scanning it, and keep a note and its
 catalog entry consistent when either changes. Never inspect credentials,
