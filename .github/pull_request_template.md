@@ -31,130 +31,39 @@ sh scripts/check-release.sh "$(mktemp -d)/out"
 
 ## Design case
 
-<!-- Required when `agent-tests surface-diff` against development/v2 is non-empty. When it is empty,
-     delete this section and "Agent tests" both, and write "Not needed: surface-diff empty" under
-     "How it was validated".
-     Light form (wording fix, no behaviour change intended): fill "Change" and "Before / after" only,
-     and write "No behaviour change intended" under "What is better".
+<!-- Needed when `agent-tests surface-diff` against development/v2 is not empty. When it is empty,
+     delete this section and "Agent tests".
+     Wording fix with no behaviour change intended: fill "Change" and "Before / after" only.
      Larger change (adds, removes or moves shipped files; changes a skill's output shape; adds or
      changes a CLI action or a `check` rule; touches a gate; needs migration): link the issue where
-     the maintainer agreed the design case. -->
-
-**Form:** full / light · **Issue:** #<n> or "none (not a larger change)"
+     the design case was agreed. -->
 
 ### Change
 
 <!-- What an agent in a generated workspace now reads, does or produces differently. Name the files. -->
 
-### Why: what the current design gets wrong
+### Why
 
-<!-- Concrete, with evidence: a base-run or baseline artifact (file:lines, run id), a failing check,
-     a token number, an issue, or a redacted real-workspace excerpt. -->
+<!-- What the current design gets wrong, with evidence: a run artifact, a failing check, a token number or an issue. -->
 
 ### Before / after
 
-<!-- Paste from agent-tests/out/<run-id>/design.md. Same scenario, fixture, prompt, host and model on
-     both sides. The line, table and numbers below are an example of the shape; replace them. -->
-
-Scenario `<scenario>` · host `<host>` · before: base `<sha>` run `<run>` (or `baselines/<version>`) · after: branch `<sha>` run `<run>`
-
-| | Before | After |
-|---|---|---|
-| Files produced | `plan.md` | `plan.md` |
-| Headings | Outcome and repository scope · Approach · Tasks and order · Risks and checks · Details | same |
-| Has <the feature> | no | yes |
-| Lines | 58 (example) | 71 (example) |
-
-<details><summary>plans/&lt;id&gt;-&lt;slug&gt;/plan.md (before → after)</summary>
-
-```diff
-<!-- paste the diff -->
-```
-</details>
+<!-- Paste agent-tests/out/<run-id>/design.md from `agent-tests report --design`. -->
 
 ### What is better
 
-<!-- Each claim tied to the after artifact or a check, with the number of runs it held in. -->
+<!-- Each claim tied to the after output or a check, with how many runs it held in. -->
 
-### The catch, and who pays
+### Costs
 
-| Cost | Who pays | Size or evidence |
-|---|---|---|
-| Tokens | <!-- every session (always-loaded) / each run of this flow --> | <!-- S0 change, scenario change --> |
-| Agent compliance | <!-- which hosts and flows --> | <!-- results per host --> |
-| Existing workspaces | <!-- members who upgrade --> | <!-- delta files; extra steps; old records still check-clean? --> |
-| Company forks / customized templates | <!-- teams with edited copies --> | <!-- files likely to conflict --> |
-| People reading the output | <!-- approver, reviewer --> | <!-- longer record, new questions --> |
-| Maintenance | <!-- who keeps it true --> | <!-- new text or checks --> |
+<!-- What this makes worse, with a size or "none": tokens, results on each host, existing workspaces
+     and customized templates that must take the change, and longer output for readers. -->
 
 ### Alternatives considered
 
-<!-- At least one, including "leave it as it is", and why not. -->
+<!-- At least one, including leaving it as it is, and why not. -->
 
 ## Agent tests
 
-<!-- Paste from agent-tests/out/<run-id>/report.md. The values in the tables below are examples of the
-     shape; replace them with your own. -->
-
-**Change kind:** <!-- for example "skill text: cc-plan", "AGENTS.md: Intent and planning", "CLI output: record approve JSON" -->
-**Surface diff:** `<n>` workspace files and `<m>` CLI outputs differ from base `<base-sha>`
-**Scenarios:** required by the trigger map: `<scenario>`, … · asked for by the reviewer: — · one-off: —
-**Before:** committed baseline `baselines/<version>` (host version and model match) / base `<sha>` run alternately on this machine
-
-| Host | Host version | Model | Effort | Isolation |
-|---|---|---|---|---|
-| `<host>` | `<version>` | `<model id>` | default | empty config dir, no MCP |
-
-| Scenario | Host | Branch | Before | Total input tokens (branch / before / change) | Output tokens | Cost per run (branch / before) | Cost basis |
-|---|---|---|---|---|---|---|---|
-| intent (example) | `<host>` | pass | pass | 212k / 198k / +7% | 4.1k / 3.9k | $0.61 / $0.57 | reported |
-| plan (example) | `<host>` | fail | pass | 880k / 860k / +2% | 12k / 12k | $2.10 / $2.02 | reported |
-| overhead (S0) (example) | `<host>` | — | — | ws−empty: 9.8k / 9.1k / +8% | — | — | reported |
-
-**Total cost:** $… (list-price equivalent) · **Hosts with no token report:** none
-**Harness errors (excluded, rerun):** 0 · **Inconclusive:** 0
-
-### Warnings (explain each below; the reviewer decides)
-
-- [ ] none · or: `<scenario>` fails on the branch (check …) · a lower result than before · tokens above +15% in …
-
-### Gate checks
-
-- [ ] U1 launcher only · [ ] U2 nothing pushed · [ ] U3 no commit outside allowed branch
-- [ ] U4 no attribution · [ ] U5 check clean at finish · [ ] U6 `sources/` untouched · [ ] U7 no writes outside workspace
-
-### Notable behaviour
-
-<!-- What the agent did differently that the design case does not already cover, and any failure.
-     Cite the run id; quote at most a few transcript lines. -->
-
-### Evidence
-
-- Report and before/after: pasted above
-- Cleaned zip of all runs: <!-- attach agent-tests/out/<run-id>/bundle.zip -->
-  It holds every run's JSON line, stream and produced files. The runner cleans it: home and run-root
-  paths become `$HOME`/`$RUN`, the username is removed, and auth files are dropped. If it finds a
-  key-shaped string, it refuses to build the zip.
-
-### Reviewer checklist
-
-<!-- For the reviewer. Leave the boxes unticked. -->
-
-Design case
-
-- [ ] Present and before the evidence; light form only where no behaviour change is intended
-- [ ] Larger change: links the issue where the maintainer agreed the design case
-- [ ] The problem is shown with evidence, not asserted
-- [ ] Before/after use the artifact the trigger map names, from the same scenario, fixture, host and model
-- [ ] Every "better" claim is visible in the after artifact or a check, with its run count
-- [ ] The catch gives a size and a payer for tokens, compliance, existing workspaces and customized templates
-- [ ] At least one alternative, including leaving it as it is
-
-Agent tests
-
-- [ ] Surface diff and scenarios match the trigger map; host-specific files ran on that host
-- [ ] "Before" is a matching baseline, or base runs on the same machine
-- [ ] Every warning is explained, and I accept the explanation (or asked for changes)
-- [ ] Opened the zip for any failed or flagged run, and for the before/after pair
-- [ ] More runs, scenarios or hosts asked for? (write which, or "none"; ask for more runs when a result is borderline)
-- [ ] Hosts the contributor lacked: run by the maintainer (write which, or "none")
+<!-- Paste agent-tests/out/<run-id>/report.md from `agent-tests report`, explain each warning below it,
+     and attach agent-tests/out/<run-id>/bundle.zip. -->

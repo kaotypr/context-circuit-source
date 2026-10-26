@@ -51,8 +51,8 @@ decides that for free, without a host.
 - A non-empty one names the scenarios and hosts to run and the before-and-after
   artifact to show.
 - The pull request then carries a design case before the test evidence: what
-  changes, what is wrong with the current design, what is better, what it costs
-  and who pays, and the alternatives.
+  changes, what is wrong with the current design, what is better, what it costs,
+  and the alternatives.
 - A larger change agrees its design case in an issue first.
 - Warnings (a failed check, a lower result, more than 15% more input tokens)
   are weighed by the reviewer and do not block.

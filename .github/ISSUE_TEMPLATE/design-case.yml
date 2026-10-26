@@ -17,8 +17,8 @@ body:
   - type: textarea
     id: why
     attributes:
-      label: "Why: what the current design gets wrong"
-      description: Concrete, with evidence, such as a run artifact quoted with file and lines, a failing check, a token number, a reported issue, or a redacted excerpt from a real workspace. "It could be cleaner" is not a problem statement.
+      label: Why
+      description: What the current design gets wrong, with evidence, such as a run artifact quoted with file and lines, a failing check, a token number, a reported issue, or a redacted excerpt from a real workspace. "It could be cleaner" is not a problem statement.
     validations:
       required: true
   - type: textarea
@@ -36,10 +36,10 @@ body:
     validations:
       required: true
   - type: textarea
-    id: catch
+    id: costs
     attributes:
-      label: The catch, and who pays
-      description: "A size, or \"none\", for each: tokens (every session for always-loaded files, or the flow); agent compliance per host; existing workspaces (what the template delta touches, extra steps, whether old records still pass `check`); company forks and customized templates (files likely to conflict); people who read the output; maintenance."
+      label: Costs
+      description: What this makes worse, with a size or "none" for each, such as tokens, results on each host, existing workspaces and customized templates that must take the change, and longer output for readers.
     validations:
       required: true
   - type: textarea

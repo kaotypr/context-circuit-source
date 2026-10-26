@@ -103,8 +103,8 @@ pull request, on your own coding-host accounts, and you pay for the runs.
    - **Design case:** what an agent will now read, do or produce differently;
      what the current design gets wrong, with evidence; a before and after of the
      agent-visible output from the same scenario, host and model; what is
-     better; the catch and who pays (tokens, compliance on each host, existing
-     workspaces, forks of the template, readers, maintenance); and the
+     better; the costs (tokens, results on each host, existing workspaces and
+     customized templates, longer output for readers); and the
      alternatives you considered, including leaving it as it is.
    - **Agent tests:** the scenarios, hosts and results. From `agent-tests/`,
      `go run ./cmd/agent-tests report` writes the tables and
