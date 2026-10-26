@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use this form for a defect. Usage questions go to GitHub Discussions, Q&A, and a security vulnerability is reported privately as SECURITY.md describes.
+        Use this form for a defect. Usage questions go to GitHub Discussions, Q&A. A security vulnerability is reported privately, as SECURITY.md describes.
   - type: dropdown
     id: area
     attributes:
