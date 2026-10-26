@@ -26,9 +26,15 @@ func LooksLikeSecret(s string) bool {
 // Redact replaces home with $HOME, a user path element with $USER, and
 // key-shaped values with [redacted].
 func Redact(s, home, user string) string {
+	return redactSecrets(RedactPaths(s, home, user))
+}
+
+// RedactPaths replaces a home prefix with $HOME and the user name, as a
+// whole word, with $USER. A longer word that contains the user name is
+// left alone. Key-shaped strings are left unchanged.
+func RedactPaths(s, home, user string) string {
 	s = replacePathPrefix(s, home, "$HOME")
-	s = redactUserElement(s, user)
-	return redactSecrets(s)
+	return redactUserElement(s, user)
 }
 
 // RedactRunRoot replaces the run-root prefix with $RUN.
@@ -49,33 +55,8 @@ func redactUserElement(s, user string) string {
 	if user == "" || s == "" {
 		return s
 	}
-	parts := splitKeep(s)
-	for i, part := range parts {
-		if part == user {
-			parts[i] = "$USER"
-		}
-	}
-	return strings.Join(parts, "")
-}
-
-// splitKeep splits on / and \ and keeps the separators as their own elements
-// so they can be joined unchanged.
-func splitKeep(s string) []string {
-	var parts []string
-	start := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == '/' || s[i] == '\\' {
-			if i > start {
-				parts = append(parts, s[start:i])
-			}
-			parts = append(parts, s[i:i+1])
-			start = i + 1
-		}
-	}
-	if start < len(s) {
-		parts = append(parts, s[start:])
-	}
-	return parts
+	re := regexp.MustCompile(`\b` + regexp.QuoteMeta(user) + `\b`)
+	return re.ReplaceAllLiteralString(s, "$USER")
 }
 
 func replacePathPrefix(s, prefix, repl string) string {

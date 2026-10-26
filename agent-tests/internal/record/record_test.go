@@ -134,7 +134,9 @@ func TestRedact(t *testing.T) {
 		{name: "home", in: "file /tmp/home/a", home: "/tmp/home", want: "file $HOME/a"},
 		{name: "home boundary", in: "file /tmp/homework", home: "/tmp/home", want: "file /tmp/homework"},
 		{name: "user element", in: "/opt/ada/bin", user: "ada", want: "/opt/$USER/bin"},
+		{name: "user word", in: "hello ada today", user: "ada", want: "hello $USER today"},
 		{name: "user substring", in: "/opt/adapter/bin", user: "ada", want: "/opt/adapter/bin"},
+		{name: "user prefix word", in: "zzuserish and zzuser", user: "zzuser", want: "zzuserish and $USER"},
 		{name: "home and user", in: "/tmp/home/ada/x", home: "/tmp/home", user: "ada", want: "$HOME/$USER/x"},
 		{name: "sk", in: "key " + longSK + " xx", want: "key [redacted] xx"},
 		{name: "short sk", in: "sk-short", want: "sk-short"},
@@ -149,6 +151,18 @@ func TestRedact(t *testing.T) {
 				t.Fatalf("got %q want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestRedactPathsLeavesSecrets(t *testing.T) {
+	secret := "sk-abcdefghijklmnop"
+	in := "/tmp/home/ada/" + secret
+	got := RedactPaths(in, "/tmp/home", "ada")
+	if got != "$HOME/$USER/"+secret {
+		t.Fatalf("%q", got)
+	}
+	if !LooksLikeSecret(got) {
+		t.Fatal("path cleaning removed the key shape")
 	}
 }
 
