@@ -1,7 +1,7 @@
 ## Agent tests
 
 **Change kind:** always-loaded, skill-text
-**Surface diff:** 2 workspace files and 1 CLI output differ from base aaaaaaaaaaaa
+**Surface diff:** `2` workspace files and `1` CLI output differ from base `aaaaaaaaaaaa`
 **Scenarios:** required by the trigger map: `intent`, `plan` · asked for by the reviewer: — · one-off: —
 **Before:** committed baseline `2.5.0`
 
@@ -24,9 +24,7 @@
 **Harness errors (excluded, rerun):** 1 · **Inconclusive:** 1
 
 ### Warnings (explain each below; the reviewer decides)
-- [ ] `execute` on claude: total input tokens above +15% (+20%)
-- [ ] `plan` on claude fails on the branch (nothing-pushed, plan-record)
-- [ ] `plan` on claude: a lower result than before (fail, before pass)
+- [ ] `execute` on claude: total input tokens above +15% (+20.0%) · `plan` on claude fails on the branch (nothing-pushed, plan-record) · `plan` on claude: a lower result than before (fail, before pass)
 
 ### Gate checks
 - [x] U1 launcher only · [ ] U2 nothing pushed · [x] U3 no commit outside allowed branch
@@ -38,7 +36,7 @@
 
 ### Evidence
 - Report and before/after: pasted above
-- Cleaned zip of all runs: bundle.zip
+- Cleaned zip of all runs: <!-- attach agent-tests/out/<run-id>/bundle.zip -->
   It holds every run's JSON line, stream and produced files. The runner cleans it: home and run-root
   paths become `$HOME`/`$RUN`, the username is removed, and auth files are dropped. If it finds a
   key-shaped string, it refuses to build the zip.

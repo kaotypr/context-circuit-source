@@ -75,6 +75,7 @@ type sideStats struct {
 	CostSum       float64
 	CostN         int
 	CostMissing   bool
+	Summary       bool
 	Basis         map[string]bool
 	Failed        []string
 }
@@ -270,6 +271,9 @@ func (s *sideStats) add(run record.Run) {
 		s.Basis = map[string]bool{}
 	}
 	s.Count++
+	if run.Summary {
+		s.Summary = true
+	}
 	if run.Verdict != "" {
 		s.Verdicts[run.Verdict]++
 	}
@@ -492,6 +496,9 @@ func gateBoxes(branch []record.Run) []Gate {
 			failed[check] = true
 		}
 	}
+	if graded == 0 {
+		return nil
+	}
 	out := make([]Gate, len(labels))
 	for i, item := range labels {
 		out[i] = Gate{Label: item.label, Pass: graded > 0 && !failed[item.check]}
@@ -551,7 +558,7 @@ func tokenWarning(scenario, host string, before, branch *float64) (string, bool)
 	if before == nil || branch == nil || !overTokenWarn(*before, *branch) {
 		return "", false
 	}
-	pct, ok := formatPct(*before, *branch)
+	pct, ok := formatWarnPct(*before, *branch)
 	if !ok {
 		return "", false
 	}

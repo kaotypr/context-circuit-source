@@ -1,6 +1,7 @@
 package report
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/record"
@@ -11,6 +12,19 @@ func TestUnified(t *testing.T) {
 	want := "--- before/files/note.txt\n+++ after/files/note.txt\n@@ -1,3 +1,3 @@\n a\n b\n-c\n+d\n"
 	if got != want {
 		t.Fatalf("got:\n%s\nwant:\n%s", got, want)
+	}
+}
+
+func TestUnifiedOmitsHuge(t *testing.T) {
+	line := strings.Repeat("x", 40) + "\n"
+	big := strings.Repeat(line, 900)
+	got := unified(big, big+"y\n", "files/big.txt")
+	if !strings.Contains(got, "diff omitted") || strings.Contains(got, "xxxx") {
+		t.Fatalf("%s", got)
+	}
+	dumped := dumpReplace([]string{"before-line", "before-line"}, []string{"after-line"}, "files/x.txt")
+	if strings.Contains(dumped, "before-line") || strings.Contains(dumped, "after-line") || !strings.Contains(dumped, "diff omitted") {
+		t.Fatalf("%s", dumped)
 	}
 }
 

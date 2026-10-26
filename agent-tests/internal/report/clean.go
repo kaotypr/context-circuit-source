@@ -6,8 +6,9 @@ import (
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/record"
 )
 
-// cleanPaths rewrites home, run-root, and user path elements.
+// cleanPaths rewrites home, run-root, and the user name as a whole word.
 // Key-shaped strings are left in place so a later check can refuse them.
+// Auth files are removed by the zip builder before this text is scanned.
 func cleanPaths(s, home, user string, roots []string) string {
 	found := detectRunRoots(s)
 	all := make([]string, 0, len(roots)+len(found))

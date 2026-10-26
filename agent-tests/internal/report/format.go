@@ -44,6 +44,16 @@ func formatPct(before, after float64) (string, bool) {
 	return fmt.Sprintf("+%.0f%%", rounded), true
 }
 
+// formatWarnPct keeps one decimal so a warning never rounds a 15.1% rise
+// down to the same digits as the +15% threshold.
+func formatWarnPct(before, after float64) (string, bool) {
+	if before == 0 {
+		return "", false
+	}
+	pct := (after - before) / before * 100
+	return fmt.Sprintf("%+.1f%%", pct), true
+}
+
 // overTokenWarn reports whether after is more than 15% above before.
 // An equal 15% is not a warning. A missing or zero before has no percentage.
 func overTokenWarn(before, after float64) bool {
@@ -60,9 +70,9 @@ func shortSHA(sha string) string {
 	return sha
 }
 
-func plural(n int, one, many string) string {
+func countWord(n int, one, many string) string {
 	if n == 1 {
-		return "1 " + one
+		return one
 	}
-	return strconv.Itoa(n) + " " + many
+	return many
 }

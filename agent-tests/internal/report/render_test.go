@@ -3,6 +3,7 @@ package report
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/record"
@@ -125,7 +126,7 @@ func TestOverheadRow(t *testing.T) {
 		t.Fatalf("%+v", m.Rows)
 	}
 	got := inputCell(m.Rows[0])
-	if got != "ws-empty: 1.5k / 1.1k / +36%" {
+	if got != "ws\u2212empty: 1.5k / 1.1k / +36%" {
 		t.Fatalf("%q", got)
 	}
 	if branchCell(m.Rows[0]) != "—" || outputCell(m.Rows[0]) != "—" {
@@ -147,8 +148,53 @@ func TestSummaryBaseline(t *testing.T) {
 		t.Fatalf("%+v", runs)
 	}
 	m := Build(Input{Before: runs, BaselineName: "summary"})
-	if len(m.Rows) != 1 || m.Rows[0].Before.Count != 2 {
+	if len(m.Rows) != 1 || m.Rows[0].Before.Count != 2 || !m.Rows[0].Before.Summary {
 		t.Fatalf("%+v", m.Rows)
+	}
+	cell := inputCell(m.Rows[0])
+	if strings.Contains(cell, "mean of") || !strings.Contains(cell, "(summary)") {
+		t.Fatalf("%q", cell)
+	}
+	if beforeCell(m.Rows[0]) != "pass (summary)" {
+		t.Fatalf("%q", beforeCell(m.Rows[0]))
+	}
+}
+
+func TestWarnPercentOneDecimal(t *testing.T) {
+	before, after := 1000.0, 1151.0
+	text, ok := tokenWarning("plan", "claude", &before, &after)
+	if !ok || !strings.Contains(text, "+15.1%") || strings.Contains(text, "(+15%)") {
+		t.Fatalf("%q", text)
+	}
+}
+
+func TestCostSuffixOnlyWhenOmitted(t *testing.T) {
+	cost := 1.5
+	got := costLine(Model{TotalCost: &cost})
+	if strings.Contains(got, "omitted") {
+		t.Fatal(got)
+	}
+	got = costLine(Model{TotalCost: &cost, CostOmitted: true})
+	if !strings.Contains(got, "runs without a cost are omitted") {
+		t.Fatal(got)
+	}
+}
+
+func TestParseSurfaceMissingChangedIsFalse(t *testing.T) {
+	got, ok, err := parseSurface([]byte(`{"outputs":[{"name":"help"},{"name":"status","changed":true},{"name":"check","changed":false}]}`))
+	if err != nil || !ok || got.Outputs != 1 {
+		t.Fatalf("%+v %v %v", got, ok, err)
+	}
+}
+
+func TestUngradedGates(t *testing.T) {
+	m := Build(Input{Branch: []record.Run{{Scenario: "join", Host: "codex", Verdict: "harness-error"}}})
+	if len(m.Gates) != 0 {
+		t.Fatalf("%+v", m.Gates)
+	}
+	text := gateBlock(m.Gates)
+	if !strings.Contains(text, "were not graded") || strings.Count(text, "[ ]") != 1 {
+		t.Fatalf("%s", text)
 	}
 }
 

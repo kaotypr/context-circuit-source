@@ -80,6 +80,9 @@ func collectEntries(opts BundleOptions) ([]zipEntry, error) {
 			return nil
 		}
 		zipName, ok := safeZipName(rel)
+		// Auth files are dropped before the body is read and before the
+		// key-shaped scan. A key inside a dropped auth file does not refuse
+		// the archive.
 		if !ok || droppedFile(zipName) || !includeRel(zipName) {
 			return nil
 		}
@@ -88,6 +91,7 @@ func collectEntries(opts BundleOptions) ([]zipEntry, error) {
 			return err
 		}
 		text := cleanPaths(string(body), opts.Home, opts.User, opts.RunRoots)
+		zipName = cleanPaths(zipName, opts.Home, opts.User, opts.RunRoots)
 		if record.LooksLikeSecret(zipName) || record.LooksLikeSecret(text) {
 			return fmt.Errorf("bundle: key-shaped string in %s", zipName)
 		}

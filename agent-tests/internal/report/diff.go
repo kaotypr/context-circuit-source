@@ -167,14 +167,5 @@ func writeHunk(b *strings.Builder, edits []edit) {
 }
 
 func dumpReplace(before, after []string, name string) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "--- before/%s\n+++ after/%s\n", name, name)
-	fmt.Fprintf(&b, "@@ -1,%d +1,%d @@\n", len(before), len(after))
-	for _, line := range before {
-		fmt.Fprintf(&b, "-%s\n", line)
-	}
-	for _, line := range after {
-		fmt.Fprintf(&b, "+%s\n", line)
-	}
-	return b.String()
+	return fmt.Sprintf("--- before/%s\n+++ after/%s\n(diff omitted: %d / %d lines)\n", name, name, len(before), len(after))
 }

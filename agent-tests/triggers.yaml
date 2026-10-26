@@ -211,17 +211,15 @@ rows:
 
   - match: scripts/release-manifest.txt
     scenarios: [borrowed, complete, direct, execute, intent, intent-lang, join, orient, plan]
-    hosts: [claude, codex, cursor]
     kind: structure
     larger: true
-    note: Every scenario on any one host, and orient on each host. A destination added, removed, or moved.
+    note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
 
   - match: assets.go
     scenarios: [borrowed, complete, direct, execute, intent, intent-lang, join, orient, plan]
-    hosts: [claude, codex, cursor]
     kind: structure
     larger: true
-    note: Every scenario on any one host, and orient on each host. A destination added, removed, or moved.
+    note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
 
   - match: internal/cli/topics.go
     scenarios: [orient]
@@ -231,10 +229,10 @@ rows:
   - match: internal/cli/commands.go
     scenarios: [borrowed, complete, execute, intent, join, plan]
     kind: cli-action
-    note: Command text. Narrow to the command that changed. Used when CLI output changed.
+    note: Upper bound. The author narrows this list to the command that changed.
 
   - match: internal/cli/cli.go
-    scenarios: [complete, intent, join, plan]
+    scenarios: [complete, intent, plan]
     kind: cli-action
     note: Next-step messages. Used when CLI output changed.
 
@@ -260,7 +258,7 @@ rows:
     kind: cli-action
 
   - match: internal/workspace/readme.go
-    scenarios: [join, orient]
+    scenarios: [join]
     kind: cli-action
     note: README writing at init.
 

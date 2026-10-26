@@ -11,7 +11,7 @@ import (
 const emptyMessage = "No agent tests needed: surface diff is empty"
 
 // mappingNote is how a changed workspace path becomes a source path.
-const mappingNote = "Source paths come from git diff --name-status between the two refs. A workspace path is tied to a source through scripts/release-manifest.txt. README.md is tied to product/workspace-README.md, which is written at init and is not a manifest line. Paths under internal/ are used when CLI output changed, or when that file writes role definitions, record skeletons, or the workspace README and those bytes changed. scripts/release-manifest.txt and assets.go are used when a destination changed or a shipped file moved. .git directories are not part of the tree. Comparison normalizes timestamps, calendar dates, record ids, temporary paths, and the built CLI version."
+const mappingNote = "Source paths come from git diff --name-status between the two refs. A workspace path is tied to a source through scripts/release-manifest.txt. README.md is tied to product/workspace-README.md, which is written at init and is not a manifest line. Paths under internal/ are used when CLI output changed, or when that file writes role definitions, record skeletons, or the workspace README and those bytes changed. scripts/release-manifest.txt and assets.go are used when a destination changed or a shipped file moved. .git directories are not part of the tree. Comparison normalizes the id, created_at, and approved_at fields the fixed script writes, temporary paths, and the CLI version from that ref's archive. Other ids, dates, and timestamps stay. JSON key sets are taken from the raw stdout."
 
 // OutputChange is one captured command. Diff is empty when the
 // normalized texts match. Stdout is kept off the JSON file.
@@ -65,6 +65,7 @@ type Report struct {
 	Larger        bool           `json:"larger"`
 	LargerReasons []Reason       `json:"larger_reasons"`
 	NoRow         []string       `json:"no_row"`
+	OrientHosts   []string       `json:"orient_hosts"`
 	Ignored       []string       `json:"ignored"`
 	Sources       []SourceHit    `json:"sources"`
 	Mapping       string         `json:"mapping"`
@@ -118,6 +119,11 @@ func Render(r Report) string {
 		b.WriteString(strings.Join(r.Hosts, ", "))
 		b.WriteString("\n")
 	}
+	if len(r.OrientHosts) > 0 {
+		b.WriteString("orient on all three hosts: ")
+		b.WriteString(strings.Join(r.OrientHosts, ", "))
+		b.WriteString("\n")
+	}
 	if len(r.Notes) > 0 {
 		b.WriteString("\n## Notes\n\n")
 		for _, note := range r.Notes {
@@ -128,9 +134,9 @@ func Render(r Report) string {
 	b.WriteString(listOr(r.Kinds, "none"))
 	b.WriteString("\n\n## Larger\n\n")
 	if r.Larger {
-		b.WriteString("Looks larger. This is a heuristic; a person decides.\n")
+		b.WriteString("Looks larger. A person decides.\n")
 		for _, reason := range r.LargerReasons {
-			fmt.Fprintf(&b, "- %s: %s\n", reason.Kind, reason.Detail)
+			fmt.Fprintf(&b, "- %s [%s]: %s\n", reason.Kind, reasonTag(reason), reason.Detail)
 		}
 	} else {
 		b.WriteString("Does not look larger.\n")
@@ -155,6 +161,13 @@ func Render(r Report) string {
 	b.WriteString(r.Mapping)
 	b.WriteString("\n")
 	return b.String()
+}
+
+func reasonTag(reason Reason) string {
+	if reason.Exact {
+		return "exact"
+	}
+	return "heuristic"
 }
 
 func listOr(items []string, empty string) string {

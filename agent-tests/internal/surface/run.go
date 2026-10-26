@@ -13,7 +13,6 @@ import (
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/hosts"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/triggers"
-	"github.com/kaotypr/context-circuit-source/agent-tests/internal/world"
 )
 
 // Options selects the two refs. Ref defaults to HEAD. Path is the PATH
@@ -99,15 +98,11 @@ func Run(ctx context.Context, opts Options) (Report, error) {
 		fmt.Fprint(out, Render(report))
 		return report, nil
 	}
-	pin, err := world.Pin(opts.Checkout)
-	if err != nil {
-		return Report{}, err
-	}
-	baseSide, err := captureSide(ctx, opts.Checkout, baseSHA, pin, opts.Path, opts.Home)
+	baseSide, err := captureSide(ctx, opts.Checkout, baseSHA, opts.Path, opts.Home)
 	if err != nil {
 		return Report{}, fmt.Errorf("base: %w", err)
 	}
-	branchSide, err := captureSide(ctx, opts.Checkout, branchSHA, pin, opts.Path, opts.Home)
+	branchSide, err := captureSide(ctx, opts.Checkout, branchSHA, opts.Path, opts.Home)
 	if err != nil {
 		return Report{}, fmt.Errorf("branch: %w", err)
 	}
@@ -171,7 +166,9 @@ func compareSides(ctx context.Context, report Report, table triggers.Table, opts
 			noRow = append(noRow, source)
 			continue
 		}
+		extra := helpScenariosFor(source, outputs)
 		scenarios = append(scenarios, hit.Scenarios...)
+		scenarios = append(scenarios, extra...)
 		hosts = append(hosts, hit.Hosts...)
 		kinds = append(kinds, hit.Kinds...)
 		notes = append(notes, hit.Notes...)
@@ -179,7 +176,11 @@ func compareSides(ctx context.Context, report Report, table triggers.Table, opts
 			larger = true
 		}
 		report.Sources = append(report.Sources, SourceHit{
-			Path: source, Scenarios: hit.Scenarios, Hosts: hit.Hosts, Kinds: hit.Kinds, Notes: hit.Notes,
+			Path:      source,
+			Scenarios: uniqueSorted(append(append([]string{}, hit.Scenarios...), extra...)),
+			Hosts:     hit.Hosts,
+			Kinds:     hit.Kinds,
+			Notes:     hit.Notes,
 		})
 	}
 	if selected.EveryScenario {
@@ -188,6 +189,7 @@ func compareSides(ctx context.Context, report Report, table triggers.Table, opts
 		hosts = append(hosts, structure.Hosts...)
 		kinds = append(kinds, structure.Kinds...)
 		notes = append(notes, structure.Notes...)
+		report.OrientHosts = append(report.OrientHosts, structure.OrientHosts...)
 		larger = true
 	}
 	hosts = append(hosts, roleHosts(files)...)
@@ -233,6 +235,9 @@ func finish(report Report) Report {
 	if report.Notes == nil {
 		report.Notes = []string{}
 	}
+	if report.OrientHosts == nil {
+		report.OrientHosts = []string{}
+	}
 	return report
 }
 
@@ -240,7 +245,7 @@ func collectReasons(files []FileChange, outputs []OutputChange, base, branch map
 	var reasons []Reason
 	reasons = append(reasons, LayoutReasons(files)...)
 	reasons = append(reasons, SkillReasons(base, branch)...)
-	reasons = append(reasons, CLIReasons(outputs, base, branch)...)
+	reasons = append(reasons, CLIReasons(outputs)...)
 	var lines []string
 	for _, file := range files {
 		before, after := fileBytes(file, base, branch)
@@ -254,7 +259,7 @@ func collectReasons(files []FileChange, outputs []OutputChange, base, branch map
 	reasons = append(reasons, GateReasons(lines)...)
 	reasons = append(reasons, MigrationReasons(base, branch)...)
 	if rowLarger && !hasKind(reasons, "layout") {
-		reasons = append(reasons, Reason{Kind: "layout", Detail: "trigger row marks a structure change as larger"})
+		reasons = append(reasons, Reason{Kind: "layout", Exact: true, Detail: "trigger row marks a structure change as larger"})
 	}
 	if reasons == nil {
 		return []Reason{}
@@ -341,8 +346,8 @@ func pairOutputs(baseSide, branchSide captured) []OutputChange {
 			Changed:      baseText != branchText,
 			Base:         baseText,
 			Branch:       branchText,
-			StdoutBase:   baseSide.norm.Text(baseBy[name].stdout),
-			StdoutBranch: branchSide.norm.Text(branchBy[name].stdout),
+			StdoutBase:   baseBy[name].stdout,
+			StdoutBranch: branchBy[name].stdout,
 		}
 		if item.Changed {
 			item.Diff = Unified(name, baseText, branchText)

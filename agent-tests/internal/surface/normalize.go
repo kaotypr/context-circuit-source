@@ -7,15 +7,16 @@ import (
 )
 
 var (
-	reTime     = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})`)
-	reDate     = regexp.MustCompile(`\b\d{4}-\d{2}-\d{2}\b`)
-	reIntentID = regexp.MustCompile(`\bi[0-9]{3,}\b`)
-	rePlanID   = regexp.MustCompile(`\bp[0-9]{4,}\b`)
+	reYAMLID = regexp.MustCompile(`(?m)^(id:[ \t]*)"?(i[0-9]+|p[0-9]+)"?[ \t]*$`)
+	reYAMLAt = regexp.MustCompile(`(?m)^((?:created_at|approved_at):[ \t]*)(?:"[^"\n]*"|\S+)[ \t]*$`)
+	reJSONID = regexp.MustCompile(`"(id)"[ \t]*:[ \t]*"(i[0-9]+|p[0-9]+)"`)
+	reJSONAt = regexp.MustCompile(`"(created_at|approved_at)"[ \t]*:[ \t]*"[^"]*"`)
 )
 
-// Norm replaces values that differ between two fresh workspaces even
-// when the template did not: timestamps, calendar dates, record ids,
-// the built version, and absolute paths under the run.
+// Norm replaces values the fixed surface script generates on a fresh
+// workspace: the id, created_at, and approved_at fields it writes, temporary
+// paths, and the CLI version built for that ref. Other ids, dates, and
+// timestamps stay, so a help line that mentions an example id still differs.
 type Norm struct {
 	replacer *strings.Replacer
 	pin      *regexp.Regexp
@@ -64,14 +65,33 @@ func (n Norm) Text(s string) string {
 	if n.replacer != nil {
 		s = n.replacer.Replace(s)
 	}
-	s = reTime.ReplaceAllString(s, "<time>")
-	s = reDate.ReplaceAllString(s, "<date>")
-	s = reIntentID.ReplaceAllString(s, "iNNN")
-	s = rePlanID.ReplaceAllString(s, "pNNNN")
+	s = reYAMLID.ReplaceAllStringFunc(s, func(line string) string {
+		m := reYAMLID.FindStringSubmatch(line)
+		if m == nil {
+			return line
+		}
+		return m[1] + idToken(m[2])
+	})
+	s = reYAMLAt.ReplaceAllString(s, "${1}<time>")
+	s = reJSONID.ReplaceAllStringFunc(s, func(match string) string {
+		m := reJSONID.FindStringSubmatch(match)
+		if m == nil {
+			return match
+		}
+		return `"` + m[1] + `":"` + idToken(m[2]) + `"`
+	})
+	s = reJSONAt.ReplaceAllString(s, `"${1}":"<time>"`)
 	if n.pin != nil {
 		s = n.pin.ReplaceAllString(s, "<version>")
 	}
 	return s
+}
+
+func idToken(id string) string {
+	if strings.HasPrefix(id, "p") {
+		return "pNNNN"
+	}
+	return "iNNN"
 }
 
 // Bytes normalizes text. A file with a NUL byte is returned unchanged.

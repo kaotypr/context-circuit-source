@@ -58,12 +58,13 @@ type Table struct {
 
 // Hit is the union of the rows and section rules that apply to one path.
 type Hit struct {
-	Scenarios []string
-	Hosts     []string
-	Kinds     []string
-	Notes     []string
-	Larger    bool
-	Rows      []Row
+	Scenarios   []string
+	Hosts       []string
+	Kinds       []string
+	Notes       []string
+	Larger      bool
+	Rows        []Row
+	OrientHosts []string
 }
 
 // Load reads triggers.yaml.
@@ -242,6 +243,8 @@ func (t Table) StructureHit() Hit {
 	hit.Hosts = unique(hit.Hosts)
 	hit.Kinds = unique(hit.Kinds)
 	hit.Notes = unique(hit.Notes)
+	// Every scenario runs on any one host. orient also runs on each host.
+	hit.OrientHosts = []string{"claude", "codex", "cursor"}
 	return hit
 }
 

@@ -22,6 +22,24 @@ func TestRenderEmpty(t *testing.T) {
 	}
 }
 
+func TestRenderReasonTags(t *testing.T) {
+	text := Render(Report{
+		Message: "Surface diff: 1 workspace files and 0 CLI outputs differ.",
+		Larger:  true,
+		LargerReasons: []Reason{
+			{Kind: "layout", Detail: "moved", Exact: true},
+			{Kind: "skill", Detail: "record skeleton headings or frontmatter changed"},
+		},
+		Sizes:       []SizeChange{{Path: "AGENTS.md"}},
+		OrientHosts: []string{"claude", "codex", "cursor"},
+	})
+	for _, part := range []string{"Looks larger", "- layout [exact]: moved", "- skill [heuristic]: record skeleton headings or frontmatter changed", "orient on all three hosts: claude, codex, cursor"} {
+		if !strings.Contains(text, part) {
+			t.Errorf("missing %q\n%s", part, text)
+		}
+	}
+}
+
 func TestRenderLarger(t *testing.T) {
 	text := Render(Report{
 		Message: "Surface diff: 1 workspace files and 0 CLI outputs differ.",
@@ -36,7 +54,7 @@ func TestRenderLarger(t *testing.T) {
 		}},
 		Hosts: []string{},
 	})
-	for _, part := range []string{"Looks larger", "heuristic", "a person decides", "approx", "any one host", "moved a.md -> b.md"} {
+	for _, part := range []string{"Looks larger", "[heuristic]", "A person decides", "approx", "any one host", "moved a.md -> b.md"} {
 		if !strings.Contains(text, part) {
 			t.Errorf("missing %q\n%s", part, text)
 		}

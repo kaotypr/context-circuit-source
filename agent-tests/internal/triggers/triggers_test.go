@@ -34,8 +34,11 @@ func TestCatalogue(t *testing.T) {
 	if !slices.Equal(hit.Scenarios, want) {
 		t.Fatalf("structure scenarios %v", hit.Scenarios)
 	}
-	if !slices.Equal(hit.Hosts, []string{"claude", "codex", "cursor"}) {
-		t.Fatalf("structure hosts %v", hit.Hosts)
+	if len(hit.Hosts) != 0 {
+		t.Fatalf("structure hosts %v, want any one host", hit.Hosts)
+	}
+	if !slices.Equal(hit.OrientHosts, []string{"claude", "codex", "cursor"}) {
+		t.Fatalf("orient hosts %v", hit.OrientHosts)
 	}
 	if !hit.Larger {
 		t.Fatal("structure rows are larger")
@@ -45,7 +48,6 @@ func TestCatalogue(t *testing.T) {
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
 	all := []string{"borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan"}
-	hosts3 := []string{"claude", "codex", "cursor"}
 	cases := []struct {
 		path      string
 		scenarios []string
@@ -78,10 +80,12 @@ func TestSamplePaths(t *testing.T) {
 		{"template/workspace.yaml", []string{"join", "orient"}, nil},
 		{"internal/cli/topics.go", []string{"orient"}, nil},
 		{"internal/cli/commands.go", []string{"borrowed", "complete", "execute", "intent", "join", "plan"}, nil},
+		{"internal/cli/cli.go", []string{"complete", "intent", "plan"}, nil},
+		{"internal/workspace/readme.go", []string{"join"}, nil},
 		{"internal/workspace/records.go", []string{"intent", "plan"}, nil},
 		{"internal/workspace/agents.go", []string{"execute", "plan"}, nil},
-		{"scripts/release-manifest.txt", all, hosts3},
-		{"assets.go", all, hosts3},
+		{"scripts/release-manifest.txt", all, nil},
+		{"assets.go", all, nil},
 	}
 	for _, tc := range cases {
 		hit := table.Apply(tc.path, nil)
@@ -94,6 +98,11 @@ func TestSamplePaths(t *testing.T) {
 		if slices.Contains(hit.Hosts, "codex") && strings.HasSuffix(tc.path, "/route.md") {
 			t.Errorf("%s includes codex", tc.path)
 		}
+	}
+	commands := table.Apply("internal/cli/commands.go", nil)
+	note := strings.Join(commands.Notes, " ")
+	if !strings.Contains(note, "Upper bound") || !strings.Contains(note, "narrows this list to the command that changed") {
+		t.Fatalf("commands note %q", note)
 	}
 	route := table.Apply("product/skills/cc-plan/route.md", nil)
 	if slices.Contains(route.Hosts, "codex") || !slices.Equal(route.Hosts, []string{"claude", "cursor"}) {

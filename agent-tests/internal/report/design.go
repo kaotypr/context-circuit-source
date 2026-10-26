@@ -48,6 +48,8 @@ func RenderDesign(in DesignInput) (string, error) {
 type paired struct {
 	Scenario string
 	Host     string
+	Version  string
+	Only     string
 	Branch   record.Run
 	Before   record.Run
 	BranchN  int
@@ -60,9 +62,10 @@ func pairRuns(branch, before []record.Run) []paired {
 	aGroups := groupRuns(before)
 	keys := map[string]bool{}
 	for key := range bGroups {
-		if _, ok := aGroups[key]; ok {
-			keys[key] = true
-		}
+		keys[key] = true
+	}
+	for key := range aGroups {
+		keys[key] = true
 	}
 	var ordered []string
 	for key := range keys {
@@ -71,23 +74,48 @@ func pairRuns(branch, before []record.Run) []paired {
 	sort.Strings(ordered)
 	var out []paired
 	for _, key := range ordered {
-		scenario, host, _ := strings.Cut(key, "\x00")
-		bRun, bHow, bok := pickRun(bGroups[key])
-		aRun, _, aok := pickRun(aGroups[key])
+		scenario, host, version := splitGroupKey(key)
+		bRuns := bGroups[key]
+		aRuns := aGroups[key]
+		if len(bRuns) == 0 || len(aRuns) == 0 {
+			only := "branch"
+			if len(bRuns) == 0 {
+				only = "base"
+			}
+			out = append(out, paired{Scenario: scenario, Host: host, Version: version, Only: only})
+			continue
+		}
+		bRun, bHow, bok := pickRun(bRuns)
+		aRun, _, aok := pickRun(aRuns)
 		if !bok || !aok {
 			continue
 		}
 		out = append(out, paired{
 			Scenario: scenario,
 			Host:     host,
+			Version:  version,
 			Branch:   bRun,
 			Before:   aRun,
-			BranchN:  len(bGroups[key]),
-			BeforeN:  len(aGroups[key]),
+			BranchN:  len(bRuns),
+			BeforeN:  len(aRuns),
 			How:      bHow,
 		})
 	}
 	return out
+}
+
+func splitGroupKey(key string) (scenario, host, version string) {
+	parts := strings.SplitN(key, "\x00", 3)
+	if len(parts) > 0 {
+		scenario = parts[0]
+	}
+	if len(parts) > 1 {
+		host = parts[1]
+	}
+	if len(parts) > 2 {
+		version = parts[2]
+	}
+	return scenario, host, version
 }
 
 func groupRuns(runs []record.Run) map[string][]record.Run {
@@ -96,7 +124,7 @@ func groupRuns(runs []record.Run) map[string][]record.Run {
 		if run.Verdict == "harness-error" || run.Scenario == "" || run.Host == "" {
 			continue
 		}
-		key := run.Scenario + "\x00" + run.Host
+		key := run.Scenario + "\x00" + run.Host + "\x00" + run.ScenarioVersion
 		out[key] = append(out[key], run)
 	}
 	return out
@@ -155,6 +183,9 @@ func filterRuns(runs []record.Run, keep func(record.Run) bool) []record.Run {
 }
 
 func renderPair(in DesignInput, pair paired) (string, error) {
+	if pair.Only != "" {
+		return pairHeading(pair) + "\n\nonly on " + pair.Only + "\n", nil
+	}
 	branchDir := locateRun(in.RunDir, pair.Branch, false)
 	beforeDir := locateRun(in.baselineRoot(), pair.Before, in.BaselineDir != "")
 	branchFiles, err := loadProduced(branchDir)
@@ -168,7 +199,7 @@ func renderPair(in DesignInput, pair paired) (string, error) {
 	branchFiles = cleanFiles(branchFiles, in)
 	beforeFiles = cleanFiles(beforeFiles, in)
 	var b strings.Builder
-	fmt.Fprintf(&b, "### `%s` · %s\n\n", pair.Scenario, pair.Host)
+	fmt.Fprintf(&b, "%s\n\n", pairHeading(pair))
 	fmt.Fprintf(&b, "Pair: branch r%d (%s), before r%d (%s). Chosen as %s.\n\n",
 		runNumber(pair.Branch), runWord(pair.BranchN), runNumber(pair.Before), runWord(pair.BeforeN), pair.How)
 	b.WriteString(summaryTable(beforeFiles, branchFiles))
@@ -185,6 +216,14 @@ func renderPair(in DesignInput, pair paired) (string, error) {
 	b.WriteString("\n### Tokens\n\n")
 	b.WriteString(tokenSection(pair.Before, pair.Branch))
 	return b.String(), nil
+}
+
+func pairHeading(pair paired) string {
+	head := fmt.Sprintf("### `%s` · %s", pair.Scenario, pair.Host)
+	if pair.Version != "" {
+		head += " · version " + pair.Version
+	}
+	return head
 }
 
 func (in DesignInput) baselineRoot() string {

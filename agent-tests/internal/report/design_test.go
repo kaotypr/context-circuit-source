@@ -42,6 +42,24 @@ func TestDesignGolden(t *testing.T) {
 	}
 }
 
+func TestPairKeyIncludesVersionAndOneSide(t *testing.T) {
+	base := record.Run{Scenario: "intent", Host: "claude", ScenarioVersion: "1", Side: "base", Verdict: "pass", Run: 1}
+	branch := record.Run{Scenario: "intent", Host: "claude", ScenarioVersion: "2", Side: "branch", Verdict: "pass", Run: 1}
+	only := record.Run{Scenario: "plan", Host: "codex", ScenarioVersion: "1", Side: "branch", Verdict: "pass", Run: 1}
+	got, err := RenderDesign(DesignInput{Branch: []record.Run{branch, only}, Before: []record.Run{base}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, part := range []string{"only on base", "only on branch", "version 1", "version 2"} {
+		if !strings.Contains(got, part) {
+			t.Fatalf("missing %q\n%s", part, got)
+		}
+	}
+	if strings.Contains(got, "Pair:") {
+		t.Fatalf("different versions were paired\n%s", got)
+	}
+}
+
 func TestReadsUnavailable(t *testing.T) {
 	dir := t.TempDir()
 	for _, side := range []string{"base", "branch"} {

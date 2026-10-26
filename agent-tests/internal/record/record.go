@@ -54,6 +54,7 @@ type Run struct {
 	WallS           float64           `json:"wall_s"`
 	ArtifactsDigest string            `json:"artifacts_digest"`
 	Date            string            `json:"date"`
+	Summary         bool              `json:"-"`
 }
 
 // Append writes r as one JSON line, creating parent directories.

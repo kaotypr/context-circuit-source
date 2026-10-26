@@ -13,7 +13,7 @@ func TestLayoutReasons(t *testing.T) {
 		{Status: "removed", Path: ".context-circuit/ids/maya.yaml"},
 	}
 	got := LayoutReasons(files)
-	if len(got) != 1 || got[0].Kind != "layout" || !strings.Contains(got[0].Detail, "old.md ->") {
+	if len(got) != 1 || got[0].Kind != "layout" || !got[0].Exact || !strings.Contains(got[0].Detail, "old.md ->") {
 		t.Fatalf("%#v", got)
 	}
 }
@@ -26,18 +26,47 @@ func TestSkillReasons(t *testing.T) {
 		t.Fatalf("body edit %#v", reasons)
 	}
 	headed := map[string][]byte{".agents/skills/cc-intent/SKILL.md": []byte(body + "# Extra\n")}
-	if reasons := SkillReasons(base, headed); len(reasons) != 1 || reasons[0].Kind != "skill" {
+	if reasons := SkillReasons(base, headed); len(reasons) != 1 || reasons[0].Kind != "skill" || reasons[0].Exact {
 		t.Fatalf("heading %#v", reasons)
 	}
 	added := map[string][]byte{".agents/skills/cc-new/SKILL.md": []byte(body)}
-	if reasons := SkillReasons(nil, added); len(reasons) != 1 || !strings.Contains(reasons[0].Detail, "added") {
+	if reasons := SkillReasons(nil, added); len(reasons) != 1 || !reasons[0].Exact || !strings.Contains(reasons[0].Detail, "added") {
 		t.Fatalf("added %#v", reasons)
 	}
 }
 
+func TestSkillShapeFromSkeletonAndPlanFolder(t *testing.T) {
+	base := map[string][]byte{
+		"intent/i100-demo.md": []byte("---\nid: i100\ncreated_at: 2026-01-02T00:00:00Z\n---\n## Request\n"),
+	}
+	branch := map[string][]byte{
+		"intent/i100-demo.md":       []byte("---\nid: i100\ncreated_at: 2026-01-02T00:00:00Z\noutcome: x\n---\n## Request\n"),
+		"plans/p1000-demo/notes.md": []byte("extra\n"),
+	}
+	if got := CLIReasons(nil); len(got) != 0 {
+		t.Fatalf("cli %#v", got)
+	}
+	got := SkillReasons(base, branch)
+	var shape, folder bool
+	for _, reason := range got {
+		if reason.Exact || reason.Kind != "skill" {
+			t.Fatalf("%#v", got)
+		}
+		if strings.Contains(reason.Detail, "skeleton") {
+			shape = true
+		}
+		if strings.Contains(reason.Detail, "plan folder file added") {
+			folder = true
+		}
+	}
+	if !shape || !folder {
+		t.Fatalf("%#v", got)
+	}
+}
+
 func TestCLIReasons(t *testing.T) {
-	help := CLIReasons([]OutputChange{{Name: "help", Changed: true, Base: "a", Branch: "b"}}, nil, nil)
-	if len(help) != 1 || !strings.Contains(help[0].Detail, "help") {
+	help := CLIReasons([]OutputChange{{Name: "help", Changed: true, Base: "a", Branch: "b"}})
+	if len(help) != 1 || help[0].Exact || !strings.Contains(help[0].Detail, "help") {
 		t.Fatalf("%#v", help)
 	}
 	keys := CLIReasons([]OutputChange{{
@@ -45,22 +74,26 @@ func TestCLIReasons(t *testing.T) {
 		Changed:      true,
 		StdoutBase:   `{"ok":true}`,
 		StdoutBranch: `{"ok":true,"extra":1}`,
-	}}, nil, nil)
+	}})
 	if len(keys) != 1 || !strings.Contains(keys[0].Detail, "JSON keys") {
 		t.Fatalf("%#v", keys)
 	}
-	check := CLIReasons([]OutputChange{{Name: "check", Changed: true}}, nil, nil)
+	check := CLIReasons([]OutputChange{{Name: "check", Changed: true}})
 	if len(check) != 1 || !strings.Contains(check[0].Detail, "check findings") {
 		t.Fatalf("%#v", check)
 	}
 }
 
 func TestGateReasonsHeuristic(t *testing.T) {
-	if got := GateReasons([]string{"commit_recommended stays"}); len(got) != 0 {
-		t.Fatalf("underscore word %#v", got)
+	if got := GateReasons([]string{"commitment stays"}); len(got) != 0 {
+		t.Fatalf("commitment %#v", got)
 	}
 	got := GateReasons([]string{"do not push the branch"})
-	if len(got) != 1 || got[0].Kind != "gate" || !strings.Contains(got[0].Detail, "heuristic") || !strings.Contains(got[0].Detail, "push") {
+	if len(got) != 1 || got[0].Kind != "gate" || got[0].Exact || !strings.Contains(got[0].Detail, "heuristic") || !strings.Contains(got[0].Detail, "push") {
+		t.Fatalf("%#v", got)
+	}
+	got = GateReasons([]string{"commit_recommended stays", "reconcile_required stays"})
+	if len(got) != 1 || !strings.Contains(got[0].Detail, "commit_recommended") || !strings.Contains(got[0].Detail, "reconcile_required") {
 		t.Fatalf("%#v", got)
 	}
 }

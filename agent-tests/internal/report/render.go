@@ -23,9 +23,7 @@ func Render(m Model) string {
 	if len(m.Warnings) == 0 {
 		b.WriteString("- [ ] none\n")
 	} else {
-		for _, warning := range m.Warnings {
-			b.WriteString("- [ ] " + warning + "\n")
-		}
+		b.WriteString("- [ ] " + strings.Join(m.Warnings, " · ") + "\n")
 	}
 	b.WriteString("\n")
 	b.WriteString(gateBlock(m.Gates))
@@ -46,9 +44,9 @@ func surfaceLine(m Model) string {
 	if sha == "" {
 		sha = "unknown"
 	}
-	return fmt.Sprintf("%s and %s differ from base %s",
-		plural(m.FileCount, "workspace file", "workspace files"),
-		plural(m.OutputCount, "CLI output", "CLI outputs"),
+	return fmt.Sprintf("`%d` %s and `%d` %s differ from base `%s`",
+		m.FileCount, countWord(m.FileCount, "workspace file", "workspace files"),
+		m.OutputCount, countWord(m.OutputCount, "CLI output", "CLI outputs"),
 		sha)
 }
 
@@ -114,6 +112,9 @@ func verdictCell(s sideStats) string {
 	if s.Count == 0 {
 		return "—"
 	}
+	if s.Summary {
+		return verdictLabel(s) + " (summary)"
+	}
 	if len(s.Verdicts) == 1 {
 		var verdict string
 		for name := range s.Verdicts {
@@ -136,22 +137,43 @@ func verdictCell(s sideStats) string {
 	return strings.Join(parts, ", ") + fmt.Sprintf(" (%d runs)", s.Count)
 }
 
+func verdictLabel(s sideStats) string {
+	if len(s.Verdicts) == 1 {
+		for name := range s.Verdicts {
+			return name
+		}
+	}
+	var names []string
+	for name := range s.Verdicts {
+		names = append(names, name)
+	}
+	sortStrings(names)
+	if len(names) == 0 {
+		return "—"
+	}
+	parts := make([]string, len(names))
+	for i, name := range names {
+		parts[i] = fmt.Sprintf("%s %d", name, s.Verdicts[name])
+	}
+	return strings.Join(parts, ", ")
+}
+
 func inputCell(row Row) string {
 	var branch, before *float64
 	var branchN, beforeN int
 	if row.Measurement {
 		branch, before = row.DeltaBranch, row.DeltaBefore
 		branchN, beforeN = row.Branch.Count, row.Before.Count
-		return "ws-empty: " + valueCell(branch, before, branchN, beforeN, true)
+		return "ws\u2212empty: " + valueCell(branch, before, branchN, beforeN, true, false, false)
 	}
-	return valueCell(row.Branch.inputMean(), row.Before.inputMean(), row.Branch.Count, row.Before.Count, true)
+	return valueCell(row.Branch.inputMean(), row.Before.inputMean(), row.Branch.Count, row.Before.Count, true, row.Branch.Summary, row.Before.Summary)
 }
 
 func outputCell(row Row) string {
 	if row.Measurement {
 		return "—"
 	}
-	return valueCell(row.Branch.outputMean(), row.Before.outputMean(), row.Branch.Count, row.Before.Count, false)
+	return valueCell(row.Branch.outputMean(), row.Before.outputMean(), row.Branch.Count, row.Before.Count, false, row.Branch.Summary, row.Before.Summary)
 }
 
 func costCell(row Row) string {
@@ -195,7 +217,7 @@ func basisCell(row Row) string {
 	return left + " / " + right
 }
 
-func valueCell(branch, before *float64, branchN, beforeN int, withPct bool) string {
+func valueCell(branch, before *float64, branchN, beforeN int, withPct, branchSummary, beforeSummary bool) string {
 	left := sideCount(branch, branchN)
 	right := sideCount(before, beforeN)
 	cell := left + " / " + right
@@ -207,7 +229,7 @@ func valueCell(branch, before *float64, branchN, beforeN int, withPct bool) stri
 			cell += " / " + pct
 		}
 	}
-	if note := meanNote(branchN, beforeN); note != "" {
+	if note := meanNote(branchN, beforeN, branchSummary, beforeSummary); note != "" {
 		cell += " " + note
 	}
 	return cell
@@ -223,7 +245,17 @@ func sideCount(v *float64, n int) string {
 	return formatCount(*v)
 }
 
-func meanNote(branchN, beforeN int) string {
+func meanNote(branchN, beforeN int, branchSummary, beforeSummary bool) string {
+	if branchSummary || beforeSummary {
+		switch {
+		case branchN > 1 && !branchSummary:
+			return fmt.Sprintf("(mean of %d branch runs; summary)", branchN)
+		case beforeN > 1 && !beforeSummary:
+			return fmt.Sprintf("(summary; mean of %d before runs)", beforeN)
+		default:
+			return "(summary)"
+		}
+	}
 	switch {
 	case branchN > 1 && beforeN > 1 && branchN == beforeN:
 		return fmt.Sprintf("(mean of %d runs)", branchN)
@@ -290,7 +322,7 @@ const notable = `### Notable behaviour
 
 const evidence = `### Evidence
 - Report and before/after: pasted above
-- Cleaned zip of all runs: bundle.zip
+- Cleaned zip of all runs: <!-- attach agent-tests/out/<run-id>/bundle.zip -->
   It holds every run's JSON line, stream and produced files. The runner cleans it: home and run-root
   paths become ` + "`$HOME`/`$RUN`" + `, the username is removed, and auth files are dropped. If it finds a
   key-shaped string, it refuses to build the zip.

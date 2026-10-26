@@ -117,6 +117,7 @@ func loadSummary(path string) ([]record.Run, error) {
 				Verdict:      row.Verdict,
 				Run:          i,
 				Side:         "base",
+				Summary:      true,
 				Tokens:       record.Tokens{InputTotal: row.InputTotal, Output: row.Output},
 				CostUSD:      row.CostUSD,
 				CostBasis:    row.CostBasis,
@@ -158,7 +159,7 @@ func parseSurface(b []byte) (Surface, bool, error) {
 	}
 	nOut := 0
 	for _, out := range raw.Outputs {
-		if out.Changed == nil || *out.Changed {
+		if out.Changed != nil && *out.Changed {
 			nOut++
 		}
 	}

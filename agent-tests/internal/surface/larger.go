@@ -8,9 +8,12 @@ import (
 
 // Reason is one way the diff looks like a larger change.
 // Kind is layout, skill, cli, gate, or migration.
+// Exact is true for layout and for a skill added or removed.
+// Skill shape, a CLI action, a gate, and migration are heuristic.
 type Reason struct {
 	Kind   string `json:"kind"`
 	Detail string `json:"detail"`
+	Exact  bool   `json:"exact"`
 }
 
 var gatePatterns = []struct {
@@ -22,6 +25,8 @@ var gatePatterns = []struct {
 	{"attribution", regexp.MustCompile(`(?i)\battribution\b`)},
 	{"approval", regexp.MustCompile(`(?i)\bapprov`)},
 	{"planning stop", regexp.MustCompile(`(?i)planning stop|planning_recommended`)},
+	{"commit_recommended", regexp.MustCompile(`(?i)\bcommit_recommended\b`)},
+	{"reconcile_required", regexp.MustCompile(`(?i)\breconcile_required\b`)},
 	{"sources", regexp.MustCompile(`(?i)\bsources\b`)},
 	{"borrowed", regexp.MustCompile(`(?i)\bborrowed\b`)},
 }
@@ -48,7 +53,7 @@ func LayoutReasons(files []FileChange) []Reason {
 		return nil
 	}
 	sort.Strings(paths)
-	return []Reason{{Kind: "layout", Detail: "shipped file added, removed, or moved: " + strings.Join(paths, ", ")}}
+	return []Reason{{Kind: "layout", Exact: true, Detail: "shipped file added, removed, or moved: " + strings.Join(paths, ", ")}}
 }
 
 // SkillReasons reports a skill file added or removed, or a change to
@@ -69,9 +74,9 @@ func SkillReasons(base, branch map[string][]byte) []Reason {
 		_, inBranch := branch[rel]
 		switch {
 		case inBase && !inBranch:
-			reasons = append(reasons, Reason{Kind: "skill", Detail: "skill removed: " + name})
+			reasons = append(reasons, Reason{Kind: "skill", Exact: true, Detail: "skill removed: " + name})
 		case !inBase && inBranch:
-			reasons = append(reasons, Reason{Kind: "skill", Detail: "skill added: " + name})
+			reasons = append(reasons, Reason{Kind: "skill", Exact: true, Detail: "skill added: " + name})
 		default:
 			bf, bh := skillShape(base[rel])
 			ff, fh := skillShape(branch[rel])
@@ -80,8 +85,60 @@ func SkillReasons(base, branch map[string][]byte) []Reason {
 			}
 		}
 	}
+	reasons = append(reasons, planFolderReasons(base, branch)...)
+	if skeletonChanged(base, branch) {
+		reasons = append(reasons, Reason{Kind: "skill", Detail: "record skeleton headings or frontmatter changed"})
+	}
 	sort.Slice(reasons, func(i, j int) bool { return reasons[i].Detail < reasons[j].Detail })
 	return reasons
+}
+
+// planFolderReasons treats a new or removed file under plans/pNNNN-*/
+// as a change to the shape of what a skill writes.
+func planFolderReasons(base, branch map[string][]byte) []Reason {
+	paths := map[string]bool{}
+	for _, tree := range []map[string][]byte{base, branch} {
+		for path := range tree {
+			if isPlanFolderFile(path) {
+				paths[path] = true
+			}
+		}
+	}
+	var reasons []Reason
+	for path := range paths {
+		_, inBase := base[path]
+		_, inBranch := branch[path]
+		switch {
+		case inBase && !inBranch:
+			reasons = append(reasons, Reason{Kind: "skill", Detail: "plan folder file removed: " + path})
+		case !inBase && inBranch:
+			reasons = append(reasons, Reason{Kind: "skill", Detail: "plan folder file added: " + path})
+		}
+	}
+	return reasons
+}
+
+func isPlanFolderFile(p string) bool {
+	if !strings.HasPrefix(p, "plans/") {
+		return false
+	}
+	rest := strings.TrimPrefix(p, "plans/")
+	dir, _, ok := strings.Cut(rest, "/")
+	if !ok {
+		return false
+	}
+	return planDir(dir)
+}
+
+func planDir(name string) bool {
+	if len(name) < 3 || name[0] != 'p' {
+		return false
+	}
+	i := 1
+	for i < len(name) && name[i] >= '0' && name[i] <= '9' {
+		i++
+	}
+	return i > 1 && i < len(name) && name[i] == '-'
 }
 
 func skillName(p string) (string, bool) {
@@ -114,10 +171,11 @@ func skillShape(b []byte) (front string, headings []string) {
 	return front, headings
 }
 
-// CLIReasons reports help text, JSON keys, check findings, and record
-// skeleton shape. Other output changes stay in the diff and are not
-// called a CLI action.
-func CLIReasons(outputs []OutputChange, base, branch map[string][]byte) []Reason {
+// CLIReasons reports help text, JSON keys, and check findings.
+// Record skeleton shape is a skill-shape reason. Other output changes
+// stay in the diff and are not called a CLI action. JSON key sets come
+// from the raw stdout, not the normalized text.
+func CLIReasons(outputs []OutputChange) []Reason {
 	help, check, keys := false, false, false
 	var keyNames []string
 	for _, out := range outputs {
@@ -146,9 +204,6 @@ func CLIReasons(outputs []OutputChange, base, branch map[string][]byte) []Reason
 	if check {
 		reasons = append(reasons, Reason{Kind: "cli", Detail: "check findings changed"})
 	}
-	if skeletonChanged(base, branch) {
-		reasons = append(reasons, Reason{Kind: "cli", Detail: "record skeleton headings or frontmatter changed"})
-	}
 	return reasons
 }
 
@@ -162,7 +217,12 @@ func skeletonChanged(base, branch map[string][]byte) bool {
 		}
 	}
 	for path := range paths {
-		if recordShape(base[path]) != recordShape(branch[path]) {
+		before, inBase := base[path]
+		after, inBranch := branch[path]
+		if !inBase || !inBranch {
+			continue
+		}
+		if recordShape(before) != recordShape(after) {
 			return true
 		}
 	}
@@ -215,7 +275,7 @@ func GateReasons(lines []string) []Reason {
 	}
 	return []Reason{{
 		Kind:   "gate",
-		Detail: "keyword heuristic on added and removed lines (push, commit, attribution, approval, planning stop, sources, borrowed knowledge); matched: " + strings.Join(names, ", "),
+		Detail: "keyword heuristic on added and removed lines (push, commit, commit_recommended, attribution, approval, planning stop, reconcile_required, sources, borrowed knowledge); matched: " + strings.Join(names, ", "),
 	}}
 }
 

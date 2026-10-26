@@ -77,6 +77,37 @@ func TestBundleCleansPathsAndDropsAuth(t *testing.T) {
 	}
 }
 
+func TestBundleUserWordAndDroppedAuthKey(t *testing.T) {
+	dir := t.TempDir()
+	user := "zzuser"
+	note := filepath.Join(dir, "artifacts", "files", user+"-note.md")
+	mustWrite(t, note, "zzuserish saw "+user+"\n")
+	mustWrite(t, filepath.Join(dir, "artifacts", "files", "auth.json"), "sk-abcdefghijklmnop\n")
+	dest := filepath.Join(dir, "bundle.zip")
+	if err := WriteBundle(BundleOptions{RunDir: dir, Dest: dest, User: user}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dest); err != nil {
+		t.Fatal(err)
+	}
+	got, err := readZip(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, ok := got["artifacts/files/$USER-note.md"]
+	if !ok {
+		t.Fatalf("entry names %v", keys(got))
+	}
+	if body != "zzuserish saw $USER\n" {
+		t.Fatalf("%q", body)
+	}
+	for name, text := range got {
+		if strings.Contains(name, "auth.json") || strings.Contains(text, "sk-abcdefghijklmnop") {
+			t.Fatalf("auth file kept %s", name)
+		}
+	}
+}
+
 func TestBundleRefusesSecret(t *testing.T) {
 	sk := "sk-abcdefghijklmnop"
 	ghp := "ghp_" + strings.Repeat("a", 20)
