@@ -46,10 +46,17 @@ type Scenario struct {
 	AllowedBranches []string `yaml:"allowed_branches"`
 }
 
-// Snapshot is the workspace state a check can read. Maps are empty rather
-// than nil when a snapshot was taken and that section had nothing in it.
-// Status, Heads, Refs, and Worktrees are keyed by "ws" for the workspace
-// and by directory name for each Git checkout under repositories/.
+// Snapshot is the workspace state a check can read. Status, Heads, Refs,
+// and Worktrees are keyed by "ws" for the active workspace and by
+// directory name for each Git checkout under its repositories directory.
+// A join run also records the original checkout as "ws0" and
+// "ws0/<repo>". RemoteRefs, Refs, Heads, and RunDigest are nil or empty
+// only when that part of the snapshot failed: the checks that read them
+// then fail. A repository that is absent from both sides is left alone
+// when the world has no such checkout.
+//
+// DecoyLogUnreadable in DecoyLog means the log existed but could not be
+// read.
 type Snapshot struct {
 	DecoyLog   string
 	Status     map[string]string
@@ -84,6 +91,10 @@ type CheckContext struct {
 	// code and stderr. It is nil in tests that do not need a command;
 	// checks treat nil as inconclusive.
 	Exec func(dir string, argv ...string) (string, error)
+	// Host is the coding host that ran, when the runner knows it.
+	// Empty, or a name with no role directory, means the check cannot
+	// tell which host ran.
+	Host string
 }
 
 // CheckResult is one required check.

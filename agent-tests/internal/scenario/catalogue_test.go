@@ -96,8 +96,11 @@ func TestCatalogue(t *testing.T) {
 	if byID["join"].Workspace != "ws2" {
 		t.Fatalf("join workspace %q", byID["join"].Workspace)
 	}
-	if len(byID["execute"].AllowedBranches) != 1 || byID["execute"].AllowedBranches[0] != "cc/p1000/*" {
+	if len(byID["execute"].AllowedBranches) != 1 || byID["execute"].AllowedBranches[0] != "cc/p1000/api" {
 		t.Fatalf("execute branches %v", byID["execute"].AllowedBranches)
+	}
+	if Registry["not-a-check"] != nil {
+		t.Fatal("an unknown check name is registered")
 	}
 	digest, err := record.Digest(filepath.Join("..", "..", "fixtures"))
 	if err != nil {

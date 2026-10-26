@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -98,7 +99,10 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	applyWorkspace(&w, item.Scenario)
 	checkBefore, err := rt.captureCheck(ctx, w)
 	if err != nil {
-		return err
+		if !errors.Is(err, errNoLauncher) {
+			return err
+		}
+		checkBefore = nil
 	}
 	before, err := rt.snapshot(ctx, w)
 	if err != nil {
@@ -178,7 +182,10 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	}
 	checkOut, checkErr := rt.runCheck(ctx, w)
 	if checkErr != nil {
-		return checkErr
+		if !errors.Is(checkErr, errNoLauncher) {
+			return checkErr
+		}
+		checkOut = nil
 	}
 	graded = &scenario.CheckContext{
 		World:       w,
@@ -189,6 +196,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		CheckBefore: checkBefore,
 		CheckAfter:  checkOut,
 		Stream:      streamText,
+		Host:        item.Host,
 		Exec: func(dir string, argv ...string) (string, error) {
 			return rt.execIsolated(ctx, w, dir, argv...)
 		},
@@ -206,7 +214,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	if err = writeText(filepath.Join(runDir, "snapshots", "after.txt"), formatSnap(after), red); err != nil {
 		return err
 	}
-	if err = writeBytes(filepath.Join(runDir, "check.json"), checkOut, red, &drops); err != nil {
+	if err = publishCheckFiles(runDir, checkBefore, checkOut, red, &drops); err != nil {
 		return err
 	}
 	if err = rt.publishHost(runDir, w, res, streamPath, &parsed, &drops); err != nil {
@@ -218,7 +226,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	if err = rt.copyDesign(w, item.Scenario, filepath.Join(runDir, "artifacts", "design"), &drops); err != nil {
 		return err
 	}
-	if err = rt.writeGitState(ctx, w, before, filepath.Join(runDir, "artifacts", "git")); err != nil {
+	if err = rt.writeGitState(ctx, w, before, item.Scenario, filepath.Join(runDir, "artifacts", "git")); err != nil {
 		return err
 	}
 	return nil
@@ -274,10 +282,16 @@ func parseStream(adapter hosts.Host, streamPath string, stdout []byte) (hosts.Pa
 	return adapter.Parse(strings.NewReader(string(stdout)))
 }
 
+// errNoLauncher means the workspace has no launcher to run check with.
+// Callers leave the check document empty so check-clean fails, and they
+// do not substitute an empty JSON object.
+var errNoLauncher = errors.New("workspace launcher is missing")
+
 func (rt *runtime) runCheck(ctx context.Context, w world.World) ([]byte, error) {
 	launcher := filepath.Join(w.WS, ".context-circuit", "cli")
-	if _, err := os.Stat(launcher); err != nil {
-		return []byte("{}\n"), nil
+	info, err := os.Stat(launcher)
+	if err != nil || info.IsDir() {
+		return nil, fmt.Errorf("check: %w", errNoLauncher)
 	}
 	res, err := proc.Run(ctx, proc.Spec{
 		Argv: []string{"sh", launcher, "--json", "check"},
@@ -301,8 +315,7 @@ func grade(sc scenario.Scenario, ctx scenario.CheckContext) ([]scenario.CheckRes
 	for _, name := range sc.Checks {
 		check, ok := scenario.Registry[name]
 		if !ok {
-			incomplete = true
-			results = append(results, scenario.CheckResult{Name: name, Pass: true, Detail: "check not registered"})
+			results = append(results, scenario.CheckResult{Name: name, Pass: false, Detail: "check not registered"})
 			continue
 		}
 		result := check(ctx)
@@ -324,8 +337,13 @@ func (rt *runtime) snapshot(ctx context.Context, w world.World) (scenario.Snapsh
 		Refs:       map[string]string{},
 		Worktrees:  map[string]string{},
 	}
-	if b, err := os.ReadFile(w.DecoyLog); err == nil {
+	b, err := os.ReadFile(w.DecoyLog)
+	switch {
+	case err == nil:
 		snap.DecoyLog = string(b)
+	case os.IsNotExist(err):
+	default:
+		snap.DecoyLog = scenario.DecoyLogUnreadable
 	}
 	env := snippetEnv(w, callerPath(rt.opts.Caller))
 	for _, repo := range snapshotRepos(w) {
@@ -387,34 +405,11 @@ type repoPath struct {
 // snapshotRepos lists the workspace and every directory under
 // repositories/. World.API is included when it is not already in that list.
 func snapshotRepos(w world.World) []repoPath {
-	var repos []repoPath
-	seenPath := map[string]bool{}
-	seenName := map[string]bool{}
-	add := func(name, path string) {
-		if path == "" || seenPath[path] || seenName[name] {
-			return
-		}
-		seenPath[path] = true
-		seenName[name] = true
-		repos = append(repos, repoPath{name: name, path: path})
+	listed := scenario.WorldRepos(w)
+	repos := make([]repoPath, len(listed))
+	for i, repo := range listed {
+		repos[i] = repoPath{name: repo.Name, path: repo.Path}
 	}
-	if w.WS != "" {
-		add("ws", w.WS)
-		entries, err := os.ReadDir(filepath.Join(w.WS, "repositories"))
-		if err == nil {
-			var names []string
-			for _, entry := range entries {
-				if entry.IsDir() {
-					names = append(names, entry.Name())
-				}
-			}
-			sort.Strings(names)
-			for _, name := range names {
-				add(name, filepath.Join(w.WS, "repositories", name))
-			}
-		}
-	}
-	add("api", w.API)
 	return repos
 }
 

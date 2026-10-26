@@ -1,6 +1,9 @@
 package scenario
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path"
 	"path/filepath"
@@ -71,8 +74,14 @@ var numberedList = regexp.MustCompile(`(?m)^\d+\.\s+\S`)
 // mdLink matches a markdown link target.
 var mdLink = regexp.MustCompile(`\]\(([^)\s]+)\)`)
 
-// csvWord matches a CSV export mention.
+// csvWord matches a CSV mention.
 var csvWord = regexp.MustCompile(`(?i)\bcsv\b`)
+
+// csvDenied matches a sentence that says CSV is unsupported.
+var csvDenied = regexp.MustCompile(`(?i)\bunsupported\b|\bnot supported\b`)
+
+// csvAffirmed matches a sentence that records a CSV export.
+var csvAffirmed = regexp.MustCompile(`(?i)\bcsv export\b|\bas csv\b|\bto csv\b`)
 
 // recordIDMention matches the fixture record ids inside a knowledge note.
 var recordIDMention = regexp.MustCompile(`\b(?:i100|p1000)\b`)
@@ -224,8 +233,17 @@ func checkOrientReply(ctx CheckContext) CheckResult {
 }
 
 func checkOrientClean(ctx CheckContext) CheckResult {
-	if len(statusLines(ctx.After.Status["ws"])) != 0 || len(statusLines(ctx.After.Status["api"])) != 0 {
-		return failCheck(nameOrientClean, "workspace or api has uncommitted changes")
+	for _, repo := range []string{"ws", "api"} {
+		if ctx.After.Heads[repo] == "" {
+			return failCheck(nameOrientClean, repo+" HEAD is missing")
+		}
+		status, ok := ctx.After.Status[repo]
+		if !ok {
+			return failCheck(nameOrientClean, repo+" status is missing")
+		}
+		if len(statusLines(status)) != 0 {
+			return failCheck(nameOrientClean, "workspace or api has uncommitted changes")
+		}
 	}
 	return passCheck(nameOrientClean)
 }
@@ -286,19 +304,19 @@ func checkJoinLocal(ctx CheckContext) CheckResult {
 	if yaml.Unmarshal([]byte(raw), &bind) != nil || bind.Workspace == nil || strings.TrimSpace(bind.Workspace.Path) == "" {
 		return failCheck(nameJoinLocal, "workspace binding is missing")
 	}
+	if ctx.World.WS == "" || !pathsEqual(resolveBinding(ctx.World.WS, bind.Workspace.Path), ctx.World.WS) {
+		return failCheck(nameJoinLocal, "workspace binding is not the active workspace")
+	}
 	api, ok := bind.Bindings["api"]
 	if !ok || strings.TrimSpace(api.Path) == "" {
 		return failCheck(nameJoinLocal, "api binding is missing")
 	}
-	for _, pattern := range []string{
-		".claude/agents/cc-*.md",
-		".codex/agents/cc-*.toml",
-		".cursor/agents/cc-*.md",
-	} {
-		matches, err := filepath.Glob(filepath.Join(ctx.World.WS, filepath.FromSlash(pattern)))
-		if err != nil || len(matches) == 0 {
-			return failCheck(nameJoinLocal, "missing role definitions "+pattern)
-		}
+	apiWant := filepath.Join(ctx.World.WS, "repositories", "api")
+	if !pathsEqual(resolveBinding(ctx.World.WS, api.Path), apiWant) {
+		return failCheck(nameJoinLocal, "api binding is not repositories/api")
+	}
+	if missing := missingRoleSet(ctx.World.WS, ctx.Host); missing != "" {
+		return failCheck(nameJoinLocal, missing)
 	}
 	return passCheck(nameJoinLocal)
 }
@@ -334,6 +352,9 @@ func checkIntentRecord(ctx CheckContext) CheckResult {
 }
 
 func checkIntentNoPlan(ctx CheckContext) CheckResult {
+	if problem := requireRecordedCheckout(nameIntentNoPlan, ctx, "ws", "api"); problem != "" {
+		return failCheck(nameIntentNoPlan, problem)
+	}
 	for _, file := range ctx.After.Files {
 		if strings.HasPrefix(file, "plans/p") {
 			return failCheck(nameIntentNoPlan, "a plan file exists")
@@ -421,6 +442,9 @@ func checkPlanRecord(ctx CheckContext) CheckResult {
 }
 
 func checkPlanLinked(ctx CheckContext) CheckResult {
+	if problem := requireRecordedCheckout(namePlanLinked, ctx, "ws", "api"); problem != "" {
+		return failCheck(namePlanLinked, problem)
+	}
 	files := matchFiles(ctx.After.Files, "intent/i100-*.md")
 	if len(files) != 1 {
 		return failCheck(namePlanLinked, "expected one intent/i100-*.md")
@@ -542,26 +566,25 @@ func checkCompleteNote(ctx CheckContext) CheckResult {
 	if err != nil {
 		return failCheck(nameCompleteNote, err.Error())
 	}
-	if !csvWord.MatchString(note) {
-		return failCheck(nameCompleteNote, "invoices note does not mention CSV")
+	if !csvExportRecorded(note) {
+		return failCheck(nameCompleteNote, "invoices note does not record that CSV export exists")
 	}
 	index, err := readRel(ctx, "context/INDEX.md")
 	if err != nil {
 		return failCheck(nameCompleteNote, err.Error())
 	}
-	want := time.Now().UTC().Format("2006-01-02")
 	found := false
 	for _, line := range strings.Split(index, "\n") {
 		if !strings.Contains(line, "domains/invoices.md") {
 			continue
 		}
 		date := reviewedDate.FindStringSubmatch(strings.TrimRight(line, " \t"))
-		if date == nil || date[1] != want {
-			got := ""
-			if date != nil {
-				got = date[1]
-			}
-			return failCheck(nameCompleteNote, "reviewed date is "+got+", want "+want)
+		got := ""
+		if date != nil {
+			got = date[1]
+		}
+		if !nearUTCDay(got, time.Now()) {
+			return failCheck(nameCompleteNote, "reviewed date is "+got+", want the run's UTC date")
 		}
 		found = true
 	}
@@ -716,15 +739,202 @@ func treeHasCSV(root string) bool {
 	if err != nil {
 		return false
 	}
+	fset := token.NewFileSet()
 	for _, entry := range entries {
-		if entry.IsDir() {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") {
 			continue
 		}
-		body, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		file, err := parser.ParseFile(fset, filepath.Join(dir, name), nil, 0)
 		if err != nil {
 			continue
 		}
-		if csvWord.Match(body) {
+		if goFileUsesCSV(file) {
+			return true
+		}
+	}
+	return false
+}
+
+// goFileUsesCSV reports whether a function in the file calls the
+// encoding/csv package. A comment or a string that says CSV does not count.
+func goFileUsesCSV(file *ast.File) bool {
+	pkg := csvImportName(file)
+	if pkg == "" {
+		return false
+	}
+	found := false
+	ast.Inspect(file, func(n ast.Node) bool {
+		fn, ok := n.(*ast.FuncDecl)
+		if !ok || fn.Body == nil {
+			return true
+		}
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			if pkg == "." {
+				if usesCSVDot(n) {
+					found = true
+				}
+				return true
+			}
+			sel, ok := n.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			id, ok := sel.X.(*ast.Ident)
+			if ok && id.Name == pkg {
+				found = true
+			}
+			return true
+		})
+		return !found
+	})
+	return found
+}
+
+func csvImportName(file *ast.File) string {
+	for _, imp := range file.Imports {
+		path, err := strconv.Unquote(imp.Path.Value)
+		if err != nil || path != "encoding/csv" {
+			continue
+		}
+		if imp.Name == nil {
+			return "csv"
+		}
+		if imp.Name.Name == "_" {
+			return ""
+		}
+		return imp.Name.Name
+	}
+	return ""
+}
+
+func usesCSVDot(n ast.Node) bool {
+	call, ok := n.(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+	id, ok := call.Fun.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	switch id.Name {
+	case "NewReader", "NewWriter":
+		return true
+	default:
+		return false
+	}
+}
+
+// requireRecordedCheckout fails when a HEAD is absent or a status was
+// not recorded. An empty status string is a clean tree and is present.
+func requireRecordedCheckout(name string, ctx CheckContext, repos ...string) string {
+	for _, repo := range repos {
+		if ctx.Before.Heads[repo] == "" || ctx.After.Heads[repo] == "" {
+			return repo + " HEAD is missing"
+		}
+		if _, ok := ctx.After.Status[repo]; !ok {
+			return repo + " status is missing"
+		}
+	}
+	return ""
+}
+
+func resolveBinding(base, raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	if !filepath.IsAbs(raw) {
+		raw = filepath.Join(base, raw)
+	}
+	return raw
+}
+
+// roleHosts are the coding hosts whose role files agent setup writes.
+// claude and claude-code share a directory: the scenario host is claude,
+// and the CLI names that host claude-code.
+var roleHosts = []string{"claude", "codex", "cursor"}
+
+var roleFileNames = []string{"cc-explorer", "cc-planner", "cc-worker", "cc-reviewer"}
+
+func roleLocation(host string) (dir, ext string, ok bool) {
+	switch host {
+	case "claude", "claude-code":
+		return ".claude/agents", ".md", true
+	case "codex":
+		return ".codex/agents", ".toml", true
+	case "cursor":
+		return ".cursor/agents", ".md", true
+	default:
+		return "", "", false
+	}
+}
+
+func roleSetComplete(root, host string) bool {
+	dir, ext, ok := roleLocation(host)
+	if !ok {
+		return false
+	}
+	for _, name := range roleFileNames {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(dir), name+ext)); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+// missingRoleSet names the host whose role files are incomplete.
+// A known host requires that host's four files. An empty or unknown
+// host requires one host's complete set.
+func missingRoleSet(root, host string) string {
+	if _, _, ok := roleLocation(host); ok {
+		if roleSetComplete(root, host) {
+			return ""
+		}
+		return "missing role definitions for " + host
+	}
+	for _, candidate := range roleHosts {
+		if roleSetComplete(root, candidate) {
+			return ""
+		}
+	}
+	return "missing role definitions"
+}
+
+func csvExportRecorded(note string) bool {
+	for _, sentence := range splitSentences(note) {
+		if !csvWord.MatchString(sentence) || csvDenied.MatchString(sentence) {
+			continue
+		}
+		if csvAffirmed.MatchString(sentence) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitSentences(text string) []string {
+	var out []string
+	for _, line := range strings.Split(text, "\n") {
+		for _, sentence := range strings.Split(line, ".") {
+			sentence = strings.TrimSpace(sentence)
+			if sentence != "" {
+				out = append(out, sentence)
+			}
+		}
+	}
+	return out
+}
+
+// nearUTCDay accepts the UTC calendar date of now and the day on either
+// side, so a note written just before midnight still matches.
+func nearUTCDay(got string, now time.Time) bool {
+	if got == "" {
+		return false
+	}
+	now = now.UTC()
+	for _, delta := range []int{-1, 0, 1} {
+		if got == now.AddDate(0, 0, delta).Format("2006-01-02") {
 			return true
 		}
 	}

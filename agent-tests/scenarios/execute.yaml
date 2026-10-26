@@ -39,4 +39,4 @@ design_artifacts:
   - .worktrees/p1000/api/internal/invoice
 human: []
 allowed_branches:
-  - cc/p1000/*
+  - cc/p1000/api

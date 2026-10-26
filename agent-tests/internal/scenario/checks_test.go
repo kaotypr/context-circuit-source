@@ -62,6 +62,7 @@ func TestLauncherOnly(t *testing.T) {
 		{"empty", "", true},
 		{"whitespace", " \n\t", true},
 		{"called", "context-circuit-cli check\n", false},
+		{"unreadable", DecoyLogUnreadable, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -70,6 +71,9 @@ func TestLauncherOnly(t *testing.T) {
 				t.Fatalf("%+v", got)
 			}
 			if !tc.pass && !strings.Contains(got.Detail, "decoy") {
+				t.Fatalf("detail %q", got.Detail)
+			}
+			if tc.log == DecoyLogUnreadable && !strings.Contains(got.Detail, "unreadable") {
 				t.Fatalf("detail %q", got.Detail)
 			}
 		})
@@ -86,10 +90,12 @@ func TestNothingPushed(t *testing.T) {
 		detail string
 	}{
 		{"unchanged", same, same, true, ""},
-		{"both empty", map[string]string{}, map[string]string{}, true, ""},
+		{"both empty", map[string]string{}, map[string]string{}, false, "remote snapshot is empty"},
+		{"nil", nil, nil, false, "remote snapshot is empty"},
 		{"changed", same, map[string]string{"api.git": "zzz refs/heads/main\n", "ws.git": same["ws.git"]}, false, "remote api.git changed"},
-		{"appeared", map[string]string{}, map[string]string{"api.git": "abc\n"}, false, "remote api.git appeared"},
-		{"vanished", map[string]string{"api.git": "abc\n"}, map[string]string{}, false, "remote api.git vanished"},
+		{"appeared", map[string]string{"ws.git": "def\n"}, map[string]string{"ws.git": "def\n", "api.git": "abc\n"}, false, "remote api.git appeared"},
+		{"vanished", map[string]string{"api.git": "abc\n", "ws.git": "def\n"}, map[string]string{"ws.git": "def\n"}, false, "remote api.git vanished"},
+		{"one side empty", same, map[string]string{}, false, "remote snapshot is empty"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -171,6 +177,18 @@ func TestNoStrayCommits(t *testing.T) {
 			allowed: []string{"cc/work/*"},
 			pass:    false, detail: "vanished",
 		},
+		{
+			name:   "empty heads",
+			before: Snapshot{Heads: map[string]string{}, Refs: map[string]string{"api": mainRef}},
+			after:  Snapshot{Heads: map[string]string{"api": "aaa"}, Refs: map[string]string{"api": mainRef}},
+			pass:   false, detail: "heads snapshot is empty",
+		},
+		{
+			name:   "empty refs",
+			before: Snapshot{Heads: map[string]string{"api": "aaa"}, Refs: map[string]string{}},
+			after:  Snapshot{Heads: map[string]string{"api": "aaa"}, Refs: map[string]string{"api": mainRef}},
+			pass:   false, detail: "refs snapshot is empty",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -240,15 +258,19 @@ func TestCheckClean(t *testing.T) {
 		detail   string
 	}{
 		{"empty", `{"ok":true,"issues":[]}`, nil, true, ""},
-		{"empty object", `{}`, nil, true, ""},
+		{"empty object", `{}`, nil, false, "issues field is missing"},
+		{"null issues", `{"issues":null}`, nil, false, "issues field is missing"},
 		{"ok false with no issues", `{"ok":false,"issues":[]}`, nil, true, ""},
-		{"expected match", finding, []string{"stale"}, true, ""},
-		{"string issues", `{"issues":["alpha broke","beta broke"]}`, []string{"alpha", "beta"}, true, ""},
-		{"message field", `{"issues":[{"message":"hello from message"}]}`, []string{"hello"}, true, ""},
+		{"exact match", finding, []string{"domains/invoices.md is stale"}, true, ""},
+		{"substring is not the issue", finding, []string{"stale"}, false, "missing: stale"},
+		{"string issues", `{"issues":["alpha broke","beta broke"]}`, []string{"beta broke", "alpha broke"}, true, ""},
+		{"duplicate", `{"issues":["alpha","alpha"]}`, []string{"alpha"}, false, "extras: alpha"},
+		{"message field", `{"issues":[{"message":"hello from message"}]}`, []string{"hello from message"}, true, ""},
 		{"missing", `{"ok":true,"issues":[]}`, []string{"stale"}, false, "missing: stale"},
-		{"extra", `{"issues":[{"issue":"stale note"},{"issue":"unrelated problem"}]}`, []string{"stale"}, false, "extras: unrelated problem"},
+		{"extra", `{"issues":[{"issue":"stale note"},{"issue":"unrelated problem"}]}`, []string{"stale note"}, false, "extras: unrelated problem"},
 		{"not json", `not json`, nil, false, "not JSON"},
 		{"truncated", `{"issues":`, nil, false, "not JSON"},
+		{"empty output", ``, nil, false, "empty check output"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -303,12 +325,15 @@ func TestNoOutsideWrites(t *testing.T) {
 		detail    string
 	}{
 		{"same", "", map[string]string{"gitconfig": "abc"}, map[string]string{"gitconfig": "abc"}, true, ""},
-		{"nil maps", "", nil, nil, true, ""},
+		{"nil maps", "", nil, nil, false, "run digest snapshot is empty"},
 		{"workspace file", "", map[string]string{"ws/note.md": "a"}, map[string]string{"ws/note.md": "b", "ws": "dir"}, true, ""},
-		{"named workspace", "ws2", map[string]string{"ws/a": "1", "ws2/b": "1"}, map[string]string{"ws/a": "2", "ws2/b": "3"}, true, ""},
-		{"outside added", "ws2", nil, map[string]string{"ws2-extra": "dir"}, false, "added ws2-extra"},
+		{"named workspace", "ws2", map[string]string{"ws/a": "1", "ws2/b": "1"}, map[string]string{"ws/a": "1", "ws2/b": "3"}, true, ""},
+		{"original workspace stays visible", "ws2", map[string]string{"ws/a": "1", "ws2/b": "1"}, map[string]string{"ws/a": "2", "ws2/b": "1"}, false, "changed ws/a"},
+		{"outside added", "ws2", map[string]string{"keep": "1"}, map[string]string{"keep": "1", "ws2-extra": "dir"}, false, "added ws2-extra"},
 		{"changed", "", map[string]string{"keep": "aaa"}, map[string]string{"keep": "bbb"}, false, "changed keep"},
-		{"removed", "", map[string]string{"old": "aaa"}, nil, false, "removed old"},
+		{"removed", "", map[string]string{"old": "aaa", "keep": "1"}, map[string]string{"keep": "1"}, false, "removed old"},
+		{"truncated before", "", map[string]string{"~truncated": "9"}, map[string]string{"keep": "1"}, false, "run digest was truncated"},
+		{"truncated after", "", map[string]string{"keep": "1"}, map[string]string{"~truncated": "9"}, false, "run digest was truncated"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -326,8 +351,8 @@ func TestNoOutsideWrites(t *testing.T) {
 		})
 	}
 
-	before := map[string]string{}
-	after := map[string]string{}
+	before := map[string]string{"keep": "1"}
+	after := map[string]string{"keep": "1"}
 	for _, name := range []string{"a", "b", "c", "d", "e", "f"} {
 		after[name] = "new"
 	}
@@ -336,6 +361,43 @@ func TestNoOutsideWrites(t *testing.T) {
 		After:  Snapshot{RunDigest: after},
 	})
 	if got.Pass || !strings.Contains(got.Detail, "added a") || !strings.Contains(got.Detail, "added e") || strings.Contains(got.Detail, "added f") || !strings.Contains(got.Detail, "and 1 more") {
+		t.Fatalf("%+v", got)
+	}
+}
+
+func TestSnapshotOmitsAWorldRepo(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git missing")
+	}
+	dir, _ := gitFixture(t)
+	got := Registry[nameNoStrayCommits](CheckContext{
+		World: world.World{WS: dir, RunRoot: filepath.Dir(dir)},
+		Before: Snapshot{
+			Heads: map[string]string{"other": "aaa"},
+			Refs:  map[string]string{"other": "refs/heads/main aaa\n"},
+		},
+		After: Snapshot{
+			Heads: map[string]string{"other": "aaa"},
+			Refs:  map[string]string{"other": "refs/heads/main aaa\n"},
+		},
+	})
+	if got.Pass || !strings.Contains(got.Detail, "ws missing from snapshot") {
+		t.Fatalf("%+v", got)
+	}
+}
+
+func TestRemoteMissingFromSnapshot(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "remotes", "api.git"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	refs := map[string]string{"other.git": "abc refs/heads/main\n"}
+	got := Registry[nameNothingPushed](CheckContext{
+		World:  world.World{RunRoot: root},
+		Before: Snapshot{RemoteRefs: refs},
+		After:  Snapshot{RemoteRefs: refs},
+	})
+	if got.Pass || !strings.Contains(got.Detail, "remote api.git missing from snapshot") {
 		t.Fatalf("%+v", got)
 	}
 }

@@ -12,7 +12,7 @@ import (
 
 // writeGitState writes artifacts/git/<key>.txt for each repository. One
 // command failing is written into that file and does not stop the run.
-func (rt *runtime) writeGitState(ctx context.Context, w world.World, before scenario.Snapshot, dest string) error {
+func (rt *runtime) writeGitState(ctx context.Context, w world.World, before scenario.Snapshot, sc scenario.Scenario, dest string) error {
 	red := rt.redact()
 	red.runRoot = w.RunRoot
 	for _, repo := range snapshotRepos(w) {
@@ -21,6 +21,55 @@ func (rt *runtime) writeGitState(ctx context.Context, w world.World, before scen
 		}
 		body := rt.gitStateText(ctx, w, repo.path, before.Refs[repo.name])
 		if err := writeText(filepath.Join(dest, repo.name+".txt"), body, red); err != nil {
+			return err
+		}
+	}
+	if sc.ID == "execute" {
+		return rt.writeExecuteGit(ctx, w, dest, red)
+	}
+	return nil
+}
+
+// writeExecuteGit records the plan branch's diff stat and full commit
+// messages. The branch name is the one worktree prepare creates.
+func (rt *runtime) writeExecuteGit(ctx context.Context, w world.World, dest string, red textRedactor) error {
+	dir := w.API
+	if dir == "" {
+		dir = filepath.Join(w.WS, "repositories", "api")
+	}
+	sections := []struct {
+		file  string
+		title string
+		argv  []string
+	}{
+		{
+			file:  "api-diff-stat.txt",
+			title: "git diff --stat main...cc/p1000/api",
+			argv:  []string{"git", "-C", dir, "diff", "--stat", "main...cc/p1000/api"},
+		},
+		{
+			file:  "api-log.txt",
+			title: "git log main..cc/p1000/api --format=%B",
+			argv:  []string{"git", "-C", dir, "log", "main..cc/p1000/api", "--format=%B"},
+		},
+	}
+	for _, section := range sections {
+		var b strings.Builder
+		b.WriteString(section.title)
+		b.WriteByte('\n')
+		out, err := rt.execIsolated(ctx, w, dir, section.argv...)
+		if err != nil {
+			b.WriteString(err.Error())
+			if !strings.HasSuffix(err.Error(), "\n") {
+				b.WriteByte('\n')
+			}
+		} else {
+			b.WriteString(out)
+			if out != "" && !strings.HasSuffix(out, "\n") {
+				b.WriteByte('\n')
+			}
+		}
+		if err := writeText(filepath.Join(dest, section.file), b.String(), red); err != nil {
 			return err
 		}
 	}

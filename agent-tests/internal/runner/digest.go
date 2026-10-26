@@ -25,7 +25,6 @@ var digestSkipDir = map[string]bool{
 	"bin":         true,
 	"src":         true,
 	"setup-home":  true,
-	"home":        true,
 	"claude":      true,
 	"claude-home": true,
 	"codex":       true,

@@ -120,6 +120,9 @@ func TestReferenceSolutions(t *testing.T) {
 			if verdict != "pass" {
 				t.Fatalf("verdict %s\n%s\ncheck %s\nsolution:\n%s", verdict, formatResults(results), graded.CheckAfter, stderr)
 			}
+			if sc.ID == "execute" {
+				assertExecuteGit(t, st)
+			}
 			assertSoft(t, st, graded, verdict, results)
 			for _, name := range scenario.Names() {
 				if mutationHost[name] != sc.ID {
@@ -219,6 +222,12 @@ func TestRunRealScenarios(t *testing.T) {
 				t.Fatal(err)
 			}
 			if _, err := os.Stat(globOne(t, out, id, "claude", "stream.jsonl")); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Stat(globOne(t, out, id, "claude", "check.json")); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Stat(globOne(t, out, id, "claude", "check-before.json")); err != nil {
 				t.Fatal(err)
 			}
 			switch id {
@@ -321,6 +330,7 @@ func (st *liveWorld) grade(t *testing.T) (string, []scenario.CheckResult, scenar
 		After:      after,
 		CheckAfter: checkAfter,
 		Stream:     st.stream,
+		Host:       "claude",
 		Exec: func(dir string, argv ...string) (string, error) {
 			return st.rt.execIsolated(ctx, st.w, dir, argv...)
 		},
@@ -484,6 +494,25 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		}
 	default:
 		t.Fatalf("no start assertion for %s", st.sc.ID)
+	}
+}
+
+func assertExecuteGit(t *testing.T, st *liveWorld) {
+	t.Helper()
+	dest := filepath.Join(st.w.RunRoot, "artifacts", "git")
+	if err := st.rt.writeGitState(context.Background(), st.w, st.before, st.sc, dest); err != nil {
+		t.Fatal(err)
+	}
+	diffText := readFile(t, filepath.Join(dest, "api-diff-stat.txt"))
+	logText := readFile(t, filepath.Join(dest, "api-log.txt"))
+	if strings.Contains(diffText, "exit ") || !strings.Contains(diffText, "export.go") {
+		t.Fatalf("diff\n%s", diffText)
+	}
+	if !strings.Contains(logText, "feat(invoice): export invoices as CSV") {
+		t.Fatalf("log\n%s", logText)
+	}
+	if strings.Contains(diffText, st.w.RunRoot) || strings.Contains(logText, st.w.RunRoot) {
+		t.Fatal("git evidence kept the run root")
 	}
 }
 

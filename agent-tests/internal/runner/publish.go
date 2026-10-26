@@ -264,6 +264,21 @@ func (rt *runtime) copyDesignFile(w world.World, src, dest string, red textRedac
 	return writeBytes(filepath.Join(dest, rel), b, red, drops)
 }
 
+// publishCheckFiles writes check.json and, when the before document was
+// captured, check-before.json beside it. A nil document is a missing
+// launcher and is left unwritten.
+func publishCheckFiles(dir string, before, after []byte, red textRedactor, drops *[]string) error {
+	if after != nil {
+		if err := writeBytes(filepath.Join(dir, "check.json"), after, red, drops); err != nil {
+			return err
+		}
+	}
+	if before == nil {
+		return nil
+	}
+	return writeBytes(filepath.Join(dir, "check-before.json"), before, red, drops)
+}
+
 func writeText(path, text string, red textRedactor) error {
 	return writeBytes(path, []byte(text), red, nil)
 }

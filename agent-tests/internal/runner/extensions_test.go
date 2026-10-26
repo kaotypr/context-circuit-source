@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -202,25 +203,38 @@ func TestHostEnvOmitsFixtures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	date := time.Now().UTC().Format("2006-01-02")
-	want := "# " + date + "\nagent-tests run --scenarios marker --hosts claude --runs 1 --ref abc123\n"
-	if string(body) != want {
+	lines := strings.Split(string(body), "\n")
+	if len(lines) < 3 || !nearUTCDate(strings.TrimPrefix(lines[0], "# "), time.Now()) {
+		t.Fatalf("reproduce date %q", body)
+	}
+	if lines[1] != "agent-tests run --scenarios marker --hosts claude --runs 1 --ref abc123" || lines[2] != "" {
 		t.Fatalf("reproduce %q", body)
 	}
 	if strings.Contains(string(body), base) || strings.Contains(string(body), "Users") {
 		t.Fatalf("reproduce names a local path: %s", body)
 	}
 	matches, err := filepath.Glob(filepath.Join(parent, "agent-test-*", "out", "check-before.json"))
-	if err != nil || len(matches) != 1 {
-		t.Fatalf("check-before %v %v", matches, err)
-	}
-	raw, err := os.ReadFile(matches[0])
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.TrimSpace(string(raw)) != "{}" {
-		t.Fatalf("check-before %s", raw)
+	if len(matches) != 0 {
+		raw, readErr := os.ReadFile(matches[0])
+		t.Fatalf("missing launcher wrote check-before %v %s", readErr, raw)
 	}
+	published := filepath.Join(out, "case1", "runs", "marker", "claude", "branch", "r1", "check.json")
+	if raw, readErr := os.ReadFile(published); readErr == nil && strings.TrimSpace(string(raw)) == "{}" {
+		t.Fatal("substituted {}")
+	}
+}
+
+func nearUTCDate(got string, now time.Time) bool {
+	now = now.UTC()
+	for _, delta := range []int{-1, 0, 1} {
+		if got == now.AddDate(0, 0, delta).Format("2006-01-02") {
+			return true
+		}
+	}
+	return false
 }
 
 func TestRunDigestSkipsAndTruncates(t *testing.T) {
@@ -270,6 +284,14 @@ func TestRunDigestSkipsAndTruncates(t *testing.T) {
 	}
 	if got["repo/linked"] != "link:readme.txt" {
 		t.Fatalf("link %q", got["repo/linked"])
+	}
+	if got["home/secret.txt"] == "" {
+		t.Fatal("home was skipped")
+	}
+	for _, dir := range []string{"out", "gocache", "gopath", "tmp", "bin", "src", "setup-home", "claude", "claude-home", "codex", "codex-home", "cursor-home"} {
+		if _, ok := got[dir+"/secret.txt"]; ok {
+			t.Fatalf("recorded %s", dir)
+		}
 	}
 	for key := range got {
 		top, _, _ := strings.Cut(key, "/")
@@ -371,7 +393,7 @@ func TestSnapshotReposAndGitState(t *testing.T) {
 		t.Fatal(err)
 	}
 	dest := filepath.Join(runRoot, "artifacts", "git")
-	if err := rt.writeGitState(context.Background(), w, snap, dest); err != nil {
+	if err := rt.writeGitState(context.Background(), w, snap, scenario.Scenario{}, dest); err != nil {
 		t.Fatal(err)
 	}
 	body, err := os.ReadFile(filepath.Join(dest, "ws.txt"))
@@ -409,7 +431,7 @@ func TestGitStateKeepsCommandErrors(t *testing.T) {
 	}
 	rt := &runtime{opts: RunOptions{Caller: map[string]string{"PATH": os.Getenv("PATH")}}}
 	dest := filepath.Join(runRoot, "artifacts", "git")
-	if err := rt.writeGitState(context.Background(), w, scenario.Snapshot{}, dest); err != nil {
+	if err := rt.writeGitState(context.Background(), w, scenario.Snapshot{}, scenario.Scenario{}, dest); err != nil {
 		t.Fatal(err)
 	}
 	body, err := os.ReadFile(filepath.Join(dest, "ws.txt"))
@@ -453,6 +475,197 @@ func commitRepo(t *testing.T, dir string, env []string, message string) string {
 	runGit(t, dir, env, "add", "note.txt")
 	runGit(t, dir, env, "commit", "-q", "-m", message)
 	return strings.TrimSpace(runGit(t, dir, env, "rev-parse", "HEAD"))
+}
+
+func TestGradeUnknownCheckFails(t *testing.T) {
+	results, incomplete := grade(scenario.Scenario{Checks: []string{"not-a-check"}}, scenario.CheckContext{})
+	if incomplete || len(results) != 1 || results[0].Pass || results[0].Name != "not-a-check" {
+		t.Fatalf("incomplete %v %+v", incomplete, results)
+	}
+	if scenario.Verdict(results, nil, incomplete) != "fail" {
+		t.Fatal(scenario.Verdict(results, nil, incomplete))
+	}
+}
+
+func TestUnreadableDecoyFailsLauncherCheck(t *testing.T) {
+	runRoot := t.TempDir()
+	w, err := emptyWorld(runRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(w.DecoyLog, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rt := &runtime{opts: RunOptions{Caller: map[string]string{"PATH": "/usr/bin:/bin"}}}
+	snap, err := rt.snapshot(context.Background(), w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.DecoyLog != scenario.DecoyLogUnreadable {
+		t.Fatalf("decoy %q", snap.DecoyLog)
+	}
+	got := scenario.Registry["launcher-only"](scenario.CheckContext{After: snap})
+	if got.Pass || !strings.Contains(got.Detail, "unreadable") {
+		t.Fatalf("%+v", got)
+	}
+}
+
+func TestRunCheckMissingLauncher(t *testing.T) {
+	runRoot := t.TempDir()
+	w, err := emptyWorld(runRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rt := &runtime{opts: RunOptions{Caller: map[string]string{"PATH": os.Getenv("PATH")}}}
+	out, err := rt.runCheck(context.Background(), w)
+	if !errors.Is(err, errNoLauncher) || out != nil {
+		t.Fatalf("err %v out %q", err, out)
+	}
+	got := scenario.Registry["check-clean"](scenario.CheckContext{CheckAfter: out})
+	if got.Pass {
+		t.Fatal("empty check output passed")
+	}
+}
+
+func TestPublishCheckFiles(t *testing.T) {
+	dir := t.TempDir()
+	before := []byte("{\"issues\":[]}\n")
+	after := []byte("{\"issues\":[{\"issue\":\"stale\"}]}\n")
+	if err := publishCheckFiles(dir, before, after, textRedactor{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if raw, err := os.ReadFile(filepath.Join(dir, "check-before.json")); err != nil || string(raw) != string(before) {
+		t.Fatalf("before %v %s", err, raw)
+	}
+	if raw, err := os.ReadFile(filepath.Join(dir, "check.json")); err != nil || string(raw) != string(after) {
+		t.Fatalf("after %v %s", err, raw)
+	}
+	empty := t.TempDir()
+	if err := publishCheckFiles(empty, nil, nil, textRedactor{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(empty, "check.json")); !os.IsNotExist(err) {
+		t.Fatal("wrote check.json without a document")
+	}
+	if _, err := os.Stat(filepath.Join(empty, "check-before.json")); !os.IsNotExist(err) {
+		t.Fatal("wrote check-before.json without a document")
+	}
+}
+
+func TestJoinSnapshotsOriginalCheckout(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git missing")
+	}
+	runRoot := t.TempDir()
+	w, err := emptyWorld(runRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := worldGitEnv(t, runRoot)
+	original := filepath.Join(runRoot, "ws")
+	clone := filepath.Join(runRoot, "ws2")
+	for _, dir := range []string{
+		original, filepath.Join(original, "repositories", "api"),
+		clone, filepath.Join(clone, "repositories", "api"),
+	} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		initRepo(t, dir, env)
+		commitRepo(t, dir, env, "feat: seed")
+	}
+	w.WS = clone
+	w.API = filepath.Join(clone, "repositories", "api")
+	w.RunRoot = runRoot
+	rt := &runtime{opts: RunOptions{Caller: map[string]string{"PATH": os.Getenv("PATH")}}}
+	before, err := rt.snapshot(context.Background(), w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"ws", "api", "ws0", "ws0/api"} {
+		if before.Heads[name] == "" {
+			t.Fatalf("missing %s in %+v", name, before.Heads)
+		}
+	}
+	commitRepo(t, original, env, "chore: hidden commit")
+	after, err := rt.snapshot(context.Background(), w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := scenario.Registry["no-stray-commits"](scenario.CheckContext{
+		World: w, Before: before, After: after,
+	})
+	if got.Pass || !strings.Contains(got.Detail, "ws0 HEAD changed") {
+		t.Fatalf("%+v", got)
+	}
+	if err := os.WriteFile(filepath.Join(original, "stray.txt"), []byte("stray\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	dirtied, err := rt.snapshot(context.Background(), w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outside := scenario.Registry["no-outside-writes"](scenario.CheckContext{
+		Scenario: scenario.Scenario{Workspace: "ws2"},
+		Before:   before,
+		After:    dirtied,
+	})
+	if outside.Pass || !strings.Contains(outside.Detail, "ws/") {
+		t.Fatalf("%+v", outside)
+	}
+}
+
+func TestExecuteGitEvidence(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git missing")
+	}
+	runRoot := t.TempDir()
+	w, err := emptyWorld(runRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := worldGitEnv(t, runRoot)
+	api := filepath.Join(w.WS, "repositories", "api")
+	if err := os.MkdirAll(filepath.Join(api, "internal", "invoice"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, api, env)
+	if err := os.WriteFile(filepath.Join(api, "internal", "invoice", "export.go"), []byte("package invoice\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	commitRepo(t, api, env, "feat: seed")
+	runGit(t, api, env, "switch", "-qc", "cc/p1000/api")
+	if err := os.WriteFile(filepath.Join(api, "internal", "invoice", "export.go"), []byte("package invoice\n\nfunc CSV() {}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(t, api, env, "add", "-A")
+	runGit(t, api, env, "commit", "-qm", "feat(invoice): export invoices as CSV", "-m", "Rows are number, customer, status, and cents.")
+	w.API = api
+	rt := &runtime{opts: RunOptions{Caller: map[string]string{"PATH": os.Getenv("PATH")}}}
+	dest := filepath.Join(runRoot, "artifacts", "git")
+	if err := rt.writeGitState(context.Background(), w, scenario.Snapshot{}, scenario.Scenario{ID: "execute"}, dest); err != nil {
+		t.Fatal(err)
+	}
+	diffText := readTestFile(t, filepath.Join(dest, "api-diff-stat.txt"))
+	logText := readTestFile(t, filepath.Join(dest, "api-log.txt"))
+	if !strings.Contains(diffText, "git diff --stat main...cc/p1000/api") || !strings.Contains(diffText, "export.go") {
+		t.Fatalf("diff\n%s", diffText)
+	}
+	if !strings.Contains(logText, "feat(invoice): export invoices as CSV") || !strings.Contains(logText, "Rows are number, customer, status, and cents.") {
+		t.Fatalf("log\n%s", logText)
+	}
+	if strings.Contains(diffText, runRoot) || strings.Contains(logText, runRoot) {
+		t.Fatal("git evidence kept the run root")
+	}
+}
+
+func readTestFile(t *testing.T, path string) string {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(body)
 }
 
 func runGit(t *testing.T, dir string, env []string, args ...string) string {

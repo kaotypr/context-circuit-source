@@ -1,9 +1,12 @@
 package scenario
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/hosts"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/proc"
@@ -97,6 +100,164 @@ func TestDirectReadmePorcelain(t *testing.T) {
 	}
 	if Registry[nameDirectReadme](ctx).Pass {
 		t.Fatal("typo passed")
+	}
+}
+
+func TestMissingCheckoutFails(t *testing.T) {
+	empty := CheckContext{}
+	for _, name := range []string{nameOrientClean, nameIntentNoPlan, namePlanLinked} {
+		got := Registry[name](empty)
+		if got.Pass || !strings.Contains(got.Detail, "HEAD is missing") {
+			t.Fatalf("%s %+v", name, got)
+		}
+	}
+	recorded := func() CheckContext {
+		heads := map[string]string{"ws": "aaa", "api": "bbb"}
+		status := map[string]string{"ws": "", "api": ""}
+		return CheckContext{
+			Before: Snapshot{Heads: heads, Status: status},
+			After:  Snapshot{Heads: heads, Status: status},
+		}
+	}
+	if !Registry[nameOrientClean](recorded()).Pass {
+		t.Fatal(Registry[nameOrientClean](recorded()))
+	}
+	if !Registry[nameIntentNoPlan](recorded()).Pass {
+		t.Fatal(Registry[nameIntentNoPlan](recorded()))
+	}
+	noStatus := recorded()
+	delete(noStatus.After.Status, "api")
+	if Registry[nameIntentNoPlan](noStatus).Pass {
+		t.Fatal("missing api status passed")
+	}
+}
+
+func TestJoinBindingAndRoles(t *testing.T) {
+	ws := t.TempDir()
+	api := filepath.Join(ws, "repositories", "api")
+	if err := os.MkdirAll(api, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ws, "member.local.yaml"), []byte("member: dana\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeRoles := func(host string) {
+		t.Helper()
+		dir, ext, ok := roleLocation(host)
+		if !ok {
+			t.Fatal(host)
+		}
+		base := filepath.Join(ws, filepath.FromSlash(dir))
+		if err := os.MkdirAll(base, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range roleFileNames {
+			if err := os.WriteFile(filepath.Join(base, name+ext), []byte(name+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	bindings := func(workspace, apiPath string) {
+		t.Helper()
+		body := fmt.Sprintf("workspace:\n  path: %q\nbindings:\n  api:\n    path: %q\n", workspace, apiPath)
+		if err := os.WriteFile(filepath.Join(ws, "repositories.local.yaml"), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx := CheckContext{World: world.World{WS: ws}, Host: "claude"}
+	bindings(".", api)
+	writeRoles("claude")
+	if !Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal(Registry[nameJoinLocal](ctx))
+	}
+	bindings("/tmp/elsewhere", api)
+	if got := Registry[nameJoinLocal](ctx); got.Pass || !strings.Contains(got.Detail, "active workspace") {
+		t.Fatalf("%+v", got)
+	}
+	bindings(".", "/tmp/elsewhere")
+	if got := Registry[nameJoinLocal](ctx); got.Pass || !strings.Contains(got.Detail, "repositories/api") {
+		t.Fatalf("%+v", got)
+	}
+	bindings(".", api)
+	if err := os.Remove(filepath.Join(ws, ".claude", "agents", "cc-worker.md")); err != nil {
+		t.Fatal(err)
+	}
+	if got := Registry[nameJoinLocal](ctx); got.Pass || !strings.Contains(got.Detail, "claude") {
+		t.Fatalf("%+v", got)
+	}
+	writeRoles("codex")
+	if Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal("claude run accepted another host's roles")
+	}
+	ctx.Host = ""
+	if !Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal(Registry[nameJoinLocal](ctx))
+	}
+	for _, name := range roleFileNames {
+		if err := os.Remove(filepath.Join(ws, ".codex", "agents", name+".toml")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal("partial role sets passed")
+	}
+}
+
+func TestCSVExportMustCallEncodingCSV(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "internal", "invoice")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	comment := "package invoice\n\n// CSV export is mentioned here.\nfunc Note() string { return \"CSV\" }\n"
+	if err := os.WriteFile(filepath.Join(dir, "export.go"), []byte(comment), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if treeHasCSV(root) {
+		t.Fatal("a comment counted as a CSV export")
+	}
+	real := "package invoice\n\nimport \"encoding/csv\"\n\nfunc CSV() { csv.NewWriter(nil) }\n"
+	if err := os.WriteFile(filepath.Join(dir, "export.go"), []byte(real), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !treeHasCSV(root) {
+		t.Fatal("encoding/csv function was not seen")
+	}
+}
+
+func TestCompleteNoteRejectsUnsupported(t *testing.T) {
+	ws := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(ws, "context", "domains"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(note, date string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(ws, "context", "domains", "invoices.md"), []byte(note), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		index := "- [Invoices](domains/invoices.md) — voiding · anchor · reviewed " + date + "\n"
+		if err := os.WriteFile(filepath.Join(ws, "context", "INDEX.md"), []byte(index), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx := CheckContext{World: world.World{WS: ws}}
+	today := time.Now().UTC().Format("2006-01-02")
+	write("Invoices export as a plain-text summary. CSV is not supported.\n", today)
+	if got := Registry[nameCompleteNote](ctx); got.Pass {
+		t.Fatal("unsupported note passed")
+	}
+	write("Invoices export as a plain-text summary or as CSV.\n", today)
+	if !Registry[nameCompleteNote](ctx).Pass {
+		t.Fatal(Registry[nameCompleteNote](ctx))
+	}
+	yesterday := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02")
+	write("The CSV export now exists.\n", yesterday)
+	if !Registry[nameCompleteNote](ctx).Pass {
+		t.Fatal(Registry[nameCompleteNote](ctx))
+	}
+	write("The CSV export now exists.\n", "2020-01-01")
+	if got := Registry[nameCompleteNote](ctx); got.Pass || !strings.Contains(got.Detail, "reviewed date") {
+		t.Fatalf("%+v", got)
 	}
 }
 
