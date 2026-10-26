@@ -39,6 +39,12 @@ is a security report:
 - Commit, push, merge, publication, deployment, and deletion of workspace data
   are gated on explicit human authorization and are never inferred.
 
+The authorization gate, like the other rules an agent follows in a workspace,
+binds an agent through the instructions it reads. The CLI does not enforce it.
+The agent tests grade named checks, such as nothing being pushed, on short runs
+of real coding hosts. That is evidence, not a guarantee. An agent that crosses a
+gate listed above is still a security report.
+
 ## Out of scope
 
 - Anything a coding agent decides to write. The workspace constrains where an

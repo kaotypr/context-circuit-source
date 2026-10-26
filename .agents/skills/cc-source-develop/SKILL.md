@@ -10,4 +10,5 @@ maintainer request. Product entry instructions are packaging material.
 Keep generated behavior in product/AGENTS.md.in and the release mapping exact.
 Exercise YAML, records, Git, and packaging in fresh temporary directories with
 go test ./... and scripts/check-release.sh. Do not run retired product lifecycles.
-Report native-host behavior as unverified unless actually exercised.
+Report native-host behavior as measured on a named host, model, and date by the
+agent tests in agent-tests/, and as not exercised when it was not.
