@@ -115,8 +115,42 @@ func TestCodexSubscriptionAuthReady(t *testing.T) {
 		t.Fatal(err)
 	}
 	ok, reason = h.AuthReady(map[string]string{"CODEX_HOME": linkHome}, cfg)
-	if ok || reason != "no Codex login file found" {
+	if ok || reason != "the Codex login file is a symlink" {
 		t.Fatalf("dangling ok %v reason %q", ok, reason)
+	}
+
+	// A symlink to a real login is refused too, as the copy refuses it.
+	goodLink := filepath.Join(dir, "goodlink")
+	if err := os.MkdirAll(goodLink, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(empty, filepath.Join(goodLink, "auth.json")); err != nil {
+		t.Fatal(err)
+	}
+	ok, reason = h.AuthReady(map[string]string{"CODEX_HOME": goodLink}, cfg)
+	if ok || reason != "the Codex login file is a symlink" {
+		t.Fatalf("symlink ok %v reason %q", ok, reason)
+	}
+
+	// With neither CODEX_HOME nor HOME there is no login, not a file
+	// relative to the working directory.
+	ok, reason = h.AuthReady(map[string]string{}, cfg)
+	if ok || reason != "no Codex login file found" {
+		t.Fatalf("no home ok %v reason %q", ok, reason)
+	}
+}
+
+func TestLoginSecretsRereadsTheFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "auth.json")
+	if got := LoginSecrets(path); len(got) != 0 {
+		t.Fatalf("missing file gave %q", got)
+	}
+	refreshed := "rt_" + strings.Repeat("r", 30)
+	if err := os.WriteFile(path, []byte(`{"tokens":{"refresh_token":"`+refreshed+`"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := LoginSecrets(path); !containsString(got, refreshed) {
+		t.Fatalf("refreshed token not found: %q", got)
 	}
 }
 

@@ -23,6 +23,16 @@ func loginCopyPaths(copies []hosts.FileCopy) []string {
 	return out
 }
 
+// refreshLoginSecrets adds the secrets each copied login file holds now, so a
+// token the host rewrote during the run is redacted like the one copied in.
+func (rt *runtime) refreshLoginSecrets(paths []string) {
+	for _, path := range paths {
+		if path != "" {
+			rt.loginSecrets = append(rt.loginSecrets, hosts.LoginSecrets(path)...)
+		}
+	}
+}
+
 // removeLoginFiles deletes copied login files. A missing file is success.
 // os.Remove does not follow a symlink. Errors do not include the path or
 // the file contents.

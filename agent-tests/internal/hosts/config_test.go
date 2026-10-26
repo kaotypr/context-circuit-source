@@ -13,7 +13,7 @@ func TestLoadHosts(t *testing.T) {
 		t.Fatal(err)
 	}
 	claude := hosts["claude"]
-	if claude.Name != "claude" || claude.Model != "claude-opus-5-5" || !claude.Provisional {
+	if claude.Name != "claude" || claude.Model != "claude-sonnet-5-5" || !claude.Provisional {
 		t.Fatalf("%+v", claude)
 	}
 	if claude.Command != "claude" || claude.HostVersion != "2.1.304" || claude.MaxBudgetUSD != 3 {
@@ -23,11 +23,11 @@ func TestLoadHosts(t *testing.T) {
 		t.Fatalf("auth %v", claude.AuthEnv)
 	}
 	codex := hosts["codex"]
-	if codex.Model != "gpt-6-sol" || codex.Effort != "medium" || codex.PriceRow != "gpt-6-sol" || codex.HostVersion != "0.162.1" {
+	if codex.Model != "gpt-5.6-luna" || codex.Effort != "medium" || codex.PriceRow != "" || codex.HostVersion != "0.162.1" {
 		t.Fatalf("%+v", codex)
 	}
 	cursor := hosts["cursor"]
-	if cursor.Model != "auto" || cursor.PriceRow != "" || cursor.HostVersion != "2026.10.22-27dcf5f" {
+	if cursor.Model != "composer-2.5" || cursor.PriceRow != "" || cursor.HostVersion != "2026.10.22-27dcf5f" {
 		t.Fatalf("%+v", cursor)
 	}
 	if claude.Auth != "env" || codex.Auth != "env" || cursor.Auth != "env" {

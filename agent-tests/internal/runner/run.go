@@ -155,7 +155,7 @@ func Run(ctx context.Context, opts RunOptions) error {
 			return err
 		}
 		if err := rt.one(ctx, item, false); err != nil {
-			fmt.Fprintf(out, "harness-error %s %s %s r%d: %s\n", item.Scenario.ID, item.Host, item.Side, item.RunN, err)
+			fmt.Fprintf(out, "harness-error %s %s %s r%d: %s\n", item.Scenario.ID, item.Host, item.Side, item.RunN, rt.redact().text(err.Error()))
 			failures = append(failures, err.Error())
 		}
 	}

@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/proc"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/report"
@@ -132,7 +134,9 @@ func runCmd(args []string, caller map[string]string) int {
 	if *out != "" {
 		outDir = *out
 	}
-	err = runner.Run(context.Background(), runner.RunOptions{
+	ctx, stop := interruptContext()
+	defer stop()
+	err = runner.Run(ctx, runner.RunOptions{
 		Checkout:         root,
 		Ref:              *ref,
 		BaseRef:          *base,
@@ -195,7 +199,9 @@ func probeCmd(args []string, caller map[string]string) int {
 	if *out != "" {
 		outDir = *out
 	}
-	err = runner.Probe(context.Background(), runner.ProbeOptions{
+	ctx, stop := interruptContext()
+	defer stop()
+	err = runner.Probe(ctx, runner.ProbeOptions{
 		Checkout:         root,
 		Ref:              *ref,
 		HostNames:        splitList(*hosts),
@@ -398,4 +404,11 @@ func callerEnv() map[string]string {
 		out[key] = val
 	}
 	return out
+}
+
+// interruptContext is cancelled by Ctrl-C or SIGTERM. The host runs in its own
+// process group and does not get the terminal's signal, so the runner has to
+// stop it and let its cleanup run, which removes a copied login file.
+func interruptContext() (context.Context, context.CancelFunc) {
+	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 }

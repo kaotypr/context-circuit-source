@@ -32,6 +32,18 @@ func ApplyCopies(copies []FileCopy) ([]string, error) {
 	return uniqueStrings(secrets), nil
 }
 
+// LoginSecrets reads secret strings from a copied login file as it is now.
+// A host may rewrite the file during a run, for example when it refreshes a
+// token, so the runner reads it again before removing it. A missing or
+// unreadable file contributes nothing.
+func LoginSecrets(path string) []string {
+	body, err := readRegular(path)
+	if err != nil {
+		return nil
+	}
+	return uniqueStrings(secretsFromLogin(body))
+}
+
 func copyOne(copy FileCopy) ([]byte, error) {
 	mode := copy.Mode
 	if mode == 0 {

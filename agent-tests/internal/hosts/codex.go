@@ -153,13 +153,25 @@ func subscriptionLoginSource(caller map[string]string) string {
 			return filepath.Join(home, ".codex", "auth.json")
 		}
 	}
-	return filepath.Join(".codex", "auth.json")
+	return ""
 }
 
-// subscriptionLoginReady uses Stat only. It does not read the file.
+// subscriptionLoginReady uses Lstat only. It does not read the file. A
+// symlink is refused here as it is by the copy, so probe does not report a
+// login that every run would then refuse.
 func subscriptionLoginReady(caller map[string]string) (bool, string) {
-	info, err := os.Stat(subscriptionLoginSource(caller))
-	if err != nil || !info.Mode().IsRegular() || info.Size() == 0 {
+	src := subscriptionLoginSource(caller)
+	if src == "" {
+		return false, "no Codex login file found"
+	}
+	info, err := os.Lstat(src)
+	if err != nil || info.Size() == 0 {
+		return false, "no Codex login file found"
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return false, "the Codex login file is a symlink"
+	}
+	if !info.Mode().IsRegular() {
 		return false, "no Codex login file found"
 	}
 	return true, ""

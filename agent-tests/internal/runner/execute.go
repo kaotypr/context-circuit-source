@@ -195,6 +195,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		Timeout:    timeout,
 		StreamPath: streamPath,
 	})
+	rt.refreshLoginSecrets(loginPaths)
 	if derr := removeLoginFiles(loginPaths); derr != nil {
 		noteLoginRemoval(derr)
 		if runErr == nil && !res.TimedOut && res.ExitCode == 0 {

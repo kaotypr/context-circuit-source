@@ -184,7 +184,7 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 				RunN:   1,
 			}
 			if err := rt.one(ctx, item, spec.empty); err != nil {
-				fmt.Fprintf(out, "harness-error %s %s: %s\n", spec.id, cfg.Name, err)
+				fmt.Fprintf(out, "harness-error %s %s: %s\n", spec.id, cfg.Name, rt.redact().text(err.Error()))
 				failures = append(failures, err.Error())
 			}
 		}
