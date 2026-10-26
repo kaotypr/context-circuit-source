@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -44,6 +45,9 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		}
 	}()
 	if err = os.MkdirAll(runDir, 0o755); err != nil {
+		return err
+	}
+	if err = writeText(filepath.Join(runDir, "reproduce.txt"), reproduceLine(item, rt.opts.Ref, rt.opts.BaseRef, time.Now().UTC().Format("2006-01-02")), rt.redact()); err != nil {
 		return err
 	}
 
@@ -89,6 +93,11 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		if err = rt.runSnippets(ctx, w, item.Scenario); err != nil {
 			return err
 		}
+	}
+	applyWorkspace(&w, item.Scenario)
+	checkBefore, err := rt.captureCheck(ctx, w)
+	if err != nil {
+		return err
 	}
 	before, err := rt.snapshot(ctx, w)
 	if err != nil {
@@ -158,6 +167,10 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	if err != nil {
 		return err
 	}
+	streamText := string(res.Stdout)
+	if raw, readErr := os.ReadFile(streamPath); readErr == nil {
+		streamText = string(raw)
+	}
 	after, err := rt.snapshot(ctx, w)
 	if err != nil {
 		return err
@@ -167,7 +180,17 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		return checkErr
 	}
 	results, incomplete = grade(item.Scenario, scenario.CheckContext{
-		World: w, Scenario: item.Scenario, Parsed: parsed, Before: before, After: after,
+		World:       w,
+		Scenario:    item.Scenario,
+		Parsed:      parsed,
+		Before:      before,
+		After:       after,
+		CheckBefore: checkBefore,
+		CheckAfter:  checkOut,
+		Stream:      streamText,
+		Exec: func(dir string, argv ...string) (string, error) {
+			return rt.execIsolated(ctx, w, dir, argv...)
+		},
 	})
 	if !parsed.Terminal {
 		incomplete = true
@@ -193,11 +216,19 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	if err = rt.copyDesign(w, item.Scenario, filepath.Join(runDir, "artifacts", "design"), &drops); err != nil {
 		return err
 	}
+	if err = rt.writeGitState(ctx, w, before, filepath.Join(runDir, "artifacts", "git")); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (rt *runtime) runSnippets(ctx context.Context, w world.World, sc scenario.Scenario) error {
+	// FIXTURES is for setup snippets only. The host environment is built
+	// later and does not receive it.
 	env := snippetEnv(w, callerPath(rt.opts.Caller))
+	if rt.opts.FixturesDir != "" {
+		env = append(env, "FIXTURES="+rt.opts.FixturesDir)
+	}
 	for i, snippet := range sc.Setup {
 		res, err := proc.Run(ctx, proc.Spec{
 			Argv: []string{"sh", "-c", snippet},
@@ -272,7 +303,13 @@ func grade(sc scenario.Scenario, ctx scenario.CheckContext) ([]scenario.CheckRes
 			results = append(results, scenario.CheckResult{Name: name, Pass: true, Detail: "check not registered"})
 			continue
 		}
-		results = append(results, check(ctx))
+		result := check(ctx)
+		// Inconclusive is not a failure and is not a pass. FailedChecks
+		// lists only results with Pass false.
+		if result.Inconclusive {
+			incomplete = true
+		}
+		results = append(results, result)
 	}
 	return results, incomplete
 }
@@ -282,20 +319,15 @@ func (rt *runtime) snapshot(ctx context.Context, w world.World) (scenario.Snapsh
 		Status:     map[string]string{},
 		Heads:      map[string]string{},
 		RemoteRefs: map[string]string{},
+		Refs:       map[string]string{},
+		Worktrees:  map[string]string{},
 	}
 	if b, err := os.ReadFile(w.DecoyLog); err == nil {
 		snap.DecoyLog = string(b)
 	}
 	env := snippetEnv(w, callerPath(rt.opts.Caller))
-	repos := []struct{ name, path string }{{"ws", w.WS}}
-	if w.API != "" {
-		repos = append(repos, struct{ name, path string }{"api", w.API})
-	}
-	for _, repo := range repos {
-		if _, err := os.Stat(repo.path); err != nil {
-			continue
-		}
-		if _, err := os.Lstat(filepath.Join(repo.path, ".git")); err != nil {
+	for _, repo := range snapshotRepos(w) {
+		if !repoHasGit(repo.path) {
 			continue
 		}
 		status, err := gitQuiet(ctx, env, repo.path, "status", "--porcelain")
@@ -308,6 +340,16 @@ func (rt *runtime) snapshot(ctx context.Context, w world.World) (scenario.Snapsh
 			return snap, err
 		}
 		snap.Heads[repo.name] = strings.TrimSpace(head)
+		refs, err := gitQuiet(ctx, env, repo.path, "for-each-ref", "--format=%(refname) %(objectname)", "refs/heads")
+		if err != nil {
+			return snap, err
+		}
+		snap.Refs[repo.name] = sortedRefLines(refs)
+		trees, err := gitQuiet(ctx, env, repo.path, "worktree", "list", "--porcelain")
+		if err != nil {
+			return snap, err
+		}
+		snap.Worktrees[repo.name] = trees
 	}
 	remotes := filepath.Join(w.RunRoot, "remotes")
 	entries, err := os.ReadDir(remotes)
@@ -327,7 +369,139 @@ func (rt *runtime) snapshot(ctx context.Context, w world.World) (scenario.Snapsh
 		}
 		snap.Files = files
 	}
+	digest, err := runDigest(w.RunRoot)
+	if err != nil {
+		return snap, err
+	}
+	snap.RunDigest = digest
 	return snap, nil
+}
+
+type repoPath struct {
+	name string
+	path string
+}
+
+// snapshotRepos lists the workspace and every directory under
+// repositories/. World.API is included when it is not already in that list.
+func snapshotRepos(w world.World) []repoPath {
+	var repos []repoPath
+	seenPath := map[string]bool{}
+	seenName := map[string]bool{}
+	add := func(name, path string) {
+		if path == "" || seenPath[path] || seenName[name] {
+			return
+		}
+		seenPath[path] = true
+		seenName[name] = true
+		repos = append(repos, repoPath{name: name, path: path})
+	}
+	if w.WS != "" {
+		add("ws", w.WS)
+		entries, err := os.ReadDir(filepath.Join(w.WS, "repositories"))
+		if err == nil {
+			var names []string
+			for _, entry := range entries {
+				if entry.IsDir() {
+					names = append(names, entry.Name())
+				}
+			}
+			sort.Strings(names)
+			for _, name := range names {
+				add(name, filepath.Join(w.WS, "repositories", name))
+			}
+		}
+	}
+	add("api", w.API)
+	return repos
+}
+
+func repoHasGit(path string) bool {
+	if path == "" {
+		return false
+	}
+	if _, err := os.Stat(path); err != nil {
+		return false
+	}
+	_, err := os.Lstat(filepath.Join(path, ".git"))
+	return err == nil
+}
+
+func sortedRefLines(text string) string {
+	var lines []string
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+	sort.Strings(lines)
+	if len(lines) == 0 {
+		return ""
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+// applyWorkspace points the host at <run root>/<workspace> after setup
+// snippets have run in the default workspace.
+func applyWorkspace(w *world.World, sc scenario.Scenario) {
+	if sc.Workspace == "" || w == nil {
+		return
+	}
+	w.WS = filepath.Join(w.RunRoot, sc.Workspace)
+	w.API = filepath.Join(w.WS, "repositories", "api")
+	if w.Env == nil {
+		w.Env = map[string]string{}
+	}
+	w.Env["WS"] = w.WS
+}
+
+func (rt *runtime) captureCheck(ctx context.Context, w world.World) ([]byte, error) {
+	out, err := rt.runCheck(ctx, w)
+	if err != nil {
+		return nil, err
+	}
+	dir := filepath.Join(w.RunRoot, "out")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(filepath.Join(dir, "check-before.json"), out, 0o644); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (rt *runtime) execIsolated(ctx context.Context, w world.World, dir string, argv ...string) (string, error) {
+	res, err := proc.Run(ctx, proc.Spec{
+		Argv: argv,
+		Dir:  dir,
+		Env:  snippetEnv(w, callerPath(rt.opts.Caller)),
+	})
+	if err != nil {
+		return string(res.Stdout), fmt.Errorf("%w\n%s", err, res.Stderr)
+	}
+	if res.ExitCode != 0 {
+		return string(res.Stdout), fmt.Errorf("exit %d\n%s", res.ExitCode, res.Stderr)
+	}
+	return string(res.Stdout), nil
+}
+
+// reproduceLine is the command that repeats this run. It names no local path.
+// A base-side line keeps the configured branch ref on --ref and adds --base.
+func reproduceLine(item planned, branchRef, baseRef, date string) string {
+	ref := branchRef
+	if ref == "" {
+		ref = item.Ref
+	}
+	line := fmt.Sprintf("agent-tests run --scenarios %s --hosts %s --runs 1 --ref %s", item.Scenario.ID, item.Host, ref)
+	if item.Side == "base" {
+		base := baseRef
+		if base == "" {
+			base = item.Ref
+		}
+		line += " --base " + base
+	}
+	return "# " + date + "\n" + line + "\n"
 }
 
 func gitQuiet(ctx context.Context, env []string, dir string, args ...string) (string, error) {
@@ -383,18 +557,41 @@ func listRel(root string) ([]string, error) {
 func formatSnap(s scenario.Snapshot) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "decoy:\n%s\n", s.DecoyLog)
-	for _, name := range []string{"ws", "api"} {
+	names := map[string]struct{}{}
+	for _, section := range []map[string]string{s.Status, s.Heads, s.Refs, s.Worktrees} {
+		for name := range section {
+			names[name] = struct{}{}
+		}
+	}
+	keys := make([]string, 0, len(names))
+	for name := range names {
+		keys = append(keys, name)
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
 		if status, ok := s.Status[name]; ok {
 			fmt.Fprintf(&b, "status %s:\n%s\n", name, status)
 		}
 		if head, ok := s.Heads[name]; ok {
 			fmt.Fprintf(&b, "head %s: %s\n", name, head)
 		}
+		if refs, ok := s.Refs[name]; ok {
+			fmt.Fprintf(&b, "local-refs %s:\n%s\n", name, refs)
+		}
+		if trees, ok := s.Worktrees[name]; ok {
+			fmt.Fprintf(&b, "worktrees %s:\n%s\n", name, trees)
+		}
 	}
-	for name, refs := range s.RemoteRefs {
-		fmt.Fprintf(&b, "refs %s:\n%s\n", name, refs)
+	remoteNames := make([]string, 0, len(s.RemoteRefs))
+	for name := range s.RemoteRefs {
+		remoteNames = append(remoteNames, name)
+	}
+	sort.Strings(remoteNames)
+	for _, name := range remoteNames {
+		fmt.Fprintf(&b, "remote-refs %s:\n%s\n", name, s.RemoteRefs[name])
 	}
 	fmt.Fprintf(&b, "files:\n%s\n", strings.Join(s.Files, "\n"))
+	fmt.Fprintf(&b, "digest-entries: %d\n", len(s.RunDigest))
 	return b.String()
 }
 
@@ -429,6 +626,8 @@ func emptyWorld(runRoot string) (world.World, error) {
 }
 
 func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string, results []scenario.CheckResult, wall time.Duration, digest string, harness error) record.Run {
+	// FailedChecks lists checks with Pass false. An inconclusive result
+	// has Pass set, so it is left out.
 	failed := []string{}
 	for _, result := range results {
 		if !result.Pass {

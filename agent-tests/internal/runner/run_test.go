@@ -226,7 +226,10 @@ func TestSnapshotSkipsNonGit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(snap.Heads) != 0 || len(snap.Status) != 0 {
+	if snap.Refs == nil || snap.Worktrees == nil || snap.RunDigest == nil {
+		t.Fatalf("nil maps %+v", snap)
+	}
+	if len(snap.Heads) != 0 || len(snap.Status) != 0 || len(snap.Refs) != 0 {
 		t.Fatalf("snapshot %+v", snap)
 	}
 }
