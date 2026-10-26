@@ -23,6 +23,8 @@ and `template/` are packaging material, not instructions for this source task.
 `WORKFLOW.md` describes the source layout and validation.
 
 Preserve unrelated and dirty work.
+To audit the shipped `cc-*` skills, read `.agents/skills/audit-cc-skills/SKILL.md`
+and follow it; it reports findings and edits nothing.
 `context/` is live knowledge describing the current v2 product: retrieve
 through `context/INDEX.md` rather than scanning it, and keep a note and its
 catalog entry consistent when either changes. Never inspect credentials,

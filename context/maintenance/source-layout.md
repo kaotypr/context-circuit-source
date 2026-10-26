@@ -37,7 +37,7 @@ generated workspaces, not this one.
 | Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
 | Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/` plus the guide and license restored from `product/`, marked `export-ignore` so the archive a project is created from carries none of it |
 | Contributor tool | The agent tests, a separate module that runs coding hosts against a fixture workspace and is run by contributors outside CI: `context-circuit-source@agent-tests/` |
-| Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts |
+| Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer skills under `.agents/skills/` (`cc-source-develop`, `audit-cc-skills`) |
 
 Product history and maintainer data never reach a release asset. The
 destination-owned class exists because a workspace root belongs to somebody

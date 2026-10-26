@@ -52,10 +52,11 @@ required.
 Source context/ is live knowledge about the current product, catalogued by
 context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
 never ships. Release requests are passive maintainer history and never ship.
-The source skill under .agents/skills/, cc-source-develop, is maintainer
-tooling, excluded from the binary and the exported workspace. .claude/skills is
-a symlink to that directory, so a host reading either path finds the same
-skills.
+The source skills under .agents/skills/ are maintainer tooling: cc-source-develop
+for source maintenance, and audit-cc-skills, which audits the shipped cc-* skills
+and edits nothing. They are excluded from the binary and the exported
+workspace. .claude/skills is a symlink to that directory, so a host reading
+either path finds the same skills.
 
 release/template-repo/ is a fourth class: not shipped to a workspace and not
 history either. Publication restores those files over the extracted artifact and
