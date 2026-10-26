@@ -9,7 +9,7 @@ import "github.com/kaotypr/context-circuit-source/agent-tests/internal/record"
 // that threshold, the long-context rates apply to the whole request.
 //
 // Reasoning tokens are not added. They are assumed to be inside Output
-// (to be confirmed in the pilot).
+// (not yet confirmed against a live run).
 //
 // ok is false when a needed count is nil, or a rate is zero while the
 // matching token count is non-zero. reason explains that case.

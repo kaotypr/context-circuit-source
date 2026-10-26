@@ -94,7 +94,7 @@ func (codexHost) Parse(r io.Reader) (Parsed, error) {
 		p.UsageSource = "reported"
 	}
 	if in.saw {
-		// cached_input_tokens are inside input_tokens (to be confirmed in the pilot).
+		// cached_input_tokens are inside input_tokens (not yet confirmed against a live run).
 		uncached := in.n
 		if cached.saw {
 			uncached -= cached.n

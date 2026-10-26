@@ -14,7 +14,7 @@ go run ./cmd/agent-tests probe
 go run ./cmd/agent-tests run --dry-run
 ```
 
-`probe` prints each host's version, whether its pinned model is set, and which
+`probe` runs `<command> --version` for each host (no model is called) and prints its version, whether its pinned model is set, and which
 auth variable names are present. `run --dry-run` prints the plan and does not
 start a host. A live run needs `--yes`.
 
@@ -32,7 +32,7 @@ scenarios from a checkout you trust.
 ## What it costs
 
 Every live run uses model usage on the account whose key it is given. A fixed
-reply of OK measured 15k to 45k input tokens per host with the maintainer's
+reply of OK measured 15k to 45k input tokens per host with a developer's
 config loaded. A scenario is many times that. Use a spend-limited key. Run
 someone else's branch in a container or a VM, because host permissions are
 skipped inside the run.
@@ -40,3 +40,5 @@ skipped inside the run.
 ## What it does not prove
 
 Permission prompts. A headless run cannot measure them.
+
+Live runs support Unix-like systems. On Windows a timed-out host is stopped, but its child processes may keep running.

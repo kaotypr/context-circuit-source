@@ -137,18 +137,8 @@ func applyClaudeUsage(p *Parsed, usage map[string]any) {
 	if outOK {
 		p.Tokens.Output = i64p(out)
 	}
-	if inOK || ccOK || crOK {
-		total := int64(0)
-		if inOK {
-			total += in
-		}
-		if ccOK {
-			total += cc
-		}
-		if crOK {
-			total += cr
-		}
-		p.Tokens.InputTotal = i64p(total)
+	if inOK && ccOK && crOK {
+		p.Tokens.InputTotal = i64p(in + cc + cr)
 	}
 	// Only the direct usage.thinking_tokens field counts. Nested
 	// output_tokens_details.thinking_tokens is a different key.
@@ -161,25 +151,17 @@ func applyClaudeUsage(p *Parsed, usage map[string]any) {
 
 func applyModelUsage(p *Parsed, mu map[string]any) {
 	names := make([]string, 0, len(mu))
-	var in, out, cr, cc int64
+	var in, out, cr, cc counted
 	for name, raw := range mu {
 		names = append(names, name)
 		obj, ok := raw.(map[string]any)
 		if !ok {
 			continue
 		}
-		if n, ok := fieldInt(obj, "inputTokens"); ok {
-			in += n
-		}
-		if n, ok := fieldInt(obj, "outputTokens"); ok {
-			out += n
-		}
-		if n, ok := fieldInt(obj, "cacheReadInputTokens"); ok {
-			cr += n
-		}
-		if n, ok := fieldInt(obj, "cacheCreationInputTokens"); ok {
-			cc += n
-		}
+		in.add(obj, "inputTokens")
+		out.add(obj, "outputTokens")
+		cr.add(obj, "cacheReadInputTokens")
+		cc.add(obj, "cacheCreationInputTokens")
 	}
 	sort.Strings(names)
 	p.ModelsUsed = names
@@ -191,10 +173,20 @@ func applyModelUsage(p *Parsed, mu map[string]any) {
 	} else {
 		p.Subagents = 0
 	}
-	p.Tokens.InputUncached = i64p(in)
-	p.Tokens.CacheRead = i64p(cr)
-	p.Tokens.CacheWrite = i64p(cc)
-	p.Tokens.Output = i64p(out)
-	p.Tokens.InputTotal = i64p(in + cr + cc)
+	if in.saw {
+		p.Tokens.InputUncached = i64p(in.n)
+	}
+	if cr.saw {
+		p.Tokens.CacheRead = i64p(cr.n)
+	}
+	if cc.saw {
+		p.Tokens.CacheWrite = i64p(cc.n)
+	}
+	if out.saw {
+		p.Tokens.Output = i64p(out.n)
+	}
+	if in.saw && cr.saw && cc.saw {
+		p.Tokens.InputTotal = i64p(in.n + cr.n + cc.n)
+	}
 	p.UsageSource = "reported"
 }

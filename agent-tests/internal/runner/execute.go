@@ -56,6 +56,8 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		home = rt.opts.Caller["HOME"]
 	}
 	if err = world.Guard(runRoot, rt.opts.Checkout, home); err != nil {
+		_ = os.Remove(runRoot) // still empty: nothing has been written yet
+		runRoot = ""
 		return err
 	}
 	var w world.World

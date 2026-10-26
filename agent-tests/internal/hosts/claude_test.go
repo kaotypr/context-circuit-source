@@ -245,3 +245,17 @@ func envMap(t *testing.T, env []string) map[string]string {
 	}
 	return out
 }
+
+func TestClaudeModelUsageMissingCountStaysNull(t *testing.T) {
+	stream := `{"type":"result","session_id":"s","is_error":false,"result":"OK","usage":{"input_tokens":5},"modelUsage":{"m1":{"inputTokens":5,"outputTokens":2}}}` + "\n"
+	p, err := (claudeHost{}).Parse(strings.NewReader(stream))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Tokens.CacheRead != nil || p.Tokens.CacheWrite != nil || p.Tokens.InputTotal != nil {
+		t.Fatalf("a count the host did not report became a number: %+v", p.Tokens)
+	}
+	if p.Tokens.Output == nil || *p.Tokens.Output != 2 {
+		t.Fatalf("output = %v", p.Tokens.Output)
+	}
+}

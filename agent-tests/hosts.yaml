@@ -2,12 +2,12 @@
 #
 # command: executable invoked for this host.
 # model: pinned model id sent on the command line. These pins are the
-# maintainer's host defaults when this file was written and are provisional
-# until the pilot baseline confirms them. Cursor "auto" cannot be priced,
+# host defaults on the machine when this file was written and are provisional
+# until a baseline run confirms them. Cursor "auto" cannot be priced,
 # so its cost is null.
 # effort: optional effort setting. Empty means the flag is omitted.
 # host_version: recorded with each run.
-# provisional: true while the pin is still awaiting the pilot baseline.
+# provisional: true while the pin is still awaiting a baseline run.
 # timeout_seconds: wall-clock limit for one host process.
 # max_budget_usd: Claude Code runaway guard. 0 selects the adapter default.
 # price_row: key in prices.yaml. Empty when the host reports its own cost

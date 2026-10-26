@@ -33,7 +33,7 @@ type ProbeOptions struct {
 }
 
 // overhead is the fixed cost measured with a loaded user config.
-// The isolated figure is lower; S0 is what measures it.
+// The isolated figure is lower; the overhead measurement reports it.
 var overhead = []struct {
 	host string
 	text string
@@ -93,9 +93,9 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 			}
 		}
 	}
-	fmt.Fprintln(out, "measured with the maintainer's own config loaded; the isolated figure is lower")
+	fmt.Fprintln(out, "measured with a developer's own host config loaded; the isolated figure is lower")
 	if !opts.Confirm {
-		fmt.Fprintln(out, "would run S0 prompt \"Reply with exactly: OK\" in an empty directory (overhead-empty) and in the common-world workspace (overhead-world), each fully isolated")
+		fmt.Fprintln(out, "would run the overhead prompt \"Reply with exactly: OK\" in an empty directory (overhead-empty) and in the common-world workspace (overhead-world), each fully isolated")
 		for _, row := range overhead {
 			if hostSelected(selected, row.host) {
 				fmt.Fprintln(out, row.text)
@@ -213,10 +213,10 @@ func worldPin(checkout string) (string, error) {
 	return world.Pin(checkout)
 }
 
-// provisionalNote marks a model pin that a pilot has not confirmed yet.
+// provisionalNote marks a model pin that no baseline run has confirmed yet.
 func provisionalNote(cfg hosts.HostConfig) string {
 	if cfg.Provisional {
-		return " (provisional: not yet confirmed by a pilot run)"
+		return " (provisional: not yet confirmed by a baseline run)"
 	}
 	return ""
 }

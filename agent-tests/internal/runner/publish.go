@@ -18,6 +18,8 @@ type textRedactor struct {
 	home    string
 	user    string
 	runRoot string
+	// secrets are literal values of the caller's key and token variables.
+	secrets []string
 }
 
 func (rt *runtime) redact() textRedactor {
@@ -29,10 +31,29 @@ func (rt *runtime) redact() textRedactor {
 			user = rt.opts.Caller["LOGNAME"]
 		}
 	}
-	return textRedactor{home: home, user: user}
+	return textRedactor{home: home, user: user, secrets: secretValues(rt.opts.Caller)}
+}
+
+// secretValues returns the values of caller variables that look like keys or
+// tokens, so the exact string is removed wherever a host echoed it.
+func secretValues(caller map[string]string) []string {
+	var out []string
+	for name, val := range caller {
+		upper := strings.ToUpper(name)
+		if len(val) < 8 {
+			continue
+		}
+		if strings.Contains(upper, "KEY") || strings.Contains(upper, "TOKEN") || strings.Contains(upper, "SECRET") {
+			out = append(out, val)
+		}
+	}
+	return out
 }
 
 func (r textRedactor) text(s string) string {
+	for _, secret := range r.secrets {
+		s = strings.ReplaceAll(s, secret, "[redacted]")
+	}
 	s = record.Redact(s, r.home, r.user)
 	if r.runRoot != "" {
 		s = record.RedactRunRoot(s, r.runRoot)
@@ -104,9 +125,12 @@ func (rt *runtime) copyChanged(ctx context.Context, w world.World, dest string, 
 			relRoot = ""
 		}
 		for _, rel := range paths {
+			if !cleanRel(rel) {
+				continue
+			}
 			src := filepath.Join(repo, rel)
 			info, err := os.Lstat(src)
-			if err != nil || !info.Mode().IsRegular() {
+			if err != nil || !info.Mode().IsRegular() || !within(repo, src) {
 				continue
 			}
 			target := filepath.Join(dest, relRoot, rel)
@@ -159,7 +183,16 @@ func (rt *runtime) copyDesign(w world.World, sc scenario.Scenario, dest string, 
 	red := rt.redact()
 	red.runRoot = w.RunRoot
 	for _, rel := range sc.DesignArtifacts {
+		if !cleanRel(rel) {
+			return fmt.Errorf("design artifact %q must be a relative path inside the workspace", rel)
+		}
 		src := filepath.Join(w.WS, rel)
+		if info, lerr := os.Lstat(src); lerr != nil || !info.Mode().IsRegular() || !within(w.WS, src) {
+			if lerr == nil && drops != nil {
+				*drops = append(*drops, rel+" not a regular file inside the workspace")
+			}
+			continue
+		}
 		b, err := os.ReadFile(src)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -188,7 +221,7 @@ func writeBytes(path string, data []byte, red textRedactor, drops *[]string) err
 	}
 	// Judge the original bytes. Redaction would hide the same patterns, and
 	// a file that still looks like a secret must not be copied at all.
-	if record.LooksLikeSecret(string(data)) {
+	if record.LooksLikeSecret(string(data)) || containsAny(string(data), red.secrets) {
 		if drops != nil {
 			*drops = append(*drops, path+" content")
 		}
@@ -207,4 +240,36 @@ func secretName(name string) bool {
 		return true
 	}
 	return strings.HasPrefix(lower, "auth") || strings.HasPrefix(lower, "credentials")
+}
+
+func containsAny(s string, needles []string) bool {
+	for _, n := range needles {
+		if n != "" && strings.Contains(s, n) {
+			return true
+		}
+	}
+	return false
+}
+
+// within reports whether path, after resolving symlinks, is root or below it.
+func within(root, path string) bool {
+	r, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return false
+	}
+	p, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(r, p)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
+}
+
+// cleanRel accepts only a relative path that stays below its base.
+func cleanRel(rel string) bool {
+	if rel == "" || filepath.IsAbs(rel) {
+		return false
+	}
+	c := filepath.Clean(rel)
+	return c != ".." && !strings.HasPrefix(c, ".."+string(filepath.Separator))
 }
