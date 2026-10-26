@@ -123,11 +123,16 @@ the finding, not the test.
 - A pull request description stands on its own: what changed, why, and which
   checks you ran. A reader should not need anything outside the pull request to
   follow it.
+- The [pull request template](.github/pull_request_template.md) asks for these,
+  the linked issue, the release note and a short checklist.
 
 ## Issue or pull request first
 
 - For a behaviour change or a new command, open an issue first, so the design
   can be agreed before you build it.
+- [New issue](https://github.com/kaotypr/context-circuit-source/issues/new/choose)
+  offers two forms: a bug report and a proposal for a behaviour change or new
+  command.
 - For a bug fix, documentation or tests, open a pull request straight away.
 - Usage questions go to
   [GitHub Discussions, Q&A](https://github.com/kaotypr/context-circuit-source/discussions/categories/q-a).

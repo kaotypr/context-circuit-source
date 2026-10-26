@@ -7,9 +7,12 @@ Ask how to use Context Circuit in
 
 ## Bugs
 
-Report a defect as a
-[new issue](https://github.com/kaotypr/context-circuit-source/issues/new). Say
-what you did, what happened, and what you expected.
+Report a defect with the bug report form under
+[new issue](https://github.com/kaotypr/context-circuit-source/issues/new/choose).
+It asks for the CLI and template versions, your operating system and coding
+host, what you did, what you expected and what happened, and an excerpt of the
+workspace `check` output. Propose a behaviour change or a new command with the
+proposal form on the same page.
 
 ## Security
 
