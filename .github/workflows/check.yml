@@ -1,29 +1,43 @@
-name: Check v2
+name: Check
 on:
   pull_request:
   push:
-    branches: [main, development/v2]
+    branches: [main, development/v2, 'development/[0-9]*.[0-9]*.[0-9]*']
 permissions:
   contents: read
 jobs:
   native:
+    name: Go tests
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The knowledge checks count commits under each note's code anchors,
           # so a shallow clone would make the reviewed-date pass see nothing.
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
+      # Linux only: Windows checks files out with CRLF line endings, and
+      # gofmt -l would report every Go file there.
+      - name: Check formatting
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files are not formatted; run gofmt -w:"
+            echo "$unformatted"
+            exit 1
+          fi
       - run: go test ./...
       - run: go vet ./...
   native-clone:
+    name: Filesystem clone tests
     # The runners' default ext4 and NTFS volumes cannot clone, so the native
     # clone code only runs on a volume mounted for it here.
     strategy:
@@ -32,8 +46,8 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
       - name: Mount an XFS volume with reflink
@@ -69,10 +83,11 @@ jobs:
           "CC_COW_NATIVE_DIR=R:\cow" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - run: go test ./internal/cow -run NativeClone -count=1 -v
   release:
+    name: Release build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
       - run: sh scripts/check-release.sh
