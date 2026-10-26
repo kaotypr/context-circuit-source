@@ -48,7 +48,7 @@ Design case
 - [ ] The problem is shown with evidence, not asserted
 - [ ] Before/after use the artifact the trigger map names, from the same scenario, fixture, host and model
 - [ ] Every "better" claim is visible in the after artifact or a check, with its run count
-- [ ] The catch gives a size and a payer for tokens, compliance, existing workspaces and customized templates
+- [ ] Costs give a size, or "none", for tokens, results on each host, existing workspaces and customized templates
 - [ ] At least one alternative, including leaving it as it is
 
 Agent tests

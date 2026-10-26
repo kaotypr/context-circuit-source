@@ -116,7 +116,7 @@ go run ./cmd/agent-tests report --design
 --design` also writes `design.md` there. Paste `report.md` into the Agent
 tests section. Paste the before/after from `design.md` into the Design case.
 Attach `bundle.zip`. You still write why the change is needed, what is better,
-the catch, and the alternatives. `CONTRIBUTING.md` describes those sections
+the costs, and the alternatives. `CONTRIBUTING.md` describes those sections
 under "Changes that affect agents". What each flag writes is in "report".
 
 ## Trigger map
