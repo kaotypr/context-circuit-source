@@ -21,7 +21,8 @@ What belongs where:
 Its [contributing
 guide](https://github.com/kaotypr/context-circuit-source/blob/main/CONTRIBUTING.md)
 describes the seam between the CLI and the coding agent, and how to validate a
-change.
+change. A change that affects what agents read, do or produce also needs a
+design case: what changes, why, a before and after, and who pays.
 
 Releases here are tagged `v*`. The CLI is released on the source repository,
 under `cli-v*` tags, together with its downloadable packages, and installing it

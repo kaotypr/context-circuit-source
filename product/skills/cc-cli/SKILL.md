@@ -23,13 +23,19 @@ The pin says which line:
   lowercase letters and not `alpha`, `beta`, `rc`, `dev`, `test`, `pre`,
   `preview` or `snapshot`. Only `cli-vX.Y.Z-<label>.<N>` releases with the
   same label are candidates.
+- A pin with one of those reserved labels, such as `2.5.0-rc.1`, is a
+  prerelease of the stable line. It installs as `context-circuit-cli` and is
+  used only because the workspace pins it exactly; never offer a prerelease as
+  an update.
 
 Order candidates by X, Y, Z, then N, as numbers, never as text. Never offer a
 release from another line as an update: moving lines is a template change a
 person names. Use available GitHub tools or the releases API; on GitLab, list
 releases through its API with the same token the installer uses. The workspace
 template and the CLI release on the same repository: template releases are
-tagged `v*` and CLI releases `cli-v*`. Pass an exact version to the installer;
+tagged `v*` and CLI releases `cli-v*`. Pass an exact version to the installer,
+without a `v` prefix; the installers accept only `2.*` versions and refuse
+anything else;
 do not guess that an unpublished version exists. A stable version installs the
 command `context-circuit-cli`; a `<label>` version installs
 `<label>-context-circuit-cli`. Both share one version store.

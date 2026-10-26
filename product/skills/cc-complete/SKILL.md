@@ -19,7 +19,8 @@ records that someone asked for this, so a translation of it is a paraphrase of
 evidence rather than a tidier form of it. The knowledge reconciled afterwards is
 English regardless.
 
-The result carries `completed_at`, the catalog entries scoped to that plan's
+The command stamps `completed_at` in the plan's frontmatter. Its result carries
+`completed`, the ID of the plan it marked, the catalog entries scoped to that plan's
 repositories, and `reconcile_required` naming the judging whenever there are any.
 In a Git workspace it also carries `commit_recommended`, the plan, intent, and ID
 files left uncommitted: pass it on, and commit them only when the person

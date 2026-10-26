@@ -106,7 +106,7 @@ reads the ones whose meaning the plan could have changed, edits each note
 together with its catalog entry, and moves the reviewed date. A completion that
 changed no durable concept reconciles nothing and says so in its note, which is
 the ordinary case. Several plans marked complete together are reconciled once
-across the set. That date is what dependency ordering reads to release a plan's
+across the set. `completed_at` is what dependency ordering reads to release a plan's
 dependents, so complete a plan only when it actually landed. Delivery alone does
 not mark the plan done or trigger cleanup.
 
