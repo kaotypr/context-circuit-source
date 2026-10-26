@@ -19,3 +19,12 @@ updates:
       go-modules:
         patterns:
           - "*"
+  - package-ecosystem: gomod
+    directory: "/agent-tests"
+    target-branch: development/v2
+    schedule:
+      interval: weekly
+    groups:
+      agent-tests-modules:
+        patterns:
+          - "*"
