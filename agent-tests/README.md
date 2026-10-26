@@ -37,9 +37,11 @@ go run ./cmd/agent-tests surface-diff --base development/v2
 
 The command prints the report and writes it under `agent-tests/out/`, which is
 gitignored. The directory name is a UTC timestamp, the base commit, and the
-branch commit, for example `out/<timestamp>-<base>-<branch>/surface/`. That
-folder holds `base/`, `branch/`, `outputs/`, `surface.json`, and `surface.md`.
-The command exits 0 whether or not anything differs.
+branch commit, for example `out/<timestamp>-<base>-<branch>/surface/`. When
+the two refs are the same commit, that directory holds only `surface.json` and
+`surface.md`. When the refs differ, it also holds `base/`, `branch/`, and
+`outputs/`. The command exits 0 whether or not anything differs. Flags and
+what is compared are in "surface-diff".
 
 When the report says `No agent tests needed: surface diff is empty`, stop.
 Paste that sentence in the pull request. You need no design case and no host
@@ -64,19 +66,25 @@ With `--base`, run 1 is the base ref and then your branch. The model note says
 the pin is provisional until a baseline run confirms it.
 
 `probe` runs `<command> --version` for each host. It does not call a model.
-It prints the configured version, the command's version, whether the pinned
-model is set, and which auth variable names are present:
+It prints the configured version, the command's version, and whether the
+pinned model is set. It then lists every configured auth variable name, and
+prints `auth: ready` or `auth: not ready` with the missing names. It does not
+list which names are set:
 
 ```sh
 go run ./cmd/agent-tests probe
 ```
 
-It then prints an older overhead measurement taken with a developer's own host
-config loaded, and says the isolated figure is lower. `probe --yes` would
-start that prompt and spend money. Leave `--yes` off unless you mean to.
+It then prints an older overhead measurement (the figures are in "Tokens and
+cost") and says the isolated figure is lower. It does not start a prompt.
 
-A live run needs `--yes`. Without it, the command prints the plan and this
-sentence, then exits 1:
+If the surface report says the change looks larger, open an issue with the
+design case and wait for the maintainer, who reviews, before any `--yes` run.
+What counts as larger is in "Trigger map".
+
+A live run needs `--yes`. `probe --yes` starts the overhead prompt and spends
+money. Without `--yes`, `run` prints the plan and this sentence on stdout and
+again on stderr, then exits 1:
 
 ```text
 this run would use model usage on your account; re-run with --yes to start
@@ -109,21 +117,22 @@ go run ./cmd/agent-tests report --design
 tests section. Paste the before/after from `design.md` into the Design case.
 Attach `bundle.zip`. You still write why the change is needed, what is better,
 the catch, and the alternatives. `CONTRIBUTING.md` describes those sections
-under "Changes that affect agents".
-
-If the surface report says the change looks larger, open an issue with the
-design case and wait for the maintainer's answer before you pass `--yes`.
+under "Changes that affect agents". What each flag writes is in "report".
 
 ## Trigger map
 
 `triggers.yaml` maps a changed source path to scenarios, hosts, and a
 before/after kind. `surface-diff` applies that file. An empty `hosts` list
-means any one host. The report prints the scenario names, the host names, and
-the kinds. Read those sections and run what they name.
+means any one host. A non-empty list means exactly those hosts. The report
+prints the scenario names, the host names, and the kinds. Read "Hosts" and
+run what they name.
 
 `product/AGENTS.md.in` always adds `orient`. The heading you edited adds the
 scenarios in this table. "Independent review on request" has no scenario in
 the catalogue.
+
+`product/workspace-README.md` runs `orient`. Its kind is `always-loaded`. It
+is written to `README.md` at init and is not a release-manifest line.
 
 | Section | Scenarios |
 |---|---|
@@ -134,12 +143,12 @@ the catalogue.
 | Shared knowledge | `orient`, `borrowed`, `complete` |
 | Intent and planning | `intent`, `plan`, `direct` |
 | Worktrees and implementation | `execute` |
-| Delivery, completion, and organization | `complete`, `execute` |
 | Independent review on request | none |
+| Delivery, completion, and organization | `complete`, `execute` |
 
 Skill files map like this. A `route.md` uses the same scenarios as that
-skill's `SKILL.md`, on Claude Code and Cursor. Codex does not read route
-files.
+skill's `SKILL.md`. Its hosts list is `claude` and `cursor` only. Codex does
+not read route files.
 
 | Skill | Scenarios |
 |---|---|
@@ -174,14 +183,15 @@ it to the command that changed. `cli.go` runs `complete`, `intent`, and
 `execute`. `readme.go` runs `join`.
 
 `role-tiering.yaml` and `internal/workspace/agents.go` run `plan` and
-`execute`, plus the host whose generated definition changed.
-`claude-settings.json` runs `orient` and `execute` on Claude Code. The
-launcher runs `orient` and `join`. The shipped installer runs `orient`. The
-trigger notes call that a faithful install through the shipped installer. The
-runner has no separate faithful mode, so those scenarios run the same way as
-the others. The Windows launcher is for when a reviewer asks.
-`scripts/release-manifest.txt` and `assets.go` are a structure change: every
-scenario on any one host, plus `orient` on all three hosts.
+`execute` on any one host, and the row also names the host whose generated
+definition changed. `claude-settings.json` runs `orient` and `execute` on
+Claude Code only. The launcher runs `orient` and `join`. The shipped installer
+runs `orient`. The trigger notes call that a faithful install through the
+shipped installer. The runner has no separate faithful mode, so those
+scenarios run the same way as the others. The Windows launcher is for when
+the maintainer, who reviews, asks. `scripts/release-manifest.txt` and
+`assets.go` are a structure change: every scenario on any one host, plus
+`orient` on `claude`, `codex`, and `cursor`.
 
 | Kind | Before / after to show |
 |---|---|
@@ -215,13 +225,13 @@ case either. A normal pull-request description is enough:
 `surface-diff` lists those paths under "Ignored" when they changed beside
 something that does reach a workspace.
 
-A larger change agrees its design case in an issue first. Wait for the
-maintainer's answer before you pay for a run. Larger means any of these:
+A larger change is agreed in an issue first. The stop before any `--yes` run
+is in "Quickstart". Larger means any of these:
 
 - layout: a shipped file added, removed, or moved
-- a skill added or removed, or a change to the shape of what a skill produces (headings, frontmatter, a new or removed file under `plans/pNNNN-*/`, or a record skeleton's headings or frontmatter keys)
+- a skill added or removed, or a change to the shape of what a skill produces (headings, frontmatter, a new or removed file in a plan's folder, or a record skeleton's headings or frontmatter keys)
 - a CLI action: help text changed, JSON keys changed, or check findings changed
-- a gate: an added or removed line matches a keyword (`push`, `commit`, `commit_recommended`, `reconcile_required`, `attribution`, `approval`, the planning stop, `sources`, or borrowed knowledge)
+- a gate: an added or removed line matches a keyword (`push`, `commit`, `commit_recommended`, `reconcile_required`, `attribution`, `approval`, which also matches `approve` and `approved`, the planning stop, which also matches `planning_recommended`, `sources`, or borrowed knowledge)
 - migration: the `version` field in `workspace.yaml` changed, or the ids file layout changed
 
 `surface-diff` reports this as "Looks larger" and tags each reason exact or
@@ -236,29 +246,29 @@ Borderline cases:
 2. A changed path with no row is printed as "No row: the author picks the closest scenario." Pick the closest scenario and say why in the pull request.
 3. When nothing fits, write a one-off scenario in `scenarios/` in the same shape as the files already there, include it in the pull request, and run it. `cc-review`, `cc-deliver`, `cc-stacked`, and `cc-system-design` have no row. An unknown check name fails, so use checks the runner already has.
 
-The reviewer may ask for more scenarios, hosts, or runs, and may waive a
-trivially safe text change. The repository maintainer decides disagreements
-and any change to the table.
+The maintainer, who reviews, may ask for more scenarios, hosts, or runs, and
+may waive a trivially safe text change. The maintainer, who reviews, decides
+disagreements and any change to the table.
 
 ## Hosts
 
 `hosts.yaml` names three hosts: `claude` (Claude Code), `codex` (Codex), and
 `cursor` (Cursor, command `cursor-agent`). Each has one pinned model.
 
-Shared files need any one host you have. A host-specific file needs that host
-as well:
+An empty hosts list means any one host. A non-empty list means exactly those
+hosts, and nothing else.
 
-- `product/CLAUDE.md.in` and `product/host/claude-settings.json` need Claude Code.
-- `product/CURSOR.md.in` and `product/cursor.mdc.in` need Cursor.
-- A skill `route.md` needs Claude Code and Cursor. Codex does not read route files.
-- A role-definition change also needs the host whose generated definition format changed.
-- A structure change runs every scenario on any one host, and `orient` on all three.
+- `product/CLAUDE.md.in` and `product/host/claude-settings.json` list `claude` only.
+- `product/CURSOR.md.in` and `product/cursor.mdc.in` list `cursor` only.
+- A skill `route.md` lists `claude` and `cursor` only. Codex does not read route files.
+- A role-definition change has an empty hosts list, so `plan` and `execute` run on any one host. The note on that row also names the host whose generated definition changed.
+- A structure change is every scenario on any one host, plus `orient` on `claude`, `codex`, and `cursor`.
 
-The reviewer may ask for more hosts. When you lack a host the change needs,
-say so. The maintainer runs it.
+The maintainer, who reviews, may ask for more hosts. When you lack a host the
+change needs, say so. The maintainer, who reviews, runs it.
 
-Run one time per scenario per required host. Run more when the reviewer asks
-because a result is borderline. `--runs` defaults to 1.
+Run one time per scenario per required host. Run more when the maintainer,
+who reviews, asks because a result is borderline. `--runs` defaults to 1.
 
 ## What "before" is
 
@@ -273,15 +283,14 @@ number starts with the branch and an odd run number starts with the base, so
 the same side is not always second.
 
 `report --baseline DIR` can read a directory that holds `runs.jsonl`, or
-`summary.json` (`{"rows":[...]}`) when the log is absent. A summary row is
-labelled as the summary figure. Without `--baseline`, rows in the same
+`summary.json` (`{"rows":[...]}`) when the log is absent. A summary baseline
+row is labelled `(summary)`. Without `--baseline`, rows in the same
 `runs.jsonl` with `"side":"base"` are the before side.
 
 ## Safety
 
 Runs do not wait for a permission prompt, and they are graded from the end
-state: files, Git refs, and `check --json`. They cannot measure permission
-prompts.
+state: files, Git refs, and `check --json`.
 
 Claude Code is started with `--dangerously-skip-permissions`. Cursor is
 started with `--force` and `--trust`. Codex is started with `--sandbox
@@ -303,6 +312,16 @@ auth variables named in `hosts.yaml` when they are set. It does not copy your
 `AWS_*`, or `KUBECONFIG`. The host extras above are applied last, which is how
 a host receives its own `HOME`.
 
+The run root is a temporary directory outside any repository. The checkout is
+read through git and is not written. Auth comes only from the environment
+variables named in `hosts.yaml`. Nothing is read from or written to the real
+home, the real workspace, or user config. The one shared place is the Go
+module cache: the caller's `GOMODCACHE` when that is set, otherwise the path
+`go env GOMODCACHE` prints. Building the CLI uses that cache with
+`GOFLAGS=-mod=readonly` and `GOTOOLCHAIN=local`, so it reads modules already
+there. Scenario setup commands run as `sh -c` in the fixture workspace, so
+only run scenarios from a checkout you trust.
+
 You pay for runs on your own account. Use a spend-limited key. Claude Code
 also receives `--max-budget-usd 3` as a guard against a runaway process.
 
@@ -311,24 +330,34 @@ also receives `--max-budget-usd 3` as a guard against a runaway process.
 The primary metric is total input tokens. Output tokens are reported
 separately.
 
-- Claude Code sums input, cache-creation, and cache-read tokens. When the result includes `modelUsage`, that sum is taken across the models named there, which includes subagents. The dollar figure is `total_cost_usd` as the host reported it. The report calls the total a list-price equivalent. On a subscription you may not be billed that amount.
-- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the `gpt-6-sol` row in `prices.yaml` (cost basis `price-table`). That row has a long-context tier. The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run.
+- Claude Code sums input, cache-creation, and cache-read tokens, and sets that total only when all three figures are present. When the result includes `modelUsage`, the sum across the models named there replaces the total only when the input, cache-read, and cache-creation figures are all present. Those models include subagents. The dollar figure is `total_cost_usd` as the host reported it. The report calls the total a list-price equivalent. On a subscription you may not be billed that amount.
+- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the `gpt-6-sol` row in `prices.yaml` (cost basis `price-table`). That row has a long-context tier. The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
 - Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. The pinned model is `auto`, which has no price row, so the cost is left unset.
 
 A missing token or cost is `n/a`. The report never writes 0 for a missing
 number. A null total has no percentage.
 
 A failed check, a lower result than before, or more than 15% more total input
-tokens is a warning. The reviewer weighs it. It does not block the pull
-request. An increase of exactly 15% stays under the line. The warning shows
-the change to one decimal place, so a rise of 15.1% does not display as 15%.
-Pass ranks above inconclusive, and inconclusive ranks above fail, which is how
-"lower" is decided.
+tokens is a warning. The maintainer, who reviews, weighs it. It does not
+block the pull request. An increase of exactly 15% stays under the line. The
+warning shows the change to one decimal place, so a rise of 15.1% does not
+display as 15%. Pass ranks above inconclusive, and inconclusive ranks above
+fail, which is how "lower" is decided.
 
 The model pins in `hosts.yaml` are provisional. `probe` and a dry run say so:
 `provisional: not yet confirmed by a baseline run`. Codex is pinned at effort
 `medium`. Claude Code and Cursor omit the effort flag, and the report shows
 that as `default`.
+
+`probe` without a live prompt prints an older measurement of a fixed "Reply
+with exactly: OK", taken with a developer's own host config loaded. The
+isolated figure is lower:
+
+- `claude`: 42500 input tokens, $0.2519 list
+- `codex`: 15974 input tokens
+- `cursor`: 21366 input tokens (2 uncached + 21364 cache write), 73-75 output
+
+A scenario is many times that. The bands in "Scenarios" are guesses.
 
 ## Scenarios
 
@@ -355,7 +384,8 @@ until a baseline run exists.
 | `borrowed` | borrowed knowledge stays read-only and is not copied | `borrowed-untouched`, `borrowed-reply` | 80k-400k |
 
 The overhead measurement (a fixed reply in an empty directory and in the
-fixture workspace) is `probe`, not a scenario file.
+fixture workspace) is `probe`, not a scenario file. The older figures are in
+"Tokens and cost".
 
 Seven checks run in every scenario:
 
@@ -364,7 +394,7 @@ Seven checks run in every scenario:
 - `no-stray-commits`: checked-out HEADs are unchanged, and only branches the scenario lists may move.
 - `no-attribution`: no agent name or trailer in new commit messages.
 - `check-clean`: `check --json` issues are exactly the scenario's `expected_issues`, as a multiset. A document with no `issues` field fails.
-- `sources-passive`: the stale brief under `sources/` was not read. Without a reads list the result is inconclusive.
+- `sources-passive`: the stream canary. It fails when the stream contains the canary text. It passes when a reads list exists and the canary is absent. It is inconclusive when the host exposes no reads list.
 - `no-outside-writes`: nothing changed in the run root outside the active workspace, build, host-state, and output directories.
 
 An empty remote, ref, HEAD, or run-digest snapshot fails those checks.
@@ -392,12 +422,12 @@ fixtures, so a changed scenario starts its own history.
 Each run directory holds the raw stream, the reply, the reads list, snapshots,
 `check.json`, `check-before.json`, the files the agent changed, the scenario's
 design artifacts, and Git state per repository under `artifacts/git/`. For
-`execute`, that also includes `api-diff-stat.txt` from `git diff --stat
-main...cc/p1000/api` and `api-log.txt` from `git log main..cc/p1000/api
---format=%B`. `reproduce.txt` is a date comment plus the `agent-tests run`
-line for that scenario, host, and ref. A base-side line also has `--base`.
-The line does not include `--yes`. Add `--yes`, and run it as `go run
-./cmd/agent-tests` from `agent-tests/`, when you repeat it:
+`execute`, that also includes `api-diff-stat.txt`, a `git diff --stat` from
+`main` to the plan branch, and `api-log.txt`, that branch's commit messages
+from `git log` with `--format=%B`. `reproduce.txt` is a date comment plus the
+`agent-tests run` line for that scenario, host, and ref. A base-side line also
+has `--base`. The line does not include `--yes`. Add `--yes`, and run it as
+`go run ./cmd/agent-tests` from `agent-tests/`, when you repeat it:
 
 ```sh
 go run ./cmd/agent-tests run --scenarios execute --hosts claude --runs 1 --yes
@@ -407,9 +437,9 @@ The tests under `go test ./...` need no model. For every scenario they build
 the real CLI, seed the starting state, replay a scripted reference solution
 through the normal grading path and expect `pass`, then damage the end state
 in the one way each check exists to catch (a push, an extra commit, an
-attribution trailer, a write outside the workspace, a read of `sources/`, and
-so on) and expect `fail`. The slow ones skip under `-short`. Whether a real
-host satisfies the checks is only shown by a live run.
+attribution trailer, a write outside the workspace, the source canary in the
+host stream, and so on) and expect `fail`. The slow ones skip under `-short`.
+What a scripted pass does not show is in "What it does not prove".
 
 ## surface-diff
 
@@ -440,26 +470,19 @@ Each side's CLI is stamped with the `CLI_VERSION` in that ref's archive.
 Before comparison, the normalizer rewrites the `id`, `created_at`, and
 `approved_at` fields the fixed script writes, temporary paths, and that CLI
 version. Other ids, dates, and timestamps stay, so an example id in help text
-still differs. JSON key sets are compared on the raw stdout. Both sides are
-kept under `out/<id>/surface/` (`base/`, `branch/`, `outputs/`, `surface.json`,
-`surface.md`). When the files, the outputs, and the sizes are all equal, the
-report says `No agent tests needed: surface diff is empty`.
+still differs. JSON key sets are compared on the raw stdout.
+
+The report is written under `out/<id>/surface/`. A same-commit run writes only
+`surface.json` and `surface.md`. When the refs differ, that directory also
+holds `base/`, `branch/`, and `outputs/`. When the files, the outputs, and
+the sizes are all equal, the report says `No agent tests needed: surface diff
+is empty`.
 
 A non-empty diff names the scenarios, hosts, and artifact kinds from
-`triggers.yaml`. An empty host list means any one host. A changed path with
-no row is reported as "No row: the author picks the closest scenario."
-
-The report says the change looks larger, with a reason tagged exact or
-heuristic, when it sees any of these:
-
-- layout (exact): a shipped file added, removed, or moved
-- a skill added or removed (exact), or a change to skill shape (heuristic): headings, frontmatter, a new or removed file under `plans/pNNNN-*/`, or a record skeleton's headings or frontmatter keys
-- a CLI action (heuristic): help text changed, JSON keys changed, or check findings changed. A record skeleton whose headings or frontmatter keys changed is the skill-shape reason above
-- a gate (heuristic): an added or removed line matches a keyword (`push`, `commit`, `commit_recommended`, `reconcile_required`, `attribution`, `approval`, the planning stop, `sources`, or borrowed knowledge)
-- migration (heuristic): the `version` field in `workspace.yaml` changed, or the ids file layout changed
-
-A person decides whether the change is actually larger. A `VERSION` or
-`CLI_VERSION` bump is not treated as migration.
+`triggers.yaml`. Which hosts that means is in "Hosts". A changed path with
+no row is reported as "No row: the author picks the closest scenario." When
+the change looks larger, the report says so and tags each reason exact or
+heuristic. What counts as larger, and who decides, is in "Trigger map".
 
 ## report
 
@@ -474,10 +497,8 @@ go run ./cmd/agent-tests report [--run ID] [--out DIR] [--baseline DIR] [--desig
 `--run` is a run id under `--out`, or a path to a run directory. `--out`
 defaults to `agent-tests/out` inside the checkout, which is gitignored. The
 default run is the newest directory under that folder that contains
-`runs.jsonl`. `--baseline` is a directory with `runs.jsonl`, or `summary.json`
-(`{"rows":[...]}`) when the log is absent. Those runs are the before side, and
-a summary row is labelled as the summary figure. Without a baseline, rows in
-the same `runs.jsonl` with `"side":"base"` are the before side.
+`runs.jsonl`. `--baseline` selects the before side. How that directory is
+read, and the `(summary)` label, are in "What "before" is".
 
 `report.md` is the Agent tests section: change kind and surface counts when
 `surface/surface.json` is present, the scenarios the trigger map required, the
@@ -487,12 +508,12 @@ cost is `n/a`, never 0. A null total has no percentage. Paste this file into
 the Agent tests section. `CONTRIBUTING.md`, under "Changes that affect
 agents", describes that section.
 
-A failed check, a lower result than before, or more than 15% more total input
-tokens is a warning only. An increase of exactly 15% is not a warning. The
-warning shows the change to one decimal place, so a rise of 15.1% does not
-display as 15%. It is not a block. The reviewer decides. The generated
-checklist says the reviewer runs hosts the contributor lacked. The rule in
-"Hosts" above is that the maintainer runs them.
+A warning in that file is for the pull request to explain. How a warning is
+chosen is in "Tokens and cost". It is not a block.
+
+The generated checklist is for the maintainer, who reviews. Its larger-change
+checkbox asks for the issue where the design was agreed. Its hosts checkbox
+records hosts the contributor lacked. Who runs those hosts is in "Hosts".
 
 `bundle.zip` holds every run's JSON line, stream, reply, and produced files.
 Before anything is written, the zip builder rewrites a home prefix to `$HOME`,
@@ -528,47 +549,21 @@ The rest is applied to a copy of the base tree, and the branch CLI's `check
 file-level delta, not the host's judgement. It needs a source checkout so the
 branch CLI can be built. It does not start a host.
 
-## What a run touches
-
-The run root is a temporary directory outside any repository. The checkout is
-read through git and is not written. The environment given to a host is the
-allowlist in "Safety". Auth comes only from the environment variables named in
-`hosts.yaml`. Nothing is read from or written to the real home, the real
-workspace, or user config. The one shared place is the Go module cache.
-Building the CLI uses the cache that `go env GOMODCACHE` reports, with
-`GOFLAGS=-mod=readonly` and `GOTOOLCHAIN=local`, so it reads modules already
-in that cache. Scenario setup commands run as `sh -c` in
-the fixture workspace, so only run scenarios from a checkout you trust.
-
-## What it costs
-
-Every live run uses model usage on the account whose key it is given. You pay
-for that. `probe` without `--yes` prints an older measurement of a fixed "Reply
-with exactly: OK", taken with a developer's own host config loaded. The
-isolated figure is lower:
-
-- Claude Code: 42500 input tokens, $0.2519 list
-- Codex: 15974 input tokens
-- Cursor: 21366 input tokens (2 uncached + 21364 cache write), 73-75 output
-
-A scenario is many times that. The bands in the scenario table are guesses.
-Use a spend-limited key. Run someone else's branch in a container or a VM.
-
 ## What it does not prove
 
-Permission prompts. A headless run cannot measure them.
+Permission prompts. A headless run cannot measure which prompts a person sees.
 
 Whether a real host satisfies the checks. The scripted tests show that the
 grader catches a damaged end state. Only a live run shows that a host passes.
 
-The token bands. They are guesses, and no baseline is committed yet.
+The token bands in "Scenarios". They are guesses. See "What "before" is".
 
-A host that exposes no tool output. The result is `inconclusive`, and it is
-never counted as a pass. Cursor records a reads list only when the stream
-contains a tool call. Until then the reads list is not available, and
-`sources-passive` is inconclusive. Codex's split of cached tokens out of
-`input_tokens`, and whether reasoning tokens are already inside output tokens,
-is an assumption in the adapter and has not been confirmed on a live run.
+A host that exposes no tool output. Cursor records a reads list only when the
+stream contains a tool call. Until then the reads list is not available, and
+`sources-passive` is inconclusive.
+
+Codex's cached-token split, and whether reasoning tokens are already inside
+output tokens. See "Tokens and cost".
 
 Live runs support Unix-like systems. On Windows a timed-out host is stopped,
 but its child processes may keep running.
