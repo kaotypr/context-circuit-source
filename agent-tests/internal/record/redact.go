@@ -12,6 +12,8 @@ var (
 	reGHPat  = regexp.MustCompile(`github_pat_[A-Za-z0-9_]{20,}`)
 	reAKIA   = regexp.MustCompile(`AKIA[0-9A-Z]{16}`)
 	reBearer = regexp.MustCompile(`Bearer [A-Za-z0-9._~+/=-]{20,}`)
+	reJWT    = regexp.MustCompile(`eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}`)
+	reRT     = regexp.MustCompile(`rt_[A-Za-z0-9._-]{20,}`)
 )
 
 // LooksLikeSecret reports whether s contains an API-key shaped value.
@@ -20,7 +22,17 @@ func LooksLikeSecret(s string) bool {
 		reGHP.MatchString(s) ||
 		reGHPat.MatchString(s) ||
 		reAKIA.MatchString(s) ||
-		reBearer.MatchString(s)
+		reBearer.MatchString(s) ||
+		reJWT.MatchString(s) ||
+		reRT.MatchString(s)
+}
+
+// ShapeSecrets returns JWT-shaped and Codex refresh-token-shaped substrings.
+func ShapeSecrets(s string) []string {
+	var out []string
+	out = append(out, reJWT.FindAllString(s, -1)...)
+	out = append(out, reRT.FindAllString(s, -1)...)
+	return out
 }
 
 // Redact replaces home with $HOME, a user path element with $USER, and
@@ -48,6 +60,8 @@ func redactSecrets(s string) string {
 	s = reGHPat.ReplaceAllString(s, "[redacted]")
 	s = reAKIA.ReplaceAllString(s, "[redacted]")
 	s = reBearer.ReplaceAllString(s, "Bearer [redacted]")
+	s = reJWT.ReplaceAllString(s, "[redacted]")
+	s = reRT.ReplaceAllString(s, "[redacted]")
 	return s
 }
 

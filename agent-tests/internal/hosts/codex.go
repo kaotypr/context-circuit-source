@@ -2,6 +2,7 @@ package hosts
 
 import (
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -29,16 +30,29 @@ func (codexHost) Build(in LaunchInput) (Launch, error) {
 	argv = append(argv, in.Prompt)
 
 	// The API key is passed only on the login command's stdin, never in
-	// argv or in the environment.
+	// argv or in the environment. Subscription mode copies a login file
+	// instead and does not read that key.
 	caller := cloneMap(in.Caller)
 	var setup [][]string
 	var setupIn []string
-	for _, name := range in.Cfg.AuthEnv {
-		v := caller[name]
-		delete(caller, name)
-		if v != "" && len(setup) == 0 {
-			setup = [][]string{{cmd, "login", "--with-api-key"}}
-			setupIn = []string{v}
+	var copies []FileCopy
+	if in.SubscriptionAuth {
+		for _, name := range in.Cfg.AuthEnv {
+			delete(caller, name)
+		}
+		copies = []FileCopy{{
+			Src:  subscriptionLoginSource(caller),
+			Dst:  filepath.Join(in.RunRoot, "codex", "auth.json"),
+			Mode: 0o600,
+		}}
+	} else {
+		for _, name := range in.Cfg.AuthEnv {
+			v := caller[name]
+			delete(caller, name)
+			if v != "" && len(setup) == 0 {
+				setup = [][]string{{cmd, "login", "--with-api-key"}}
+				setupIn = []string{v}
+			}
 		}
 	}
 	in.Caller = caller
@@ -57,6 +71,7 @@ func (codexHost) Build(in LaunchInput) (Launch, error) {
 		Stdin:      "",
 		SetupArgv:  setup,
 		SetupStdin: setupIn,
+		CopyIn:     copies,
 	}, nil
 }
 
@@ -121,7 +136,45 @@ func (codexHost) Parse(r io.Reader) (Parsed, error) {
 }
 
 func (codexHost) AuthReady(caller map[string]string, cfg HostConfig) (bool, string) {
+	if cfg.SubscriptionAuth {
+		return subscriptionLoginReady(caller)
+	}
 	return authFromEnv(caller, cfg.AuthEnv)
+}
+
+// subscriptionLoginSource is the caller's login file. CODEX_HOME wins when
+// it is set. Otherwise the file is HOME/.codex/auth.json.
+func subscriptionLoginSource(caller map[string]string) string {
+	if caller != nil {
+		if dir := caller["CODEX_HOME"]; dir != "" {
+			return filepath.Join(dir, "auth.json")
+		}
+		if home := caller["HOME"]; home != "" {
+			return filepath.Join(home, ".codex", "auth.json")
+		}
+	}
+	return ""
+}
+
+// subscriptionLoginReady uses Lstat only. It does not read the file. A
+// symlink is refused here as it is by the copy, so probe does not report a
+// login that every run would then refuse.
+func subscriptionLoginReady(caller map[string]string) (bool, string) {
+	src := subscriptionLoginSource(caller)
+	if src == "" {
+		return false, "no Codex login file found"
+	}
+	info, err := os.Lstat(src)
+	if err != nil || info.Size() == 0 {
+		return false, "no Codex login file found"
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return false, "the Codex login file is a symlink"
+	}
+	if !info.Mode().IsRegular() {
+		return false, "no Codex login file found"
+	}
+	return true, ""
 }
 
 type counted struct {

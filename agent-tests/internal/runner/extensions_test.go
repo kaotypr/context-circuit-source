@@ -86,7 +86,7 @@ func TestReproduceLine(t *testing.T) {
 		Host:     "claude",
 		Side:     "branch",
 		Ref:      "abc123",
-	}, "abc123", "", "2026-10-26")
+	}, "abc123", "", "2026-10-26", "")
 	want := "# 2026-10-26\nagent-tests run --scenarios orient --hosts claude --runs 1 --ref abc123\n"
 	if branch != want {
 		t.Fatalf("%q", branch)
@@ -96,7 +96,7 @@ func TestReproduceLine(t *testing.T) {
 		Host:     "claude",
 		Side:     "base",
 		Ref:      "base123",
-	}, "abc123", "base123", "2026-10-26")
+	}, "abc123", "base123", "2026-10-26", "")
 	if strings.Contains(base, "/") || !strings.Contains(base, "--ref abc123 --base base123") {
 		t.Fatalf("%q", base)
 	}

@@ -173,6 +173,9 @@ func TestCodexBuildArgvSecretNotInEnv(t *testing.T) {
 	if plain.SetupArgv != nil || plain.SetupStdin != nil {
 		t.Fatalf("unexpected setup %#v %#v", plain.SetupArgv, plain.SetupStdin)
 	}
+	if len(launch.CopyIn) != 0 || len(plain.CopyIn) != 0 {
+		t.Fatalf("copy without subscription %#v %#v", launch.CopyIn, plain.CopyIn)
+	}
 	if containsArg(plain.Argv, "-c") {
 		t.Fatalf("effort flag without effort: %q", plain.Argv)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/hosts"
@@ -31,7 +32,10 @@ func (rt *runtime) redact() textRedactor {
 			user = rt.opts.Caller["LOGNAME"]
 		}
 	}
-	return textRedactor{home: home, user: user, secrets: secretValues(rt.opts.Caller)}
+	secrets := secretValues(rt.opts.Caller)
+	secrets = append(secrets, rt.loginSecrets...)
+	sort.Slice(secrets, func(i, j int) bool { return len(secrets[i]) > len(secrets[j]) })
+	return textRedactor{home: home, user: user, secrets: secrets}
 }
 
 // secretValues returns the values of caller variables that look like keys or
@@ -52,6 +56,9 @@ func secretValues(caller map[string]string) []string {
 
 func (r textRedactor) text(s string) string {
 	for _, secret := range r.secrets {
+		if secret == "" {
+			continue
+		}
 		s = strings.ReplaceAll(s, secret, "[redacted]")
 	}
 	s = record.Redact(s, r.home, r.user)
@@ -73,7 +80,7 @@ func (rt *runtime) publishHost(runDir string, w world.World, res proc.Result, st
 	if err != nil {
 		stream = res.Stdout
 	}
-	if err := writeBytes(filepath.Join(runDir, "stream.jsonl"), stream, red, drops); err != nil {
+	if err := writeRedacted(filepath.Join(runDir, "stream.jsonl"), stream, red); err != nil {
 		return err
 	}
 	if err := writeBytes(filepath.Join(runDir, "stderr.txt"), res.Stderr, red, drops); err != nil {
@@ -90,7 +97,7 @@ func (rt *runtime) publishHost(runDir string, w world.World, res proc.Result, st
 			}
 		}
 	}
-	if err := writeText(filepath.Join(runDir, "reply.md"), reply, red); err != nil {
+	if err := writeRedacted(filepath.Join(runDir, "reply.md"), []byte(reply), red); err != nil {
 		return err
 	}
 	if err := writeText(filepath.Join(runDir, "reads.txt"), reads, red); err != nil {
@@ -279,8 +286,37 @@ func publishCheckFiles(dir string, before, after []byte, red textRedactor, drops
 	return writeBytes(filepath.Join(dir, "check-before.json"), before, red, drops)
 }
 
+// scrubFile rewrites a host capture so a kept run root does not hold
+// login values the host printed. A missing file is left alone.
+func (rt *runtime) scrubFile(path string) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	if err := os.WriteFile(path, []byte(rt.redact().text(string(raw))), 0o600); err != nil {
+		return
+	}
+}
+
 func writeText(path, text string, red textRedactor) error {
 	return writeBytes(path, []byte(text), red, nil)
+}
+
+// writeRedacted rewrites exact secret values and key shapes, then writes
+// the text. Stream and reply use it so a host that prints a login value
+// leaves [redacted] rather than the value.
+func writeRedacted(path string, data []byte, red textRedactor) error {
+	if secretName(filepath.Base(path)) {
+		return nil
+	}
+	text := red.text(string(data))
+	if record.LooksLikeSecret(text) {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(text), 0o644)
 }
 
 func writeBytes(path string, data []byte, red textRedactor, drops *[]string) error {

@@ -48,6 +48,10 @@ type LaunchInput struct {
 	Cfg       HostConfig
 	Caller    map[string]string
 	DecoyDir  string
+	// SubscriptionAuth selects the login-file mode for this launch.
+	// The runner sets it from --subscription-auth. Adapters that do not
+	// support it leave CopyIn empty.
+	SubscriptionAuth bool
 }
 
 // Launch is a process the runner can start.
@@ -61,6 +65,10 @@ type Launch struct {
 	Stdin      string
 	SetupArgv  [][]string
 	SetupStdin []string
+	// CopyIn is applied by the runner after MkDirs and before setup.
+	// Secrets holds values taken from those copies, in memory only.
+	CopyIn  []FileCopy
+	Secrets []string
 }
 
 // Host is one coding host.

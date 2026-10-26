@@ -352,6 +352,7 @@ func TestProbePrintsOverheadWithoutStarting(t *testing.T) {
 		"command version: stub-9",
 		"model: claude-opus-5-5 pinned",
 		"auth env: ANTHROPIC_API_KEY",
+		"auth: environment variables",
 		"auth: ready",
 		"measured with a developer's own host config loaded; the isolated figure is lower",
 		`would run the overhead prompt "Reply with exactly: OK"`,

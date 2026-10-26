@@ -19,17 +19,18 @@ import (
 // Confirm is the --yes flag. Without it, Probe prints the measured
 // overhead and does not start a prompt.
 type ProbeOptions struct {
-	Checkout    string
-	Ref         string
-	HostNames   []string
-	HostsFile   string
-	PricesFile  string
-	FixturesDir string
-	OutDir      string
-	Caller      map[string]string
-	ParentTemp  string
-	Confirm     bool
-	Stdout      io.Writer
+	Checkout         string
+	Ref              string
+	HostNames        []string
+	HostsFile        string
+	PricesFile       string
+	FixturesDir      string
+	OutDir           string
+	Caller           map[string]string
+	ParentTemp       string
+	Confirm          bool
+	Stdout           io.Writer
+	SubscriptionAuth []string
 }
 
 // overhead is the fixed cost measured with a loaded user config.
@@ -51,6 +52,9 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 	out := opts.Stdout
 	if out == nil {
 		out = os.Stdout
+	}
+	if err := ValidateSubscriptionAuth(opts.SubscriptionAuth); err != nil {
+		return err
 	}
 	if opts.Ref == "" {
 		opts.Ref = "HEAD"
@@ -82,7 +86,17 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 		if err != nil {
 			return err
 		}
+		cfg.SubscriptionAuth = containsHost(opts.SubscriptionAuth, cfg.Name)
 		ready, detail := adapter.AuthReady(opts.Caller, cfg)
+		if cfg.SubscriptionAuth {
+			state := "missing"
+			if ready {
+				state = "present"
+			}
+			fmt.Fprintf(out, "auth: subscription login file (%s)\n", state)
+		} else {
+			fmt.Fprintln(out, "auth: environment variables")
+		}
 		fmt.Fprintf(out, "auth env: %s\n", strings.Join(cfg.AuthEnv, ", "))
 		if ready {
 			fmt.Fprintln(out, "auth: ready")
@@ -128,13 +142,14 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 	}
 	rt := &runtime{
 		opts: RunOptions{
-			Checkout:    opts.Checkout,
-			Ref:         opts.Ref,
-			FixturesDir: opts.FixturesDir,
-			OutDir:      opts.OutDir,
-			Caller:      opts.Caller,
-			ParentTemp:  opts.ParentTemp,
-			Confirm:     true,
+			Checkout:         opts.Checkout,
+			Ref:              opts.Ref,
+			FixturesDir:      opts.FixturesDir,
+			OutDir:           opts.OutDir,
+			Caller:           opts.Caller,
+			ParentTemp:       opts.ParentTemp,
+			Confirm:          true,
+			SubscriptionAuth: opts.SubscriptionAuth,
 		},
 		prices:        prices,
 		id:            time.Now().UTC().Format("20060102T150405Z"),
@@ -142,6 +157,9 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 		srcCommit:     srcCommit,
 		fixtureDigest: digest,
 		stdout:        out,
+	}
+	if err := sweepBeforeHosts(out, opts.ParentTemp); err != nil {
+		return err
 	}
 	var failures []string
 	for _, cfg := range selected {
@@ -166,7 +184,7 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 				RunN:   1,
 			}
 			if err := rt.one(ctx, item, spec.empty); err != nil {
-				fmt.Fprintf(out, "harness-error %s %s: %s\n", spec.id, cfg.Name, err)
+				fmt.Fprintf(out, "harness-error %s %s: %s\n", spec.id, cfg.Name, rt.redact().text(err.Error()))
 				failures = append(failures, err.Error())
 			}
 		}

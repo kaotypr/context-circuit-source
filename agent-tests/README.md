@@ -313,9 +313,12 @@ auth variables named in `hosts.yaml` when they are set. It does not copy your
 a host receives its own `HOME`.
 
 The run root is a temporary directory outside any repository. The checkout is
-read through git and is not written. Auth comes only from the environment
-variables named in `hosts.yaml`. Nothing is read from or written to the real
-home, the real workspace, or user config. The one shared place is the Go
+read through git and is not written. Without `--subscription-auth`, auth
+comes only from the environment variables named in `hosts.yaml`, and no login
+file is read. With `--subscription-auth codex`, the runner copies that host's
+subscription login file into the run's private `CODEX_HOME` and deletes the
+copy when the host process ends. Nothing else is read from or written to the
+real home, the real workspace, or user config. The one shared place is the Go
 module cache: the caller's `GOMODCACHE` when that is set, otherwise the path
 `go env GOMODCACHE` prints. Building the CLI uses that cache with
 `GOFLAGS=-mod=readonly` and `GOTOOLCHAIN=local`, so it reads modules already
@@ -331,8 +334,8 @@ The primary metric is total input tokens. Output tokens are reported
 separately.
 
 - Claude Code sums input, cache-creation, and cache-read tokens, and sets that total only when all three figures are present. When the result includes `modelUsage`, the sum across the models named there replaces the total only when the input, cache-read, and cache-creation figures are all present. Those models include subagents. The dollar figure is `total_cost_usd` as the host reported it. The report calls the total a list-price equivalent. On a subscription you may not be billed that amount.
-- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the `gpt-6-sol` row in `prices.yaml` (cost basis `price-table`). That row has a long-context tier. The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
-- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. The pinned model is `auto`, which has no price row, so the cost is left unset.
+- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the model's row in `prices.yaml` (cost basis `price-table`) when `price_row` names one. The pinned `gpt-5.6-luna` has no row yet, so its cost is left unset. The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
+- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. The pinned model is `composer-2.5`, which has no price row, so the cost is left unset.
 
 A missing token or cost is `n/a`. The report never writes 0 for a missing
 number. A null total has no percentage.
@@ -358,6 +361,18 @@ isolated figure is lower:
 - `cursor`: 21366 input tokens (2 uncached + 21364 cache write), 73-75 output
 
 A scenario is many times that. The bands in "Scenarios" are guesses.
+
+## Subscription login (Codex)
+
+API keys are not required.
+
+For Claude, create a token yourself with `claude setup-token` and export `CLAUDE_CODE_OAUTH_TOKEN` in the shell that starts the run. The runner passes only that variable. Cursor keeps its login in the macOS keychain. The runner does not use that login. Cursor runs only with `CURSOR_API_KEY`.
+
+Codex can use its subscription login file instead of `OPENAI_API_KEY`. Pass `--subscription-auth codex` to `run` or `probe` (a comma list is accepted only when every name is `codex`). The runner copies `auth.json` from `CODEX_HOME` when that variable is set, otherwise from `HOME/.codex/auth.json`, into the run's private `CODEX_HOME` as mode 0600. The copy is removed when the host process ends, including a non-zero exit, a timeout, a panic, a run stopped with Ctrl-C or SIGTERM, and a run root that is kept. The file is read once more before it is removed, so a token the host refreshed during the run is redacted too. A copy left in this tool's temporary `agent-test-*` directory by a crashed process is removed at the next `run` or `probe` that starts a host. The sweep does not read the caller's home. Errors name that file only as "subscription login file".
+
+Do not start Codex this way while a Codex session is open, and run Codex alone. The copy can refresh its token, and that refresh can invalidate the login on disk.
+
+A live Codex run with the copied login is not proven. Offline tests use a fake login file and a stub host. They do not show that Codex accepts the copy when started with `--ignore-user-config`.
 
 ## Scenarios
 
@@ -552,6 +567,8 @@ branch CLI can be built. It does not start a host.
 ## What it does not prove
 
 Permission prompts. A headless run cannot measure which prompts a person sees.
+
+A live Codex run that signs in from the copied subscription login file.
 
 Whether a real host satisfies the checks. The scripted tests show that the
 grader catches a damaged end state. Only a live run shows that a host passes.
