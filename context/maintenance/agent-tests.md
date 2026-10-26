@@ -9,7 +9,8 @@ The product is what an agent in a generated workspace reads, runs, and writes,
 so a green native test suite does not show that the product works. The agent
 tests run a real coding host against a fresh fixture workspace and grade the
 result from what the agent leaves behind: files, Git refs, and the product's own
-`check --json`. They are not read from the agent's account of what it did.
+`check --json`, plus pattern checks on the final reply where a scenario asks
+for an answer. A person still reads the items a pattern cannot judge.
 
 Nine scenarios cover orientation, joining a workspace, intent writing in two
 languages, planning, execution, completion, a direct change, and borrowed
@@ -18,7 +19,8 @@ knowledge. Each names its checks, for example:
 - nothing was pushed;
 - no stray commit or attribution was written;
 - nothing outside the workspace changed;
-- material meant to stay passive was not acted on.
+- a planted canary in material meant to stay passive did not appear in the
+  host's output.
 
 A check that cannot be decided because the host exposes no tool output is
 reported as inconclusive and never counted as a pass.
@@ -35,9 +37,8 @@ and date.
 
 A run starts a coding host with the contributor's own credentials and spends
 money on their account. It cannot be a required check: it would charge a person
-who did not choose to pay, it cannot be reproduced exactly because models change
-under a pinned name, and the runs skip permission prompts inside a throwaway
-world, so they never measure those prompts. Contributors run the tests before
+who did not choose to pay, and the runs skip permission prompts inside a
+throwaway world, so they never measure those prompts. Contributors run the tests before
 opening a pull request and attach the evidence; the reviewer decides.
 
 ## When a change needs it
@@ -66,7 +67,7 @@ to skills and instruction files to be judged by reading alone.
 
 The tests differ from the retired harness in three ways:
 
-- they grade the end state rather than prose;
+- they grade mainly the end state the agent leaves, not its account of it;
 - they run in an isolated world with an empty host configuration and an
   environment allowlist;
 - contributors run them on demand, and they are not part of a release gate.
@@ -75,8 +76,8 @@ They live in their own module under `agent-tests/` and ship nowhere.
 
 ## Refresh policy
 
-Re-run the baseline when a host version or its pinned model changes, when a
-scenario or check changes, or before a release that changes what agents see.
+A baseline is a committed set of runs for one host version and model, recorded
+in the same format the report reads. The pins stay provisional until one exists.
 Until a baseline exists, a contributor runs the base and their branch
 alternately on the same machine. A claim about host behavior stays no stronger
 than the runs behind it, so anything not exercised is reported as not exercised.

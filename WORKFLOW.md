@@ -65,11 +65,6 @@ security pages while no workspace ever receives them. The guide, its artwork and
 the license are restored the same way from product/, so a README.md or LICENSE
 defined in template-repo/ is refused: those have one source each.
 
-agent-tests/ is a fifth class: a separate Go module that is not shipped and not
-history either. It is a contributor tool that runs coding hosts against a
-fixture workspace, so it is excluded from every build, archive, and the
-manifest, and CI does not run it.
-
 A dist/ build is therefore the workspace only, not a preview of the published
 repository: everything in this class joins the tree at publication.
 
@@ -80,6 +75,11 @@ Context Circuit, no release notes for the template, and no LICENSE at its root.
 A tag-to-tag sync reads the git tree rather than an archive and cannot see the
 mark, so product/AGENTS.md.in names the same paths for the agent performing
 that update.
+
+agent-tests/ is a fifth class: a separate Go module that is not shipped and not
+history either. It is a contributor tool that runs coding hosts against a
+fixture workspace, so it is excluded from every build, archive, and the
+manifest, and CI does not run it.
 
 ## How context/ is validated
 

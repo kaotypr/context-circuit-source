@@ -41,9 +41,9 @@ is a security report:
 
 The authorization gate, like the other rules an agent follows in a workspace,
 binds an agent through the instructions it reads. The CLI does not enforce it.
-The agent tests measure how often coding hosts follow those instructions. That
-is evidence, not a guarantee, so treat the gates as a safeguard to verify and
-not as a security boundary.
+The agent tests grade named checks, such as nothing being pushed, on short runs
+of real coding hosts. That is evidence, not a guarantee. An agent that crosses a
+gate listed above is still a security report.
 
 ## Out of scope
 
