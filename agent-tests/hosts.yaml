@@ -1,0 +1,49 @@
+# Host launch defaults.
+#
+# command: executable invoked for this host.
+# model: pinned model id sent on the command line. These pins are the
+# host defaults on the machine when this file was written and are provisional
+# until a baseline run confirms them. Cursor "auto" cannot be priced,
+# so its cost is null.
+# effort: optional effort setting. Empty means the flag is omitted.
+# host_version: recorded with each run.
+# provisional: true while the pin is still awaiting a baseline run.
+# timeout_seconds: wall-clock limit for one host process.
+# max_budget_usd: Claude Code runaway guard. 0 selects the adapter default.
+# price_row: key in prices.yaml. Empty when the host reports its own cost
+# or the model cannot be priced.
+# auth_env: credential variable names taken from the caller. Auth files are
+# never read.
+
+hosts:
+  claude:
+    command: claude
+    model: claude-opus-5-5
+    effort: ""
+    host_version: "2.1.304"
+    provisional: true
+    timeout_seconds: 1800
+    max_budget_usd: 3
+    auth_env:
+      - ANTHROPIC_API_KEY
+      - CLAUDE_CODE_OAUTH_TOKEN
+  codex:
+    command: codex
+    model: gpt-6-sol
+    effort: medium
+    host_version: "0.162.1"
+    provisional: true
+    timeout_seconds: 1800
+    price_row: gpt-6-sol
+    auth_env:
+      - OPENAI_API_KEY
+  cursor:
+    command: cursor-agent
+    model: auto
+    effort: ""
+    host_version: "2026.10.22-27dcf5f"
+    provisional: true
+    timeout_seconds: 1800
+    price_row: ""
+    auth_env:
+      - CURSOR_API_KEY

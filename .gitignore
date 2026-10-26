@@ -18,3 +18,4 @@ dist/
 /template/member.local.yaml
 /template/.worktrees/
 /bin/
+agent-tests/out/
