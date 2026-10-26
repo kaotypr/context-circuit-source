@@ -26,9 +26,14 @@ func LooksLikeSecret(s string) bool {
 // Redact replaces home with $HOME, a user path element with $USER, and
 // key-shaped values with [redacted].
 func Redact(s, home, user string) string {
+	return redactSecrets(RedactPaths(s, home, user))
+}
+
+// RedactPaths replaces a home prefix with $HOME and a user path element
+// with $USER. Key-shaped strings are left unchanged.
+func RedactPaths(s, home, user string) string {
 	s = replacePathPrefix(s, home, "$HOME")
-	s = redactUserElement(s, user)
-	return redactSecrets(s)
+	return redactUserElement(s, user)
 }
 
 // RedactRunRoot replaces the run-root prefix with $RUN.

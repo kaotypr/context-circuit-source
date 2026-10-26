@@ -13,6 +13,7 @@ go test ./...
 go run ./cmd/agent-tests probe
 go run ./cmd/agent-tests run --dry-run
 go run ./cmd/agent-tests surface-diff --base <ref>
+go run ./cmd/agent-tests report
 ```
 
 `probe` runs `<command> --version` for each host (no model is called) and prints its version, whether its pinned model is set, and which
@@ -48,6 +49,26 @@ A non-empty diff names the scenarios, hosts, and artifact kinds from `triggers.y
 - migration: the `version` field in `workspace.yaml` changed, or the ids file layout changed
 
 A person decides whether the change is actually larger. A `VERSION` or `CLI_VERSION` bump is not treated as migration.
+
+## report
+
+`report` reads a finished run and writes `report.md`. It does not start a host.
+
+```sh
+go run ./cmd/agent-tests report [--run ID] [--out DIR] [--baseline DIR] [--design] [--upgrade-check] [--no-zip]
+```
+
+`--run` is a run id under `--out`, or a path to a run directory. The default is the newest directory under `out/` that contains `runs.jsonl`. `--baseline` is a directory with `runs.jsonl`, or `summary.json` (`{"rows":[...]}`) when the log is absent. Those runs are the before side. Without a baseline, rows in the same `runs.jsonl` with `"side":"base"` are the before side.
+
+`report.md` is the Agent tests section: change kind and surface counts when `surface/surface.json` is present, the scenarios the trigger map required, the host table, and one row per scenario and host. Several runs of the same scenario and host are averaged, and the row says how many. A missing token or cost is `n/a`, never 0. A null total has no percentage.
+
+A failed check, a lower result than before, or more than 15% more total input tokens is a warning only. It is not a block. The reviewer decides.
+
+`bundle.zip` holds every run's JSON line, stream, reply, and produced files. Before anything is written, the zip builder rewrites a home prefix to `$HOME`, a run-root prefix to `$RUN`, and the account name, as a path element, to `$USER`. It drops `auth.json`, `.credentials*`, `*.token`, `.netrc`, `.env`, `id_rsa*`, `*.pem`, and the contents of a per-host auth directory (`claude` and `codex` config directories, `cursor-home`, and `.claude`, `.codex`, `.cursor`). The host id in `runs/<scenario>/<host>/` is kept. Symlinks are skipped, and entry names stay relative. If a key-shaped string remains in anything that would be zipped, the command stops, names the file, and leaves no zip behind, including a partial one. `--no-zip` skips the archive.
+
+`--design` pairs one base run with one branch run of the same scenario and host and writes `design.md`. The run on a side is the passing run with the median total input tokens, and the lowest run number breaks a tie. When none passed, the median of the remaining runs is used. The file diffs `artifacts/files` and `artifacts/design`, summarizes files, headings, and line counts, diffs `reads.txt` (or says the reads list is not available), quotes the first 12 lines of each reply, and gives the token change.
+
+`--upgrade-check` takes the template delta from `surface/base` and `surface/branch` under the run directory, or rebuilds those two init workspaces from the recorded refs. It skips paths a workspace never receives from the template repository (`README.md`, `LICENSE`, `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`, and `assets/` at the root), `.context-circuit/ids.yaml`, and a `version` change in `workspace.yaml`. The rest is applied to a copy of the base tree, and the branch CLI's `check --json` runs on that copy. The section in `design.md` says this is a file-level delta, not the host's judgement. It needs a source checkout so the branch CLI can be built. It does not start a host.
 
 ## What a run touches
 

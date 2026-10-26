@@ -152,6 +152,18 @@ func TestRedact(t *testing.T) {
 	}
 }
 
+func TestRedactPathsLeavesSecrets(t *testing.T) {
+	secret := "sk-abcdefghijklmnop"
+	in := "/tmp/home/ada/" + secret
+	got := RedactPaths(in, "/tmp/home", "ada")
+	if got != "$HOME/$USER/"+secret {
+		t.Fatalf("%q", got)
+	}
+	if !LooksLikeSecret(got) {
+		t.Fatal("path cleaning removed the key shape")
+	}
+}
+
 func TestRedactRunRoot(t *testing.T) {
 	if got := RedactRunRoot("log /tmp/run/abc/out", "/tmp/run/abc"); got != "log $RUN/out" {
 		t.Fatalf("%q", got)

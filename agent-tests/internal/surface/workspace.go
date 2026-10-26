@@ -42,31 +42,11 @@ func captureSide(ctx context.Context, checkout, ref, pin, pathEnv, home string) 
 		return captured{}, err
 	}
 	defer os.RemoveAll(run)
-	if err := world.Guard(run, checkout, home); err != nil {
-		return captured{}, err
-	}
-	for _, dir := range []string{"home", "tmp", "gocache"} {
-		if err := os.MkdirAll(filepath.Join(run, dir), 0o755); err != nil {
-			return captured{}, err
-		}
-	}
-	if err := writeGitConfig(run); err != nil {
-		return captured{}, err
-	}
-	src := filepath.Join(run, "src")
-	if err := world.ExtractArchive(ctx, checkout, ref, src); err != nil {
-		return captured{}, err
-	}
-	cli, err := world.BuildCLI(ctx, src, run, pin)
+	ws, cli, err := initSide(ctx, checkout, ref, pin, pathEnv, home, run)
 	if err != nil {
 		return captured{}, err
 	}
-	ws := filepath.Join(run, "ws")
-	env := sideEnv(run, pathEnv)
-	if err := prepareWorkspace(ctx, cli, ws, env); err != nil {
-		return captured{}, err
-	}
-	outputs, err := runScript(ctx, cli, ws, env)
+	outputs, err := runScript(ctx, cli, ws, sideEnv(run, pathEnv))
 	if err != nil {
 		return captured{}, err
 	}
@@ -79,6 +59,57 @@ func captureSide(ctx context.Context, checkout, ref, pin, pathEnv, home string) 
 		outputs: outputs,
 		norm:    NewNorm(pathTokens(run, ws), pin),
 	}, nil
+}
+
+// OpenInitWorkspace archives ref, builds the CLI, and inits a workspace
+// the same way surface-diff does. cleanup removes the run root, including
+// the CLI binary.
+func OpenInitWorkspace(ctx context.Context, checkout, ref, pathEnv, home string) (ws, cli string, cleanup func(), err error) {
+	pin, err := world.Pin(checkout)
+	if err != nil {
+		return "", "", nil, err
+	}
+	if pathEnv == "" {
+		pathEnv = os.Getenv("PATH")
+	}
+	run, err := world.NewRunRoot("")
+	if err != nil {
+		return "", "", nil, err
+	}
+	cleanup = func() { _ = os.RemoveAll(run) }
+	ws, cli, err = initSide(ctx, checkout, ref, pin, pathEnv, home, run)
+	if err != nil {
+		cleanup()
+		return "", "", nil, err
+	}
+	return ws, cli, cleanup, nil
+}
+
+func initSide(ctx context.Context, checkout, ref, pin, pathEnv, home, run string) (ws, cli string, err error) {
+	if err := world.Guard(run, checkout, home); err != nil {
+		return "", "", err
+	}
+	for _, dir := range []string{"home", "tmp", "gocache"} {
+		if err := os.MkdirAll(filepath.Join(run, dir), 0o755); err != nil {
+			return "", "", err
+		}
+	}
+	if err := writeGitConfig(run); err != nil {
+		return "", "", err
+	}
+	src := filepath.Join(run, "src")
+	if err := world.ExtractArchive(ctx, checkout, ref, src); err != nil {
+		return "", "", err
+	}
+	cli, err = world.BuildCLI(ctx, src, run, pin)
+	if err != nil {
+		return "", "", err
+	}
+	ws = filepath.Join(run, "ws")
+	if err := prepareWorkspace(ctx, cli, ws, sideEnv(run, pathEnv)); err != nil {
+		return "", "", err
+	}
+	return ws, cli, nil
 }
 
 func pathTokens(run, ws string) []PathToken {

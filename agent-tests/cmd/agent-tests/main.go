@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/proc"
+	"github.com/kaotypr/context-circuit-source/agent-tests/internal/report"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/runner"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/surface"
 )
@@ -30,6 +31,8 @@ func main() {
 		os.Exit(probeCmd(os.Args[2:], caller))
 	case "surface-diff":
 		os.Exit(surfaceDiffCmd(os.Args[2:], caller))
+	case "report":
+		os.Exit(reportCmd(os.Args[2:], caller))
 	default:
 		fmt.Fprintf(os.Stderr, "unknown subcommand %q\n", os.Args[1])
 		usage(os.Stderr)
@@ -41,12 +44,15 @@ func usage(w io.Writer) {
 	fmt.Fprint(w, `agent-tests run [flags]
 agent-tests probe [flags]
 agent-tests surface-diff --base <ref> [flags]
+agent-tests report [flags]
 
 run    execute scenarios. Without --yes the plan is printed and no host starts.
 probe  print host version, pinned model, and auth variable names.
 surface-diff
        compare two refs offline. It does not start a host and needs no key.
        Exit 0 whether or not the surface differs.
+report read a finished run and write report.md. It does not start a host.
+       --design writes design.md. --upgrade-check runs check on a file-level delta.
 
 run flags:
   --scenarios   comma-separated scenario ids (default: all in scenarios/)
@@ -69,6 +75,14 @@ surface-diff flags:
   --ref         git ref of the later side (default: HEAD)
   --checkout    source checkout (default: git top-level of the current directory)
   --out         output directory (default: agent-tests/out under the checkout)
+
+report flags:
+  --run            run id under --out, or a path (default: newest run)
+  --out            output directory (default: agent-tests/out under the checkout)
+  --baseline       directory with runs.jsonl or summary.json, used as before
+  --design         write design.md, pairing base and branch runs
+  --upgrade-check  apply the template delta and run the branch CLI check
+  --no-zip         do not write bundle.zip
 `)
 }
 
@@ -230,6 +244,68 @@ func surfaceDiffCmd(args []string, caller map[string]string) int {
 		ScenariosDir: scenariosDir,
 		Path:         caller["PATH"],
 		Home:         caller["HOME"],
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	return 0
+}
+
+func reportCmd(args []string, caller map[string]string) int {
+	fs := flag.NewFlagSet("report", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	runID := fs.String("run", "", "run id or path (default: newest under --out)")
+	outDirFlag := fs.String("out", "", "output directory")
+	baseline := fs.String("baseline", "", "before runs: a directory with runs.jsonl or summary.json")
+	design := fs.Bool("design", false, "write design.md")
+	upgrade := fs.Bool("upgrade-check", false, "apply the template delta and run check")
+	noZip := fs.Bool("no-zip", false, "do not write bundle.zip")
+	checkout := fs.String("checkout", "", "source checkout, used by --upgrade-check")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "usage: agent-tests report [--run ID] [--out DIR] [--baseline DIR] [--design] [--upgrade-check] [--no-zip]")
+		fmt.Fprintln(os.Stderr, "read a finished run. It does not start a host.")
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() != 0 {
+		fmt.Fprintf(os.Stderr, "unexpected argument %q\n", fs.Arg(0))
+		fs.Usage()
+		return 2
+	}
+	outDir := *outDirFlag
+	var root string
+	if outDir == "" || *upgrade || *checkout != "" {
+		resolved, err := resolveCheckout(*checkout, caller["PATH"])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		root = resolved
+		if outDir == "" {
+			_, _, _, _, outDir = layout(root)
+		}
+	}
+	user := caller["USER"]
+	if user == "" {
+		user = caller["LOGNAME"]
+	}
+	err := report.Run(context.Background(), report.Options{
+		OutDir:   outDir,
+		Run:      *runID,
+		Baseline: *baseline,
+		Design:   *design,
+		Upgrade:  *upgrade,
+		NoZip:    *noZip,
+		Home:     caller["HOME"],
+		User:     user,
+		Checkout: root,
+		Path:     caller["PATH"],
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
