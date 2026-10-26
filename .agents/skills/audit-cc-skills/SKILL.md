@@ -38,9 +38,19 @@ From the repository root, with `T=$(mktemp -d)`:
 2. Make a throwaway workspace: `git init -q -b main "$T/ws"`, then
    `"$T/cli" --workspace "$T/ws" init --name Acme --purpose "Invoicing" --member maya --member-name Maya`,
    then `"$T/cli" --workspace "$T/ws" repo init --id api --path "$T/ws/repositories/api" --base main`.
-3. Capture `"$T/cli" help` and `help <topic>` for every topic it lists, and
-   `--json` output of `check`, `status`, and one `record create` for an intent
-   and a plan. These are the evidence for C1 and C3.
+3. Capture `"$T/cli" help` and `help <topic>` for every topic it lists, and the
+   `--json` output of these:
+
+   ```sh
+   "$T/cli" --workspace "$T/ws" --json check
+   "$T/cli" --workspace "$T/ws" --json status
+   "$T/cli" --workspace "$T/ws" --json record create --kind intent --slug sample --title "Sample intent"
+   "$T/cli" --workspace "$T/ws" --json record create --kind plan --slug sample --title "Sample plan" --repo api
+   ```
+
+   On this setup `check` exits 1 with one issue, because the workspace is a Git
+   checkout that `workspace connect` was never run on; its JSON is still the
+   evidence. These outputs are the evidence for C1 and C3.
 4. List what each skill names: commands, flags, JSON fields, next-step strings,
    file paths, and other skills. Check each against step 3, the Go code in
    `internal/`, and `scripts/release-manifest.txt`.
@@ -70,7 +80,7 @@ Context Circuit checks:
   string a skill names exists in the CLI built from this commit and means what the
   skill says. Existing Go tests cover commands and flags only.
 - **C2 Launcher discipline.** Every call goes through the workspace launcher
-  (`.context-circuit/cli`, or `cli.ps1` where Windows is meant); no bare command;
+  (`.context-circuit/cli`, or `.context-circuit/cli.ps1` where Windows is meant); no bare command;
   no `CC_CLI_VERSION=local` except where `cc-cli` explains it.
 - **C3 Records and folders.** Paths, frontmatter fields, and headings match
   `internal/workspace/records.go` and the real layout: intent and plan paths,
@@ -94,7 +104,7 @@ Context Circuit checks:
 - **C8 Nothing is stale.** No retired terms, outdated commands or paths, or
   hard-coded version that should read "or later"; no default `--reuse`;
   `planning_required` only as the sign of an old CLI.
-- **C9 Agrees with `context/`.** Notes on the same subject say the same. When they
+- **C9 Agrees with this checkout's `context/`.** Notes on the same subject say the same. When they
   disagree, the code decides which side is wrong; report the disagreement.
 - **C10 Language rules.** Record headings and field names stay English;
   repository text follows the repository; prose follows the member.
@@ -108,7 +118,7 @@ Context Circuit checks:
 Produce one report that pastes into a pull request as it is:
 
 1. A findings table, one row per finding: skill, check id, severity (`wrong`,
-   `stale`, `inconsistent`, `unclear`), `file:line`, evidence (the CLI output or
+   `stale`, `inconsistent`, `unclear`), `file:line`, shipped (yes or no), evidence (the CLI output or
    code location that contradicts the text), and a suggested fix. Report nothing
    without evidence; if a suspected problem turns out to be fine, say so in the
    summary instead of the table.
@@ -117,5 +127,5 @@ Produce one report that pastes into a pull request as it is:
 3. Candidate Go tests: findings a test could check mechanically, so they stop
    being re-checked by hand. List them; do not write them.
 
-Mark each finding in a shipped file as shipped. Findings never change anything
+A finding in a file under `product/` or `template/` is shipped. Findings never change anything
 by themselves: hand the report to the maintainer.

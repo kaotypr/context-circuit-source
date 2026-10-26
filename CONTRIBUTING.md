@@ -82,9 +82,9 @@ pull request, on your own coding-host accounts, and you pay for the runs.
    If the report says `No agent tests needed: surface diff is empty`, nothing
    more is needed.
 2. If you changed a shipped skill, also read the maintainer skill
-   `audit-cc-skills` under `.agents/skills/` once it is in your checkout. It is a
-   free, static check of the skills that starts no coding host. Until then, the
-   agent tests below are the only check.
+   `audit-cc-skills` under `.agents/skills/`. It is a free, static check of the
+   skills that starts no coding host. The agent tests below are the check that
+   runs a host.
 3. If the change is larger, open an issue with the design case first and wait for
    the maintainer's answer before you pay for any agent runs. A change is larger
    when it adds, removes or moves shipped files; changes the shape of what a

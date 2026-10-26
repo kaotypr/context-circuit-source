@@ -138,6 +138,6 @@ it does that for is `actors/`.*
 *How this checkout is laid out, validated, and released. Not what the product
 does once installed.*
 
-- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history, knowledge tree · reviewed 2026-10-23
+- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history, knowledge tree, maintainer skills · reviewed 2026-10-27
 - [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what is and is not established by tests · test, vet, format, ci, release check, build output, publish, destination-owned, knowledge tree, host behavior · reviewed 2026-10-27
 - [Agent tests: what agent behavior is measured](maintenance/agent-tests.md) {context-circuit-source} — what is measured about coding-agent behavior, where, why it is not CI, and what it does not prove · agent tests, scenarios, hosts, design case, surface diff, baseline, refresh, host behavior, measured · reviewed 2026-10-27
