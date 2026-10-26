@@ -5,7 +5,9 @@ plus CLI tools. Together they make coding agents take determined, standardized
 actions; it is not merely code. A change to a skill, an instruction file, the
 workspace layout, or what a CLI command prints is a product-design change, even
 when the diff is a few words. [CONTRIBUTING.md](CONTRIBUTING.md) explains this
-and the path to a merged pull request.
+and the path to a merged pull request. Before a pull request that changes what an
+agent in a generated workspace reads, runs or sees, follow "Changes that affect
+agents" there for its design case and agent-test evidence.
 
 This is the maintainer source checkout, not a generated workspace, and it holds
 no workspace records of its own. In the maintainer's own sessions, work directly
