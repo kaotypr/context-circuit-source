@@ -19,8 +19,8 @@ jobs:
   native:
     name: Go tests
     if: >-
-      (github.event_name == 'pull_request' && github.base_ref != 'main')
-      || (github.event_name == 'push' && github.ref != 'refs/heads/main')
+      (github.event_name == 'pull_request' && github.base_ref != 'ci/probe-base')
+      || (github.event_name == 'push' && github.ref != 'refs/heads/ci/probe-base')
     strategy:
       fail-fast: false
       matrix:
@@ -52,8 +52,8 @@ jobs:
   native-clone:
     name: Filesystem clone tests
     if: >-
-      (github.event_name == 'pull_request' && github.base_ref != 'main')
-      || (github.event_name == 'push' && github.ref != 'refs/heads/main')
+      (github.event_name == 'pull_request' && github.base_ref != 'ci/probe-base')
+      || (github.event_name == 'push' && github.ref != 'refs/heads/ci/probe-base')
     # The runners' default ext4 and NTFS volumes cannot clone, so the native
     # clone code only runs on a volume mounted for it here.
     strategy:
@@ -101,8 +101,8 @@ jobs:
   release:
     name: Release build
     if: >-
-      (github.event_name == 'pull_request' && github.base_ref == 'main')
-      || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      (github.event_name == 'pull_request' && github.base_ref == 'ci/probe-base')
+      || (github.event_name == 'push' && github.ref == 'refs/heads/ci/probe-base')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
