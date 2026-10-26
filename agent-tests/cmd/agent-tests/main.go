@@ -13,6 +13,7 @@ import (
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/proc"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/runner"
+	"github.com/kaotypr/context-circuit-source/agent-tests/internal/surface"
 )
 
 func main() {
@@ -27,6 +28,8 @@ func main() {
 		os.Exit(runCmd(os.Args[2:], caller))
 	case "probe":
 		os.Exit(probeCmd(os.Args[2:], caller))
+	case "surface-diff":
+		os.Exit(surfaceDiffCmd(os.Args[2:], caller))
 	default:
 		fmt.Fprintf(os.Stderr, "unknown subcommand %q\n", os.Args[1])
 		usage(os.Stderr)
@@ -37,9 +40,13 @@ func main() {
 func usage(w io.Writer) {
 	fmt.Fprint(w, `agent-tests run [flags]
 agent-tests probe [flags]
+agent-tests surface-diff --base <ref> [flags]
 
 run    execute scenarios. Without --yes the plan is printed and no host starts.
 probe  print host version, pinned model, and auth variable names.
+surface-diff
+       compare two refs offline. It does not start a host and needs no key.
+       Exit 0 whether or not the surface differs.
 
 run flags:
   --scenarios   comma-separated scenario ids (default: all in scenarios/)
@@ -56,6 +63,12 @@ run flags:
 probe flags:
   --hosts --ref --checkout --out --yes
   Without --yes, probe prints the measured overhead and does not start a prompt.
+
+surface-diff flags:
+  --base        git ref of the earlier side (required)
+  --ref         git ref of the later side (default: HEAD)
+  --checkout    source checkout (default: git top-level of the current directory)
+  --out         output directory (default: agent-tests/out under the checkout)
 `)
 }
 
@@ -162,6 +175,61 @@ func probeCmd(args []string, caller map[string]string) int {
 		OutDir:      outDir,
 		Caller:      caller,
 		Confirm:     *yes,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	return 0
+}
+
+func surfaceDiffCmd(args []string, caller map[string]string) int {
+	fs := flag.NewFlagSet("surface-diff", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	base := fs.String("base", "", "git ref of the earlier side")
+	ref := fs.String("ref", "HEAD", "git ref of the later side")
+	checkout := fs.String("checkout", "", "source checkout")
+	outDirFlag := fs.String("out", "", "output directory")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "usage: agent-tests surface-diff --base <ref> [--ref HEAD] [--checkout PATH] [--out DIR]")
+		fmt.Fprintln(os.Stderr, "compare two refs offline. It does not start a host and needs no key.")
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() != 0 {
+		fmt.Fprintf(os.Stderr, "unexpected argument %q\n", fs.Arg(0))
+		fs.Usage()
+		return 2
+	}
+	if strings.TrimSpace(*base) == "" {
+		fmt.Fprintln(os.Stderr, "surface-diff: --base is required")
+		fs.Usage()
+		return 2
+	}
+	root, err := resolveCheckout(*checkout, caller["PATH"])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	hostsFile, _, scenariosDir, _, outDir := layout(root)
+	if *outDirFlag != "" {
+		outDir = *outDirFlag
+	}
+	_, err = surface.Run(context.Background(), surface.Options{
+		Checkout:     root,
+		BaseRef:      *base,
+		Ref:          *ref,
+		OutDir:       outDir,
+		TriggersFile: filepath.Join(root, "agent-tests", "triggers.yaml"),
+		HostsFile:    hostsFile,
+		ScenariosDir: scenariosDir,
+		Path:         caller["PATH"],
+		Home:         caller["HOME"],
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

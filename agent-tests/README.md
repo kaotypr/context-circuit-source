@@ -12,11 +12,42 @@ cd agent-tests
 go test ./...
 go run ./cmd/agent-tests probe
 go run ./cmd/agent-tests run --dry-run
+go run ./cmd/agent-tests surface-diff --base <ref>
 ```
 
 `probe` runs `<command> --version` for each host (no model is called) and prints its version, whether its pinned model is set, and which
 auth variable names are present. `run --dry-run` prints the plan and does not
 start a host. A live run needs `--yes`.
+
+## surface-diff
+
+`surface-diff` compares two git refs without a coding host and without a key. It is free and offline. For each ref it archives the tree, builds the CLI, initializes a workspace, and runs one short script: help topics, `record create` for an intent and a plan, `check` in text and JSON, `agent setup`, and `status`. The script uses the same fixture names on both sides.
+
+```sh
+go run ./cmd/agent-tests surface-diff --base <ref> [--ref HEAD] [--checkout PATH] [--out DIR]
+```
+
+`--base` is required. `--ref` defaults to `HEAD`. The command exits 0 whether or not anything differs.
+
+It compares three things:
+
+- workspace files, as added, removed, changed, or moved (a removed file and an added file with the same bytes are a move)
+- CLI outputs, as a unified diff of the normalized text
+- the size of the always-loaded files (`AGENTS.md`, `CLAUDE.md`, `CURSOR.md`, `.cursor/rules/context-circuit.mdc`, `README.md`) and of each skill (`.agents/skills/<name>/SKILL.md`), in bytes and in approximate tokens (bytes/4)
+
+Timestamps, calendar dates, record ids, temporary paths, and the built CLI version are normalized before the comparison. Both sides are kept under `out/<id>/surface/` (`base/`, `branch/`, `outputs/`, `surface.json`, `surface.md`). When the files, the outputs, and the sizes are all equal, the report says `No agent tests needed: surface diff is empty`.
+
+A non-empty diff names the scenarios, hosts, and artifact kinds from `triggers.yaml`. An empty host list means any one host. A changed path with no row is reported as "no row: the author picks".
+
+**Larger** is a heuristic, not a decision. The report says the change looks larger, with reasons, when it sees any of these:
+
+- layout: a shipped file added, removed, or moved
+- a skill added or removed, or its headings or frontmatter changed
+- a CLI action: help text changed, JSON keys changed, or check findings changed
+- a gate: an added or removed line matches a keyword (push, commit, attribution, approval, planning stop, sources, borrowed knowledge)
+- migration: the `version` field in `workspace.yaml` changed, or the ids file layout changed
+
+A person decides whether the change is actually larger. A `VERSION` or `CLI_VERSION` bump is not treated as migration.
 
 ## What a run touches
 
