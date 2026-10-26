@@ -16,12 +16,30 @@ import (
 
 func TestNames(t *testing.T) {
 	want := []string{
+		"borrowed-reply",
+		"borrowed-untouched",
 		"check-clean",
+		"complete-note",
+		"complete-plan-done",
+		"direct-no-records",
+		"direct-readme",
+		"execute-records-untouched",
+		"execute-tests-pass",
+		"execute-worktree",
+		"intent-lang-body",
+		"intent-no-plan",
+		"intent-record",
+		"join-local-files",
+		"join-members",
 		"launcher-only",
 		"no-attribution",
 		"no-outside-writes",
 		"no-stray-commits",
 		"nothing-pushed",
+		"orient-clean-trees",
+		"orient-reply",
+		"plan-linked",
+		"plan-record",
 		"sources-passive",
 	}
 	got := Names()

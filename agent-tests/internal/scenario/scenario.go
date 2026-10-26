@@ -102,8 +102,14 @@ type CheckResult struct {
 // Check grades one named property of a run.
 type Check func(ctx CheckContext) CheckResult
 
-// Registry holds the shared checks. Each check registers itself.
+// Registry holds the shared checks and the scenario checks. Each check
+// registers itself.
 var Registry = map[string]Check{}
+
+// SoftRegistry holds optional metrics. A registered function's return
+// value is what the run record stores. An unregistered name keeps the
+// description from the scenario file.
+var SoftRegistry = map[string]func(CheckContext) any{}
 
 // Load reads one scenario file. Unknown fields are an error.
 func Load(path string) (Scenario, error) {

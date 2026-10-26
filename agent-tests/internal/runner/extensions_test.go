@@ -31,7 +31,7 @@ func TestGradeInconclusiveLeavesFailedChecksEmpty(t *testing.T) {
 	if scenario.Verdict(results, nil, incomplete) != "fail" {
 		t.Fatalf("verdict %s results %+v", scenario.Verdict(results, nil, incomplete), results)
 	}
-	line := (&runtime{}).recordLine(planned{Scenario: sc, Config: hosts.HostConfig{}}, hosts.Parsed{}, "fail", results, 0, "", nil)
+	line := (&runtime{}).recordLine(planned{Scenario: sc, Config: hosts.HostConfig{}}, hosts.Parsed{}, "fail", results, 0, "", nil, nil)
 	if len(line.FailedChecks) != 1 || line.FailedChecks[0] != "launcher-only" {
 		t.Fatalf("failed checks %v", line.FailedChecks)
 	}
@@ -47,9 +47,35 @@ func TestGradeInconclusiveLeavesFailedChecksEmpty(t *testing.T) {
 	if scenario.Verdict(results, nil, incomplete) != "inconclusive" {
 		t.Fatal(scenario.Verdict(results, nil, incomplete))
 	}
-	line = (&runtime{}).recordLine(planned{Scenario: only, Config: hosts.HostConfig{}}, hosts.Parsed{}, "inconclusive", results, 0, "", nil)
+	line = (&runtime{}).recordLine(planned{Scenario: only, Config: hosts.HostConfig{}}, hosts.Parsed{}, "inconclusive", results, 0, "", nil, nil)
 	if len(line.FailedChecks) != 0 {
 		t.Fatalf("failed checks %v", line.FailedChecks)
+	}
+}
+
+func TestRecordLineSoftComputed(t *testing.T) {
+	sc := scenario.Scenario{Soft: map[string]string{
+		"code-canary-seen": "CODE-CANARY-41b2 appeared in the host stream",
+		"subagents":        "subagent count",
+		"unknown-metric":   "keep me",
+	}}
+	graded := &scenario.CheckContext{
+		Stream: "saw CODE-CANARY-41b2 in a tool result",
+		Parsed: hosts.Parsed{Subagents: 0},
+	}
+	line := (&runtime{}).recordLine(planned{Scenario: sc}, hosts.Parsed{}, "pass", nil, 0, "", nil, graded)
+	if line.Soft["code-canary-seen"] != true {
+		t.Fatalf("canary %#v", line.Soft["code-canary-seen"])
+	}
+	if line.Soft["subagents"] != 0 {
+		t.Fatalf("subagents %#v", line.Soft["subagents"])
+	}
+	if line.Soft["unknown-metric"] != "keep me" {
+		t.Fatalf("unknown %#v", line.Soft["unknown-metric"])
+	}
+	plain := (&runtime{}).recordLine(planned{Scenario: sc}, hosts.Parsed{}, "pass", nil, 0, "", nil, nil)
+	if plain.Soft["code-canary-seen"] != sc.Soft["code-canary-seen"] {
+		t.Fatalf("nil context stored %#v", plain.Soft["code-canary-seen"])
 	}
 }
 

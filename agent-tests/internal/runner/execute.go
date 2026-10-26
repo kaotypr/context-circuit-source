@@ -24,6 +24,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	var wall time.Duration
 	var drops []string
 	var runRoot string
+	var graded *scenario.CheckContext
 	runDir := filepath.Join(rt.opts.OutDir, rt.id, "runs", item.Scenario.ID, item.Host, item.Side, fmt.Sprintf("r%d", item.RunN))
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -36,7 +37,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 			_ = writeText(filepath.Join(runDir, "drop.log"), strings.Join(drops, "\n")+"\n", rt.redact())
 		}
 		digest, _ := record.Digest(runDir)
-		line := rt.recordLine(item, parsed, verdict, results, wall, digest, err)
+		line := rt.recordLine(item, parsed, verdict, results, wall, digest, err, graded)
 		if werr := record.Append(filepath.Join(rt.opts.OutDir, rt.id, "runs.jsonl"), line); werr != nil && err == nil {
 			err = werr
 		}
@@ -179,7 +180,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	if checkErr != nil {
 		return checkErr
 	}
-	results, incomplete = grade(item.Scenario, scenario.CheckContext{
+	graded = &scenario.CheckContext{
 		World:       w,
 		Scenario:    item.Scenario,
 		Parsed:      parsed,
@@ -191,7 +192,8 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		Exec: func(dir string, argv ...string) (string, error) {
 			return rt.execIsolated(ctx, w, dir, argv...)
 		},
-	})
+	}
+	results, incomplete = grade(item.Scenario, *graded)
 	if !parsed.Terminal {
 		incomplete = true
 	}
@@ -625,7 +627,7 @@ func emptyWorld(runRoot string) (world.World, error) {
 	}, nil
 }
 
-func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string, results []scenario.CheckResult, wall time.Duration, digest string, harness error) record.Run {
+func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string, results []scenario.CheckResult, wall time.Duration, digest string, harness error, graded *scenario.CheckContext) record.Run {
 	// FailedChecks lists checks with Pass false. An inconclusive result
 	// has Pass set, so it is left out.
 	failed := []string{}
@@ -636,6 +638,12 @@ func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string,
 	}
 	soft := map[string]any{}
 	for name, desc := range item.Scenario.Soft {
+		if graded != nil {
+			if fn, ok := scenario.SoftRegistry[name]; ok {
+				soft[name] = fn(*graded)
+				continue
+			}
+		}
 		soft[name] = desc
 	}
 	reasons := map[string]string{}
