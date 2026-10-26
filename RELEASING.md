@@ -45,7 +45,7 @@ Only `main` and `development/v2` are protected branches: a pull request is requi
 
 ## Branches
 
-`development/X.Y.Z` is not protected, so it can be deleted without bypassing anything. The repository is set to delete a pull request's branch when the pull request merges, so merging `development/X.Y.Z` into `development/v2` (step 4) deletes it, and its commits are then on `development/v2`. If the branch is still there once the release is on `main`, the maintainer deletes it by hand. Topic branches are deleted on merge in the same way.
+`development/X.Y.Z` is not protected, so it can be deleted without bypassing anything. The repository has a setting that can delete a pull request's branch when it merges. It is off while 2.5.0 is released and will be turned on again afterwards. When it is on, merging `development/X.Y.Z` into `development/v2` deletes it, and its commits are then on `development/v2`. Topic branches are deleted on merge in the same way when the setting is on. While it is off, the maintainer deletes branches by hand.
 
 ## Agent-test baseline
 

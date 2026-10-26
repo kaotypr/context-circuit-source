@@ -21,17 +21,22 @@ var PassThroughDenied = []string{
 }
 
 // BaseEnv builds the complete child environment, sorted KEY=VAL.
-// PATH is DecoyDir plus the caller's PATH. Nothing else is copied from
-// Caller except the auth names in Cfg.AuthEnv, and those are still dropped
-// when they are on PassThroughDenied. extra is applied last, so a host can
-// set HOME there.
+// PATH is DecoyDir, then the caller's PATH when that value is non-empty.
+// A trailing colon is not added: an empty PATH entry is the current
+// directory. Nothing else is copied from Caller except the auth names in
+// Cfg.AuthEnv, and those are still dropped when they are on
+// PassThroughDenied. extra is applied last, so a host can set HOME there.
 func BaseEnv(in LaunchInput, extra map[string]string) []string {
 	caller := in.Caller
 	if caller == nil {
 		caller = map[string]string{}
 	}
+	path := in.DecoyDir
+	if rest := caller["PATH"]; rest != "" {
+		path += ":" + rest
+	}
 	env := map[string]string{
-		"PATH":                in.DecoyDir + ":" + caller["PATH"],
+		"PATH":                path,
 		"TMPDIR":              filepath.Join(in.RunRoot, "tmp"),
 		"GOCACHE":             filepath.Join(in.RunRoot, "gocache"),
 		"LANG":                "C.UTF-8",

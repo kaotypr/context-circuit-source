@@ -58,8 +58,8 @@ func TestExtractArchiveLeavesCheckoutUntouched(t *testing.T) {
 	if string(got) != "hello\n" {
 		t.Fatalf("extracted %q", got)
 	}
-	if listFiles(t, repo) != beforeList {
-		t.Fatalf("checkout listing changed\nbefore:\n%s\nafter:\n%s", beforeList, listFiles(t, repo))
+	if afterList := listFiles(t, repo); afterList != beforeList {
+		t.Fatalf("checkout listing changed\nonly before: %s\nonly after: %s", listDiff(beforeList, afterList), listDiff(afterList, beforeList))
 	}
 	if gitText(t, repo, "status") != beforeStatus || gitText(t, repo, "status", "--porcelain") != beforePorcelain {
 		t.Fatal("git status changed")
@@ -88,6 +88,20 @@ func TestExtractRejectsEscape(t *testing.T) {
 	}
 }
 
+func listDiff(a, b string) string {
+	have := map[string]bool{}
+	for _, line := range strings.Split(b, "\n") {
+		have[line] = true
+	}
+	var only []string
+	for _, line := range strings.Split(a, "\n") {
+		if !have[line] {
+			only = append(only, line)
+		}
+	}
+	return strings.Join(only, ", ")
+}
+
 func listFiles(t *testing.T, root string) string {
 	t.Helper()
 	var names []string
@@ -100,6 +114,11 @@ func listFiles(t *testing.T, root string) string {
 			return err
 		}
 		if rel == "." {
+			return nil
+		}
+		// Git creates and removes lock files on its own. A maintenance
+		// lock that disappears during archive is not a checkout write.
+		if strings.HasPrefix(rel, ".git"+string(os.PathSeparator)) && strings.HasSuffix(rel, ".lock") {
 			return nil
 		}
 		names = append(names, rel)

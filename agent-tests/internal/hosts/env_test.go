@@ -54,6 +54,17 @@ func TestBaseEnvDropsDeniedCallerNames(t *testing.T) {
 	}
 }
 
+func TestBaseEnvEmptyCallerPATH(t *testing.T) {
+	in := LaunchInput{DecoyDir: "/work/run/decoy", RunRoot: "/work/run"}
+	if got := envMap(t, BaseEnv(in, nil))["PATH"]; got != "/work/run/decoy" {
+		t.Fatalf("nil caller PATH %q", got)
+	}
+	in.Caller = map[string]string{"PATH": ""}
+	if got := envMap(t, BaseEnv(in, nil))["PATH"]; got != "/work/run/decoy" {
+		t.Fatalf("empty PATH %q", got)
+	}
+}
+
 func TestForName(t *testing.T) {
 	for _, name := range []string{"claude", "codex", "cursor"} {
 		h, err := ForName(name)

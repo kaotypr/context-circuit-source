@@ -78,9 +78,15 @@ func moduleCache(ctx context.Context) (string, error) {
 	if v := strings.TrimSpace(os.Getenv("GOMODCACHE")); v != "" {
 		return v, nil
 	}
+	// The build below does not receive HOME. This lookup does, because
+	// `go env` prints an empty GOMODCACHE when HOME is unset.
+	env := []string{"PATH=" + os.Getenv("PATH")}
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		env = append(env, "HOME="+home)
+	}
 	res, err := proc.Run(ctx, proc.Spec{
 		Argv: []string{"go", "env", "GOMODCACHE"},
-		Env:  []string{"PATH=" + os.Getenv("PATH")},
+		Env:  env,
 	})
 	if err != nil {
 		return "", fmt.Errorf("go env GOMODCACHE: %w", err)
