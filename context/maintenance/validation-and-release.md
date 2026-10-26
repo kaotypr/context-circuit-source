@@ -1,6 +1,6 @@
 # Validation and release checks
 
-How a change here is proven before it ships, and what stays unproven.
+How a change here is proven before it ships, and what the tests do not establish.
 
 ## What a change here runs
 
@@ -74,13 +74,14 @@ installed Git, with no other language runtime.
 
 ## What validation does not establish
 
-Markdown scenarios are validated against the shared entry instruction by
-reading, not by execution. Deterministic tests establish file and Git behavior;
-they do not establish whether a coding host loads or follows the shared
-instruction. **Host behavior is reported as unverified unless it was actually
-exercised.**
+Deterministic tests establish file and Git behavior. They do not establish
+whether a coding host loads or follows the shared instruction, and a green
+pipeline does not either.
 
-This is the honest limit of the whole test story, and it is stated in the
-shipped release notes too, because a green pipeline would otherwise imply it.
-The instruction surface is the product, and it is unverified in the way that
-matters most.
+That is measured separately, by the agent tests (see
+[Agent tests](agent-tests.md)). A result there is a statement about one host,
+one model, and one date: host H, model M, k of N runs passed, on date D. It is
+produced outside CI, by whoever changes what agents see. No 2.5.0 baseline is
+recorded yet, so no figures are cited here. Host behavior that was not exercised
+is reported as not exercised, and a claim about a host is never stronger than
+the runs behind it.

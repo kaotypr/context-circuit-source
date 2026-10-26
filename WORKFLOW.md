@@ -65,6 +65,11 @@ security pages while no workspace ever receives them. The guide, its artwork and
 the license are restored the same way from product/, so a README.md or LICENSE
 defined in template-repo/ is refused: those have one source each.
 
+agent-tests/ is a fifth class: a separate Go module that is not shipped and not
+history either. It is a contributor tool that runs coding hosts against a
+fixture workspace, so it is excluded from every build, archive, and the
+manifest, and CI does not run it.
+
 A dist/ build is therefore the workspace only, not a preview of the published
 repository: everything in this class joins the tree at publication.
 
@@ -109,8 +114,10 @@ reflink volume on Linux and a ReFS VHDX on Windows and runs
 TestNativeCloneOnCapableVolume there with CC_COW_NATIVE_DIR; without that
 variable the test skips.
 
-Validate Markdown scenarios against the shared entry instruction. Deterministic
-tests establish file and Git behavior, not whether a coding host loads or follows
-instructions. Report host behavior as unverified unless actually exercised. Do
-not revive the retired v1 acceptance harness or run a separate agent review
-unless the user requests one.
+Deterministic tests establish file and Git behavior, not whether a coding host
+loads or follows instructions. That is measured by the agent tests under
+agent-tests/, which run a real host and grade what it leaves behind, outside CI
+and on the contributor's own account; see agent-tests/README.md and
+context/maintenance/agent-tests.md. Report host behavior as measured on a named
+host, model, and date, and as not exercised when it was not. Do not run a
+separate agent review unless the user requests one.

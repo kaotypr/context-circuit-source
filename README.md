@@ -217,6 +217,10 @@ What is a breaking change, and how a fork publishes a variant, is in
 - Keep a context note and its catalog entry in the same change.
 - Preserve unrelated working-tree changes and validate release behavior in
   fresh temporary directories.
+- Behavior agents can see is measured by the agent tests under `agent-tests/`,
+  which contributors run on their own accounts and which are not part of CI. Say
+  which host, model, and date a claim rests on, and say so when a host was not
+  exercised.
 - Do not revive retired v1 lifecycle machinery.
 
 See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
