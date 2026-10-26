@@ -102,6 +102,8 @@ func TestVerdict(t *testing.T) {
 		{"fail", fail, nil, false, "fail"},
 		{"fail beats incomplete", fail, nil, true, "fail"},
 		{"incomplete", pass, nil, true, "inconclusive"},
+		{"inconclusive flag is not read here", []CheckResult{{Name: "u1", Pass: true, Inconclusive: true}}, nil, false, "pass"},
+		{"runner reports inconclusive separately", []CheckResult{{Name: "u1", Pass: true, Inconclusive: true}}, nil, true, "inconclusive"},
 		{"harness beats fail", fail, errSentinel{}, false, "harness-error"},
 		{"harness beats incomplete", pass, errSentinel{}, true, "harness-error"},
 	}
@@ -113,6 +115,53 @@ func TestVerdict(t *testing.T) {
 			}
 			if got := Verdict(tc.results, harness, tc.incomplete); got != tc.want {
 				t.Fatalf("got %s want %s", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestWorkspaceAndBranches(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, body string) string {
+		t.Helper()
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	ok := write("ok.yaml", ""+
+		"id: join\n"+
+		"version: 1\n"+
+		"prompt: hello\n"+
+		"workspace: ws2\n"+
+		"human:\n"+
+		"  - whether the summary is accurate\n"+
+		"allowed_branches:\n"+
+		"  - \"cc/work/*\"\n")
+	got, err := Load(ok)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Workspace != "ws2" || len(got.Human) != 1 || len(got.AllowedBranches) != 1 || got.AllowedBranches[0] != "cc/work/*" {
+		t.Fatalf("%+v", got)
+	}
+	cases := []struct {
+		name string
+		body string
+	}{
+		{"slash", "id: bad\nversion: 1\nprompt: hi\nworkspace: a/b\n"},
+		{"dotdot", "id: bad\nversion: 1\nprompt: hi\nworkspace: \"..\"\n"},
+		{"embedded", "id: bad\nversion: 1\nprompt: hi\nworkspace: foo..bar\n"},
+		{"dot", "id: bad\nversion: 1\nprompt: hi\nworkspace: \".\"\n"},
+		{"empty branch", "id: bad\nversion: 1\nprompt: hi\nallowed_branches:\n  - \"\"\n"},
+		{"bad pattern", "id: bad\nversion: 1\nprompt: hi\nallowed_branches:\n  - \"[\"\n"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			path := write(tc.name+".yaml", tc.body)
+			if _, err := Load(path); err == nil {
+				t.Fatal("expected validation error")
 			}
 		})
 	}

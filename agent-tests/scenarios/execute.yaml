@@ -1,0 +1,42 @@
+id: execute
+version: 1
+title: Run a plan in a worktree
+covers:
+  - worktrees and implementation
+  - the repository's own instructions
+  - commit rules
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan'
+prompt: |-
+  Execute p1000.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - execute-worktree
+  - execute-records-untouched
+  - execute-tests-pass
+soft:
+  commit-subjects-conventional: "new commit subjects match type(scope): subject"
+design_artifacts:
+  - .worktrees/p1000/api/internal/invoice
+human: []
+allowed_branches:
+  - cc/p1000/api

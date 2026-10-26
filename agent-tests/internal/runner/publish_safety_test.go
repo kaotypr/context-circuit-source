@@ -21,7 +21,7 @@ func TestCopyDesignRejectsPathsOutsideTheWorkspace(t *testing.T) {
 		t.Fatal(err)
 	}
 	rt := &runtime{}
-	for _, rel := range []string{"../outside.txt", outside, ""} {
+	for _, rel := range []string{"../outside.txt", outside, "", "sub/../../outside.txt", "../*"} {
 		sc := scenario.Scenario{DesignArtifacts: []string{rel}}
 		err := rt.copyDesign(world.World{WS: ws, RunRoot: dir}, sc, filepath.Join(dir, "out"), nil)
 		if err == nil {
@@ -57,6 +57,76 @@ func TestCopyDesignSkipsSymlinkThatLeavesTheWorkspace(t *testing.T) {
 	}
 	if len(drops) != 1 {
 		t.Fatalf("drops = %v", drops)
+	}
+}
+
+func TestCopyDesignGlobAndDirectory(t *testing.T) {
+	dir := t.TempDir()
+	ws := filepath.Join(dir, "ws")
+	notes := filepath.Join(ws, "notes")
+	plans := filepath.Join(ws, "plans", "item")
+	if err := os.MkdirAll(filepath.Join(notes, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(plans, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(path, body string) {
+		t.Helper()
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(filepath.Join(notes, "a.txt"), "a")
+	write(filepath.Join(notes, "sub", "b.txt"), "b")
+	write(filepath.Join(plans, "plan.md"), "plan")
+	write(filepath.Join(plans, "extra.txt"), "extra")
+	write(filepath.Join(ws, "skip.txt"), "skip")
+	outside := filepath.Join(dir, "outside.txt")
+	write(outside, "private-marker")
+	if err := os.Symlink(outside, filepath.Join(notes, "sub", "leak")); err != nil {
+		t.Skip("symlinks unavailable")
+	}
+	var drops []string
+	rt := &runtime{}
+	sc := scenario.Scenario{DesignArtifacts: []string{"notes", "plans/*", "missing/*.md", "["}}
+	err := rt.copyDesign(world.World{WS: ws, RunRoot: dir}, sc, filepath.Join(dir, "out"), &drops)
+	if err == nil || !strings.Contains(err.Error(), "[") {
+		t.Fatalf("bad pattern: %v", err)
+	}
+	sc.DesignArtifacts = []string{"notes", "plans/*", "missing/*.md"}
+	drops = nil
+	if err := rt.copyDesign(world.World{WS: ws, RunRoot: dir}, sc, filepath.Join(dir, "out"), &drops); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "out")
+	for _, rel := range []string{"notes/a.txt", "notes/sub/b.txt", "plans/item/plan.md", "plans/item/extra.txt"} {
+		body, err := os.ReadFile(filepath.Join(out, rel))
+		if err != nil {
+			t.Fatalf("%s: %v", rel, err)
+		}
+		if len(body) == 0 {
+			t.Fatalf("%s empty", rel)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(out, "skip.txt")); err == nil {
+		t.Fatal("a file outside the pattern was copied")
+	}
+	if _, err := os.Stat(filepath.Join(out, "notes", "sub", "leak")); err == nil {
+		t.Fatal("a symlink out of the workspace was copied")
+	}
+	copied := treeText(t, out)
+	if strings.Contains(copied, "private-marker") {
+		t.Fatal("outside file contents were copied")
+	}
+	found := false
+	for _, line := range drops {
+		if line == "design artifact missing/*.md: no match" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("drops %v", drops)
 	}
 }
 

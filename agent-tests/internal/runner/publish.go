@@ -57,6 +57,11 @@ func (r textRedactor) text(s string) string {
 	s = record.Redact(s, r.home, r.user)
 	if r.runRoot != "" {
 		s = record.RedactRunRoot(s, r.runRoot)
+		// Git prints the symlink-resolved path, which on some systems
+		// is not the path the run root was created with.
+		if resolved, err := filepath.EvalSymlinks(r.runRoot); err == nil {
+			s = record.RedactRunRoot(s, resolved)
+		}
 	}
 	return s
 }
@@ -186,25 +191,92 @@ func (rt *runtime) copyDesign(w world.World, sc scenario.Scenario, dest string, 
 		if !cleanRel(rel) {
 			return fmt.Errorf("design artifact %q must be a relative path inside the workspace", rel)
 		}
-		src := filepath.Join(w.WS, rel)
-		if info, lerr := os.Lstat(src); lerr != nil || !info.Mode().IsRegular() || !within(w.WS, src) {
-			if lerr == nil && drops != nil {
-				*drops = append(*drops, rel+" not a regular file inside the workspace")
+		matches, err := filepath.Glob(filepath.Join(w.WS, filepath.FromSlash(rel)))
+		if err != nil {
+			return fmt.Errorf("design artifact %q: %w", rel, err)
+		}
+		if len(matches) == 0 {
+			if drops != nil {
+				*drops = append(*drops, "design artifact "+rel+": no match")
 			}
 			continue
 		}
-		b, err := os.ReadFile(src)
-		if err != nil {
-			if os.IsNotExist(err) {
-				continue
+		for _, match := range matches {
+			if err := rt.copyDesignMatch(w, match, dest, red, drops); err != nil {
+				return err
 			}
-			return err
-		}
-		if err := writeBytes(filepath.Join(dest, rel), b, red, drops); err != nil {
-			return err
 		}
 	}
 	return nil
+}
+
+func (rt *runtime) copyDesignMatch(w world.World, match, dest string, red textRedactor, drops *[]string) error {
+	info, err := os.Lstat(match)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if info.IsDir() {
+		rel, err := filepath.Rel(w.WS, match)
+		if err != nil {
+			return err
+		}
+		if !cleanRel(rel) || !within(w.WS, match) {
+			if drops != nil {
+				*drops = append(*drops, rel+" not a regular file inside the workspace")
+			}
+			return nil
+		}
+		return filepath.WalkDir(match, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if path == match || d.IsDir() {
+				return nil
+			}
+			return rt.copyDesignFile(w, path, dest, red, drops)
+		})
+	}
+	return rt.copyDesignFile(w, match, dest, red, drops)
+}
+
+func (rt *runtime) copyDesignFile(w world.World, src, dest string, red textRedactor, drops *[]string) error {
+	rel, err := filepath.Rel(w.WS, src)
+	if err != nil {
+		return err
+	}
+	info, lerr := os.Lstat(src)
+	if lerr != nil || !cleanRel(rel) || !info.Mode().IsRegular() || !within(w.WS, src) {
+		if drops != nil {
+			*drops = append(*drops, rel+" not a regular file inside the workspace")
+		}
+		return nil
+	}
+	b, err := os.ReadFile(src)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	return writeBytes(filepath.Join(dest, rel), b, red, drops)
+}
+
+// publishCheckFiles writes check.json and, when the before document was
+// captured, check-before.json beside it. A nil document is a missing
+// launcher and is left unwritten.
+func publishCheckFiles(dir string, before, after []byte, red textRedactor, drops *[]string) error {
+	if after != nil {
+		if err := writeBytes(filepath.Join(dir, "check.json"), after, red, drops); err != nil {
+			return err
+		}
+	}
+	if before == nil {
+		return nil
+	}
+	return writeBytes(filepath.Join(dir, "check-before.json"), before, red, drops)
 }
 
 func writeText(path, text string, red textRedactor) error {

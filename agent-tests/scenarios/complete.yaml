@@ -1,0 +1,52 @@
+id: complete
+version: 1
+title: Complete a plan and reconcile knowledge
+covers:
+  - completion
+  - knowledge reconciliation
+  - a strict check-clean finish
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan'
+  - |
+    set -eu
+    export GIT_AUTHOR_DATE=2026-02-01T09:00:00Z GIT_COMMITTER_DATE=2026-02-01T09:00:00Z
+    git -C "$WS/repositories/api" switch -qc cc/p1000/api
+    git -C "$WS/repositories/api" apply "$FIXTURES/patches/csv-export.patch"
+    git -C "$WS/repositories/api" commit -qam 'feat(invoice): export invoices as CSV'
+    git -C "$WS/repositories/api" switch -q main
+    git -C "$WS/repositories/api" merge -q --no-ff cc/p1000/api -m 'Merge p1000'
+    git -C "$WS/repositories/api" push -q origin main
+    unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+prompt: |-
+  p1000 has been merged into main in the api repo. Please mark it complete.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - complete-plan-done
+  - complete-note
+soft: {}
+design_artifacts:
+  - plans/p1000-*/plan.md
+  - context/domains/invoices.md
+  - context/INDEX.md
+human:
+  - Whether the note edit is correct and minimal, and whether the reply passes on the commit recommendation.
+allowed_branches: []

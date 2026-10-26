@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -34,16 +35,42 @@ type Scenario struct {
 	Checks          []string          `yaml:"checks"`
 	Soft            map[string]string `yaml:"soft"`
 	DesignArtifacts []string          `yaml:"design_artifacts"`
+	// Workspace is the single path element under the run root where the
+	// host starts. Empty means ws.
+	Workspace string `yaml:"workspace"`
+	// Human lists judgements a person still has to make.
+	Human []string `yaml:"human"`
+	// AllowedBranches are path.Match patterns for branch names this
+	// scenario may create or advance. The name is the part after
+	// refs/heads/.
+	AllowedBranches []string `yaml:"allowed_branches"`
 }
 
-// Snapshot is the workspace state a check can read. Maps are empty rather
-// than nil when a snapshot was taken and that section had nothing in it.
+// Snapshot is the workspace state a check can read. Status, Heads, Refs,
+// and Worktrees are keyed by "ws" for the active workspace and by
+// directory name for each Git checkout under its repositories directory.
+// A join run also records the original checkout as "ws0" and
+// "ws0/<repo>". RemoteRefs, Refs, Heads, and RunDigest are nil or empty
+// only when that part of the snapshot failed: the checks that read them
+// then fail. A repository that is absent from both sides is left alone
+// when the world has no such checkout.
+//
+// DecoyLogUnreadable in DecoyLog means the log existed but could not be
+// read.
 type Snapshot struct {
 	DecoyLog   string
 	Status     map[string]string
 	Heads      map[string]string
 	RemoteRefs map[string]string
 	Files      []string
+	// Refs holds sorted "refname objectname" lines of refs/heads for one repo.
+	Refs map[string]string
+	// Worktrees holds `git worktree list --porcelain` text for one repo.
+	Worktrees map[string]string
+	// RunDigest maps a relative path under the run root to the sha256 hex
+	// of a regular file, "dir" for a directory, or "link:<target>" for a
+	// symlink. Paths the snapshot skips are absent.
+	RunDigest map[string]string
 }
 
 // CheckContext is the evidence one check sees.
@@ -53,21 +80,47 @@ type CheckContext struct {
 	Parsed   hosts.Parsed
 	Before   Snapshot
 	After    Snapshot
+	// CheckBefore and CheckAfter are the raw `check --json` documents
+	// from after setup and after the host exits.
+	CheckBefore []byte
+	CheckAfter  []byte
+	// Stream is the raw host stream text.
+	Stream string
+	// Exec runs a command with the isolated environment used for
+	// snapshots and returns stdout. A non-nil error includes the exit
+	// code and stderr. It is nil in tests that do not need a command;
+	// checks treat nil as inconclusive.
+	Exec func(dir string, argv ...string) (string, error)
+	// Host is the coding host that ran, when the runner knows it.
+	// Empty, or a name with no role directory, means the check cannot
+	// tell which host ran.
+	Host string
 }
 
 // CheckResult is one required check.
+//
+// Inconclusive is set only together with Pass. The result is not a
+// failure, it is never counted as a pass, and it makes the run
+// inconclusive. Verdict is unchanged: a failed check still beats an
+// inconclusive run.
 type CheckResult struct {
-	Name   string
-	Pass   bool
-	Detail string
+	Name         string
+	Pass         bool
+	Inconclusive bool
+	Detail       string
 }
 
 // Check grades one named property of a run.
 type Check func(ctx CheckContext) CheckResult
 
-// Registry holds the shared checks. It starts empty; the checks are added
-// by a later change.
+// Registry holds the shared checks and the scenario checks. Each check
+// registers itself.
 var Registry = map[string]Check{}
+
+// SoftRegistry holds optional metrics. A registered function's return
+// value is what the run record stores. An unregistered name keeps the
+// description from the scenario file.
+var SoftRegistry = map[string]func(CheckContext) any{}
 
 // Load reads one scenario file. Unknown fields are an error.
 func Load(path string) (Scenario, error) {
@@ -134,6 +187,36 @@ func (s Scenario) validate() error {
 	if strings.TrimSpace(s.Prompt) == "" {
 		return fmt.Errorf("scenario %s has an empty prompt", s.ID)
 	}
+	if err := validateWorkspace(s.Workspace); err != nil {
+		return fmt.Errorf("scenario %s: %w", s.ID, err)
+	}
+	if err := validateAllowedBranches(s.AllowedBranches); err != nil {
+		return fmt.Errorf("scenario %s: %w", s.ID, err)
+	}
+	return nil
+}
+
+// validateWorkspace accepts an empty name, which means ws, or one path
+// element with no separator and no ".." .
+func validateWorkspace(name string) error {
+	if name == "" {
+		return nil
+	}
+	if strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") || name == "." || name != path.Base(name) {
+		return fmt.Errorf("workspace %q must be a single path element", name)
+	}
+	return nil
+}
+
+func validateAllowedBranches(patterns []string) error {
+	for _, pattern := range patterns {
+		if strings.TrimSpace(pattern) == "" {
+			return fmt.Errorf("allowed branch pattern is empty")
+		}
+		if _, err := path.Match(pattern, "branch"); err != nil {
+			return fmt.Errorf("allowed branch pattern %q: %w", pattern, err)
+		}
+	}
 	return nil
 }
 
@@ -159,7 +242,8 @@ func (s Scenario) Hash(fixtureDigest string) string {
 // from a score and rerun. It wins over every other verdict.
 // fail means a required check is contradicted by the evidence.
 // inconclusive means the host did not expose evidence a check needs,
-// and is never counted as a pass.
+// and is never counted as a pass. A check reports that by setting
+// Inconclusive with Pass; the runner passes it in as hostIncomplete.
 // pass means every required check passed.
 func Verdict(results []CheckResult, harnessError error, hostIncomplete bool) string {
 	if harnessError != nil {

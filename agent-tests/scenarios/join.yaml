@@ -1,0 +1,38 @@
+id: join
+version: 1
+title: A new member on a fresh clone
+covers:
+  - the setup gate
+  - member, band, and role commands
+  - workspace connect and repo connect
+  - agent setup
+setup:
+  - |
+    set -eu
+    git clone -q "$RUN/remotes/ws.git" "$RUN/ws2"
+    mkdir -p "$RUN/ws2/repositories"
+    git clone -q "$RUN/remotes/api.git" "$RUN/ws2/repositories/api"
+prompt: |-
+  Hi, I'm Dana Reyes — use the id dana. I just joined and cloned this workspace; the api repository is already cloned at repositories/api. Add me with the band the workspace suggests, record my role as backend developer, and get this machine set up so I can start work. Don't commit anything.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - join-members
+  - join-local-files
+soft: {}
+design_artifacts:
+  - members.yaml
+  - member.local.yaml
+  - repositories.local.yaml
+  - .claude/agents/cc-*.md
+  - .codex/agents/cc-*.toml
+  - .cursor/agents/cc-*.md
+human: []
+allowed_branches: []
+workspace: ws2

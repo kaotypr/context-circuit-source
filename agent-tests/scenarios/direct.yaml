@@ -1,0 +1,24 @@
+id: direct
+version: 1
+title: A direct change in a bound checkout
+covers:
+  - a direct change with no intent and no plan
+  - a commit in a bound checkout needs authorization
+prompt: |-
+  Quick one: fix the typo "recieve" in the api README directly — no plan needed. Don't commit it.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - direct-readme
+  - direct-no-records
+soft: {}
+design_artifacts:
+  - repositories/api/README.md
+human: []
+allowed_branches: []
