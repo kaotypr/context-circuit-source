@@ -21,7 +21,8 @@ intended.
 
 A variant build, whose version carries a label such as `acme` in
 `2.5.0-acme.1`, is on that label's own release line. The fork that builds it
-supports it; this project does not.
+supports it; this project does not. The compatibility policy and the variant
+contract are in [RELEASING.md](RELEASING.md).
 
 ## What the products do and do not touch
 

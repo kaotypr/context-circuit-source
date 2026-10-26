@@ -156,6 +156,8 @@ of a pull request.
   line.
 - Do not edit `release/requests/`, `VERSION` or `CLI_VERSION`. The maintainer
   prepares those when a release is cut.
+- The release-note format and the compatibility policy are in
+  [RELEASING.md](RELEASING.md).
 
 ## Licensing
 
