@@ -22,6 +22,7 @@
   <a href="CLI.md">CLI package guide</a> ·
   <a href="#development">Development</a> ·
   <a href="#release-assembly">Release assembly</a> ·
+  <a href="#for-company-teams">For company teams</a> ·
   <a href="#licensing">Licensing</a>
 </p>
 
@@ -181,12 +182,29 @@ The products have separate version lines and package inventories:
 | Native CLI | `CLI_VERSION` | `cli-v*` | macOS, Linux, and Windows archives for amd64/arm64 |
 
 The CLI embeds the blank workspace seed as a convenience for `init` and
-`template export`. That seed does not make the two products one release: an
-existing workspace pins its expected CLI version in
-`.context-circuit/CLI_VERSION`, and installed CLI versions coexist side by side.
+`template export`. That seed does not make the two products one release.
 
 Publication is never an implicit part of validation. Commits, tags, pushes,
 release publication, and deployment require an explicit maintainer request.
+
+## For company teams
+
+Install with the workspace's `cc-cli` skill, or take a package from a `cli-v*`
+release. [CLI.md](CLI.md) is the package guide: checksums, the version store,
+and where a registry credential goes.
+
+The launcher `.context-circuit/cli` (`.context-circuit/cli.ps1` in Windows
+PowerShell or cmd) runs exactly the version `.context-circuit/CLI_VERSION`
+pins, from the installers' version store. It refuses, and names the install
+step, when that version is not installed. Installed versions coexist, so a
+workspace keeps its pin while another workspace on the same machine keeps a
+different one. A stable pin updates among stable releases, and a `<label>` pin
+among that label's releases. Moving to another line is a template change a
+person names by its exact tag.
+
+What is a breaking change, and how a fork publishes a variant, is in
+[RELEASING.md](RELEASING.md). Which versions receive fixes is in
+[SECURITY.md](SECURITY.md).
 
 ## Maintaining product behavior
 
