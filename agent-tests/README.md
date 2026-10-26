@@ -24,7 +24,10 @@ The run root is a temporary directory outside any repository. The checkout is
 read through git and is not written. The environment given to a host is an
 allowlist. Auth comes only from the environment variables named in
 `hosts.yaml`. Nothing is read from or written to the real home, the real
-workspace, or user config.
+workspace, or user config. The one shared place is the Go module cache: building the
+CLI uses the cache that `go env GOMODCACHE` reports, and may download a missing module
+into it. Scenario setup commands run as `sh -c` in the fixture workspace, so only run
+scenarios from a checkout you trust.
 
 ## What it costs
 
