@@ -87,6 +87,11 @@ func Run(ctx context.Context, opts RunOptions) error {
 	}
 	plan := planCombos(selected, selectedHosts, opts)
 	fmt.Fprint(out, formatPlan(plan))
+	for _, cfg := range selectedHosts {
+		if cfg.Provisional {
+			fmt.Fprintf(out, "note: %s model %s%s\n", cfg.Name, cfg.Model, provisionalNote(cfg))
+		}
+	}
 	if opts.DryRun {
 		return nil
 	}

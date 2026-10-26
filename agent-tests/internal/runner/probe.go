@@ -76,7 +76,7 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 		if cfg.Model == "" {
 			fmt.Fprintln(out, "model: not pinned")
 		} else {
-			fmt.Fprintf(out, "model: %s pinned\n", cfg.Model)
+			fmt.Fprintf(out, "model: %s pinned%s\n", cfg.Model, provisionalNote(cfg))
 		}
 		adapter, err := hosts.ForName(cfg.Name)
 		if err != nil {
@@ -211,4 +211,12 @@ func digestFixtures(dir string) (string, error) {
 
 func worldPin(checkout string) (string, error) {
 	return world.Pin(checkout)
+}
+
+// provisionalNote marks a model pin that a pilot has not confirmed yet.
+func provisionalNote(cfg hosts.HostConfig) string {
+	if cfg.Provisional {
+		return " (provisional: not yet confirmed by a pilot run)"
+	}
+	return ""
 }

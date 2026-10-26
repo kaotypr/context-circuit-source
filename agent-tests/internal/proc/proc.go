@@ -18,6 +18,8 @@ const (
 	maxCapture  = 64 << 20
 	truncMarker = "[truncated]"
 	killGrace   = 5 * time.Second
+	// DefaultTimeout applies to a Spec with no Timeout.
+	DefaultTimeout = 30 * time.Minute
 )
 
 // Spec describes one child process. Env is the complete environment:
@@ -28,7 +30,9 @@ type Spec struct {
 	Env  []string
 	// Stdin is copied to the child. An empty string supplies empty stdin
 	// (the same bytes the child would read from /dev/null).
-	Stdin      string
+	Stdin string
+	// Timeout bounds the child. Zero means DefaultTimeout, so no child can
+	// run without a limit.
 	Timeout    time.Duration
 	StreamPath string
 	// OnLine, when set, is called once per stdout line in order.
@@ -130,12 +134,12 @@ func Run(ctx context.Context, s Spec) (Result, error) {
 		waitCh <- cmd.Wait()
 	}()
 
-	var timeout <-chan time.Time
-	if s.Timeout > 0 {
-		timer := time.NewTimer(s.Timeout)
-		defer timer.Stop()
-		timeout = timer.C
+	if s.Timeout <= 0 {
+		s.Timeout = DefaultTimeout
 	}
+	timer := time.NewTimer(s.Timeout)
+	defer timer.Stop()
+	timeout := timer.C
 
 	var waitErr error
 	timedOut := false
