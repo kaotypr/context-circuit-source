@@ -81,7 +81,9 @@ var planPresented = regexp.MustCompile(`(?i)\bplan\b`)
 // borrowedUpstream, borrowedHandbook, and borrowedReview match the S8 reply.
 // The three words are independent and may appear in any order.
 var (
-	borrowedUpstream = regexp.MustCompile(`(?i)\bupstream\b`)
+	// borrowedUpstream accepts the word, or the owning repository named as
+	// where the fix goes ("in the handbook repository through its own review").
+	borrowedUpstream = regexp.MustCompile(`(?i)\bupstream\b|\b(?:handbook|owning|borrowed|that|its) repository\b|\bhandbook's (?:own )?(?:repository|repo)\b`)
 	borrowedHandbook = regexp.MustCompile(`(?i)\bhandbook\b`)
 	borrowedReview   = regexp.MustCompile(`(?i)\breview\b`)
 )
