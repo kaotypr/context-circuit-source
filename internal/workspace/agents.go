@@ -1,10 +1,14 @@
 package workspace
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -329,6 +333,12 @@ func (s *Store) setupHost(host string) ([]string, error) {
 		}
 		files[path], paths = content, append(paths, path)
 	}
+	// The host setting is checked before anything is written, so a settings
+	// file setup refuses to touch leaves the role definitions as they were too.
+	setting, settingChanged, settingMode, err := s.hostSetting(host)
+	if err != nil {
+		return nil, err
+	}
 	next := agentInventory{Files: map[string]string{}}
 	for _, path := range paths {
 		if err := s.Write(path, files[path], 0644); err != nil {
@@ -336,7 +346,78 @@ func (s *Store) setupHost(host string) ([]string, error) {
 		}
 		next.Files[path] = digest(files[path])
 	}
-	return paths, s.WriteYAML(inventoryPath, next, 0600)
+	if err := s.WriteYAML(inventoryPath, next, 0600); err != nil {
+		return paths, err
+	}
+	if !settingChanged {
+		return paths, nil
+	}
+	path := hostSettings[host].Path
+	return append(paths, path), s.Write(path, setting, settingMode)
+}
+
+// hostSettingFile is one top-level key setup adds to a host's own local settings
+// file. A host that writes an attribution trailer into every commit it makes
+// works against the rule that commits carry none, and a small model keeps the
+// trailer its host wrote, so where the host has a project setting that turns it
+// off, setup writes it. The file is the host's machine-local one, gitignored,
+// because a person's settings there are theirs: setup adds the key when it is
+// absent and otherwise leaves the file alone, a value the person chose included.
+//
+// Codex has no such setting. Cursor's is read only from its user configuration;
+// its project file rejects the key and stops the CLI, so nothing is written.
+type hostSettingFile struct {
+	Path, Key string
+	Value     json.RawMessage
+}
+
+var hostSettings = map[string]hostSettingFile{
+	"claude-code": {".claude/settings.local.json", "attribution", json.RawMessage(`{"commit": "", "pr": ""}`)},
+}
+
+// hostSetting returns the merged settings file for a host and whether it
+// differs from what is on disk. The person's bytes are kept: the key is
+// inserted before the closing brace rather than re-encoding the file, which
+// would reorder and reformat everything else in it.
+func (s *Store) hostSetting(host string) ([]byte, bool, fs.FileMode, error) {
+	want, ok := hostSettings[host]
+	if !ok {
+		return nil, false, 0, nil
+	}
+	current, err := s.Read(want.Path)
+	if os.IsNotExist(err) {
+		return []byte("{\n  " + strconv.Quote(want.Key) + ": " + string(want.Value) + "\n}\n"), true, 0644, nil
+	}
+	if err != nil {
+		return nil, false, 0, err
+	}
+	resolved, err := s.Path(want.Path)
+	if err != nil {
+		return nil, false, 0, err
+	}
+	info, err := os.Stat(resolved)
+	if err != nil {
+		return nil, false, 0, err
+	}
+	var top map[string]any
+	decoder := json.NewDecoder(bytes.NewReader(current))
+	decoder.UseNumber()
+	if err := decoder.Decode(&top); err != nil || top == nil || decoder.Decode(new(any)) != io.EOF {
+		return nil, false, 0, fmt.Errorf("preserve unreadable host settings: %s is not one JSON object", want.Path)
+	}
+	if _, present := top[want.Key]; present {
+		return current, false, 0, nil
+	}
+	end := bytes.LastIndexByte(current, '}')
+	body := bytes.TrimRight(current[:end], " \t\r\n")
+	entry := "  " + strconv.Quote(want.Key) + ": " + string(want.Value) + "\n"
+	separator := ",\n"
+	if len(top) == 0 {
+		separator = "\n"
+	}
+	merged := append(append(append([]byte{}, body...), separator...), entry...)
+	merged = append(merged, current[end:]...)
+	return merged, true, info.Mode().Perm(), nil
 }
 
 type Dispatch struct {
