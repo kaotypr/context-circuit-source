@@ -54,6 +54,27 @@ var issuedCredit = regexp.MustCompile(`(?is)issued.{0,80}credit|credit.{0,80}iss
 // "approv", so "approve" and "approval" both count.
 var approvalAsk = regexp.MustCompile(`(?i)approv`)
 
+// numberedInvite matches a reply that invites answers by number: it lists a
+// numbered question, refers to numbered questions or answering by number, or
+// shows the "1:" answer form.
+var numberedInvite = regexp.MustCompile(`(?im)^\s*\d+[.)]\s+.*\?\s*$|\bby (question )?number\b|\bnumbered\b|\b(reply|respond) with your answers?\b|\banswer (each|the|these|those) questions?\b|(^|[\s"'“(` + "`" + `])\d+:\s`)
+
+// stopsBeforeBuild matches a reply that says it stops before planning or
+// building.
+var stopsBeforeBuild = regexp.MustCompile(`(?i)\bbefore (any(one|body)? |i |we )?(start(ing)? )?(plan|build|implement|cod)\w*|\bwait\w* (for|on) your (review|answers?|reply|replies|decision|go-ahead|confirmation)\b|\b(won't|will not|do not|don't|am not|not going to) (start )?(plan|build|implement)\w*|\bstop(ping)? (here|there)\b`)
+
+// asksForReview reports whether a reply presents an intent for a person to
+// decide on: it asks for approval, or it both invites answers by number and
+// says it stops before planning or building. The shipped rule is to present
+// the intent, invite answers by number, and stop; it never asks the agent to
+// say "approve".
+func asksForReview(reply string) bool {
+	if approvalAsk.MatchString(reply) {
+		return true
+	}
+	return numberedInvite.MatchString(reply) && stopsBeforeBuild.MatchString(reply)
+}
+
 // planPresented matches a reply that talks about the plan.
 var planPresented = regexp.MustCompile(`(?i)\bplan\b`)
 
@@ -349,8 +370,8 @@ func checkIntentRecord(ctx CheckContext) CheckResult {
 	if !headingsPresent(body, intentHeadings) || hasPlaceholder(body) || !openQuestionsOK(body) {
 		return failCheck(nameIntentRecord, "intent sections are incomplete or still the template")
 	}
-	if !approvalAsk.MatchString(ctx.Parsed.FinalReply) {
-		return failCheck(nameIntentRecord, "reply does not ask for approval")
+	if !asksForReview(ctx.Parsed.FinalReply) {
+		return failCheck(nameIntentRecord, "reply neither asks for approval nor invites numbered answers and stops before planning")
 	}
 	return passCheck(nameIntentRecord)
 }
