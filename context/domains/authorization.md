@@ -203,7 +203,9 @@ commits, pull requests, reviews, or comments. Repository commit conventions are
 followed, defaulting to a typed, scoped, imperative subject. The obligation
 includes inspecting authored messages and removing injected attribution before
 reporting delivery complete, because some hosts add it and "I did not write it"
-is not the same as "it is not there".
+is not the same as "it is not there". Where a host can be told not to add it,
+`agent setup` tells it so (Claude Code); the inspection stays the guard
+everywhere, and the only one on hosts that cannot.
 
 Owner:
 
