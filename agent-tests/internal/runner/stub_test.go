@@ -77,6 +77,14 @@ type stubHost struct {
 
 func runAgainstStubs(t *testing.T, home, rootDir string) (map[string]string, string) {
 	t.Helper()
+	dumps, out := runStubs(t, home, rootDir)
+	return dumps, out
+}
+
+// runStubs runs the marker scenario on the three stub hosts and returns
+// each host's capture and the output directory.
+func runStubs(t *testing.T, home, rootDir string) (map[string]string, string) {
+	t.Helper()
 	if testing.Short() {
 		t.Skip("short")
 	}
@@ -207,7 +215,7 @@ func runAgainstStubs(t *testing.T, home, rootDir string) (map[string]string, str
 			t.Fatalf("run root left behind: %s", entry.Name())
 		}
 	}
-	return dumps, treeText(t, out)
+	return dumps, out
 }
 
 func configModel(host stubHost) string {

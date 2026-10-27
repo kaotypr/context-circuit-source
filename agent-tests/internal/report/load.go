@@ -75,18 +75,20 @@ type summaryFile struct {
 }
 
 type summaryRow struct {
-	Scenario     string   `json:"scenario"`
-	Host         string   `json:"host"`
-	HostVersion  string   `json:"host_version"`
-	Model        string   `json:"model"`
-	Effort       string   `json:"effort"`
-	Verdict      string   `json:"verdict"`
-	InputTotal   *int64   `json:"input_total"`
-	Output       *int64   `json:"output"`
-	CostUSD      *float64 `json:"cost_usd"`
-	CostBasis    string   `json:"cost_basis"`
-	Runs         int      `json:"runs"`
-	FailedChecks []string `json:"failed_checks"`
+	Scenario string `json:"scenario"`
+	// ScenarioVersion is optional; design pairs runs by scenario version.
+	ScenarioVersion string   `json:"scenario_version,omitempty"`
+	Host            string   `json:"host"`
+	HostVersion     string   `json:"host_version"`
+	Model           string   `json:"model"`
+	Effort          string   `json:"effort"`
+	Verdict         string   `json:"verdict"`
+	InputTotal      *int64   `json:"input_total"`
+	Output          *int64   `json:"output"`
+	CostUSD         *float64 `json:"cost_usd"`
+	CostBasis       string   `json:"cost_basis"`
+	Runs            int      `json:"runs"`
+	FailedChecks    []string `json:"failed_checks"`
 }
 
 func loadSummary(path string) ([]record.Run, error) {
@@ -109,19 +111,20 @@ func loadSummary(path string) ([]record.Run, error) {
 		}
 		for i := 1; i <= n; i++ {
 			out = append(out, record.Run{
-				Scenario:     row.Scenario,
-				Host:         row.Host,
-				HostVersion:  row.HostVersion,
-				Model:        row.Model,
-				Effort:       row.Effort,
-				Verdict:      row.Verdict,
-				Run:          i,
-				Side:         "base",
-				Summary:      true,
-				Tokens:       record.Tokens{InputTotal: row.InputTotal, Output: row.Output},
-				CostUSD:      row.CostUSD,
-				CostBasis:    row.CostBasis,
-				FailedChecks: append([]string{}, row.FailedChecks...),
+				Scenario:        row.Scenario,
+				ScenarioVersion: row.ScenarioVersion,
+				Host:            row.Host,
+				HostVersion:     row.HostVersion,
+				Model:           row.Model,
+				Effort:          row.Effort,
+				Verdict:         row.Verdict,
+				Run:             i,
+				Side:            "base",
+				Summary:         true,
+				Tokens:          record.Tokens{InputTotal: row.InputTotal, Output: row.Output},
+				CostUSD:         row.CostUSD,
+				CostBasis:       row.CostBasis,
+				FailedChecks:    append([]string{}, row.FailedChecks...),
 			})
 		}
 	}

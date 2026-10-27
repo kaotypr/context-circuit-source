@@ -96,3 +96,26 @@ func TestSurfaceDiffUsageErrors(t *testing.T) {
 		t.Fatalf("extra arg %d", code)
 	}
 }
+
+func TestExportBaselineFlags(t *testing.T) {
+	var buf bytes.Buffer
+	usage(&buf)
+	for _, part := range []string{"export-baseline", "--deny-file", "--run", "--out"} {
+		if !strings.Contains(buf.String(), part) {
+			t.Errorf("usage missing %q", part)
+		}
+	}
+	if code := exportBaselineCmd([]string{"--out", t.TempDir()}, map[string]string{}); code != 2 {
+		t.Fatalf("missing --run %d", code)
+	}
+	if code := exportBaselineCmd([]string{"--run", t.TempDir()}, map[string]string{}); code != 2 {
+		t.Fatalf("missing --out %d", code)
+	}
+	out := filepath.Join(t.TempDir(), "baseline")
+	if code := exportBaselineCmd([]string{"--run", t.TempDir(), "--out", out}, map[string]string{}); code != 1 {
+		t.Fatalf("run without runs.jsonl %d", code)
+	}
+	if _, err := os.Stat(out); !os.IsNotExist(err) {
+		t.Fatal("a failed export left its output directory")
+	}
+}

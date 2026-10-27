@@ -35,6 +35,8 @@ func main() {
 		os.Exit(surfaceDiffCmd(os.Args[2:], caller))
 	case "report":
 		os.Exit(reportCmd(os.Args[2:], caller))
+	case "export-baseline":
+		os.Exit(exportBaselineCmd(os.Args[2:], caller))
 	default:
 		fmt.Fprintf(os.Stderr, "unknown subcommand %q\n", os.Args[1])
 		usage(os.Stderr)
@@ -47,6 +49,7 @@ func usage(w io.Writer) {
 agent-tests probe [flags]
 agent-tests surface-diff --base <ref> [flags]
 agent-tests report [flags]
+agent-tests export-baseline --run DIR [--run DIR ...] --out DIR [--deny-file PATH]
 
 run    execute scenarios. Without --yes the plan is printed and no host starts.
 probe  print host version, pinned model, and auth variable names.
@@ -55,6 +58,9 @@ surface-diff
        Exit 0 whether or not the surface differs.
 report read a finished run and write report.md. It does not start a host.
        --design writes design.md. --upgrade-check runs check on a file-level delta.
+export-baseline
+       merge finished run directories into a baseline directory for
+       report --baseline. It does not start a host.
 
 run flags:
   --scenarios   comma-separated scenario ids (default: all in scenarios/)
@@ -88,6 +94,12 @@ report flags:
   --design         write design.md, pairing base and branch runs
   --upgrade-check  apply the template delta and run the branch CLI check
   --no-zip         do not write bundle.zip
+
+export-baseline flags:
+  --run        a finished run directory (repeatable)
+  --out        baseline directory; must not exist or must be empty
+  --deny-file  local file with one term per line; an exported file that
+               contains a term refuses the export. Terms are never printed.
 `)
 }
 
@@ -335,6 +347,62 @@ func reportCmd(args []string, caller map[string]string) int {
 		return 1
 	}
 	return 0
+}
+
+func exportBaselineCmd(args []string, caller map[string]string) int {
+	fs := flag.NewFlagSet("export-baseline", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var runs listFlag
+	fs.Var(&runs, "run", "finished run directory (repeatable)")
+	out := fs.String("out", "", "baseline directory; must not exist or must be empty")
+	deny := fs.String("deny-file", "", "local file with one deny-listed term per line")
+	fs.Usage = func() {
+		fmt.Fprintln(os.Stderr, "usage: agent-tests export-baseline --run DIR [--run DIR ...] --out DIR [--deny-file PATH]")
+		fmt.Fprintln(os.Stderr, "merge finished runs into a baseline directory. It does not start a host.")
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() != 0 {
+		fmt.Fprintf(os.Stderr, "unexpected argument %q\n", fs.Arg(0))
+		fs.Usage()
+		return 2
+	}
+	if len(runs) == 0 || strings.TrimSpace(*out) == "" {
+		fmt.Fprintln(os.Stderr, "export-baseline: --run and --out are required")
+		fs.Usage()
+		return 2
+	}
+	user := caller["USER"]
+	if user == "" {
+		user = caller["LOGNAME"]
+	}
+	err := report.ExportBaseline(report.ExportOptions{
+		Runs:     runs,
+		Out:      *out,
+		DenyFile: *deny,
+		Home:     caller["HOME"],
+		User:     user,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	return 0
+}
+
+// listFlag collects a repeatable string flag.
+type listFlag []string
+
+func (l *listFlag) String() string { return strings.Join(*l, ",") }
+
+func (l *listFlag) Set(v string) error {
+	*l = append(*l, v)
+	return nil
 }
 
 func layout(checkout string) (hostsFile, pricesFile, scenariosDir, fixturesDir, outDir string) {
