@@ -41,7 +41,9 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          unformatted="$(gofmt -l .)"
+          # Committed agent-test baselines hold files a host produced, which
+          # may include unformatted Go; they are evidence, not source.
+          unformatted="$(find . -path ./agent-tests/baselines -prune -o -name '*.go' -print0 | xargs -0 gofmt -l)"
           if [ -n "$unformatted" ]; then
             echo "These files are not formatted; run gofmt -w:"
             echo "$unformatted"
