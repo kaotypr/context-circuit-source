@@ -44,8 +44,15 @@ func TestCatalogue(t *testing.T) {
 		if entry.Name() != sc.ID+".yaml" {
 			t.Fatalf("file %s id %s", entry.Name(), sc.ID)
 		}
-		if sc.Version != 1 {
-			t.Fatalf("%s version %d", sc.ID, sc.Version)
+		// A scenario's version is bumped when its prompt, setup or check
+		// semantics change, so earlier runs are not compared with later ones.
+		wantVersion := map[string]int{"plan": 2}
+		want := wantVersion[sc.ID]
+		if want == 0 {
+			want = 1
+		}
+		if sc.Version != want {
+			t.Fatalf("%s version %d, want %d", sc.ID, sc.Version, want)
 		}
 		if strings.TrimSpace(sc.Title) == "" || strings.TrimSpace(sc.Prompt) == "" {
 			t.Fatalf("%s missing title or prompt", sc.ID)

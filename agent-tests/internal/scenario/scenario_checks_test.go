@@ -289,3 +289,63 @@ func execCommand(t *testing.T, argv ...string) string {
 	}
 	return ""
 }
+
+func TestPlanRecordDetailsOnlyWithSupportingFiles(t *testing.T) {
+	const rel = "plans/p1000-invoice-csv-export/plan.md"
+	sections := `
+## Outcome and repository scope
+
+The api repository gains a CSV export for invoices.
+
+## Approach
+
+Add a CSV writer next to the plain-text summary.
+
+## Tasks and order
+
+- Add the writer and its test.
+
+## Risks and checks
+
+Run go test in the api repository.
+`
+	details := "\n## Details\n\nThe design is in [design](design.md).\n"
+	front := func(extra string) string {
+		return "---\nid: p1000\nintent: i100\nrepositories:\n- api\n" + extra + "---\n\n# Invoice CSV export\n"
+	}
+	required := "required_files:\n  shared:\n  - design.md\n"
+	cases := []struct {
+		name string
+		text string
+		pass bool
+	}{
+		{"no supporting files, no Details", front("") + sections, true},
+		{"links leave the folder, no Details", front("") + sections + "\nSee [the intent](../../intent/i100-invoice-csv-export.md), [docs](https://example.com/x.md) and [above](#approach).\n", true},
+		{"required_files without Details", front(required) + sections, false},
+		{"linked file without Details", front("") + sections + "\nThe design is in [design](design.md).\n", false},
+		{"linked subfolder file without Details", front("") + sections + "\nSee [notes](./notes/api.md).\n", false},
+		{"Details with assigned link", front(required) + sections + details, true},
+		{"Details with unassigned link", front("") + sections + details, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ws := t.TempDir()
+			full := filepath.Join(ws, filepath.FromSlash(rel))
+			if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(full, []byte(tc.text), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			ctx := CheckContext{
+				World:  world.World{WS: ws},
+				After:  Snapshot{Files: []string{rel}},
+				Parsed: hosts.Parsed{FinalReply: "Here is the plan."},
+			}
+			got := checkPlanRecord(ctx)
+			if got.Pass != tc.pass {
+				t.Fatalf("pass %v, want %v: %s", got.Pass, tc.pass, got.Detail)
+			}
+		})
+	}
+}
