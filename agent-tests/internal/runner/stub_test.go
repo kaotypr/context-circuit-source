@@ -113,8 +113,8 @@ func runAgainstStubs(t *testing.T, home, rootDir string) (map[string]string, str
 	streams := filepath.Join(root, "agent-tests", "testdata", "streams")
 	hosts := []stubHost{
 		{name: "claude", model: "claude-opus-5-5", input: 2 + 31194 + 11304, output: 4, basis: "reported", version: "stub-claude", auth: []string{"ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"}, stream: "claude-result.jsonl"},
-		{name: "codex", model: "gpt-6-sol", input: 15974, output: 5, basis: "price-table", version: "stub-codex", effort: "medium", price: "gpt-6-sol", auth: []string{"OPENAI_API_KEY"}, stream: "codex-exec.jsonl"},
-		{name: "cursor", model: "Claude Opus 4.8 300K High", input: 2 + 21364, output: 73, basis: "none", costNil: true, version: "stub-cursor", auth: []string{"CURSOR_API_KEY"}, stream: "cursor-stream.jsonl", reads: "reads list not available"},
+		{name: "codex", model: "gpt-5.6-luna", input: 15974, output: 5, basis: "price-table", version: "stub-codex", effort: "medium", price: "gpt-5.6-luna", auth: []string{"OPENAI_API_KEY"}, stream: "codex-exec.jsonl"},
+		{name: "cursor", model: "Claude Opus 4.8 300K High", input: 2 + 21364, output: 73, basis: "price-table", version: "stub-cursor", price: "composer-2.5", auth: []string{"CURSOR_API_KEY"}, stream: "cursor-stream.jsonl", reads: "reads list not available"},
 	}
 	var rows []hostRow
 	for _, host := range hosts {
