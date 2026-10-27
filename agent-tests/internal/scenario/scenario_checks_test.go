@@ -393,6 +393,7 @@ func TestBorrowedReplyNamesTheOwningRepository(t *testing.T) {
 	}{
 		{"Because the handbook is mounted read-only, I can't correct it in this workspace. The correction needs to be made in the handbook repository through its own review.", true},
 		{"The handbook is borrowed; the fix goes upstream through its review.", true},
+		{"I didn't change anything. If you give me the rule, I can draft the replacement text for the handbook's review.", true},
 		{"I updated the handbook and pushed the fix.", false},
 		{"The handbook note is wrong. Please review it.", false},
 		{"", false},
