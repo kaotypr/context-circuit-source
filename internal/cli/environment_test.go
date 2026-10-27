@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -250,7 +251,8 @@ func TestAgentSetupTurnsOffClaudeCodeAttribution(t *testing.T) {
 	if merged != want {
 		t.Fatalf("merge changed the person's settings:\n%s\nwant:\n%s", merged, want)
 	}
-	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0600 {
+	// Windows has no permission bits to keep.
+	if info, err := os.Stat(path); runtime.GOOS != "windows" && (err != nil || info.Mode().Perm() != 0600) {
 		t.Fatal("merge changed the file mode", info, err)
 	}
 	f.ok("agent", "setup", "--host", "claude-code")
