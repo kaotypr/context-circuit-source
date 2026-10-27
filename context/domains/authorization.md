@@ -175,12 +175,37 @@ until they are pushed no other clone sees them and two people can reserve the
 same number. So after it succeeds each gate reads Git status for the records it
 concerns and every ID file and returns `commit_recommended`, or
 `commit_unchecked` with the reason when Git cannot be read. It is a
-recommendation in the same sense as planning's: the CLI never stages or
-commits, the gate never fails because of Git, and the agent commits workspace
+recommendation in the same sense as planning's: the CLI never stages, commits
+or pushes, the gate never fails because of Git, and the agent commits workspace
 records only when the person authorizes it, since they are the person's working
-copy like a bound checkout. Nothing tracks this between gates — no `check`
-finding, no `status` field, no hook — because these two moments are where it
-matters and the agent can always ask.
+copy like a bound checkout. `record archive` returns the same field for the
+records it moves. Nothing tracks this between gates — no `check` finding, no
+`status` field, no hook — because these moments are where it matters and the
+agent can always ask.
+
+A record committed but not pushed is as invisible to teammates as one never
+committed, so the agent asks one question: commit and push the files the gate
+named, or commit only. A yes authorizes both, for those files, that once, and
+covers only the workspace repository's base branch, pushed to its upstream.
+Commit only is a full answer, and the agent says the records are not visible to
+other clones yet. With no remote or no upstream it says so after the commit and
+sets nothing up.
+
+A push refused because the remote moved on is brought up to date by
+`git pull --rebase`. Rebase is safe here because the commits it replays are the
+person's own unpushed record commits that nobody else holds, and it keeps the
+workspace history one line of record commits. The agent resolves only what
+involves no choice between two people's versions: changes Git combines cleanly
+(reported, naming records changed on both sides), and an ID file conflict, where
+keeping the union of both sides' entries loses nobody's reservation. One record
+changed on both sides with a conflict, a record deleted on one side and changed
+on the other, a conflict in anything that is not a record or ID file, and a
+number `check` reports reserved twice go to the person with both versions, the
+rebase left in progress. A `check` finding the pull merely brought in is reported
+and does not block. The agent pushes once more; a second refusal, or a refusal
+for any other reason such as authentication or a protected branch, is reported,
+and nothing is ever force-pushed. The same union rule settles the ID file
+conflict teammates hit when they upgrade at the same time.
 
 This is the same reason [workspace files and safe
 editing](../architecture/workspace-files.md) reports a resolved base branch
@@ -196,7 +221,10 @@ started from — this machine's recorded base, or the repository's shared defaul
 branch when the binding records none — is the default pull-request target unless
 a person chooses another, delivery can happen per repository, and drift is
 explained rather than resolved by an automatic rebase-and-recheck behavior.
-Review is not a precondition for any of it.
+Review is not a precondition for any of it. The pull-and-rebase for workspace
+records above is not delivery and does not relax this: delivered code is shared
+work whose drift a person judges, while unpushed record commits are the person's
+own and replay without rewriting anything anyone else holds.
 
 Agent attribution, credit, co-author, or generated-by text never goes into
 commits, pull requests, reviews, or comments. Repository commit conventions are
