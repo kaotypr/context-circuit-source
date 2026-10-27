@@ -104,7 +104,10 @@ Before the first host starts, `run` checks each selected host's auth the way
 not ready. `--dry-run` prints the same readiness lines and does not stop. Each
 run records the version the host command prints for `--version`; when that
 cannot be read it records the configured `host_version` and marks it
-`"host_version_source":"config"`.
+`"host_version_source":"config"`. The recorded `model` is always the pinned
+id from `hosts.yaml`. When the host reports its model under another name, as
+Cursor reports `Composer 2.5` for `composer-2.5`, that name is kept in
+`host_model`.
 
 Each combination is written under `agent-tests/out/<timestamp>/`. The run id
 is a UTC timestamp. `runs.jsonl` sits in that directory. One run's files sit
@@ -328,9 +331,11 @@ overwrites. It writes:
 - `runs.jsonl`, the chosen run lines;
 - `summary.json`, `{"rows":[...]}` with `missing` and `harness_errors`;
 - `hosts.yaml`, per host the version the host command printed (or the
-  configured one, marked `host_version_source: "config"`), model, effort,
-  isolation, dates, source commit, CLI version, fixture digest, and scenario
-  versions. Runs of one host that disagree on any of these refuse the export;
+  configured one, marked `host_version_source: "config"`), the pinned model,
+  effort, isolation, dates, source commit, CLI version, fixture digest, and
+  scenario versions. Runs of one host that disagree on any of these refuse the
+  export. The names the host reported for its model, when they differ from
+  the pin, are listed under `host_models` and never refuse it;
 - `artifacts/<scenario>/<host>/` with `files/`, `design/`, `git/`,
   `reads.txt`, `reply.md` and `check.json`. Streams, stderr and snapshots are
   not exported;

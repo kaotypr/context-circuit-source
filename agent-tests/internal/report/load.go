@@ -81,6 +81,7 @@ type summaryRow struct {
 	Host            string   `json:"host"`
 	HostVersion     string   `json:"host_version"`
 	Model           string   `json:"model"`
+	HostModel       string   `json:"host_model,omitempty"`
 	Effort          string   `json:"effort"`
 	Verdict         string   `json:"verdict"`
 	InputTotal      *int64   `json:"input_total"`
@@ -116,6 +117,7 @@ func loadSummary(path string) ([]record.Run, error) {
 				Host:            row.Host,
 				HostVersion:     row.HostVersion,
 				Model:           row.Model,
+				HostModel:       row.HostModel,
 				Effort:          row.Effort,
 				Verdict:         row.Verdict,
 				Run:             i,

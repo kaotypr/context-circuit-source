@@ -40,25 +40,31 @@ type Run struct {
 	// HostVersionSource is "command" when HostVersion is what the host
 	// binary printed for --version, and "config" when it is the value from
 	// hosts.yaml because the command could not be read.
-	HostVersionSource string            `json:"host_version_source,omitempty"`
-	Model             string            `json:"model"`
-	Effort            string            `json:"effort"`
-	Run               int               `json:"run"`
-	Verdict           string            `json:"verdict"`
-	FailedChecks      []string          `json:"failed_checks"`
-	Soft              map[string]any    `json:"soft"`
-	Tokens            Tokens            `json:"tokens"`
-	UsageSource       string            `json:"usage_source"`
-	CostUSD           *float64          `json:"cost_usd"`
-	CostBasis         string            `json:"cost_basis"`
-	NullReasons       map[string]string `json:"null_reasons,omitempty"`
-	Turns             int               `json:"turns"`
-	ToolCalls         int               `json:"tool_calls"`
-	Subagents         int               `json:"subagents"`
-	WallS             float64           `json:"wall_s"`
-	ArtifactsDigest   string            `json:"artifacts_digest"`
-	Date              string            `json:"date"`
-	Summary           bool              `json:"-"`
+	HostVersionSource string `json:"host_version_source,omitempty"`
+	// Model is the pinned model id from hosts.yaml, the one sent on the
+	// command line, so a baseline row matches its hosts.yaml entry.
+	Model string `json:"model"`
+	// HostModel is the model name the host itself reported, kept only when
+	// it differs from Model: Cursor reports a display name such as
+	// "Composer 2.5" for the pin composer-2.5.
+	HostModel       string            `json:"host_model,omitempty"`
+	Effort          string            `json:"effort"`
+	Run             int               `json:"run"`
+	Verdict         string            `json:"verdict"`
+	FailedChecks    []string          `json:"failed_checks"`
+	Soft            map[string]any    `json:"soft"`
+	Tokens          Tokens            `json:"tokens"`
+	UsageSource     string            `json:"usage_source"`
+	CostUSD         *float64          `json:"cost_usd"`
+	CostBasis       string            `json:"cost_basis"`
+	NullReasons     map[string]string `json:"null_reasons,omitempty"`
+	Turns           int               `json:"turns"`
+	ToolCalls       int               `json:"tool_calls"`
+	Subagents       int               `json:"subagents"`
+	WallS           float64           `json:"wall_s"`
+	ArtifactsDigest string            `json:"artifacts_digest"`
+	Date            string            `json:"date"`
+	Summary         bool              `json:"-"`
 }
 
 // Append writes r as one JSON line, creating parent directories.

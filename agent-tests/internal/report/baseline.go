@@ -356,6 +356,8 @@ func renderHostsYAML(chosen []exportRun) (string, error) {
 	b.WriteString("# Hosts as recorded by the exported runs.\n")
 	b.WriteString("# host_version_source is \"command\" when the host printed it for --version,\n")
 	b.WriteString("# and \"config\" when the configured value was recorded instead.\n")
+	b.WriteString("# model is the pinned id; host_models lists the names the host reported\n")
+	b.WriteString("# for it when they differ.\n")
 	b.WriteString("hosts:\n")
 	for _, name := range names {
 		runs := byHost[name]
@@ -378,6 +380,19 @@ func renderHostsYAML(chosen []exportRun) (string, error) {
 				return "", err
 			}
 			fmt.Fprintf(&b, "    %s: %s\n", field.key, strconv.Quote(value))
+		}
+		// The host's own model names are informational; runs may differ.
+		reported := map[string]bool{}
+		for _, item := range runs {
+			if item.run.HostModel != "" {
+				reported[item.run.HostModel] = true
+			}
+		}
+		if len(reported) > 0 {
+			b.WriteString("    host_models:\n")
+			for _, value := range sortedKeys(reported) {
+				fmt.Fprintf(&b, "      - %s\n", strconv.Quote(value))
+			}
 		}
 		isolation := hostIsolation[name]
 		if isolation == "" {
@@ -441,6 +456,7 @@ func summaryRows(chosen []exportRun) []summaryRow {
 			Host:            run.Host,
 			HostVersion:     run.HostVersion,
 			Model:           run.Model,
+			HostModel:       run.HostModel,
 			Effort:          run.Effort,
 			Verdict:         run.Verdict,
 			InputTotal:      run.Tokens.InputTotal,

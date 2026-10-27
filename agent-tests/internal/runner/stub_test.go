@@ -232,7 +232,16 @@ func assertHostOutput(t *testing.T, out string, host stubHost, secret, digest, p
 		t.Fatalf("%s record %+v", host.name, line)
 	}
 	// The stub prints stub-9 for --version; the configured value is not recorded.
-	if line.Model != host.model || line.HostVersion != "stub-9" || line.HostVersionSource != "command" || line.UsageSource != "reported" {
+	// The recorded model is the pin; what the host reported is kept apart
+	// when it differs.
+	wantHostModel := host.model
+	if wantHostModel == configModel(host) {
+		wantHostModel = ""
+	}
+	if line.Model != configModel(host) || line.HostModel != wantHostModel {
+		t.Fatalf("%s model %q host_model %q", host.name, line.Model, line.HostModel)
+	}
+	if line.HostVersion != "stub-9" || line.HostVersionSource != "command" || line.UsageSource != "reported" {
 		t.Fatalf("%s model %s version %s (%s) usage %s", host.name, line.Model, line.HostVersion, line.HostVersionSource, line.UsageSource)
 	}
 	if line.Tokens.InputTotal == nil || *line.Tokens.InputTotal != host.input {
@@ -301,6 +310,7 @@ type runLine struct {
 	HostVersion       string   `json:"host_version"`
 	HostVersionSource string   `json:"host_version_source"`
 	Model             string   `json:"model"`
+	HostModel         string   `json:"host_model"`
 	Run               int      `json:"run"`
 	Verdict           string   `json:"verdict"`
 	UsageSource       string   `json:"usage_source"`

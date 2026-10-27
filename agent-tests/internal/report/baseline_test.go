@@ -346,3 +346,84 @@ func TestExportBaselineOutputTarget(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestExportBaselineKeepsPinnedModelAndHostModel(t *testing.T) {
+	root := t.TempDir()
+	first := baseRecord("intent", "cursor", "pass", "2026-10-01", 1)
+	first.Model, first.HostModel = "composer-2.5", "Composer 2.5"
+	second := baseRecord("plan", "cursor", "pass", "2026-10-01", 1)
+	second.Model = "composer-2.5"
+	dir := writeRunDir(t, filepath.Join(root, "runs"), "20261001T000000Z", []fakeRun{
+		{run: first, note: "n\n", reads: "a\n", reply: "ok\n"},
+		{run: second, note: "n\n", reads: "a\n", reply: "ok\n"},
+	})
+	out := filepath.Join(root, "baseline")
+	if err := ExportBaseline(ExportOptions{Runs: []string{dir}, Out: out, Stdout: &bytes.Buffer{}}); err != nil {
+		t.Fatal(err)
+	}
+	hostsYAML, err := os.ReadFile(filepath.Join(out, "hosts.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, part := range []string{`model: "composer-2.5"`, "host_models:", `- "Composer 2.5"`} {
+		if !strings.Contains(string(hostsYAML), part) {
+			t.Fatalf("hosts.yaml missing %q\n%s", part, hostsYAML)
+		}
+	}
+	b, err := os.ReadFile(filepath.Join(out, "summary.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	alone := filepath.Join(root, "summary-only")
+	if err := os.MkdirAll(alone, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(alone, "summary.json"), b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := LoadBaseline(alone)
+	if err != nil || len(rows) != 2 {
+		t.Fatalf("summary baseline %v %+v", err, rows)
+	}
+	for _, row := range rows {
+		want := ""
+		if row.Scenario == "intent" {
+			want = "Composer 2.5"
+		}
+		if row.Model != "composer-2.5" || row.HostModel != want {
+			t.Fatalf("row %s model %q host_model %q", row.Scenario, row.Model, row.HostModel)
+		}
+	}
+
+	// A branch run whose host reported another display name still pairs.
+	branch := baseRecord("intent", "cursor", "pass", "2026-10-10", 1)
+	branch.Model, branch.HostModel = "composer-2.5", "Composer 2.5 Preview"
+	branchDir := writeRunDir(t, filepath.Join(root, "branch"), "20261010T000000Z", []fakeRun{
+		{run: branch, note: "branch note\n", reads: "a\n", reply: "branch reply\n"},
+	})
+	if err := Run(context.Background(), Options{Run: branchDir, Baseline: out, Design: true, NoZip: true, Stdout: &bytes.Buffer{}}); err != nil {
+		t.Fatal(err)
+	}
+	design, err := os.ReadFile(filepath.Join(branchDir, "design.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(design), "### `intent` · cursor") || strings.Contains(string(design), "only on branch") {
+		t.Fatalf("design did not pair the runs\n%s", design)
+	}
+}
+
+func TestExportBaselineStillRefusesPinnedModelDisagreement(t *testing.T) {
+	root := t.TempDir()
+	other := baseRecord("plan", "claude", "pass", "2026-10-01", 1)
+	other.Model = "model-b"
+	dir := writeRunDir(t, filepath.Join(root, "runs"), "20261001T000000Z", []fakeRun{
+		{run: baseRecord("intent", "claude", "pass", "2026-10-01", 1), note: "n\n", reads: "a\n", reply: "ok\n"},
+		{run: other, note: "n\n", reads: "a\n", reply: "ok\n"},
+	})
+	err := ExportBaseline(ExportOptions{Runs: []string{dir}, Out: filepath.Join(root, "baseline")})
+	if err == nil || !strings.Contains(err.Error(), "host claude") || !strings.Contains(err.Error(), "model") {
+		t.Fatalf("err %v", err)
+	}
+	noLeftovers(t, root)
+}
