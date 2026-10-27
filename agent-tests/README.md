@@ -421,6 +421,16 @@ login keychain, which is what raised the "Keychain Not Found" dialog and the
 keeps the session that `CURSOR_API_KEY` opens inside the process, so no
 keychain is read or written and no keychain is created for the run.
 
+Cursor adds a `Co-authored-by: Cursor` trailer to commits unless its user
+configuration turns attribution off: with the setting on, the CLI asks the
+server for that trailer and the model adds it. A project `.cursor/cli.json`
+may hold only `permissions`, so a workspace cannot carry the setting. The
+runner writes the isolated `cli-config.json` with
+`attribution.attributeCommitsToAgent` and `attributePRsToAgent` set to `false`,
+the setting a person can make in their own `~/.cursor/cli-config.json`, so
+Cursor results are measured as for a person who has turned it off. A team admin
+can also turn attribution off for the whole team.
+
 Plugins and team hooks that Cursor's backend assigns to the account behind
 `CURSOR_API_KEY` are downloaded into the run's fake home and still load. A
 notice from such a plugin can appear in a Cursor reply. Use a key for an
