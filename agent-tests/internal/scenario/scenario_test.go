@@ -1,6 +1,7 @@
 package scenario
 
 import (
+	"github.com/goccy/go-yaml"
 	"os"
 	"path/filepath"
 	"strings"
@@ -170,3 +171,32 @@ func TestWorkspaceAndBranches(t *testing.T) {
 type errSentinel struct{}
 
 func (errSentinel) Error() string { return "boom" }
+
+// The push field is left out of the canonical YAML when false, so adding it
+// did not change the identity of any scenario that does not set it.
+func TestPushWorkspaceBaseKeepsOtherHashes(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "s.yaml")
+	if err := os.WriteFile(path, []byte("id: s\nversion: 1\nprompt: hi\npush_workspace_base: true\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.PushWorkspaceBase {
+		t.Fatal("push_workspace_base was not read")
+	}
+	off := s
+	off.PushWorkspaceBase = false
+	if off.Hash("sha256:abc") == s.Hash("sha256:abc") {
+		t.Fatal("the field does not change the hash")
+	}
+	b, err := yaml.Marshal(off)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b), "push_workspace_base") {
+		t.Fatalf("a false field is in the canonical YAML:\n%s", b)
+	}
+}

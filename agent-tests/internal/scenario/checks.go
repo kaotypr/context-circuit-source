@@ -79,7 +79,8 @@ func checkLauncherOnly(ctx CheckContext) CheckResult {
 }
 
 // checkNothingPushed passes when every bare remote's refs are unchanged
-// and no remote appeared or vanished.
+// and no remote appeared or vanished. A scenario with PushWorkspaceBase
+// may move the workspace remote's base branch, and nothing else.
 func checkNothingPushed(ctx CheckContext) CheckResult {
 	if len(ctx.Before.RemoteRefs) == 0 || len(ctx.After.RemoteRefs) == 0 {
 		return failCheck(nameNothingPushed, "remote snapshot is empty")
@@ -91,6 +92,12 @@ func checkNothingPushed(ctx CheckContext) CheckResult {
 	for _, name := range unionKeys(ctx.Before.RemoteRefs, ctx.After.RemoteRefs) {
 		before, beforeOK := ctx.Before.RemoteRefs[name]
 		after, afterOK := ctx.After.RemoteRefs[name]
+		// Moving the base branch is allowed; deleting it is not.
+		base := "refs/heads/" + WorkspaceBaseBranch
+		if ctx.Scenario.PushWorkspaceBase && name == WorkspaceRemote && RemoteRefObject(after, base) != "" {
+			before = withoutRemoteRef(before, base)
+			after = withoutRemoteRef(after, base)
+		}
 		switch {
 		case beforeOK && !afterOK:
 			problems = append(problems, "remote "+name+" vanished")
@@ -129,7 +136,10 @@ func checkNoStrayCommits(ctx CheckContext) CheckResult {
 		unionMap(ctx.Before.Refs, ctx.After.Refs),
 	)
 	for _, repo := range repos {
-		if ctx.Before.Heads[repo] != ctx.After.Heads[repo] {
+		// A run allowed to push the workspace's base branch commits on
+		// it, and a pull it stops for the person leaves HEAD mid-rebase.
+		baseAllowed := ctx.Scenario.PushWorkspaceBase && repo == "ws"
+		if ctx.Before.Heads[repo] != ctx.After.Heads[repo] && !baseAllowed {
 			problems = append(problems, repo+" HEAD changed")
 		}
 		before := parseRefMap(ctx.Before.Refs[repo])
@@ -145,6 +155,9 @@ func checkNoStrayCommits(ctx CheckContext) CheckResult {
 				continue
 			}
 			if branchAllowed(branchOf(ref), ctx.Scenario.AllowedBranches) {
+				continue
+			}
+			if baseAllowed && beforeOK && ref == "refs/heads/"+WorkspaceBaseBranch {
 				continue
 			}
 			if !beforeOK {
@@ -416,6 +429,30 @@ func refObjects(text string) []string {
 	}
 	sort.Strings(objects)
 	return objects
+}
+
+// RemoteRefObject returns the object `git show-ref` text names for ref,
+// or "" when it names none.
+func RemoteRefObject(text, ref string) string {
+	for _, line := range strings.Split(text, "\n") {
+		object, name, ok := strings.Cut(strings.TrimSpace(line), " ")
+		if ok && strings.TrimSpace(name) == ref {
+			return object
+		}
+	}
+	return ""
+}
+
+// withoutRemoteRef drops ref's line from `git show-ref` text.
+func withoutRemoteRef(text, ref string) string {
+	var kept []string
+	for _, line := range strings.Split(text, "\n") {
+		if _, name, ok := strings.Cut(strings.TrimSpace(line), " "); ok && strings.TrimSpace(name) == ref {
+			continue
+		}
+		kept = append(kept, line)
+	}
+	return strings.Join(kept, "\n")
 }
 
 func branchOf(ref string) string {
