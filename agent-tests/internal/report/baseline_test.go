@@ -427,3 +427,152 @@ func TestExportBaselineStillRefusesPinnedModelDisagreement(t *testing.T) {
 	}
 	noLeftovers(t, root)
 }
+
+func TestExportBaselineRedactDeny(t *testing.T) {
+	root := t.TempDir()
+	reply := "Done.\n\nNotice from the Zephyrquill Market plugin: see ZEPHYRQUILL and zephyrquill-tools.\n"
+	dir := writeRunDir(t, filepath.Join(root, "runs"), "20261001T000000Z", []fakeRun{
+		{run: baseRecord("intent", "cursor", "pass", "2026-10-01", 1), note: "Built for the bluefinch team.\n", reads: "a\n", reply: reply},
+		{run: baseRecord("plan", "cursor", "pass", "2026-10-01", 1), note: "clean\n", reads: "a\n", reply: "ok\n"},
+	})
+	deny := filepath.Join(root, "deny.txt")
+	// "zephyrquill market" is longer than "zephyrquill" and must win.
+	if err := os.WriteFile(deny, []byte("# local terms\nzephyrquill\nzephyrquill market\nbluefinch\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(root, "baseline")
+	var buf bytes.Buffer
+	if err := ExportBaseline(ExportOptions{Runs: []string{dir}, Out: out, DenyFile: deny, RedactDeny: true, Stdout: &buf}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(out, "artifacts", "intent", "cursor", "reply.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "Done.\n\nNotice from the [private] plugin: see [private] and [private]-tools.\n"
+	if string(got) != want {
+		t.Fatalf("reply %q", got)
+	}
+	var summary struct {
+		RedactDeny bool           `json:"redact_deny"`
+		Redactions map[string]int `json:"redactions"`
+	}
+	b, err := os.ReadFile(filepath.Join(out, "summary.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &summary); err != nil {
+		t.Fatal(err)
+	}
+	wantCounts := map[string]int{
+		"artifacts/intent/cursor/reply.md":      3,
+		"artifacts/intent/cursor/files/note.md": 1,
+	}
+	if !summary.RedactDeny || len(summary.Redactions) != len(wantCounts) {
+		t.Fatalf("summary redactions %+v", summary)
+	}
+	for rel, n := range wantCounts {
+		if summary.Redactions[rel] != n {
+			t.Fatalf("%s: %d replacements, want %d (%v)", rel, summary.Redactions[rel], n, summary.Redactions)
+		}
+	}
+	if !strings.Contains(buf.String(), "replaced 4 deny-listed occurrence(s) in 2 file(s)") {
+		t.Fatalf("stdout %q", buf.String())
+	}
+	err = filepath.WalkDir(out, func(p string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		body, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		lower := strings.ToLower(string(body))
+		for _, term := range []string{"zephyrquill", "bluefinch"} {
+			if strings.Contains(lower, term) {
+				t.Errorf("%s still contains a deny-listed term", p)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(strings.ToLower(buf.String()), "zephyrquill") {
+		t.Fatal("a deny-listed term was printed")
+	}
+}
+
+func TestExportBaselineRedactDenyReplacementIsNotAMatch(t *testing.T) {
+	root := t.TempDir()
+	dir := writeRunDir(t, filepath.Join(root, "runs"), "20261001T000000Z", []fakeRun{
+		{run: baseRecord("intent", "cursor", "pass", "2026-10-01", 1), note: "n\n", reads: "a\n", reply: "a Private note\n"},
+	})
+	deny := filepath.Join(root, "deny.txt")
+	if err := os.WriteFile(deny, []byte("private\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(root, "baseline")
+	if err := ExportBaseline(ExportOptions{Runs: []string{dir}, Out: out, DenyFile: deny, RedactDeny: true, Stdout: &bytes.Buffer{}}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(out, "artifacts", "intent", "cursor", "reply.md"))
+	if err != nil || string(got) != "a [private] note\n" {
+		t.Fatalf("reply %q %v", got, err)
+	}
+}
+
+func TestExportBaselineRedactDenyStillRefuses(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		item  fakeRun
+		where string
+	}{
+		{"file name", fakeRun{note: "n\n", reads: "a\n", reply: "ok\n", extra: map[string]string{"artifacts/files/zephyrquill-notes.md": "x\n"}}, "a file name under artifacts/intent/cursor contains a deny-listed term"},
+		{"absolute path", fakeRun{note: "n\n", reads: "a\n", reply: "zephyrquill at /var/folders/xy/T/run\n"}, "absolute path (/var/folders/)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			tc.item.run = baseRecord("intent", "cursor", "pass", "2026-10-01", 1)
+			dir := writeRunDir(t, filepath.Join(root, "runs"), "20261001T000000Z", []fakeRun{tc.item})
+			deny := filepath.Join(root, "deny.txt")
+			if err := os.WriteFile(deny, []byte("zephyrquill\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			var buf bytes.Buffer
+			err := ExportBaseline(ExportOptions{Runs: []string{dir}, Out: filepath.Join(root, "baseline"), DenyFile: deny, RedactDeny: true, Stdout: &buf})
+			if err == nil || !strings.Contains(err.Error(), tc.where) {
+				t.Fatalf("err %v", err)
+			}
+			if strings.Contains(strings.ToLower(err.Error()+buf.String()), "zephyrquill") {
+				t.Fatal("the deny-listed term was printed")
+			}
+			noLeftovers(t, root)
+		})
+	}
+}
+
+func TestExportBaselineWithoutRedactDenyRecordsNoRedactions(t *testing.T) {
+	root := t.TempDir()
+	dir := writeRunDir(t, filepath.Join(root, "runs"), "20261001T000000Z", []fakeRun{
+		{run: baseRecord("intent", "cursor", "pass", "2026-10-01", 1), note: "n\n", reads: "a\n", reply: "ok\n"},
+	})
+	out := filepath.Join(root, "baseline")
+	if err := ExportBaseline(ExportOptions{Runs: []string{dir}, Out: out, Stdout: &bytes.Buffer{}}); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(out, "summary.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b), "redact") {
+		t.Fatalf("summary mentions redaction without the flag\n%s", b)
+	}
+	readme, err := os.ReadFile(filepath.Join(out, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(readme), "## Host notes") || !strings.Contains(string(readme), "Cursor ran with a plugin assigned to its account") {
+		t.Fatalf("README host notes\n%s", readme)
+	}
+}

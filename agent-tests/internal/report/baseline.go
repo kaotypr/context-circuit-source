@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,10 +28,17 @@ type ExportOptions struct {
 	// DenyFile is an optional local file with one term per line. The terms
 	// are matched case-insensitively and are never printed.
 	DenyFile string
-	Home     string
-	User     string
-	Stdout   io.Writer
+	// RedactDeny replaces every case-insensitive occurrence of a deny-listed
+	// term in file contents with redactedTerm instead of refusing the
+	// export. A file name that contains a term still refuses it.
+	RedactDeny bool
+	Home       string
+	User       string
+	Stdout     io.Writer
 }
+
+// redactedTerm replaces a deny-listed term when RedactDeny is set.
+const redactedTerm = "[private]"
 
 // absolutePathPatterns are path prefixes that must not appear in a
 // committed baseline once the home prefix has been redacted.
@@ -75,6 +83,11 @@ type baselineSummary struct {
 	Rows          []summaryRow `json:"rows"`
 	Missing       []pairRef    `json:"missing"`
 	HarnessErrors []harnessRef `json:"harness_errors"`
+	// RedactDeny is true when the export replaced deny-listed terms.
+	RedactDeny bool `json:"redact_deny,omitempty"`
+	// Redactions counts, per exported file, how many deny-listed terms were
+	// replaced. It never names a term.
+	Redactions map[string]int `json:"redactions,omitempty"`
 }
 
 // refusal is an export stopped by the scrub check. Its message names the
@@ -140,6 +153,10 @@ func ExportBaseline(opts ExportOptions) error {
 		}
 	}()
 	w := &exportWriter{root: tmp, home: opts.Home, user: opts.User, deny: deny}
+	if opts.RedactDeny {
+		w.redact = denyPattern(deny)
+		w.counts = map[string]int{}
+	}
 
 	var log bytes.Buffer
 	for _, item := range chosen {
@@ -153,19 +170,6 @@ func ExportBaseline(opts ExportOptions) error {
 	if err := w.write("runs.jsonl", log.Bytes()); err != nil {
 		return err
 	}
-	summary := baselineSummary{
-		SrcCommit:     srcCommit,
-		Rows:          summaryRows(chosen),
-		Missing:       missing,
-		HarnessErrors: harness,
-	}
-	sb, err := json.MarshalIndent(summary, "", "  ")
-	if err != nil {
-		return err
-	}
-	if err := w.write("summary.json", append(sb, '\n')); err != nil {
-		return err
-	}
 	if err := w.write("hosts.yaml", []byte(hostsYAML)); err != nil {
 		return err
 	}
@@ -175,6 +179,25 @@ func ExportBaseline(opts ExportOptions) error {
 		}
 	}
 	if err := w.write("README.md", []byte(renderBaselineReadme(srcCommit, chosen, missing))); err != nil {
+		return err
+	}
+	// summary.json is written last so it can count the replacements made in
+	// every other file.
+	summary := baselineSummary{
+		SrcCommit:     srcCommit,
+		Rows:          summaryRows(chosen),
+		Missing:       missing,
+		HarnessErrors: harness,
+	}
+	if opts.RedactDeny {
+		summary.RedactDeny = true
+		summary.Redactions = w.counts
+	}
+	sb, err := json.MarshalIndent(summary, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := w.write("summary.json", append(sb, '\n')); err != nil {
 		return err
 	}
 	if replaceEmpty {
@@ -187,6 +210,13 @@ func ExportBaseline(opts ExportOptions) error {
 	}
 	done = true
 	fmt.Fprintf(out, "exported %d run(s); %d scenario and host pair(s) missing\n", len(chosen), len(missing))
+	if opts.RedactDeny {
+		total := 0
+		for _, n := range w.counts {
+			total += n
+		}
+		fmt.Fprintf(out, "replaced %d deny-listed occurrence(s) in %d file(s) with %s\n", total, len(w.counts), redactedTerm)
+	}
 	return nil
 }
 
@@ -501,6 +531,9 @@ func renderBaselineReadme(srcCommit string, chosen []exportRun, missing []pairRe
 			fmt.Fprintf(&b, "- `%s` · %s\n", pair.Scenario, pair.Host)
 		}
 	}
+	b.WriteString("\n## Host notes\n\n")
+	b.WriteString("<!-- Edit by hand: what about a host's setup a reader needs to know. -->\n\n")
+	b.WriteString("- Cursor ran with a plugin assigned to its account, whose notices appear in some replies (redacted where they named private terms).\n")
 	b.WriteString("\n## Notable behaviour\n\n")
 	b.WriteString("<!-- Written by hand after reading the runs. -->\n\n")
 	b.WriteString("_Not written yet._\n")
@@ -526,6 +559,25 @@ type exportWriter struct {
 	home string
 	user string
 	deny []string
+	// redact is set when deny-listed terms in contents are replaced rather
+	// than refused; counts holds the replacements per relative path.
+	redact *regexp.Regexp
+	counts map[string]int
+}
+
+// denyPattern matches any deny-listed term case-insensitively in one pass,
+// longest term first, so a replacement is never matched again.
+func denyPattern(terms []string) *regexp.Regexp {
+	if len(terms) == 0 {
+		return nil
+	}
+	sorted := append([]string{}, terms...)
+	sort.SliceStable(sorted, func(i, j int) bool { return len(sorted[i]) > len(sorted[j]) })
+	quoted := make([]string, len(sorted))
+	for i, term := range sorted {
+		quoted[i] = regexp.QuoteMeta(term)
+	}
+	return regexp.MustCompile("(?i)(?:" + strings.Join(quoted, "|") + ")")
 }
 
 // write redacts body, refuses it when an absolute path or a deny-listed
@@ -541,12 +593,24 @@ func (w *exportWriter) write(rel string, body []byte) error {
 			return &refusal{fmt.Sprintf("export-baseline: refused: %s contains an absolute path (%s); nothing was written", rel, pattern)}
 		}
 	}
-	lowerText := strings.ToLower(text)
 	lowerName := strings.ToLower(rel)
 	for _, term := range w.deny {
 		if strings.Contains(lowerName, term) {
 			return &refusal{fmt.Sprintf("export-baseline: refused: a file name under %s contains a deny-listed term; nothing was written", runPrefix(rel))}
 		}
+	}
+	if w.redact != nil {
+		if n := len(w.redact.FindAllIndex(body, -1)); n > 0 {
+			body = w.redact.ReplaceAllLiteral(body, []byte(redactedTerm))
+			w.counts[rel] += n
+		}
+	}
+	lowerText := strings.ToLower(string(body))
+	if w.redact != nil {
+		// The replacement text itself is not a match.
+		lowerText = strings.ReplaceAll(lowerText, redactedTerm, "\x00")
+	}
+	for _, term := range w.deny {
 		if strings.Contains(lowerText, term) {
 			return &refusal{fmt.Sprintf("export-baseline: refused: %s contains a deny-listed term; nothing was written", rel)}
 		}

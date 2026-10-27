@@ -315,7 +315,7 @@ go run ./cmd/agent-tests export-baseline \
   --run out/<claude-run-id> --run out/<codex-run-id> --run out/<cursor-run-id> \
   --run out/<probe-run-id> --run out/<rerun-id> \
   --out baselines/<version> \
-  --deny-file <local file outside the repository>
+  --deny-file <local file outside the repository> [--redact-deny]
 ```
 
 Per scenario and host it keeps the newest run that is not a harness error:
@@ -339,8 +339,9 @@ overwrites. It writes:
 - `artifacts/<scenario>/<host>/` with `files/`, `design/`, `git/`,
   `reads.txt`, `reply.md` and `check.json`. Streams, stderr and snapshots are
   not exported;
-- `README.md`, the summary table, the missing pairs, and an empty "Notable
-  behaviour" section you write by hand.
+- `README.md`, the summary table, the missing pairs, a "Host notes" section
+  with a placeholder line about Cursor's account plugin to keep or edit, and
+  an empty "Notable behaviour" section you write by hand.
 
 Every written file has the home prefix and account name redacted again. The
 export then refuses, names the file, and leaves nothing behind when any file
@@ -348,6 +349,17 @@ still contains `/Users/`, `/home/`, `/private/`, `/tmp/` or `/var/folders/`,
 or a term from `--deny-file`. The deny file holds one term per line, matched
 case-insensitively; blank lines and `#` lines are skipped. It is read locally,
 and its terms are never printed, so keep it outside the repository.
+
+Some replies carry text the account adds rather than the scenario: Cursor,
+for example, may show a notice from a plugin assigned to its account that
+names a private term. With `--redact-deny` (which needs `--deny-file`), every
+case-insensitive occurrence of a term in a file's contents is replaced with
+`[private]` instead of refusing the export. A file name that contains a term
+still refuses it, and so does an absolute path. `summary.json` then records
+`"redact_deny": true` and `redactions`, the number of replacements per
+exported file by relative path, never the terms themselves. Without the flag
+the export behaves as above. Say in the baseline README's "Host notes" which
+replies were redacted and why.
 
 Then check the result reads as a before side, with no base runs:
 
