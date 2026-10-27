@@ -573,6 +573,11 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if _, err := s.SplitIDLedger(member); err != nil {
 		return err
 	}
+	// A seed that still carries an empty archive/ folder starts with _archive/
+	// instead, so a new workspace never holds the legacy name.
+	if _, err := s.RenameLegacyArchives(); err != nil {
+		return err
+	}
 	// The README travels with the workspace, so it carries the workspace's name
 	// and the versions it received rather than the product's newest release. It
 	// is written here rather than exported, because a blank seed has no name to

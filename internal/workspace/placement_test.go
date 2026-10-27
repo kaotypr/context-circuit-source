@@ -144,13 +144,29 @@ func TestFlatPlacementPaths(t *testing.T) {
 		ok       bool
 	}{
 		{"intent/i001-billing.md", "i001", false, true},
+		{"intent/_archive/i001-billing.md", "i001", true, true},
 		{"intent/archive/i001-billing.md", "i001", true, true},
+		{"intent/sub/i001-billing.md", "i001", false, true},
+		{"intent/sub/_archive/i001-billing.md", "i001", true, true},
+		{"intent/_archive/sub/i001-billing.md", "i001", true, true},
+		{"intent/archive/sub/i001-billing.md", "i001", true, true},
 		{"plans/p0001-api/plan.md", "p0001", false, true},
+		{"plans/_archive/p0001-api/plan.md", "p0001", true, true},
 		{"plans/archive/p0001-api/plan.md", "p0001", true, true},
+		{"plans/alex/p1010-thing/plan.md", "p1010", false, true},
+		{"plans/alex/_archive/p1010-thing/plan.md", "p1010", true, true},
+		{"plans/_archive/alex/p1010-thing/plan.md", "p1010", true, true},
+		{"plans/alex/p1010-thing.md", "p1010", false, true},
 		{"plans/p0001-api.md", "p0001", false, true},
+		// An archive/ inside a group is an ordinary folder, one level too deep.
+		{"plans/alex/archive/p1010-thing/plan.md", "", false, false},
+		{"plans/alex/deeper/p1010-thing/plan.md", "", false, false},
+		{"plans/_archive/_archive/p1010-thing/plan.md", "", false, false},
+		{"plans/_drafts/p1010-thing/plan.md", "", false, false},
+		{"plans/alex/_drafts/p1010-thing/plan.md", "", false, false},
+		{"plans/p1234-x/p1010-thing/plan.md", "", false, false},
 		{"plans/p0001-api/notes.md", "", false, false},
 		{"intent/i001-billing/plan.md", "", false, false},
-		{"intent/sub/i001-billing.md", "", false, false},
 		{"context/i001-billing.md", "", false, false},
 	} {
 		id, archived, ok := p.Classify(tc.rel)
@@ -159,9 +175,13 @@ func TestFlatPlacementPaths(t *testing.T) {
 		}
 	}
 	for rel, want := range map[string]string{
-		"intent/i001-billing.md":         "intent/archive/i001-billing.md",
-		"plans/p0001-api/plan.md":        "plans/archive/p0001-api/plan.md",
-		"intent/archive/i001-billing.md": "intent/archive/i001-billing.md",
+		"intent/i001-billing.md":          "intent/_archive/i001-billing.md",
+		"plans/p0001-api/plan.md":         "plans/_archive/p0001-api/plan.md",
+		"plans/p0001-api.md":              "plans/_archive/p0001-api.md",
+		"intent/alex/i001-billing.md":     "intent/alex/_archive/i001-billing.md",
+		"plans/alex/p1010-thing/plan.md":  "plans/alex/_archive/p1010-thing/plan.md",
+		"intent/_archive/i001-billing.md": "intent/_archive/i001-billing.md",
+		"intent/archive/i001-billing.md":  "intent/archive/i001-billing.md",
 	} {
 		if got := p.ArchivedPath(rel); got != want {
 			t.Errorf("ArchivedPath(%s) = %s, want %s", rel, got, want)
@@ -172,5 +192,22 @@ func TestFlatPlacementPaths(t *testing.T) {
 	}
 	if got := p.NewRecordPath("plan", "p0001", "api"); got != "plans/p0001-api/plan.md" {
 		t.Errorf("plan placed at %s", got)
+	}
+	matches := p.GitPathMatcher("p1010")
+	for rel, want := range map[string]bool{
+		"plans/alex/p1010-thing/plan.md":           true,
+		"plans/alex/p1010-thing/notes/design.md":   true,
+		"plans/_archive/alex/p1010-thing/plan.md":  true,
+		"plans/alex/_archive/p1010-thing/extra.md": true,
+		"plans/p1010-thing.md":                     true,
+		"plans/alex/p1011-other/plan.md":           false,
+		"plans/alex/archive/p1010-thing/plan.md":   false,
+		"intent/i101-billing.md":                   false,
+		"plans/p1010-thing/p1011-nested/plan.md":   true,
+		"plans/_drafts/p1010-thing/plan.md":        false,
+	} {
+		if got := matches(rel); got != want {
+			t.Errorf("GitPathMatcher(p1010)(%s) = %v, want %v", rel, got, want)
+		}
 	}
 }

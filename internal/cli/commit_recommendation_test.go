@@ -74,8 +74,8 @@ func TestApprovalRecommendsCommittingItsRecords(t *testing.T) {
 
 	// A renamed record is listed once under each path, not as a stray old path.
 	commitRecords(t, f.root)
-	archived := "intent/archive/" + filepath.Base(i.Path)
-	if err := os.MkdirAll(filepath.Join(f.root, "intent", "archive"), 0755); err != nil {
+	archived := "intent/_archive/" + filepath.Base(i.Path)
+	if err := os.MkdirAll(filepath.Join(f.root, "intent", "_archive"), 0755); err != nil {
 		t.Fatal(err)
 	}
 	git(t, f.root, "mv", filepath.FromSlash(i.Path), filepath.FromSlash(archived))

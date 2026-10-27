@@ -308,7 +308,7 @@ func TestDeletingAMembersRecordsReleasesTheirNumbers(t *testing.T) {
 	kept := f.intent("billing")
 	plan := f.plan(kept.ID, "billing-api", "api")
 	archived := f.intent("old-idea")
-	archive := filepath.Join(f.root, "intent/archive", filepath.Base(archived.Path))
+	archive := filepath.Join(f.root, "intent/_archive", filepath.Base(archived.Path))
 	write(t, archive, read(t, filepath.Join(f.root, archived.Path)))
 	os.Remove(filepath.Join(f.root, archived.Path))
 	f.ok("member", "use", "--id", "alex")
