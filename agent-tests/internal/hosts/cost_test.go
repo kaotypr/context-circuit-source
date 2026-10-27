@@ -94,19 +94,19 @@ func TestCostCodexRecordedStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	row := prices["gpt-5.6-luna"]
+	row := prices["gpt-6-luna"]
 	h, err := ForName("codex")
 	if err != nil {
 		t.Fatal(err)
 	}
 	p := parseFile(t, h, "codex-exec.jsonl")
 	// 15974 uncached is under the long-context threshold.
-	// 15974 * $0.20/M + 0 * $0.02/M + 0 * $0.25/M + 5 * $1.20/M = 0.0032008
+	// 15974 * $0.10/M + 0 * $0.01/M + 0 * $0.125/M + 5 * $0.50/M = 0.0015999
 	got, ok, reason := Cost(row, p.Tokens)
 	if !ok {
 		t.Fatal(reason)
 	}
-	near(t, got, 0.0032008)
+	near(t, got, 0.0015999)
 }
 
 func TestCostCursorRecordedStream(t *testing.T) {

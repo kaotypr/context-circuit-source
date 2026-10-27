@@ -3,6 +3,8 @@ package hosts
 import (
 	"io"
 	"path/filepath"
+	"sort"
+	"strings"
 )
 
 type cursorHost struct{}
@@ -21,21 +23,33 @@ func (cursorHost) Build(in LaunchInput) (Launch, error) {
 	}
 	home := filepath.Join(in.RunRoot, "cursor-home")
 	config := filepath.Join(home, ".config")
+	configDir := filepath.Join(config, "cursor")
+	dataDir := filepath.Join(home, ".cursor")
+	// cursor-agent resolves its config, data, plugin, hook and project
+	// directories from HOME, XDG_CONFIG_HOME, CURSOR_CONFIG_DIR and
+	// CURSOR_DATA_DIR; all four point into the run root. On macOS the
+	// default credential store is the login keychain, written through
+	// /usr/bin/security. The memory store keeps the API key's session in
+	// the process instead, so no keychain is read or written.
 	env := BaseEnv(in, map[string]string{
-		"HOME":            home,
-		"XDG_CONFIG_HOME": config,
+		"HOME":                       home,
+		"XDG_CONFIG_HOME":            config,
+		"CURSOR_CONFIG_DIR":          configDir,
+		"CURSOR_DATA_DIR":            dataDir,
+		"AGENT_CLI_CREDENTIAL_STORE": "memory",
 	})
 	return Launch{
 		Argv:   argv,
 		Dir:    in.Workspace,
 		Env:    env,
-		MkDirs: []string{home, config},
+		MkDirs: []string{home, config, configDir, dataDir},
 	}, nil
 }
 
 func (cursorHost) Parse(r io.Reader) (Parsed, error) {
 	p := Parsed{UsageSource: "not reported"}
 	sawTool := false
+	seen := map[string]bool{}
 	err := eachJSONObject(r, func(m map[string]any) {
 		switch m["type"] {
 		case "system":
@@ -49,24 +63,11 @@ func (cursorHost) Parse(r io.Reader) (Parsed, error) {
 				p.SessionID = s
 			}
 		case "tool_call":
-			sawTool = true
-			name, _ := m["name"].(string)
-			summary := ""
-			if in, ok := m["input"].(map[string]any); ok {
-				summary = firstSummary(in)
+			if line, ok := cursorToolLine(m, seen); ok {
+				sawTool = true
+				p.ToolCalls++
+				p.Reads = append(p.Reads, line)
 			}
-			if name == "" {
-				if tc, ok := m["tool_call"].(map[string]any); ok {
-					name, _ = tc["name"].(string)
-					if summary == "" {
-						if args, ok := tc["args"].(map[string]any); ok {
-							summary = firstSummary(args)
-						}
-					}
-				}
-			}
-			p.ToolCalls++
-			p.Reads = append(p.Reads, toolLine(name, summary))
 		case "result":
 			applyCursorResult(&p, m)
 		}
@@ -127,4 +128,84 @@ func applyCursorResult(p *Parsed, m map[string]any) {
 		}
 		p.Tokens.InputTotal = i64p(total)
 	}
+}
+
+// cursorToolLine turns one tool_call event into a reads line. cursor-agent
+// sends a started and a completed event per call, sharing call_id, with the
+// call under tool_call.<kind>ToolCall.args. A call is counted once: on the
+// first of its events seen. An event without a call_id is counted on its
+// own. The older flat shape, name and input on the event, is still read.
+func cursorToolLine(m map[string]any, seen map[string]bool) (string, bool) {
+	if id, ok := m["call_id"].(string); ok && id != "" {
+		if seen[id] {
+			return "", false
+		}
+		seen[id] = true
+	}
+	if name, ok := m["name"].(string); ok && name != "" {
+		summary := ""
+		if in, ok := m["input"].(map[string]any); ok {
+			summary = firstSummary(in)
+		}
+		return toolLine(name, summary), true
+	}
+	tc, ok := m["tool_call"].(map[string]any)
+	if !ok {
+		return toolLine("", ""), true
+	}
+	if name, ok := tc["name"].(string); ok && name != "" {
+		summary := ""
+		if args, ok := tc["args"].(map[string]any); ok {
+			summary = firstSummary(args)
+		}
+		return toolLine(name, summary), true
+	}
+	keys := make([]string, 0, len(tc))
+	for key, val := range tc {
+		if _, ok := val.(map[string]any); ok && strings.HasSuffix(key, "ToolCall") {
+			keys = append(keys, key)
+		}
+	}
+	if len(keys) == 0 {
+		return toolLine("", ""), true
+	}
+	sort.Strings(keys)
+	key := keys[0]
+	name := strings.TrimSuffix(key, "ToolCall")
+	call := tc[key].(map[string]any)
+	args, _ := call["args"].(map[string]any)
+	return toolLine(name, cursorSummary(name, args)), true
+}
+
+// cursorSummary is the path, command or pattern of one Cursor tool call.
+func cursorSummary(name string, args map[string]any) string {
+	if args == nil {
+		return ""
+	}
+	str := func(key string) string {
+		s, _ := args[key].(string)
+		return s
+	}
+	join := func(a, b string) string {
+		switch {
+		case a == "":
+			return b
+		case b == "":
+			return a
+		default:
+			return a + " " + b
+		}
+	}
+	switch name {
+	case "shell":
+		return str("command")
+	case "grep":
+		return join(str("pattern"), str("path"))
+	case "glob":
+		return join(str("globPattern"), str("targetDirectory"))
+	}
+	if s := firstSummary(args); s != "" {
+		return s
+	}
+	return join(str("globPattern"), str("targetDirectory"))
 }

@@ -260,7 +260,13 @@ disagreements and any change to the table.
 ## Hosts
 
 `hosts.yaml` names three hosts: `claude` (Claude Code), `codex` (Codex), and
-`cursor` (Cursor, command `cursor-agent`). Each has one pinned model.
+`cursor` (Cursor, command `cursor-agent`). Each has one pinned model:
+`claude-haiku-5-5` at effort `medium` on Claude Code, `gpt-6-luna` at effort
+`medium` on Codex, and `composer-2.5` on Cursor.
+
+Each pin is that host's smallest current model. A baseline made with them is
+a lower-bound reference: a stronger model usually copes with what the
+smallest one handles, but a baseline does not prove that it does.
 
 An empty hosts list means any one host. A non-empty list means exactly those
 hosts, and nothing else.
@@ -357,8 +363,8 @@ else's branch only in a container or a VM.
 Each host gets an empty config home under the run root. None of the three is given an MCP config file:
 
 - Claude Code uses an empty `CLAUDE_CONFIG_DIR` and an empty `HOME`, and `--strict-mcp-config` with no MCP config file. Auth comes from `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`.
-- Codex uses an empty `CODEX_HOME` and an empty `HOME`, and `--ignore-user-config`. The API key is passed only on the stdin of `codex login --with-api-key`, and is removed from the child environment. Auth comes from `OPENAI_API_KEY`.
-- Cursor uses an empty `HOME` and an empty `XDG_CONFIG_HOME`. Auth comes from `CURSOR_API_KEY`.
+- Codex uses an empty `CODEX_HOME` and an empty `HOME`, and `--ignore-user-config`. The API key is passed only on the stdin of `codex login --with-api-key`, and is removed from the child environment. Auth comes from `OPENAI_API_KEY`. `--skip-git-repo-check` lets the empty-folder overhead run start outside a Git repository; every other workspace is a repository, where the check passes anyway. `workspace-write` keeps a workspace's `.codex` read-only, so the runner creates it and names it as one more writable directory with `--add-dir`, and agent setup can write the Codex role files.
+- Cursor uses an empty `HOME`, `XDG_CONFIG_HOME`, `CURSOR_CONFIG_DIR`, and `CURSOR_DATA_DIR`, all under the run root, and `AGENT_CLI_CREDENTIAL_STORE=memory`. Auth comes from `CURSOR_API_KEY`. See "Cursor isolation".
 
 The child environment is an allowlist. It sets `PATH` to the decoy directory
 and then your `PATH`, `TMPDIR` and `GOCACHE` under the run root, `LANG` to
@@ -385,13 +391,37 @@ only run scenarios from a checkout you trust.
 You pay for runs on your own account. Use a spend-limited key. Claude Code
 also receives `--max-budget-usd 3` as a guard against a runaway process.
 
+### Cursor isolation
+
+`cursor-agent` resolves its config, data, plugin, hook, and project
+directories from `HOME`, `XDG_CONFIG_HOME`, `CURSOR_CONFIG_DIR`, and
+`CURSOR_DATA_DIR`. The runner points all four into the run root, so the
+files under your own `~/.cursor`, `~/.config/cursor`, and `~/.claude` are
+not read. On macOS its default credential store is the login keychain,
+written through `/usr/bin/security`. Under the run's fake `HOME` there is no
+login keychain, which is what raised the "Keychain Not Found" dialog and the
+"couldn't save your credentials" warning. `AGENT_CLI_CREDENTIAL_STORE=memory`
+keeps the session that `CURSOR_API_KEY` opens inside the process, so no
+keychain is read or written and no keychain is created for the run.
+
+Plugins and team hooks that Cursor's backend assigns to the account behind
+`CURSOR_API_KEY` are downloaded into the run's fake home and still load. A
+notice from such a plugin can appear in a Cursor reply. Use a key for an
+account or team without plugins when a reply must be free of them.
+
+Not yet confirmed by a live run: that `cursor-agent` signs in with
+`CURSOR_API_KEY` under the memory store without a keychain dialog, and that
+the plugin notice seen in the pilot came from the account and not from a
+local file outside the run root.
+
 ## Tokens and cost
 
 The primary metric is total input tokens. Output tokens are reported
 separately.
 
 - Claude Code sums input, cache-creation, and cache-read tokens, and sets that total only when all three figures are present. When the result includes `modelUsage`, the sum across the models named there replaces the total only when the input, cache-read, and cache-creation figures are all present. Those models include subagents. The dollar figure is `total_cost_usd` as the host reported it. The report calls the total a list-price equivalent. On a subscription you may not be billed that amount.
-- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the model's row in `prices.yaml` (cost basis `price-table`) when `price_row` names one. The pinned `gpt-5.6-luna` row has a long-context tier above 272,000 input tokens. The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
+- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the model's row in `prices.yaml` (cost basis `price-table`) when `price_row` names one. The pinned `gpt-6-luna` row ($0.10 input, $0.01 cached input, $0.125 cache write at the 30-minute rate, $0.50 output per million tokens) has a long-context tier above 272,000 input tokens ($0.20, $0.02, $0.25, $0.75). The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
+- Claude Code's pin is `claude-haiku-5-5`, and its cost is what the host reports.
 - Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. Its cost comes from the `composer-2.5` row (cost basis `price-table`). Cursor publishes no cache-write price, so that row charges cache writes at the input rate as an estimate.
 
 A missing token or cost is `n/a`. The report never writes 0 for a missing
@@ -405,13 +435,13 @@ display as 15%. Pass ranks above inconclusive, and inconclusive ranks above
 fail, which is how "lower" is decided.
 
 The model pins in `hosts.yaml` are provisional. `probe` and a dry run say so:
-`provisional: not yet confirmed by a baseline run`. Codex is pinned at effort
-`medium`. Claude Code and Cursor omit the effort flag, and the report shows
+`provisional: not yet confirmed by a baseline run`. Claude Code and Codex are
+pinned at effort `medium`. Cursor omits the effort flag, and the report shows
 that as `default`.
 
 `probe` without a live prompt prints an older measurement of a fixed "Reply
-with exactly: OK", taken with a developer's own host config loaded. The
-isolated figure is lower:
+with exactly: OK", taken with a developer's own host config loaded and with
+the earlier pins. The isolated figure is lower:
 
 - `claude`: 42500 input tokens, $0.2519 list
 - `codex`: 15974 input tokens
@@ -423,7 +453,7 @@ A scenario is many times that. The bands in "Scenarios" are guesses.
 
 API keys are not required.
 
-For Claude, create a token yourself with `claude setup-token` and export `CLAUDE_CODE_OAUTH_TOKEN` in the shell that starts the run. The runner passes only that variable. Cursor keeps its login in the macOS keychain. The runner does not use that login. Cursor runs only with `CURSOR_API_KEY`.
+For Claude, create a token yourself with `claude setup-token` and export `CLAUDE_CODE_OAUTH_TOKEN` in the shell that starts the run. The runner passes only that variable. Cursor keeps its login in the macOS keychain. The runner does not use that login and selects Cursor's memory credential store. Cursor runs only with `CURSOR_API_KEY`.
 
 Codex can use its subscription login file instead of `OPENAI_API_KEY`. Pass `--subscription-auth codex` to `run` or `probe` (a comma list is accepted only when every name is `codex`). The runner copies `auth.json` from `CODEX_HOME` when that variable is set, otherwise from `HOME/.codex/auth.json`, into the run's private `CODEX_HOME` as mode 0600. The copy is removed when the host process ends, including a non-zero exit, a timeout, a panic, a run stopped with Ctrl-C or SIGTERM, and a run root that is kept. The file is read once more before it is removed, so a token the host refreshed during the run is redacted too. A copy left in this tool's temporary `agent-test-*` directory by a crashed process is removed at the next `run` or `probe` that starts a host. The sweep does not read the caller's home. Errors name that file only as "subscription login file".
 
@@ -481,6 +511,12 @@ reviewer for the host that ran when that host is known: `claude` (and the
 CLI's `claude-code`) uses `.claude/agents`, `codex` uses `.codex/agents`, and
 `cursor` uses `.cursor/agents`. When the check has no host name, or a name
 with no role directory, any one of those complete sets is enough.
+`plan-record` requires the plan's Outcome and repository scope, Approach,
+Tasks and order, and Risks and checks sections. It requires a Details section
+only when the plan has a supporting file: an entry in `required_files`, or a
+relative link to a file inside the plan folder. The record template says to
+remove Details when there is none. Every link under Details must be assigned
+in `required_files`.
 `execute-worktree` requires a Go function in `internal/invoice` that calls
 `encoding/csv`. `complete-note` requires the invoices note to record that a
 CSV export exists, and accepts the run's UTC date or the day on either side.
@@ -633,8 +669,12 @@ grader catches a damaged end state. Only a live run shows that a host passes.
 The token bands in "Scenarios". They are guesses. See "What "before" is".
 
 A host that exposes no tool output. Cursor records a reads list only when the
-stream contains a tool call. Until then the reads list is not available, and
-`sources-passive` is inconclusive.
+stream contains a tool call: each line names the tool (`read`, `grep`, `glob`,
+`edit`, `shell`, and so on) and its path, pattern, or command. A run without
+a tool call has no reads list, and `sources-passive` is inconclusive there.
+
+Cursor's isolation from the account behind `CURSOR_API_KEY`. See "Cursor
+isolation".
 
 Codex's cached-token split, and whether reasoning tokens are already inside
 output tokens. See "Tokens and cost".

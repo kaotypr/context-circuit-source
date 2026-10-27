@@ -98,13 +98,17 @@ var intentHeadings = []string{
 	"Open questions",
 }
 
+// planHeadings are required in every plan. planDetailsHeading is required
+// only when the plan has supporting files: the record template says to
+// remove the section when there are none.
 var planHeadings = []string{
 	"Outcome and repository scope",
 	"Approach",
 	"Tasks and order",
 	"Risks and checks",
-	"Details",
 }
+
+const planDetailsHeading = "Details"
 
 // placeholderSentences are the sentences record create writes and a filled
 // record must replace.
@@ -431,6 +435,9 @@ func checkPlanRecord(ctx CheckContext) CheckResult {
 	}
 	if !headingsPresent(body, planHeadings) || hasPlaceholder(body) {
 		return failCheck(namePlanRecord, "plan sections are incomplete or still the template")
+	}
+	if !hasHeading(body, planDetailsHeading) && planHasSupportingFiles(front, body) {
+		return failCheck(namePlanRecord, "plan has supporting files but no Details section")
 	}
 	if ok, missing := linksAssigned(front, body); !ok {
 		return failCheck(namePlanRecord, "linked detail is not in required_files: "+missing)
@@ -1113,6 +1120,33 @@ func linksAssigned(front, body string) (bool, string) {
 		}
 	}
 	return true, ""
+}
+
+// planHasSupportingFiles reports whether the plan names a supporting file:
+// an entry in required_files, or a relative link anywhere in the body to a
+// file inside the plan folder. A link with a scheme, an absolute path, an
+// anchor, or a path leaving the folder is not one.
+func planHasSupportingFiles(front, body string) bool {
+	if len(assignedFiles(front)) > 0 {
+		return true
+	}
+	for _, match := range mdLink.FindAllStringSubmatch(body, -1) {
+		if inPlanFolder(match[1]) {
+			return true
+		}
+	}
+	return false
+}
+
+func inPlanFolder(target string) bool {
+	if i := strings.IndexAny(target, "#?"); i >= 0 {
+		target = target[:i]
+	}
+	if target == "" || strings.Contains(target, "://") || strings.HasPrefix(target, "/") || strings.HasPrefix(target, "mailto:") {
+		return false
+	}
+	clean := path.Clean(target)
+	return clean != "." && clean != ".." && !strings.HasPrefix(clean, "../")
 }
 
 func assignedFiles(front string) map[string]bool {

@@ -14,15 +14,26 @@ func (codexHost) Name() string { return "codex" }
 func (codexHost) Build(in LaunchInput) (Launch, error) {
 	cmd := chosenCommand(in, "codex")
 	gocache := filepath.Join(in.RunRoot, "gocache")
+	// workspace-write keeps .codex under the workspace read-only, even when
+	// it does not exist yet, so agent setup cannot write the Codex role
+	// files there. Naming the directory as its own writable root lifts
+	// that for this directory only; it is created before the host starts.
+	wsCodex := filepath.Join(in.Workspace, ".codex")
+	// --skip-git-repo-check: the empty-folder overhead run has no Git
+	// repository, and codex exec refuses to start outside one. Every other
+	// workspace is a repository, where the check passes anyway, so the
+	// flag is set on every run and changes nothing there.
 	argv := []string{
 		cmd,
 		"exec",
 		"--json",
 		"--ignore-user-config",
+		"--skip-git-repo-check",
 		"-C", in.Workspace,
 		"-m", chosenModel(in),
 		"--sandbox", "workspace-write",
 		"--add-dir", gocache,
+		"--add-dir", wsCodex,
 	}
 	if in.Effort != "" {
 		argv = append(argv, "-c", `model_reasoning_effort="`+in.Effort+`"`)
@@ -67,7 +78,7 @@ func (codexHost) Build(in LaunchInput) (Launch, error) {
 		Argv:       argv,
 		Dir:        in.Workspace,
 		Env:        env,
-		MkDirs:     []string{codexHome, home},
+		MkDirs:     []string{codexHome, home, wsCodex},
 		Stdin:      "",
 		SetupArgv:  setup,
 		SetupStdin: setupIn,
