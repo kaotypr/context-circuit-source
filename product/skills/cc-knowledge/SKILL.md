@@ -241,9 +241,11 @@ match `borrowed`. That mark decides what you may do with it.
   repository is mounted rather than vendored. Asked to fix knowledge that came
   from a borrowed repository, leave `context/` alone and tell the person the fix
   goes upstream, through that repository's own review.
-- **Never edit one here.** The checkout's push URL is disabled, so an attempt
-  fails rather than half-succeeding. An improvement is a merge request in that
-  repository, from a separate checkout of it.
+- **Never edit one here, and never fix one yourself.** The checkout's push URL
+  is disabled, so an attempt fails rather than half-succeeding. An improvement
+  is the person's merge request in that repository: do not clone, commit to, or
+  push it from this task, even from a separate checkout, unless they ask for
+  that as its own task.
 - **Never reconcile one.** Completion returns this workspace's own entries, and
   a borrowed entry is an obligation nobody here can discharge. Borrowed
   knowledge goes stale on its owner's schedule.

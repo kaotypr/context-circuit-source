@@ -47,7 +47,10 @@ key, the file's formatting, and any attribution value a person set stay as they
 are, the file is written only when it changes, and a file that is not one JSON
 object is refused and left untouched. Codex has no such setting, and Cursor reads
 it only from its user configuration, so setup writes nothing for either; there,
-inspect each commit message and remove any trailer the host added.
+inspect each commit message and remove any trailer the host added. A Cursor user
+can turn it off for themselves: set `"attribution": {"attributeCommitsToAgent":
+false, "attributePRsToAgent": false}` in `~/.cursor/cli-config.json`, or turn off
+"Attribute commits to agent" in the CLI's settings.
 
 A worker's brief depends on how it is parallelized. One worker per plan owns its
 whole worktree and cannot collide with a sibling plan, whose work arrives later
