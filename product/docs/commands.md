@@ -233,9 +233,9 @@ writes a file for every author, so only one person on a team upgrades first:
 they make the first changing command, then commit and push the files the notice
 names; committing is the person's decision. Everyone else pulls
 before making any change. Teammates who upgrade at the same time get a Git
-conflict in `.context-circuit/ids/*.yaml`, which is theirs to resolve by hand:
-keep the union of both sides' entries in each member file, then run `check`,
-which reports any number reserved twice. If a merge leaves Git conflict markers
+conflict in `.context-circuit/ids/*.yaml`, which is resolved by keeping the
+union of both sides' entries in each member file, then running `check`, which
+reports any number reserved twice. If a merge leaves Git conflict markers
 in `ids.yaml`, the split refuses until a person resolves them, keeping every
 entry. A member or record author whose ID is a Windows device name stops the
 split, which names them; `status` and `check` report a roster member like that
@@ -305,8 +305,13 @@ uncommitted records are not listed. Approval and completion always rewrite the
 record they touch, so in a Git workspace that record is always listed. The key is omitted when nothing is listed. When Git is
 not installed, or the workspace is not in a Git repository, the result carries
 `commit_unchecked` with the reason instead. Neither ever blocks or undoes the
-command, and the CLI never stages, commits, or pushes: committing the records
-still needs the person's authorization. A workspace inside another repository
+command, and the CLI never stages, commits, or pushes. The agent asks the person
+one question, commit and push the listed files or commit only; the answer is the
+authorization for those files, that once, and covers pushing only the
+workspace's base branch to its upstream, never by force. A push refused because
+the remote moved on is brought up to date with `git pull --rebase`, ID file
+conflicts resolved by keeping both sides' entries, and any other conflict
+brought to the person, as `AGENTS.md` describes. A workspace inside another repository
 is reported relative to its own root, leaving out files outside it; one that
 repository ignores lists nothing.
 

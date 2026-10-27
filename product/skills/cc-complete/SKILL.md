@@ -23,8 +23,9 @@ The command stamps `completed_at` in the plan's frontmatter. Its result carries
 `completed`, the ID of the plan it marked, the catalog entries scoped to that plan's
 repositories, and `reconcile_required` naming the judging whenever there are any.
 In a Git workspace it also carries `commit_recommended`, the plan, intent, and ID
-files left uncommitted: pass it on, and commit them only when the person
-authorizes it. Completion reporting success is the record written, not the request finished.
+files left uncommitted: ask the person once whether to commit and push them, or
+commit only. Their answer authorizes that and nothing more; a refused push is
+handled as `AGENTS.md` says under delivery. Completion reporting success is the record written, not the request finished.
 
 ## Judge, do not rewrite
 
@@ -56,7 +57,8 @@ When the result carries `archive_offer`, the person has that many finished
 records of their own not archived. Once the request is finished, offer to
 archive them, and run `record archive` only on a yes; a no changes nothing.
 It moves only their own finished records and returns `commit_recommended`,
-which needs their authorization like any other.
+which is asked about like any other: commit and push, or commit only, on their
+authorization.
 
 ```sh
 sh <root>/.context-circuit/cli --json record archive

@@ -71,8 +71,9 @@ writes an ID file for every author at once. Only one person on a team upgrades
 first: they make that change, commit and push it, and everyone else pulls before
 changing anything. Before making that first change, tell the person this. A Git
 conflict in `.context-circuit/ids/*.yaml` from teammates upgrading at the same
-time is theirs to resolve by hand: keep the union of both sides' entries in each
-member file, then run `check`, which reports any number reserved twice.
+time is resolved by keeping the union of both sides' entries in each member
+file, then running `check`, which reports any number reserved twice; a number
+reserved twice goes to the person.
 The first changing command of a 2.5.0 CLI likewise renames `archive/` to
 `_archive/`: one person makes it, commits and pushes it, and the rest install
 2.5.0 before pulling.
@@ -377,10 +378,22 @@ execution request, while a commit in a bound checkout is a change to the
 person's own working copy and still needs authorization. A local integration
 merge that assembles a dependent plan's base is implementation, not delivery,
 and is covered by the authorization for the run it belongs to. Workspace records
-are the person's working copy too: `record approve` and `record complete` return
-`commit_recommended` naming the records and ID files they leave uncommitted,
-which is a recommendation to pass on to the person, and committing them still
-needs the person's authorization. Use ordinary Git
+are the person's working copy too: `record approve`, `record complete`, and
+`record archive` return `commit_recommended` naming the records and ID files
+they leave uncommitted. Ask the person one question: commit and push those
+files, or commit only. Their answer is the authorization, for those files, that
+once; after commit only, say other clones cannot see them yet. Push only the
+workspace's base branch to its upstream; with no remote or upstream, say why
+and stop after the commit. If the push is refused because the remote moved on,
+`git pull --rebase`, which replays only these unpushed record commits. Keep
+what Git combines, saying which records changed on both sides; in an ID file
+conflict keep the union of both sides' entries. Any other conflict — one record
+changed on both sides, deleted on one, or a file that is not a record — goes to
+the person with both versions, the rebase left in progress (`git rebase
+--abort` returns to the local commits). Then run `check`: a number reserved
+twice goes to the person, a finding the pull brought in is reported and does
+not block. Report what came in, and push once more; report a second refusal or
+any other, and never force-push. Use ordinary Git
 and provider tools; the Go CLI provides repository, branch, and base information
 and never silently delivers. The branch the work started from — this machine's
 recorded base, or the repository's default branch when the binding records none
@@ -390,8 +403,8 @@ repository's default and not what this machine delivers to, and answering from
 it targets the wrong branch convincingly. When the user asks to deliver changes
 or open a pull request, use `.agents/skills/cc-deliver/SKILL.md`, which says
 which branch each request opens from and against what, per repository and for
-the chain ends of a stacked run. Explain relevant drift or conflicts without
-imposing automatic rebase-and-reverify behavior.
+the chain ends of a stacked run. For delivered code, explain relevant drift or
+conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more
 plans completed, that request is finished only when the completion note is

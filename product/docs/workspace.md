@@ -351,9 +351,9 @@ IDs and moves the workspace to schema 3, then commits and pushes it. Everyone
 else pulls that commit before making any change of their own. Teammates who
 upgrade at the same time and each make a change before pulling will each have
 written the same member files with different content, and Git reports a conflict
-in `.context-circuit/ids/*.yaml`. That conflict is theirs to resolve by hand:
-keep the union of both sides' entries in each member file, then run `check`,
-which reports any number reserved twice.
+in `.context-circuit/ids/*.yaml`. That conflict is resolved by keeping the union
+of both sides' entries in each member file, then running `check`, which reports
+any number reserved twice; a number reserved twice is the person's to settle.
 
 A member ID that is a Windows device name, which a 2.3.0 roster could hold,
 stops the split: it names the member, or the author and their records, and

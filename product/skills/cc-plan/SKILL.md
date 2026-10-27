@@ -13,8 +13,9 @@ intents the person has already been shown and asks for their plans; plan each
 named intent then, without a stop and without asking for approval again. Asking
 for an intent to be written and planned in one go is not approval. In a Git
 workspace approval also returns `commit_recommended`, naming the records and ID
-files left uncommitted: pass it on, and commit them only when the person
-authorizes it.
+files left uncommitted: ask the person once whether to commit and push them, or
+commit only; their answer is the authorization, and a refused push is handled as
+`AGENTS.md` says under delivery.
 
 An approval answered with `planning_required` instead comes from a CLI older
 than this template. Tell the person to install or upgrade to the version the
