@@ -25,7 +25,8 @@ as in member list --json, but not sit between a group and its subcommand.
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
                       [--member-band N] [--member-role ROLE ...] (the first member,
                       selected here; band 1 unless another is given)
-status                inspect workspace, members, bindings, and Git state
+status                your open work first, then workspace, members, bindings,
+                      and Git state
 check                 report record, binding, dependency, and worktree issues
 member add            --id ID --name NAME --band N [--language NAME] [--tone TEXT]
                       [--role ROLE ...]
@@ -65,7 +66,10 @@ repo inspect          --id ID
 record create         --kind intent|plan --slug SLUG --title TITLE
                       [--intent ID --repo ID ... --depends-on ID ...]
 record show           --id ID
-record list           [--archived]
+record list           [--member ID | --all] [--archived] (default: your own records;
+                      --all adds every member's and records with no author)
+record archive        [--id ID ...] (move under _archive/: your finished records,
+                      or exactly the named ones; IDs stay reserved)
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
@@ -522,6 +526,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		fmt.Fprintln(errOut, err)
 		return 1
 	}
+	fmt.Fprint(errOut, in.notice)
 	if refused != nil {
 		fmt.Fprintln(errOut, refused)
 		return 1

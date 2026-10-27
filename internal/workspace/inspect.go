@@ -57,7 +57,11 @@ func uniqueFindings(values []Finding) []Finding {
 }
 
 type Orientation struct {
-	Workspace Config `json:"workspace"`
+	// MyWork opens the output: the active member's own open work, and how
+	// many of their finished records are not archived. It is absent while no
+	// member is selected, and nobody else's records are counted in it.
+	MyWork    *MyWork `json:"my_work,omitempty"`
+	Workspace Config  `json:"workspace"`
 	// Self is the Git state of the workspace's own repository, present only
 	// once it has been described. Shared records are read from whatever commit
 	// this checkout is sitting on, so a stale or dirty workspace is part of
@@ -127,6 +131,16 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 			result.Issues = append(result.Issues, schema2Roles(members)...)
 		}
 		result.Issues = append(result.Issues, deviceNameMembers(members)...)
+	}
+	if result.ActiveMember != "" {
+		// A record that cannot be read is reported, not fatal: status is
+		// where a person looks first when something is wrong.
+		if work, err := s.myWork(result.ActiveMember); err != nil {
+			result.Issues = append(result.Issues, found(err.Error(),
+				needsAPerson+"the records could not be listed; inspect "+recordRootsText()+" for an unreadable file"))
+		} else {
+			result.MyWork = work
+		}
 	}
 	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
 		result.Issues = append(result.Issues, found("workspace repository: "+err.Error(),

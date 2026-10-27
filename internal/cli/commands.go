@@ -24,6 +24,9 @@ type input struct {
 
 	// checkFailed is set by check, whose findings make the exit code 1.
 	checkFailed bool
+	// notice is printed on the error stream after the result, for what a
+	// reader should know about a result without it changing shape.
+	notice string
 }
 
 // get returns a string flag's value, or "" for a flag the command never defined.
@@ -321,12 +324,21 @@ var commands = map[string]command{
 		},
 	},
 	"record list": {
+		flags: []string{"member"},
 		extra: func(in *input) {
 			in.f.BoolVar(&in.archived, "archived", false, "include archived records")
+			in.f.BoolVar(&in.all, "all", false, "every member's records, and records with no author")
 		},
+		// No flag lists the active member's own records.
+		optional: []string{"member"},
 		readOnly: true,
 		run: func(_ context.Context, s *workspace.Store, in *input) (any, error) {
-			return s.ListRecords(in.archived)
+			listing, err := s.SelectRecords(workspace.RecordSelection{Member: in.get("member"), All: in.all, Archived: in.archived})
+			if err != nil {
+				return nil, err
+			}
+			in.notice = listing.Notice
+			return listing.Records, nil
 		},
 	},
 	"record approve": {
@@ -362,6 +374,12 @@ var commands = map[string]command{
 		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
 			return s.DeleteRecords(ctx, in.get("member"), in.all, in.recordIDs, in.confirm)
 		},
+	},
+	"record archive": {
+		extra: func(in *input) {
+			in.f.Var(&in.recordIDs, "id", "intent or plan ID to archive (repeatable)")
+		},
+		run: runArchive,
 	},
 	"record dependencies": {
 		flags: []string{"id"},
@@ -589,8 +607,45 @@ func runComplete(ctx context.Context, s *workspace.Store, in *input) (any, error
 	if plan, found := s.FindRecord(in.get("id")); found == nil && plan.Intent != "" {
 		ids = append(ids, plan.Intent)
 	}
+	// Finished work is archived by the member who did it, and the agent does
+	// the remembering: the count rides on the result the agent is reading.
+	if member, err := s.ActiveMember(); err == nil {
+		if count, err := s.UnarchivedFinishedCount(member); err == nil && count > 0 {
+			result["archive_offer"] = map[string]any{
+				"unarchived_finished": count,
+				"offer":               "offer the person to archive their finished records with `record archive`, which moves only their own finished intents and plans under _archive/ and keeps every ID reserved; archive only if they agree, and a no changes nothing",
+			}
+		}
+	}
 	recommendCommit(ctx, s, result, ids...)
 	return result, e
+}
+
+func runArchive(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+	archive, err := s.ArchiveRecords(in.recordIDs)
+	if err != nil {
+		return nil, err
+	}
+	result := map[string]any{"archived": archive.Records}
+	if len(archive.AlreadyArchived) > 0 {
+		result["already_archived"] = archive.AlreadyArchived
+	}
+	if len(archive.Unfinished) > 0 {
+		result["unfinished"] = archive.Unfinished
+		result["unfinished_note"] = "these records were archived by ID although their work is not finished; archiving is file organization and changes nothing else about them"
+	}
+	if len(archive.LinksRewritten) > 0 {
+		result["links_rewritten"] = archive.LinksRewritten
+	}
+	if len(archive.LinksReported) > 0 {
+		result["links_reported"] = archive.LinksReported
+		result["links_note"] = "these links were not rewritten and no longer point where they did: edit each to the path given as to"
+	}
+	if len(archive.Records) == 0 && len(in.recordIDs) == 0 {
+		result["note"] = "none of your records is finished and unarchived, so nothing was moved"
+	}
+	recommendCommit(ctx, s, result, archive.Changed...)
+	return result, nil
 }
 
 func runContextFind(ctx context.Context, s *workspace.Store, in *input) (any, error) {
