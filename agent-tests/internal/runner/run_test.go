@@ -151,6 +151,7 @@ func TestDryRunPrintsPlan(t *testing.T) {
 		"marker x claude x branch x r1",
 		"marker x claude x branch x r2",
 		"marker x claude x base x r2",
+		"auth claude: not ready (no auth env configured)",
 		"",
 	}, "\n")
 	if got != want {

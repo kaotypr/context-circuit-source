@@ -28,33 +28,37 @@ type Tokens struct {
 // CostBasis is "reported", "price-table", or "none".
 // Side is "base" or "branch".
 type Run struct {
-	Scenario        string            `json:"scenario"`
-	ScenarioVersion string            `json:"scenario_version"`
-	FixtureDigest   string            `json:"fixture_digest"`
-	SrcCommit       string            `json:"src_commit"`
-	BaseCommit      string            `json:"base_commit"`
-	Side            string            `json:"side"`
-	CLIVersion      string            `json:"cli_version"`
-	Host            string            `json:"host"`
-	HostVersion     string            `json:"host_version"`
-	Model           string            `json:"model"`
-	Effort          string            `json:"effort"`
-	Run             int               `json:"run"`
-	Verdict         string            `json:"verdict"`
-	FailedChecks    []string          `json:"failed_checks"`
-	Soft            map[string]any    `json:"soft"`
-	Tokens          Tokens            `json:"tokens"`
-	UsageSource     string            `json:"usage_source"`
-	CostUSD         *float64          `json:"cost_usd"`
-	CostBasis       string            `json:"cost_basis"`
-	NullReasons     map[string]string `json:"null_reasons,omitempty"`
-	Turns           int               `json:"turns"`
-	ToolCalls       int               `json:"tool_calls"`
-	Subagents       int               `json:"subagents"`
-	WallS           float64           `json:"wall_s"`
-	ArtifactsDigest string            `json:"artifacts_digest"`
-	Date            string            `json:"date"`
-	Summary         bool              `json:"-"`
+	Scenario        string `json:"scenario"`
+	ScenarioVersion string `json:"scenario_version"`
+	FixtureDigest   string `json:"fixture_digest"`
+	SrcCommit       string `json:"src_commit"`
+	BaseCommit      string `json:"base_commit"`
+	Side            string `json:"side"`
+	CLIVersion      string `json:"cli_version"`
+	Host            string `json:"host"`
+	HostVersion     string `json:"host_version"`
+	// HostVersionSource is "command" when HostVersion is what the host
+	// binary printed for --version, and "config" when it is the value from
+	// hosts.yaml because the command could not be read.
+	HostVersionSource string            `json:"host_version_source,omitempty"`
+	Model             string            `json:"model"`
+	Effort            string            `json:"effort"`
+	Run               int               `json:"run"`
+	Verdict           string            `json:"verdict"`
+	FailedChecks      []string          `json:"failed_checks"`
+	Soft              map[string]any    `json:"soft"`
+	Tokens            Tokens            `json:"tokens"`
+	UsageSource       string            `json:"usage_source"`
+	CostUSD           *float64          `json:"cost_usd"`
+	CostBasis         string            `json:"cost_basis"`
+	NullReasons       map[string]string `json:"null_reasons,omitempty"`
+	Turns             int               `json:"turns"`
+	ToolCalls         int               `json:"tool_calls"`
+	Subagents         int               `json:"subagents"`
+	WallS             float64           `json:"wall_s"`
+	ArtifactsDigest   string            `json:"artifacts_digest"`
+	Date              string            `json:"date"`
+	Summary           bool              `json:"-"`
 }
 
 // Append writes r as one JSON line, creating parent directories.

@@ -96,11 +96,17 @@ func Run(ctx context.Context, opts RunOptions) error {
 			fmt.Fprintf(out, "note: %s model %s%s\n", cfg.Name, cfg.Model, provisionalNote(cfg))
 		}
 	}
+	authProblems := authPreflight(out, selectedHosts, opts)
 	if opts.DryRun {
 		return nil
 	}
 	if !opts.Confirm {
 		msg := "this run would use model usage on your account; re-run with --yes to start"
+		fmt.Fprintln(out, msg)
+		return fmt.Errorf("%s", msg)
+	}
+	if len(authProblems) > 0 {
+		msg := "auth not ready, no host was started: " + strings.Join(authProblems, "; ")
 		fmt.Fprintln(out, msg)
 		return fmt.Errorf("%s", msg)
 	}
@@ -145,6 +151,7 @@ func Run(ctx context.Context, opts RunOptions) error {
 		baseCommit:    baseCommit,
 		fixtureDigest: digest,
 		stdout:        out,
+		hostVersions:  measureHostVersions(ctx, selectedHosts, callerPath(opts.Caller)),
 	}
 	if err := sweepBeforeHosts(out, opts.ParentTemp); err != nil {
 		return err
@@ -177,6 +184,58 @@ type runtime struct {
 	// loginSecrets are values from a copied subscription login file.
 	// They stay in memory for this run and are never written out.
 	loginSecrets []string
+	// hostVersions holds what each host command printed for --version.
+	// A host missing from the map was not measured.
+	hostVersions map[string]hostVersion
+}
+
+// hostVersion is one host command's --version result. When measured is
+// false the command could not be read and the configured value is recorded.
+type hostVersion struct {
+	value    string
+	measured bool
+}
+
+// measureHostVersions runs each selected host's --version once, the way
+// probe reads it.
+func measureHostVersions(ctx context.Context, list []hosts.HostConfig, path string) map[string]hostVersion {
+	out := make(map[string]hostVersion, len(list))
+	for _, cfg := range list {
+		ver, err := commandVersion(ctx, cfg.Command, path)
+		if err != nil || ver == "" {
+			out[cfg.Name] = hostVersion{value: cfg.HostVersion}
+			continue
+		}
+		out[cfg.Name] = hostVersion{value: ver, measured: true}
+	}
+	return out
+}
+
+// authPreflight prints each selected host's auth readiness, as probe
+// does, and returns one problem per host that is not ready. It names
+// variables, never their values.
+func authPreflight(out io.Writer, list []hosts.HostConfig, opts RunOptions) []string {
+	var problems []string
+	for _, cfg := range list {
+		adapter, err := hosts.ForName(cfg.Name)
+		if err != nil {
+			fmt.Fprintf(out, "auth %s: not ready (%s)\n", cfg.Name, err)
+			problems = append(problems, cfg.Name+": "+err.Error())
+			continue
+		}
+		cfg.SubscriptionAuth = containsHost(opts.SubscriptionAuth, cfg.Name)
+		ready, detail := adapter.AuthReady(opts.Caller, cfg)
+		if ready {
+			fmt.Fprintf(out, "auth %s: ready\n", cfg.Name)
+			continue
+		}
+		if detail == "" {
+			detail = "not ready"
+		}
+		fmt.Fprintf(out, "auth %s: not ready (%s)\n", cfg.Name, detail)
+		problems = append(problems, cfg.Name+": "+detail)
+	}
+	return problems
 }
 
 // ValidateSubscriptionAuth accepts only the codex host. An empty list is

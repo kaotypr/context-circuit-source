@@ -99,6 +99,13 @@ and spends on your account:
 go run ./cmd/agent-tests run --scenarios orient --hosts claude --runs 1 --base development/v2 --yes
 ```
 
+Before the first host starts, `run` checks each selected host's auth the way
+`probe` does and stops with exit 1, naming the missing variables, when one is
+not ready. `--dry-run` prints the same readiness lines and does not stop. Each
+run records the version the host command prints for `--version`; when that
+cannot be read it records the configured `host_version` and marks it
+`"host_version_source":"config"`.
+
 Each combination is written under `agent-tests/out/<timestamp>/`. The run id
 is a UTC timestamp. `runs.jsonl` sits in that directory. One run's files sit
 in `runs/<scenario>/<host>/<side>/r<N>/`.
@@ -273,8 +280,8 @@ who reviews, asks because a result is borderline. `--runs` defaults to 1.
 ## What "before" is
 
 The before side is a committed baseline when your host version and model match
-`hosts.yaml`. No baseline is committed yet. There is no baseline directory in
-this repository.
+`hosts.yaml`. No baseline is committed yet. `agent-tests/baselines/` holds no
+baseline directory.
 
 Until one is committed, run the base ref and your branch alternately on the
 same machine. Pass `--base` with the pull request's target branch. With
@@ -286,6 +293,56 @@ the same side is not always second.
 `summary.json` (`{"rows":[...]}`) when the log is absent. A summary baseline
 row is labelled `(summary)`. Without `--baseline`, rows in the same
 `runs.jsonl` with `"side":"base"` are the before side.
+
+## Exporting a baseline
+
+A baseline is made from finished run directories: one per host batch, the
+`probe --yes` run that records the overhead prompt, and any reruns. Every run
+must come from the same source commit. `export-baseline` does not start a
+host:
+
+```sh
+go run ./cmd/agent-tests export-baseline \
+  --run out/<claude-run-id> --run out/<codex-run-id> --run out/<cursor-run-id> \
+  --run out/<probe-run-id> --run out/<rerun-id> \
+  --out baselines/<version> \
+  --deny-file <local file outside the repository>
+```
+
+Per scenario and host it keeps the newest run that is not a harness error:
+the later date, then the later run id, then the later `--run` on the command
+line, then the higher run number. Base-side runs are skipped. A pair with only
+harness errors is listed under `missing` in `summary.json` and in the README,
+and every harness-error run is listed under `harness_errors`; rerun those
+pairs and export again.
+
+`--out` must not exist, or must be an empty directory. Export never
+overwrites. It writes:
+
+- `runs.jsonl`, the chosen run lines;
+- `summary.json`, `{"rows":[...]}` with `missing` and `harness_errors`;
+- `hosts.yaml`, per host the version the host command printed (or the
+  configured one, marked `host_version_source: "config"`), model, effort,
+  isolation, dates, source commit, CLI version, fixture digest, and scenario
+  versions. Runs of one host that disagree on any of these refuse the export;
+- `artifacts/<scenario>/<host>/` with `files/`, `design/`, `git/`,
+  `reads.txt`, `reply.md` and `check.json`. Streams, stderr and snapshots are
+  not exported;
+- `README.md`, the summary table, the missing pairs, and an empty "Notable
+  behaviour" section you write by hand.
+
+Every written file has the home prefix and account name redacted again. The
+export then refuses, names the file, and leaves nothing behind when any file
+still contains `/Users/`, `/home/`, `/private/`, `/tmp/` or `/var/folders/`,
+or a term from `--deny-file`. The deny file holds one term per line, matched
+case-insensitively; blank lines and `#` lines are skipped. It is read locally,
+and its terms are never printed, so keep it outside the repository.
+
+Then check the result reads as a before side, with no base runs:
+
+```sh
+go run ./cmd/agent-tests report --run <a branch run id> --baseline baselines/<version> --design
+```
 
 ## Safety
 
