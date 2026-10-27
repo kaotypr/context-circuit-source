@@ -235,17 +235,18 @@ A workspace may mount an organization's knowledge center as a knowledge
 repository. `context find` reads its index beside this catalog and marks each
 match `borrowed`. That mark decides what you may do with it.
 
-- **Never copy a borrowed note into `context/`.** Link to it by path. A copy
-  goes stale silently while still reading as current, and nothing here can tell
-  that it has; avoiding that is the whole reason the repository is mounted
-  rather than vendored.
+- **Never record a borrowed note, or a correction of it, in `context/`.** Link
+  to it by path. A copy goes stale silently while still reading as current, and
+  nothing here can tell that it has; avoiding that is the whole reason the
+  repository is mounted rather than vendored. Asked to fix knowledge that came
+  from a borrowed repository, leave `context/` alone and tell the person the fix
+  goes upstream, through that repository's own review.
 - **Never edit one here.** The checkout's push URL is disabled, so an attempt
   fails rather than half-succeeding. An improvement is a merge request in that
   repository, from a separate checkout of it.
 - **Never reconcile one.** Completion returns this workspace's own entries, and
   a borrowed entry is an obligation nobody here can discharge. Borrowed
-  knowledge goes stale on its owner's schedule; when you find it wrong, say so
-  and raise it upstream rather than recording the correction here.
+  knowledge goes stale on its owner's schedule.
 - **Read it before re-deriving anything.** It exists so that what someone
   already established about a shared service is not worked out again from source
   or trial and error. Judge relevance from what its own index and frontmatter
