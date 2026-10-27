@@ -177,9 +177,99 @@ func TestCursorBuildArgv(t *testing.T) {
 			t.Fatalf("caller home leaked: %s", e)
 		}
 	}
-	wantDirs := []string{home, filepath.Join(home, ".config")}
+	if env["CURSOR_CONFIG_DIR"] != filepath.Join(home, ".config", "cursor") {
+		t.Fatalf("config dir %s", env["CURSOR_CONFIG_DIR"])
+	}
+	if env["CURSOR_DATA_DIR"] != filepath.Join(home, ".cursor") {
+		t.Fatalf("data dir %s", env["CURSOR_DATA_DIR"])
+	}
+	if env["AGENT_CLI_CREDENTIAL_STORE"] != "memory" {
+		t.Fatalf("credential store %q", env["AGENT_CLI_CREDENTIAL_STORE"])
+	}
+	wantDirs := []string{
+		home,
+		filepath.Join(home, ".config"),
+		filepath.Join(home, ".config", "cursor"),
+		filepath.Join(home, ".cursor"),
+	}
 	if !reflect.DeepEqual(launch.MkDirs, wantDirs) || launch.Dir != "/work/ws" {
 		t.Fatalf("dir %s mkdirs %v", launch.Dir, launch.MkDirs)
+	}
+	// Every directory the adapter points Cursor at, and every directory it
+	// creates, is inside the run root. Nothing runs before the host.
+	for _, key := range []string{"HOME", "XDG_CONFIG_HOME", "CURSOR_CONFIG_DIR", "CURSOR_DATA_DIR", "TMPDIR"} {
+		if !strings.HasPrefix(env[key], run+string(filepath.Separator)) {
+			t.Fatalf("%s outside the run root: %s", key, env[key])
+		}
+	}
+	for _, dir := range launch.MkDirs {
+		if !strings.HasPrefix(dir, run+string(filepath.Separator)) {
+			t.Fatalf("mkdir outside the run root: %s", dir)
+		}
+	}
+	if len(launch.SetupArgv) != 0 || len(launch.CopyIn) != 0 {
+		t.Fatalf("setup %#v copies %#v", launch.SetupArgv, launch.CopyIn)
+	}
+	for _, a := range launch.Argv {
+		if strings.Contains(a, "cursor-auth-value") {
+			t.Fatalf("argv leaked the key: %s", a)
+		}
+	}
+}
+
+func TestCursorParseRecordedToolCalls(t *testing.T) {
+	h, err := ForName("cursor")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := parseFile(t, h, "cursor-tools.jsonl")
+	if !p.Terminal || p.IsError || p.Model != "Composer 2.5" {
+		t.Fatalf("terminal %v error %v model %q", p.Terminal, p.IsError, p.Model)
+	}
+	want := []string{
+		"Tool: grep recieve $RUN/ws",
+		"Tool: glob **/api/**/README* $RUN/ws",
+		"Tool: read $RUN/ws/workspace.yaml",
+		"Tool: read $RUN/ws/repositories/api/README.md",
+		"Tool: edit $RUN/ws/repositories/api/README.md",
+		"Tool: shell sh $RUN/ws/.context-circuit/cli context find --repo api 2>/dev/null || true",
+	}
+	if !reflect.DeepEqual(p.Reads, want) {
+		t.Fatalf("reads %q", p.Reads)
+	}
+	if !p.ReadsAvailable || p.ToolCalls != len(want) {
+		t.Fatalf("reads %v tools %d", p.ReadsAvailable, p.ToolCalls)
+	}
+	eqInt(t, "output", p.Tokens.Output, 1028)
+	eqInt(t, "cache_read", p.Tokens.CacheRead, 108472)
+}
+
+func TestCursorParseSyntheticNestedToolCalls(t *testing.T) {
+	h, err := ForName("cursor")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const stream = `
+{"type":"tool_call","subtype":"started","call_id":"a","tool_call":{"readToolCall":{"args":{"path":"$RUN/ws/AGENTS.md"}}}}
+{"type":"tool_call","subtype":"completed","call_id":"a","tool_call":{"readToolCall":{"args":{"path":"$RUN/ws/AGENTS.md"},"result":{"success":{}}}}}
+{"type":"tool_call","subtype":"completed","call_id":"b","tool_call":{"shellToolCall":{"args":{"command":"git status\n--short"}}}}
+{"type":"tool_call","subtype":"started","call_id":"c","tool_call":{"newKindToolCall":{"args":{"path":"x.md"}}}}
+{"type":"tool_call","subtype":"started","call_id":"d","tool_call":{"globToolCall":{"args":{"globPattern":"**/*.md"}}}}
+{"type":"tool_call","subtype":"started","call_id":"e","tool_call":{}}
+`
+	p := parseText(t, h, stream)
+	want := []string{
+		"Tool: read $RUN/ws/AGENTS.md",
+		"Tool: shell git status --short",
+		"Tool: newKind x.md",
+		"Tool: glob **/*.md",
+		"Tool: ",
+	}
+	if !reflect.DeepEqual(p.Reads, want) {
+		t.Fatalf("reads %q", p.Reads)
+	}
+	if p.ToolCalls != len(want) || !p.ReadsAvailable {
+		t.Fatalf("tools %d reads %v", p.ToolCalls, p.ReadsAvailable)
 	}
 }
 
