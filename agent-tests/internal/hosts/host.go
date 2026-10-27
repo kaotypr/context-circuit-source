@@ -193,6 +193,10 @@ func i64p(n int64) *int64 {
 	return &n
 }
 
+// ToolLineMax is the length, in runes, a reads-list line is cut to after
+// redaction.
+const ToolLineMax = 200
+
 func oneLine(s string, max int) string {
 	s = strings.Map(func(r rune) rune {
 		if r == '\n' || r == '\r' {
@@ -206,8 +210,12 @@ func oneLine(s string, max int) string {
 	return s
 }
 
+// toolLine keeps the whole summary on one line. It is not shortened here:
+// shortening before the runner replaces the run root and home with $RUN and
+// $HOME could cut a path in half and leave the fragment unredacted. The
+// runner shortens each line after redaction (ToolLineMax).
 func toolLine(name, summary string) string {
-	summary = oneLine(summary, 200)
+	summary = oneLine(summary, 0)
 	if summary == "" {
 		return "Tool: " + name
 	}

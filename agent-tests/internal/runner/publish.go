@@ -100,7 +100,7 @@ func (rt *runtime) publishHost(runDir string, w world.World, res proc.Result, st
 	if err := writeRedacted(filepath.Join(runDir, "reply.md"), []byte(reply), red); err != nil {
 		return err
 	}
-	if err := writeText(filepath.Join(runDir, "reads.txt"), reads, red); err != nil {
+	if err := writeText(filepath.Join(runDir, "reads.txt"), shortenLines(red.text(reads), hosts.ToolLineMax+len("Tool: ")+40), red); err != nil {
 		return err
 	}
 	decoy, err := os.ReadFile(w.DecoyLog)
@@ -380,4 +380,16 @@ func cleanRel(rel string) bool {
 	}
 	c := filepath.Clean(rel)
 	return c != ".." && !strings.HasPrefix(c, ".."+string(filepath.Separator))
+}
+
+// shortenLines cuts each line to max runes. It runs after redaction, so a
+// cut can never leave part of a local path behind.
+func shortenLines(s string, max int) string {
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		if r := []rune(line); len(r) > max {
+			lines[i] = string(r[:max])
+		}
+	}
+	return strings.Join(lines, "\n")
 }
