@@ -23,11 +23,11 @@ func TestLoadHosts(t *testing.T) {
 		t.Fatalf("auth %v", claude.AuthEnv)
 	}
 	codex := hosts["codex"]
-	if codex.Model != "gpt-5.6-luna" || codex.Effort != "medium" || codex.PriceRow != "" || codex.HostVersion != "0.162.1" {
+	if codex.Model != "gpt-5.6-luna" || codex.Effort != "medium" || codex.PriceRow != "gpt-5.6-luna" || codex.HostVersion != "0.162.1" {
 		t.Fatalf("%+v", codex)
 	}
 	cursor := hosts["cursor"]
-	if cursor.Model != "composer-2.5" || cursor.PriceRow != "" || cursor.HostVersion != "2026.10.22-27dcf5f" {
+	if cursor.Model != "composer-2.5" || cursor.PriceRow != "composer-2.5" || cursor.HostVersion != "2026.10.22-27dcf5f" {
 		t.Fatalf("%+v", cursor)
 	}
 	if claude.Auth != "env" || codex.Auth != "env" || cursor.Auth != "env" {
@@ -109,15 +109,40 @@ func TestLoadPrices(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	row := prices["gpt-6-sol"]
-	if row.Source != "https://developers.openai.com/api/docs/pricing" || row.Checked != "2026-10-26" {
-		t.Fatalf("%+v", row)
+	luna := prices["gpt-5.6-luna"]
+	if luna.Source != "https://developers.openai.com/api/docs/pricing" || luna.Checked != "2026-10-27" {
+		t.Fatalf("%+v", luna)
 	}
-	if row.InputPerM != 2 || row.CachedInputPerM != 0.2 || row.CacheWritePerM != 2.5 || row.OutputPerM != 10 {
-		t.Fatalf("%+v", row)
+	if luna.InputPerM != 0.2 || luna.CachedInputPerM != 0.02 || luna.CacheWritePerM != 0.25 || luna.OutputPerM != 1.2 {
+		t.Fatalf("%+v", luna)
 	}
-	if row.LongContextThreshold != 272000 || row.LongInputPerM != 4 || row.LongOutputPerM != 15 {
-		t.Fatalf("%+v", row)
+	if luna.LongContextThreshold != 272000 || luna.LongInputPerM != 0.4 || luna.LongOutputPerM != 1.8 {
+		t.Fatalf("%+v", luna)
+	}
+	composer := prices["composer-2.5"]
+	if composer.Source != "https://cursor.com/docs/models" || composer.InputPerM != 0.5 || composer.CachedInputPerM != 0.2 || composer.CacheWritePerM != 0.5 || composer.OutputPerM != 2.5 || composer.LongContextThreshold != 0 {
+		t.Fatalf("%+v", composer)
+	}
+}
+
+// Every host that prices from the table names a row that exists, so a renamed
+// or removed row cannot quietly turn a host's cost into null.
+func TestEveryPriceRowExists(t *testing.T) {
+	hosts, err := LoadHosts(filepath.Join("..", "..", "hosts.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	prices, err := LoadPrices(filepath.Join("..", "..", "prices.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, cfg := range hosts {
+		if cfg.PriceRow == "" {
+			continue
+		}
+		if _, ok := prices[cfg.PriceRow]; !ok {
+			t.Errorf("%s names price row %q, which prices.yaml does not have", name, cfg.PriceRow)
+		}
 	}
 }
 

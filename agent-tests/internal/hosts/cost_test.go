@@ -94,25 +94,40 @@ func TestCostCodexRecordedStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	row := prices["gpt-6-sol"]
-	if row.InputPerM != 2 || row.CachedInputPerM != 0.2 || row.CacheWritePerM != 2.5 || row.OutputPerM != 10 {
-		t.Fatalf("row %+v", row)
-	}
-	if row.LongContextThreshold != 272000 {
-		t.Fatal(row.LongContextThreshold)
-	}
+	row := prices["gpt-5.6-luna"]
 	h, err := ForName("codex")
 	if err != nil {
 		t.Fatal(err)
 	}
 	p := parseFile(t, h, "codex-exec.jsonl")
 	// 15974 uncached is under the long-context threshold.
-	// 15974 * $2/M + 0 * $0.20/M + 0 * $2.50/M + 5 * $10/M = 0.031998
+	// 15974 * $0.20/M + 0 * $0.02/M + 0 * $0.25/M + 5 * $1.20/M = 0.0032008
 	got, ok, reason := Cost(row, p.Tokens)
 	if !ok {
 		t.Fatal(reason)
 	}
-	const want = 0.031998
+	near(t, got, 0.0032008)
+}
+
+func TestCostCursorRecordedStream(t *testing.T) {
+	prices, err := LoadPrices(filepath.Join("..", "..", "prices.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, err := ForName("cursor")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := parseFile(t, h, "cursor-stream.jsonl")
+	got, ok, reason := Cost(prices["composer-2.5"], p.Tokens)
+	if !ok {
+		t.Fatal(reason)
+	}
+	// Cache writes are charged at the input rate, the row's stated estimate.
+	want := (float64(*p.Tokens.InputUncached)*0.5 + float64(*p.Tokens.CacheRead)*0.2 +
+		float64(*p.Tokens.CacheWrite)*0.5 + float64(*p.Tokens.Output)*2.5) / 1e6
 	near(t, got, want)
-	near(t, got, float64(15974*2+5*10)/1e6)
+	if *p.Tokens.CacheWrite == 0 {
+		t.Fatal("the recorded Cursor stream no longer writes cache; this test no longer covers the estimated rate")
+	}
 }

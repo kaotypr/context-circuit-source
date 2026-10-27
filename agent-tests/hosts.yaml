@@ -2,15 +2,15 @@
 #
 # command: executable invoked for this host.
 # model: pinned model id sent on the command line. The pins are provisional
-# until a baseline run confirms them. A host with no price_row and no cost of
-# its own in the stream records a null cost, which is not zero.
+# until a baseline run confirms them.
 # effort: optional effort setting. Empty means the flag is omitted.
 # host_version: recorded with each run.
 # provisional: true while the pin is still awaiting a baseline run.
 # timeout_seconds: wall-clock limit for one host process.
 # max_budget_usd: Claude Code runaway guard. 0 selects the adapter default.
-# price_row: key in prices.yaml. Empty when the host reports its own cost
-# or the model cannot be priced.
+# price_row: key in prices.yaml, used when the host reports no cost of its
+# own. Empty when the host reports its own cost; a host with neither records a
+# null cost, which is not zero.
 # auth_env: credential variable names taken from the caller when auth is
 #   env, the default. Without --subscription-auth the login file is not read.
 # auth: optional. env (default) or subscription. subscription is accepted
@@ -37,7 +37,7 @@ hosts:
     host_version: "0.162.1"
     provisional: true
     timeout_seconds: 1800
-    price_row: ""
+    price_row: gpt-5.6-luna
     # auth: subscription is valid for this host. Leave it unset so a run
     # without --subscription-auth codex keeps using auth_env only.
     auth_env:
@@ -49,6 +49,6 @@ hosts:
     host_version: "2026.10.22-27dcf5f"
     provisional: true
     timeout_seconds: 1800
-    price_row: ""
+    price_row: composer-2.5
     auth_env:
       - CURSOR_API_KEY

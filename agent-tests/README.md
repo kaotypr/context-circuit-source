@@ -334,8 +334,8 @@ The primary metric is total input tokens. Output tokens are reported
 separately.
 
 - Claude Code sums input, cache-creation, and cache-read tokens, and sets that total only when all three figures are present. When the result includes `modelUsage`, the sum across the models named there replaces the total only when the input, cache-read, and cache-creation figures are all present. Those models include subagents. The dollar figure is `total_cost_usd` as the host reported it. The report calls the total a list-price equivalent. On a subscription you may not be billed that amount.
-- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the model's row in `prices.yaml` (cost basis `price-table`) when `price_row` names one. The pinned `gpt-5.6-luna` has no row yet, so its cost is left unset. The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
-- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. The pinned model is `composer-2.5`, which has no price row, so the cost is left unset.
+- Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the model's row in `prices.yaml` (cost basis `price-table`) when `price_row` names one. The pinned `gpt-5.6-luna` row has a long-context tier above 272,000 input tokens. The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
+- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. Its cost comes from the `composer-2.5` row (cost basis `price-table`). Cursor publishes no cache-write price, so that row charges cache writes at the input rate as an estimate.
 
 A missing token or cost is `n/a`. The report never writes 0 for a missing
 number. A null total has no percentage.
