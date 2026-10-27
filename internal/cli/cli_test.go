@@ -442,7 +442,7 @@ func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
 	}
 	f.ok("record", "complete", "--id", p.ID, "--text", "User requested completion.")
 	f.ok("check")
-	archive := filepath.Join(f.root, "plans", "archive")
+	archive := filepath.Join(f.root, "plans", "_archive")
 	if err := os.Mkdir(archive, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -1204,7 +1204,7 @@ func TestHumanOutputAndDuplicateRecordProtection(t *testing.T) {
 	if out.String() != i.Content {
 		t.Fatal("human record display omitted Markdown")
 	}
-	duplicate := filepath.Join(f.root, "intent", "archive", i.ID+"-duplicate.md")
+	duplicate := filepath.Join(f.root, "intent", "_archive", i.ID+"-duplicate.md")
 	write(t, duplicate, i.Content)
 	f.fail("record", "show", "--id", i.ID)
 	before := idFiles(t, f)

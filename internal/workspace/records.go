@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -76,45 +75,9 @@ func splitRecord(data []byte) ([]byte, []byte, error) {
 	return data[4 : 4+end], data[4+end+5:], nil
 }
 
+// RecordPaths lists every record entry file where the placement finds one.
 func (s *Store) RecordPaths(archived bool) ([]string, error) {
-	var paths []string
-	for _, folder := range []string{"intent", "plans"} {
-		base, err := s.Path(folder)
-		if err != nil {
-			return nil, err
-		}
-		err = filepath.WalkDir(base, func(path string, entry fs.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
-			}
-			if entry.Type()&os.ModeSymlink != 0 {
-				return fmt.Errorf("record directories cannot contain symlinks: %s", path)
-			}
-			if entry.IsDir() {
-				if path != base && !archived && entry.Name() == "archive" {
-					return filepath.SkipDir
-				}
-				if folder == "intent" && path != base && entry.Name() != "archive" {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			parent := filepath.Dir(path)
-			recordLevel := parent == base || archived && parent == filepath.Join(base, "archive")
-			folderEntry := folder == "plans" && entry.Name() == "plan.md" && recordFilename.MatchString(filepath.Base(parent)+".md") &&
-				(filepath.Dir(parent) == base || archived && filepath.Dir(parent) == filepath.Join(base, "archive"))
-			if recordLevel && recordFilename.MatchString(entry.Name()) || folderEntry {
-				rel, _ := filepath.Rel(s.Root, path)
-				paths = append(paths, filepath.ToSlash(rel))
-			}
-			return nil
-		})
-		if err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
-	}
-	slices.Sort(paths)
-	return paths, nil
+	return placement.RecordPaths(s, archived)
 }
 
 func (s *Store) FindRecord(id string) (Record, error) {
@@ -355,9 +318,7 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	}
 	record := Record{ID: id, CreatedBy: author, CreatedAt: ISOTime(isoTime(time.Now()))}
 	body := "## Goal\n\nDescribe the intended outcome.\n\n## Non-goals\n\nDescribe what is out of scope.\n\n## Constraints\n\nRecord relevant constraints.\n\n## Success criteria\n\n- Describe an observable result.\n\n## Repository scope\n\nList the repositories likely to be involved.\n\n## Open questions\n\nNone known.\n"
-	folder := "intent"
 	if kind == "plan" {
-		folder = "plans"
 		record.Intent, record.Repositories, record.DependsOn = intent, unique(repos), unique(dependencies)
 		body = "## Outcome and repository scope\n\nDescribe the requested result and each repository's responsibility.\n\n## Approach\n\nGround the approach in the selected repositories.\n\n## Tasks and order\n\n- Describe implementation steps and dependencies.\n\n## Risks and checks\n\nRecord useful risks and ordinary test, lint, or build commands.\n\n## Details\n\nLink each supporting file here and assign it in required_files. Remove this section when there are no supporting files.\n"
 	}
@@ -365,10 +326,7 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	if err != nil {
 		return Record{}, err
 	}
-	record.Path = fmt.Sprintf("%s/%s-%s.md", folder, id, slug)
-	if kind == "plan" {
-		record.Path = fmt.Sprintf("plans/%s-%s/plan.md", id, slug)
-	}
+	record.Path = placement.NewRecordPath(kind, id, slug)
 	data := []byte("---\n" + string(header) + "---\n\n# " + title + "\n\n" + body)
 	p, err := s.Path(record.Path)
 	if err != nil {

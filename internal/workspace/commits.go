@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os/exec"
-	"regexp"
 	"slices"
 	"strings"
 )
@@ -17,9 +16,10 @@ type UncommittedFile struct {
 }
 
 // UncommittedRecords lists the files of the named records, wherever they live,
-// and every ID file that Git reports as not committed. A record left
-// uncommitted is invisible to every other clone, and an ID file left
-// uncommitted is how two people come to reserve the same number.
+// every ID file, and every record an archive rename in this run moved, that
+// Git reports as not committed. A record left uncommitted is invisible to
+// every other clone, and an ID file left uncommitted is how two people come to
+// reserve the same number.
 //
 // It never fails: it runs after a command has already succeeded, and Git's
 // absence must not turn that success into a failure. Whatever kept Git from
@@ -38,12 +38,9 @@ func (s *Store) UncommittedRecords(ctx context.Context, ids ...string) (files []
 	if err != nil {
 		return files, gitUnavailable(err)
 	}
-	var patterns []*regexp.Regexp
+	var matchers []func(string) bool
 	for _, id := range ids {
-		quoted := regexp.QuoteMeta(id)
-		patterns = append(patterns,
-			regexp.MustCompile(`^intent/(archive/)?`+quoted+`-[a-z][a-z0-9-]*\.md$`),
-			regexp.MustCompile(`^plans/(archive/)?`+quoted+`-[a-z][a-z0-9-]*(\.md|/.+)$`))
+		matchers = append(matchers, placement.GitPathMatcher(id))
 	}
 	concerns := func(rel string) bool {
 		if rel == "" {
@@ -52,8 +49,13 @@ func (s *Store) UncommittedRecords(ctx context.Context, ids ...string) (files []
 		if IsIDFile(rel) {
 			return true
 		}
-		for _, pattern := range patterns {
-			if pattern.MatchString(rel) {
+		for _, folder := range s.archivesMoved {
+			if strings.HasPrefix(rel, folder+"/") {
+				return true
+			}
+		}
+		for _, matches := range matchers {
+			if matches(rel) {
 				return true
 			}
 		}

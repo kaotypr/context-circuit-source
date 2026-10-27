@@ -117,7 +117,7 @@ func legacy(t *testing.T, reserved Ledger, records ...string) *Store {
 		}
 		if strings.HasSuffix(id, "9") {
 			// Archived records are split like any other.
-			rel = strings.Replace(rel, "/", "/archive/", 1)
+			rel = strings.Replace(rel, "/", "/_archive/", 1)
 		}
 		if err := os.MkdirAll(filepath.Dir(filepath.Join(store.Root, rel)), 0o755); err != nil {
 			t.Fatal(err)

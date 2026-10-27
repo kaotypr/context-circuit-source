@@ -96,7 +96,7 @@ func TestDeletingOneRecordByID(t *testing.T) {
 func TestDeletingByIDReachesEveryKindOfRecord(t *testing.T) {
 	f := team(t)
 	archived := f.intent("old-idea")
-	archive := filepath.Join(f.root, "intent", "archive", filepath.Base(archived.Path))
+	archive := filepath.Join(f.root, "intent", "_archive", filepath.Base(archived.Path))
 	write(t, archive, read(t, filepath.Join(f.root, archived.Path)))
 	os.Remove(filepath.Join(f.root, archived.Path))
 	f.ok("member", "use", "--id", "alex")
@@ -120,7 +120,7 @@ func TestDeletingByIDReachesEveryKindOfRecord(t *testing.T) {
 	if r := deletedRecord(t, preview, "i050"); r.CreatedBy != "" || r.Status != "draft" {
 		t.Fatalf("an authorless record must show no author: %+v", r)
 	}
-	if r := deletedRecord(t, preview, archived.ID); !strings.HasPrefix(r.Path, "intent/archive/") {
+	if r := deletedRecord(t, preview, archived.ID); !strings.HasPrefix(r.Path, "intent/_archive/") {
 		t.Fatalf("the archived record's path is not shown: %+v", r)
 	}
 
