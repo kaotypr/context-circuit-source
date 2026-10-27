@@ -33,8 +33,15 @@ func (f fixture) gate(args ...string) (map[string]string, gateResult) {
 		for _, file := range result.CommitRecommended.Files {
 			files[file.Path] = file.Change
 		}
-		if !strings.Contains(result.CommitRecommended.Note, "authorization") {
-			f.t.Fatalf("the recommendation does not say committing needs authorization: %q", result.CommitRecommended.Note)
+		note := result.CommitRecommended.Note
+		if !strings.Contains(note, "authorization") {
+			f.t.Fatalf("the recommendation does not say committing needs authorization: %q", note)
+		}
+		// One question offers both answers: commit and push, or commit only.
+		for _, want := range []string{"commit and push", "commit only", "nothing was staged, committed or pushed"} {
+			if !strings.Contains(note, want) {
+				f.t.Fatalf("the recommendation does not say %q: %q", want, note)
+			}
 		}
 	}
 	return files, result

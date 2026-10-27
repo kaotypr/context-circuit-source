@@ -153,8 +153,8 @@ type commitRecommendation struct {
 // recommendCommit adds what approval and completion leave uncommitted to their
 // result. It runs after the command has succeeded and only ever adds a key: a
 // recommendation when there is something to commit, or the reason Git could
-// not say. It never stages or commits, because committing workspace records is
-// the person's decision.
+// not say. It never stages, commits or pushes, because committing and pushing
+// workspace records is the person's decision.
 func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]any, ids ...string) {
 	files, unchecked := s.UncommittedRecords(ctx, ids...)
 	if unchecked != "" {
@@ -164,7 +164,7 @@ func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]
 	if len(files) > 0 {
 		result["commit_recommended"] = commitRecommendation{
 			Files: files,
-			Note:  "these records and ID files are not committed, so other clones cannot see them yet: recommend committing and pushing them to the person; committing still needs the person's authorization, and nothing was staged or committed",
+			Note:  "these records and ID files are not committed, so other clones cannot see them yet: ask the person whether to commit and push them, or commit only; committing and pushing need the person's answer as their authorization, and nothing was staged, committed or pushed",
 		}
 	}
 }
