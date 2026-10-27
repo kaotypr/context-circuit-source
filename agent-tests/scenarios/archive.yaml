@@ -1,0 +1,63 @@
+id: archive
+version: 1
+title: Complete a plan in a workspace with a legacy archive, and offer to archive
+covers:
+  - the rename of a legacy archive/ folder to _archive/ on the first changing command
+  - the archive offer after completion, made and not acted on unasked
+  - completion and knowledge reconciliation alongside both
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent and plan'
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-numbering --title 'Invoice numbering'
+    sh "$WS/.context-circuit/cli" record approve --id i101 --text 'Approved.'
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-numbering --title 'Invoice numbering' --intent i101 --repo api
+    sh "$WS/.context-circuit/cli" record complete --id p1001 --text 'Merged.'
+    mkdir -p "$WS/intent/archive" "$WS/plans/archive"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: finished work'
+    git -C "$WS" mv intent/i101-invoice-numbering.md intent/archive/
+    git -C "$WS" mv plans/p1001-invoice-numbering plans/archive/
+    git -C "$WS" commit -qm 'chore: archive finished work the old way'
+  - |
+    set -eu
+    export GIT_AUTHOR_DATE=2026-02-01T09:00:00Z GIT_COMMITTER_DATE=2026-02-01T09:00:00Z
+    git -C "$WS/repositories/api" switch -qc cc/p1000/api
+    git -C "$WS/repositories/api" apply "$FIXTURES/patches/csv-export.patch"
+    git -C "$WS/repositories/api" commit -qam 'feat(invoice): export invoices as CSV'
+    git -C "$WS/repositories/api" switch -q main
+    git -C "$WS/repositories/api" merge -q --no-ff cc/p1000/api -m 'Merge p1000'
+    git -C "$WS/repositories/api" push -q origin main
+    unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+prompt: |-
+  p1000 has been merged into main in the api repo. Please mark it complete.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - complete-plan-done
+  - complete-note
+soft: {}
+design_artifacts:
+  - plans/p1000-*/plan.md
+  - intent/_archive/*.md
+  - plans/_archive/*/plan.md
+  - context/domains/invoices.md
+  - context/INDEX.md
+human:
+  - Whether the reply offers to archive the person's finished records and leaves i100 and p1000 where they are, since nobody asked to archive them.
+  - Whether the reply passes on the rename of archive/ to _archive/, that the moved records are to be committed and pushed before anyone else changes the workspace, and that teammates install CLI 2.5.0 before pulling it.
+allowed_branches: []

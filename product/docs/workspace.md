@@ -16,6 +16,7 @@ the shared instruction and folders alongside these small records:
 | plans/pNNNN-slug/plan.md | New plan entry, repositories, dependencies, optional intent and required_files, created_by, created_at, completed_at | Yes |
 | plans/pNNNN-slug/* | Optional supporting design files assigned in the plan entry | Yes |
 | plans/pNNNN-slug.md | Legacy single-file plan, still readable and editable | Yes |
+| intent/, plans/ group and _archive/ folders | One optional level of group folder, with `_archive/` above or below it; a record under `_archive/` is archived, and a top-level `archive/` is the legacy archive the first changing command renames | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
 | member.local.yaml | Active member ID on this machine; written by init, and by member use on every other machine | No |
 | repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |

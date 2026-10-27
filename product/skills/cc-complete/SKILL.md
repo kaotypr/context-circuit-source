@@ -50,6 +50,18 @@ sh <root>/.context-circuit/cli check
 
 Other work need not wait for unrelated knowledge updates.
 
+## Offer to archive
+
+When the result carries `archive_offer`, the person has that many finished
+records of their own not archived. Once the request is finished, offer to
+archive them, and run `record archive` only on a yes; a no changes nothing.
+It moves only their own finished records and returns `commit_recommended`,
+which needs their authorization like any other.
+
+```sh
+sh <root>/.context-circuit/cli --json record archive
+```
+
 ## What completion is not
 
 It does not remove a worktree, delete a branch, or deliver anything. Worktrees

@@ -485,6 +485,16 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if err != nil || res.ExitCode != 0 {
 			t.Fatalf("patched api tests: %v\n%s", err, res.Stderr)
 		}
+	case "archive":
+		if len(issues) != 3 || !strings.Contains(string(checkBefore), "legacy archive folder awaits its rename to _archive/") || !strings.Contains(string(checkBefore), "invoices") {
+			t.Fatalf("start check %s", checkBefore)
+		}
+		if len(globRel(t, st.w.WS, "plans", "archive", "p1001-*", "plan.md")) != 1 || len(globRel(t, st.w.WS, "intent", "archive", "i101-*.md")) != 1 {
+			t.Fatal("finished work is not in the legacy archive")
+		}
+		if strings.Contains(readFile(t, oneGlob(t, st.w.WS, "plans", "p1000-*", "plan.md")), "completed_at:") {
+			t.Fatal("plan is already complete")
+		}
 	case "borrowed":
 		note := filepath.Join(st.w.WS, "repositories", "handbook", "numbering.md")
 		if !strings.Contains(readFile(t, note), "Invoice numbers are global and never restart.") {
@@ -698,6 +708,7 @@ func streamFor(id string) string {
 		"complete":    "The plan is marked complete and the invoices note mentions CSV. Those edits are uncommitted, and committing them is recommended.",
 		"direct":      "The README typo is fixed and the change is not committed.",
 		"borrowed":    "The handbook is read-only here. The correction belongs upstream, in the handbook repository's own review.",
+		"archive":     "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
 	extra := ""

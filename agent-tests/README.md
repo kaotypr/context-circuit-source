@@ -168,7 +168,7 @@ not read route files.
 | `cc-dispatch` | `plan`, `execute` |
 | `cc-worktree` | `execute` |
 | `cc-knowledge` | `complete`, `borrowed` |
-| `cc-complete` | `complete` |
+| `cc-complete` | `complete`, `archive` |
 | `cc-direct` | `direct` |
 | `cc-cli` | `orient` |
 
@@ -190,7 +190,9 @@ bound (`borrowed`, `complete`, `execute`, `intent`, `join`, `plan`); narrow
 it to the command that changed. `cli.go` runs `complete`, `intent`, and
 `plan`. `records.go` runs `intent` and `plan`. `inspect.go`,
 `readability.go`, and `review.go` run `complete`. `worktrees.go` runs
-`execute`. `readme.go` runs `join`.
+`execute`. `readme.go` runs `join`. `archive.go` and `archive_migration.go`
+run `archive`, `mine.go` runs `orient` and `archive`, and `placement.go` runs
+`archive`.
 
 `role-tiering.yaml` and `internal/workspace/agents.go` run `plan` and
 `execute` on any one host, and the row also names the host whose generated
@@ -509,6 +511,7 @@ until a baseline run exists.
 | `plan` | planning an approved intent from real code, then stop | `plan-record`, `plan-linked` | 300k-1.5M |
 | `execute` | a plan run in a worktree on its own branch | `execute-worktree`, `execute-records-untouched`, `execute-tests-pass` | 0.5M-3M |
 | `complete` | completion plus knowledge reconciliation, ending check-clean | `complete-plan-done`, `complete-note` | 200k-900k |
+| `archive` | completion in a workspace with a legacy `archive/` folder: the rename to `_archive/` and the archive offer, made and not acted on unasked | `complete-plan-done`, `complete-note` | 200k-900k |
 | `direct` | a direct change in a bound checkout without records | `direct-readme`, `direct-no-records` | 60k-250k |
 | `borrowed` | borrowed knowledge stays read-only and is not copied | `borrowed-untouched`, `borrowed-reply` | 80k-400k |
 

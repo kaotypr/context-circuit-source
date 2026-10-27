@@ -10,7 +10,8 @@ purpose, the workspace's own repository, logical repository IDs with their URL
 and default branch, and recorded relationships; the member roster with each
 member's allocation band and any informational roles; one permanent ID file per
 member; the per-host role settings; intent and plan records; and the knowledge
-tree.
+tree. A record sits in its kind's folder or one level of group folder below
+it, and the `_archive/` folder above or below that group holds archived ones.
 
 Member roles are written only at schema 3. An older CLI reads the roster
 strictly and stops at a field it does not know, so roles wait for a schema that
@@ -97,12 +98,16 @@ describes that machine and nobody else.
   reusing a reserved number would be worse. Deletion is the one deliberate
   release, and it updates the ID files before removing records so an
   interruption still leaves the numbers counted as taken.
-- **The ID split is the one rewrite nobody asked for.** A schema 2 workspace's
-  shared ID file is split into member files, and the schema moved to 3, by the
-  first changing command once setup is complete, or by the setup step that
-  completes it. It is reported on the error stream so no result changes shape,
-  naming the shared files the command changed, and committing them stays the
-  person's decision. Interrupted anywhere, running it again finishes it.
+- **Two rewrites nobody asked for: the ID split and the archive rename.** A
+  schema 2 workspace's shared ID file is split into member files, and the
+  schema moved to 3, by the first changing command once setup is complete, or by
+  the setup step that completes it. The same command renames a legacy top-level
+  `archive/` folder to `_archive/`, without moving the schema: a legacy
+  `archive/` reads as archived until then, and a CLI older than the rename does
+  not read `_archive/`, so teammates upgrade before pulling it. Each is reported
+  on the error stream so no result changes shape, and committing what moved
+  stays the person's decision. Interrupted anywhere, running it again finishes
+  it.
 
 ## Dates
 
@@ -125,6 +130,8 @@ Owner:
   machine-local files and what each may hold.
 - `context-circuit-source@internal/workspace/ids.go` — the per-member ID files
   and the split of the shared one.
+- `context-circuit-source@internal/workspace/archive_migration.go` — the
+  rename of a legacy archive folder.
 - `context-circuit-source@internal/workspace/self.go` — describing and binding
   the workspace's own repository.
 - `context-circuit-source@product/docs/workspace.md` — the description shipped

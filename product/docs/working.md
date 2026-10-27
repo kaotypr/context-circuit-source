@@ -126,11 +126,32 @@ under `sources/`, because those are archived while the knowledge outlasts them a
 recorded evidence path would reopen material that must stay passive. `check` reports
 the lines in `context/` that cross that boundary.
 
-Archival is optional ordinary file organization. ID-based lookups discover records
-under their intent/plans directories, including archives. Listing archives requires
-`record list --archived`; normal listings read active top-level records. Allocation
-inventories filenames, including archives, without reading archived content. Keep
-reservations and fix any handwritten relative links when records move.
+A record may sit directly in `intent/` or `plans/`, or in one level of group
+folder below it, such as `plans/alex/p1010-thing/`; a group is ordinary file
+organization and says nothing about who owns a record. `_archive/` may sit above
+or below a group: `plans/_archive/`, `plans/<group>/_archive/`, and
+`plans/_archive/<group>/`. Every command that reads records finds them in any of
+these places. Folder names starting with `_` are kept for the CLI, and
+`_archive/` is the only one it gives meaning to: a record under it is archived.
+A top-level `archive/` is the legacy archive folder from before 2.5.0: it still
+reads as archived and is not usable as a group name, and the first changing
+command renames it to `_archive/`. An `archive/` inside a group is an ordinary
+folder.
+
+Archiving is ordinary file organization, and each member archives their own.
+`record archive` moves the active member's finished records, a completed plan or
+an approved intent whose plans are all completed, under the `_archive/` beside
+them, keeping a group's records in that group's `_archive/`; `--id` archives
+exactly the named records, whoever wrote them, and marks any unfinished one.
+After `record complete`, the agent offers it, and a no changes nothing. ID-based
+lookups find a record wherever it sits, archives included, and no ID file
+changes, so every number stays reserved. `record list` shows the active member's
+active records; `--member ID` shows another member's, `--all` everyone's, and
+`--archived` adds archived ones. Allocation inventories filenames, including
+archives, without reading archived content. `record archive` rewrites inline
+relative links into and out of the records it moves and reports any other link
+the move breaks; a record moved by hand keeps its reservation, and its
+handwritten links are fixed by hand.
 
 Deletion is not archival. `record delete --member ID` removes one member's intents
 and plans, archived ones included, `record delete --all` removes every record

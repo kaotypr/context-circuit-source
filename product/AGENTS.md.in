@@ -73,6 +73,9 @@ changing anything. Before making that first change, tell the person this. A Git
 conflict in `.context-circuit/ids/*.yaml` from teammates upgrading at the same
 time is theirs to resolve by hand: keep the union of both sides' entries in each
 member file, then run `check`, which reports any number reserved twice.
+The first changing command of a 2.5.0 CLI likewise renames `archive/` to
+`_archive/`: one person makes it, commits and pushes it, and the rest install
+2.5.0 before pulling.
 
 Everything else is ordinary which-side judgment. `.context-circuit/VERSION` and
 `.context-circuit/CLI_VERSION` take the template's value, because they record
@@ -283,8 +286,8 @@ date, `YYYY-MM-DD`. No other date format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
 metadata; no assignee, owner, reviewer, or member namespaces. A reserved ID is
-never reused while it stays reserved: archiving a record, or removing its file by
-hand, releases nothing. `record delete` is the one operation that releases IDs,
+never reused while it stays reserved: archiving a record, moving it between
+folders, or removing its file by hand, releases nothing. `record delete` is the one operation that releases IDs,
 together with the records that held them. Local locking serializes one
 workspace directory. `.context-circuit/docs/working.md` describes the record
 structures in full.
@@ -405,8 +408,9 @@ or repair worktrees using Git; Git's inventory is authoritative, and the ignored
 plan-to-worktree association is only a convenience for resuming work. See
 `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 
-Archiving is optional ordinary file organization on request. Keep ID reservations
-and fix relative links when moving a record. External publication is an explicitly
+Archiving is optional file organization: `record archive` moves your own
+finished records under `_archive/`, keeping their IDs, and is offered after
+completion, never done unasked. Fix relative links when moving a record by hand. External publication is an explicitly
 requested task through available host tools; no automatic provider synchronization
 is part of core v2.
 

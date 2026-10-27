@@ -40,7 +40,7 @@ func (r ArchiveRename) Notice() string {
 		targets = append(targets, archiveTarget(from)+"/")
 	}
 	return "notice: " + strings.Join(moves, "; ") + ", the one archive folder this CLI reads; every record in it stays archived and keeps its reserved number. " +
-		"Commit and push the moved records in " + strings.Join(targets, " and ") + " before anyone else changes the workspace, so every clone reads them in the same place; committing is the person's decision.\n"
+		"Commit and push the moved records in " + strings.Join(targets, " and ") + " before anyone else changes the workspace, so every clone reads them in the same place. Every member installs a CLI of 2.5.0 or later before pulling it, because an earlier CLI does not read _archive/. Committing is the person's decision.\n"
 }
 
 // archiveTarget is the _archive/ folder a legacy archive folder moves to.

@@ -20,7 +20,7 @@ func TestCatalogue(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan",
+		"archive", "borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan",
 	}
 	var got []string
 	for id := range scenarios {
@@ -47,7 +47,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan"}
+	all := []string{"archive", "borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan"}
 	cases := []struct {
 		path      string
 		scenarios []string
@@ -64,7 +64,7 @@ func TestSamplePaths(t *testing.T) {
 		{"product/skills/cc-dispatch/SKILL.md", []string{"execute", "plan"}, nil},
 		{"product/skills/cc-worktree/SKILL.md", []string{"execute"}, nil},
 		{"product/skills/cc-knowledge/SKILL.md", []string{"borrowed", "complete"}, nil},
-		{"product/skills/cc-complete/SKILL.md", []string{"complete"}, nil},
+		{"product/skills/cc-complete/SKILL.md", []string{"archive", "complete"}, nil},
 		{"product/skills/cc-direct/SKILL.md", []string{"direct"}, nil},
 		{"product/skills/cc-cli/SKILL.md", []string{"orient"}, nil},
 		{"product/skills/cc-cli/scripts/install.sh", []string{"orient"}, nil},

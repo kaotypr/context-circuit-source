@@ -17,7 +17,7 @@ func TestCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != 9 {
+	if len(loaded) != 10 {
 		t.Fatalf("scenarios %d", len(loaded))
 	}
 	entries, err := os.ReadDir(dir)
@@ -59,7 +59,7 @@ func TestCatalogue(t *testing.T) {
 		}
 		wantSetup := map[string]bool{
 			"join": true, "intent-lang": true, "plan": true,
-			"execute": true, "complete": true, "borrowed": true,
+			"execute": true, "complete": true, "borrowed": true, "archive": true,
 		}
 		if wantSetup[sc.ID] {
 			if len(sc.Setup) == 0 || strings.TrimSpace(strings.Join(sc.Setup, "")) == "" {
