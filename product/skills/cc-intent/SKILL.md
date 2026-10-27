@@ -92,6 +92,12 @@ written; a placeholder would invent a pending decision.
 A question the request already answers is applied without asking. An
 implementation question belongs in the plan, not here.
 
+## Presenting it
+
+The record is in its author's language; the conversation is not. Present the
+intent, its open questions, and everything you say around them in the language
+the person is writing to you in, even when the record itself is in another.
+
 ## After approval
 
 Record the person's approval in their own words. `record approve` returns

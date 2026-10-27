@@ -9,6 +9,11 @@ import (
 
 type cursorHost struct{}
 
+// cursorUserConfig is the isolated user configuration a Cursor run starts
+// with: commit and pull request attribution off, as a person can set it in
+// ~/.cursor/cli-config.json.
+const cursorUserConfig = `{"version":1,"attribution":{"attributeCommitsToAgent":false,"attributePRsToAgent":false}}`
+
 func (cursorHost) Name() string { return "cursor" }
 
 func (cursorHost) Build(in LaunchInput) (Launch, error) {
@@ -38,11 +43,22 @@ func (cursorHost) Build(in LaunchInput) (Launch, error) {
 		"CURSOR_DATA_DIR":            dataDir,
 		"AGENT_CLI_CREDENTIAL_STORE": "memory",
 	})
+	// Cursor attributes commits to itself unless the user configuration
+	// turns that off: with the setting on, the CLI asks the server for the
+	// "Co-authored-by: Cursor" trailer, which the model then adds. A project
+	// .cursor/cli.json may hold only permissions, so the workspace cannot
+	// carry the setting. The run uses the setting a person can set for
+	// themselves (see the agents guide), written into the isolated
+	// configuration; Cursor fills every other field with its defaults.
 	return Launch{
 		Argv:   argv,
 		Dir:    in.Workspace,
 		Env:    env,
 		MkDirs: []string{home, config, configDir, dataDir},
+		SetupArgv: [][]string{{
+			"sh", "-c", `printf '%s\n' "$1" > "$CURSOR_CONFIG_DIR/cli-config.json"`,
+			"sh", cursorUserConfig,
+		}},
 	}, nil
 }
 

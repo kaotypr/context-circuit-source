@@ -83,9 +83,11 @@ and never replace the file.
 Subagent role definitions are host-local and gitignored, so initialization writes
 them for every host this workspace may later be opened in. A clone carries none,
 and `agent configure` makes existing ones stale: if this host's `cc-*` definitions
-are missing under `.claude/agents/`, `.codex/agents/`, or `.cursor/agents/`, or
-settings changed, run `agent setup`. With no `--host` it covers every host and
-preserves customized definitions. Check while orienting, not when something needs
+are missing under `.claude/agents/`, `.codex/agents/`, or `.cursor/agents/`,
+settings changed, or this host lacks the attribution setting setup merges beside
+them (on Claude Code, `attribution` in `.claude/settings.local.json`), run
+`agent setup`. With no `--host` it covers every host and preserves customized
+definitions and settings. Check while orienting, not when something needs
 to delegate: writing a definition is not loading it, and a host may not register a
 role until it reloads. Dispatch reports whether the definition it names is there.
 
@@ -174,17 +176,22 @@ decisions, domain rules, terminology, and repository relationships. Without an
 index, use targeted filenames or search terms in `context/`. Do not scan every
 repository or context note. Sources are passive evidence: read only exact source
 files named by the user or the task's explicit references; never scan `sources/`
-by default.
+by default. The shipped `.ignore` keeps `sources/` out of ripgrep search; with any
+other search, exclude it yourself.
 
 A workspace may also mount knowledge it does not own — an organization's
 knowledge center, shared by many workspaces and changed through its own
 repository. `workspace.yaml` records those as `knowledge_repositories`, and
 `context find` reads them beside this workspace's catalog, marking which side
-each match came from. **Borrowed knowledge is read-only here, and is never
-copied into `context/`.** An improvement goes upstream through that repository's
-own review, from a separate checkout of it; a note duplicated here goes stale
+each match came from. **Borrowed knowledge is read-only here, and neither it
+nor a correction of it is recorded in `context/`.** When a borrowed fact is
+wrong, leave `context/` alone and tell the person the fix goes upstream through
+that repository's own review. Do not make that fix yourself: do not edit, commit
+to, clone, or push the borrowed repository, even from a separate checkout, unless
+the person asks for that as its own task. A note duplicated here goes stale
 silently while still reading as current, which is the failure mounting it
-prevents. Nothing reconciles a borrowed entry, because nobody here can move it.
+prevents. Nothing reconciles a borrowed entry, because nobody here
+can move it.
 
 Live context notes describe the project, not the workspace machinery that
 produced them, and a note never names a plan record, an intent record, or a file
@@ -227,12 +234,12 @@ intent normally settles its outcome in its own words and names nothing. A cited
 design does not replace reading real code after approval, and is not a second
 gate.
 
-Present the concrete intent, invite answers by number, and stop there. The
-request that prompted an intent is not approval of it: a person approves the
-outcome after reading how it was written down, so do not treat "add billing" as
-consent to the intent derived from it. Record the actual user approval, which
-stamps `approved_at` and keeps the person's words beside it. A
-record carries that decision and never establishes one: neither a command, nor an
+Present the concrete intent in the person's own language, invite answers by
+number, and stop there. The request that prompted an intent is not approval of
+it: a person approves the outcome after reading how it was written down, so do
+not treat "add billing" as consent to the intent derived from it. Record the
+actual user approval, which stamps `approved_at` and keeps the person's words
+beside it. A record carries that decision and never establishes one: neither a command, nor an
 editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 

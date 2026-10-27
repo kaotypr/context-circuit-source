@@ -126,6 +126,15 @@ written in one, a plan grounded in another, execution in a third — so setup
 covers every host unless `--host` narrows it, and initialization runs it rather
 than leaving a step between a new workspace and its first delegation.
 
+Setup also merges one host setting where a host allows it: on Claude Code it
+adds `attribution` with empty commit and pull-request text to the local, ignored
+`.claude/settings.local.json`, so the host stops adding its own co-author
+trailer. It adds the key only when it is absent, keeps every other key and any
+value a person set, and refuses a file that is not one JSON object. Cursor
+accepts that setting only in its user-level configuration, which a workspace
+does not touch, and Codex has none, so on those hosts the written rule is the
+guard.
+
 Seeding those files from the template instead would ship content no inventory
 records, which a later version reads as a customization and refuses to replace.
 A clone still carries none of them, because they are ignored, and dispatch

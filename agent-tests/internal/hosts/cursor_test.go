@@ -1,6 +1,7 @@
 package hosts
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -207,8 +208,24 @@ func TestCursorBuildArgv(t *testing.T) {
 			t.Fatalf("mkdir outside the run root: %s", dir)
 		}
 	}
-	if len(launch.SetupArgv) != 0 || len(launch.CopyIn) != 0 {
+	// The one setup step writes the isolated user configuration with
+	// attribution off, into CURSOR_CONFIG_DIR, which is under the run root.
+	if len(launch.CopyIn) != 0 || len(launch.SetupArgv) != 1 {
 		t.Fatalf("setup %#v copies %#v", launch.SetupArgv, launch.CopyIn)
+	}
+	setup := launch.SetupArgv[0]
+	if len(setup) != 5 || setup[0] != "sh" || !strings.Contains(setup[2], `"$CURSOR_CONFIG_DIR/cli-config.json"`) || setup[4] != cursorUserConfig {
+		t.Fatalf("setup %#v", setup)
+	}
+	var cfg struct {
+		Version     int `json:"version"`
+		Attribution struct {
+			Commits *bool `json:"attributeCommitsToAgent"`
+			PRs     *bool `json:"attributePRsToAgent"`
+		} `json:"attribution"`
+	}
+	if err := json.Unmarshal([]byte(cursorUserConfig), &cfg); err != nil || cfg.Version != 1 || cfg.Attribution.Commits == nil || *cfg.Attribution.Commits || cfg.Attribution.PRs == nil || *cfg.Attribution.PRs {
+		t.Fatalf("user config %s: %v", cursorUserConfig, err)
 	}
 	for _, a := range launch.Argv {
 		if strings.Contains(a, "cursor-auth-value") {

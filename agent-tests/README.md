@@ -179,7 +179,7 @@ and `complete`; `workspace.md` runs `join` and `borrowed`; `worktrees.md` runs
 
 Template data: `INDEX.md` and `glossary.md` run `orient`, `complete`, and
 `borrowed`; `intent/README.md` runs `intent`; `plans/README.md` runs `plan`;
-`sources/README.md` runs `orient` and `borrowed`; `gitignore.in` runs `join`
+`sources/README.md` and `ignore.in` run `orient` and `borrowed`; `gitignore.in` runs `join`
 and `execute`; `workspace.yaml` and `members.yaml` run `join` and `orient`.
 
 CLI output: `topics.go` runs `orient`, and a changed help topic adds the
@@ -420,6 +420,16 @@ login keychain, which is what raised the "Keychain Not Found" dialog and the
 "couldn't save your credentials" warning. `AGENT_CLI_CREDENTIAL_STORE=memory`
 keeps the session that `CURSOR_API_KEY` opens inside the process, so no
 keychain is read or written and no keychain is created for the run.
+
+Cursor adds a `Co-authored-by: Cursor` trailer to commits unless its user
+configuration turns attribution off: with the setting on, the CLI asks the
+server for that trailer and the model adds it. A project `.cursor/cli.json`
+may hold only `permissions`, so a workspace cannot carry the setting. The
+runner writes the isolated `cli-config.json` with
+`attribution.attributeCommitsToAgent` and `attributePRsToAgent` set to `false`,
+the setting a person can make in their own `~/.cursor/cli-config.json`, so
+Cursor results are measured as for a person who has turned it off. A team admin
+can also turn attribution off for the whole team.
 
 Plugins and team hooks that Cursor's backend assigns to the account behind
 `CURSOR_API_KEY` are downloaded into the run's fake home and still load. A

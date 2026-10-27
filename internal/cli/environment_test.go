@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -204,4 +205,128 @@ func TestWorktreeSkipsAnEntryItCannotReuse(t *testing.T) {
 		t.Fatal("a refused entry was partly copied")
 	}
 	f.fail("worktree", "prepare", "--repo", "web", "--branch", "strict", "--path", filepath.Join(f.home, "strict"), "--copy-mode", "required")
+}
+
+const claudeLocalSettings = ".claude/settings.local.json"
+
+// Claude Code adds an attribution trailer to every commit unless its settings
+// turn that off, so setup writes the setting into the machine-local file a
+// person also keeps their own settings in.
+func TestAgentSetupTurnsOffClaudeCodeAttribution(t *testing.T) {
+	f := setup(t)
+	path := filepath.Join(f.root, claudeLocalSettings)
+	// Initialization runs setup, so a new workspace already carries it.
+	var settings map[string]map[string]string
+	if err := json.Unmarshal([]byte(read(t, path)), &settings); err != nil {
+		t.Fatal(err)
+	}
+	if got := settings["attribution"]; len(got) != 2 || got["commit"] != "" || got["pr"] != "" {
+		t.Fatalf("attribution is not off: %s", read(t, path))
+	}
+	if !strings.Contains(strings.ReplaceAll(read(t, filepath.Join(f.root, ".gitignore")), "\r\n", "\n"), "/.claude/settings.local.json\n") {
+		t.Fatal("the local settings file is not ignored")
+	}
+	for _, other := range []string{".cursor/cli.json", ".codex/config.toml"} {
+		if _, err := os.Lstat(filepath.Join(f.root, other)); !os.IsNotExist(err) {
+			t.Fatal("setup wrote a settings file the host does not read:", other)
+		}
+	}
+
+	// A re-run changes nothing.
+	before := read(t, path)
+	f.ok("agent", "setup")
+	if read(t, path) != before {
+		t.Fatal("a re-run rewrote the settings file")
+	}
+
+	// An existing file keeps every byte it had and gains only the key.
+	existing := "{\n  \"permissions\": {\"allow\": [\"Bash(make:*)\"]},\n  \"model\": \"fixture\",\n  \"limit\": 12345678901234567890\n}\n"
+	write(t, path, existing)
+	if err := os.Chmod(path, 0600); err != nil {
+		t.Fatal(err)
+	}
+	f.ok("agent", "setup", "--host", "claude-code")
+	merged := read(t, path)
+	want := "{\n  \"permissions\": {\"allow\": [\"Bash(make:*)\"]},\n  \"model\": \"fixture\",\n  \"limit\": 12345678901234567890,\n  \"attribution\": {\"commit\": \"\", \"pr\": \"\"}\n}\n"
+	if merged != want {
+		t.Fatalf("merge changed the person's settings:\n%s\nwant:\n%s", merged, want)
+	}
+	// Windows has no permission bits to keep.
+	if info, err := os.Stat(path); runtime.GOOS != "windows" && (err != nil || info.Mode().Perm() != 0600) {
+		t.Fatal("merge changed the file mode", info, err)
+	}
+	f.ok("agent", "setup", "--host", "claude-code")
+	if read(t, path) != merged {
+		t.Fatal("a re-run rewrote the merged file")
+	}
+
+	// A value the person set is theirs, whatever it is.
+	own := "{\"attribution\": {\"commit\": \"Reviewed by the team\"}}"
+	write(t, path, own)
+	f.ok("agent", "setup", "--host", "claude-code")
+	if read(t, path) != own {
+		t.Fatal("setup replaced the person's attribution setting")
+	}
+
+	// An empty object gains the key; an unreadable file is refused and kept.
+	write(t, path, "{}\n")
+	f.ok("agent", "setup", "--host", "claude-code")
+	if err := json.Unmarshal([]byte(read(t, path)), &settings); err != nil || settings["attribution"] == nil {
+		t.Fatalf("an empty file did not gain the key: %s", read(t, path))
+	}
+	for _, malformed := range []string{"{\"model\": \"fixture\",}\n", "[]\n", "null\n", "{} {}\n", "// comment\n{}\n"} {
+		write(t, path, malformed)
+		roleFile := filepath.Join(f.root, ".claude/agents/cc-worker.md")
+		role := read(t, roleFile)
+		if out := f.fail("agent", "setup", "--host", "claude-code"); !strings.Contains(out, "preserve") {
+			t.Fatalf("refusal does not say the file is preserved: %s", out)
+		}
+		if read(t, path) != malformed {
+			t.Fatalf("a refused file was changed: %q", malformed)
+		}
+		if read(t, roleFile) != role {
+			t.Fatal("a refused setup still rewrote role definitions")
+		}
+	}
+
+	// A link is followed nowhere, so a file outside the workspace is never edited.
+	outside := filepath.Join(f.home, "outside-settings.json")
+	write(t, outside, "{}\n")
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, path); err != nil {
+		t.Skip("symlinks unavailable:", err)
+	}
+	f.fail("agent", "setup", "--host", "claude-code")
+	if read(t, outside) != "{}\n" {
+		t.Fatal("setup wrote through a symlink")
+	}
+}
+
+// sources/ is passive evidence. The seed ships a root .ignore that keeps it out
+// of search tools reading that file, anchored so a sources/ folder inside a
+// cloned repository or a worktree stays searchable, and ignores the host's
+// local settings file setup merges into.
+func TestTemplateExportKeepsSourcesOutOfSearch(t *testing.T) {
+	f := setup(t)
+	blank := filepath.Join(f.home, "blank")
+	f.ok("template", "export", "--path", blank)
+	var rules []string
+	for line := range strings.SplitSeq(strings.ReplaceAll(read(t, filepath.Join(blank, ".ignore")), "\r\n", "\n"), "\n") {
+		if line != "" && !strings.HasPrefix(line, "#") {
+			rules = append(rules, line)
+		}
+	}
+	if strings.Join(rules, ",") != "/sources/" {
+		t.Fatalf(".ignore rules are %q, want only the anchored /sources/", rules)
+	}
+	if !strings.Contains(strings.ReplaceAll(read(t, filepath.Join(blank, ".gitignore")), "\r\n", "\n"), "\n/.claude/settings.local.json\n") {
+		t.Fatal("the seed .gitignore does not ignore the local Claude Code settings")
+	}
+	for _, rel := range []string{".ignore", "sources/README.md"} {
+		if _, err := os.Stat(filepath.Join(f.root, rel)); err != nil {
+			t.Fatal("an initialized workspace lacks", rel, err)
+		}
+	}
 }
