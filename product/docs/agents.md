@@ -39,6 +39,16 @@ these files and their update inventory are local and ignored. A customized nativ
 file is preserved and reported instead of overwritten. Restart/reload the coding
 host when it does not discover newly written definitions in the current session.
 
+Setup also turns off commit and pull request attribution where the host has a
+project setting for it. For Claude Code it adds `"attribution": {"commit": "",
+"pr": ""}` to `.claude/settings.local.json`, which is gitignored and holds this
+machine's own settings too. The key is added only when it is absent: every other
+key, the file's formatting, and any attribution value a person set stay as they
+are, the file is written only when it changes, and a file that is not one JSON
+object is refused and left untouched. Codex has no such setting, and Cursor reads
+it only from its user configuration, so setup writes nothing for either; there,
+inspect each commit message and remove any trailer the host added.
+
 A worker's brief depends on how it is parallelized. One worker per plan owns its
 whole worktree and cannot collide with a sibling plan, whose work arrives later
 through an integration merge; several workers inside one worktree share files and
