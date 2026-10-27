@@ -349,3 +349,37 @@ Run go test in the api repository.
 		})
 	}
 }
+
+// codexIntentReply is a real Codex reply to the intent prompt. It invites a
+// numbered answer and stops before planning without the word "approve".
+const codexIntentReply = "I drafted [intent i100: Download invoices as CSV]($RUN/ws/intent/i100-invoice-csv-download.md).\n\n" +
+	"It states that customers can download their invoices as CSV through the API, scoped to `api`. " +
+	"The existing product context says invoices export as a plain-text summary, so I left one question for you:\n\n" +
+	"1. Should CSV be added alongside that summary export, or replace it?\n\n" +
+	"Reply with your answer (for example, “1: add alongside”) or any edits you want. " +
+	"I’ll wait for your review before planning or anyone builds it."
+
+func TestAsksForReview(t *testing.T) {
+	cases := []struct {
+		name  string
+		reply string
+		want  bool
+	}{
+		{"codex real reply", codexIntentReply, true},
+		{"asks for approval", "I wrote the intent. Please approve it before anyone builds it.", true},
+		{"approval noun", "The intent is ready for your approval.", true},
+		{"numbered list and wait", "Open questions:\n\n1. Which columns?\n2. Which date range?\n\nI will wait for your answers before planning.", true},
+		{"answer by number and won't plan", "Answer by number when you can. I won't plan anything yet.", true},
+		{"colon form and before anyone builds", "Reply like `1: yes`. Nothing happens before anyone builds it.", true},
+		{"plain statement", "I wrote the intent for invoice CSV export.", false},
+		{"numbered question without stop", "1. Which columns should the CSV have?\n\nLet me know.", false},
+		{"stop without numbered invite", "I will wait for your review before planning.", false},
+		{"time is not a numbered answer", "Drafted at 10:30. I will wait for your review before planning.", false},
+		{"empty", "", false},
+	}
+	for _, tc := range cases {
+		if got := asksForReview(tc.reply); got != tc.want {
+			t.Errorf("%s: asksForReview = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}

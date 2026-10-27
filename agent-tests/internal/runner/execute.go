@@ -716,10 +716,7 @@ func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string,
 	if len(reasons) > 0 {
 		nullReasons = reasons
 	}
-	model := parsed.Model
-	if model == "" {
-		model = item.Config.Model
-	}
+	model, hostModel := recordedModel(item.Config.Model, parsed.Model)
 	usage := parsed.UsageSource
 	if usage == "" {
 		usage = "not reported"
@@ -736,6 +733,7 @@ func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string,
 		HostVersion:       hostVer,
 		HostVersionSource: hostVerSource,
 		Model:             model,
+		HostModel:         hostModel,
 		Effort:            item.Config.Effort,
 		Run:               item.RunN,
 		Verdict:           verdict,
@@ -753,6 +751,21 @@ func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string,
 		ArtifactsDigest:   digest,
 		Date:              time.Now().UTC().Format("2006-01-02"),
 	}
+}
+
+// recordedModel returns the model a run records and, separately, what the
+// host reported when that differs. The recorded model is always the pinned id
+// when there is one, so runs of one host agree with hosts.yaml whatever name
+// the host prints for it.
+func recordedModel(pinned, reported string) (model, hostModel string) {
+	pinned, reported = strings.TrimSpace(pinned), strings.TrimSpace(reported)
+	if pinned == "" {
+		return reported, ""
+	}
+	if reported == "" || reported == pinned {
+		return pinned, ""
+	}
+	return pinned, reported
 }
 
 func priceOf(cfg hosts.HostConfig, prices map[string]hosts.PriceRow, parsed hosts.Parsed) (*float64, string, string) {

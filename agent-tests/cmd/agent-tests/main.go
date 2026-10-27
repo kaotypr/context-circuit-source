@@ -49,7 +49,7 @@ func usage(w io.Writer) {
 agent-tests probe [flags]
 agent-tests surface-diff --base <ref> [flags]
 agent-tests report [flags]
-agent-tests export-baseline --run DIR [--run DIR ...] --out DIR [--deny-file PATH]
+agent-tests export-baseline --run DIR [--run DIR ...] --out DIR [--deny-file PATH [--redact-deny]]
 
 run    execute scenarios. Without --yes the plan is printed and no host starts.
 probe  print host version, pinned model, and auth variable names.
@@ -100,6 +100,11 @@ export-baseline flags:
   --out        baseline directory; must not exist or must be empty
   --deny-file  local file with one term per line; an exported file that
                contains a term refuses the export. Terms are never printed.
+  --redact-deny
+               with --deny-file, replace each case-insensitive occurrence of a
+               term in file contents with [private] instead of refusing, and
+               count the replacements per file in summary.json. A file name
+               that contains a term still refuses the export.
 `)
 }
 
@@ -356,8 +361,9 @@ func exportBaselineCmd(args []string, caller map[string]string) int {
 	fs.Var(&runs, "run", "finished run directory (repeatable)")
 	out := fs.String("out", "", "baseline directory; must not exist or must be empty")
 	deny := fs.String("deny-file", "", "local file with one deny-listed term per line")
+	redactDeny := fs.Bool("redact-deny", false, "replace deny-listed terms in file contents with [private] instead of refusing")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: agent-tests export-baseline --run DIR [--run DIR ...] --out DIR [--deny-file PATH]")
+		fmt.Fprintln(os.Stderr, "usage: agent-tests export-baseline --run DIR [--run DIR ...] --out DIR [--deny-file PATH [--redact-deny]]")
 		fmt.Fprintln(os.Stderr, "merge finished runs into a baseline directory. It does not start a host.")
 		fs.PrintDefaults()
 	}
@@ -377,16 +383,22 @@ func exportBaselineCmd(args []string, caller map[string]string) int {
 		fs.Usage()
 		return 2
 	}
+	if *redactDeny && strings.TrimSpace(*deny) == "" {
+		fmt.Fprintln(os.Stderr, "export-baseline: --redact-deny needs --deny-file")
+		fs.Usage()
+		return 2
+	}
 	user := caller["USER"]
 	if user == "" {
 		user = caller["LOGNAME"]
 	}
 	err := report.ExportBaseline(report.ExportOptions{
-		Runs:     runs,
-		Out:      *out,
-		DenyFile: *deny,
-		Home:     caller["HOME"],
-		User:     user,
+		Runs:       runs,
+		Out:        *out,
+		DenyFile:   *deny,
+		RedactDeny: *redactDeny,
+		Home:       caller["HOME"],
+		User:       user,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

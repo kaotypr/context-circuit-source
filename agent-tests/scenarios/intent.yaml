@@ -1,5 +1,5 @@
 id: intent
-version: 1
+version: 2
 title: An intent from a request, then stop
 covers:
   - intent and planning

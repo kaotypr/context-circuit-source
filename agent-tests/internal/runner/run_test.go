@@ -482,3 +482,21 @@ func porcelain(t *testing.T, root string) string {
 	}
 	return string(res.Stdout)
 }
+
+func TestRecordedModelIsThePin(t *testing.T) {
+	cases := []struct {
+		pinned, reported, model, hostModel string
+	}{
+		{"composer-2.5", "Composer 2.5", "composer-2.5", "Composer 2.5"},
+		{"claude-haiku-5-5", "claude-haiku-5-5", "claude-haiku-5-5", ""},
+		{"gpt-6-luna", "", "gpt-6-luna", ""},
+		{"", "reported-only", "reported-only", ""},
+		{"", "", "", ""},
+	}
+	for _, tc := range cases {
+		model, hostModel := recordedModel(tc.pinned, tc.reported)
+		if model != tc.model || hostModel != tc.hostModel {
+			t.Errorf("recordedModel(%q, %q) = %q, %q; want %q, %q", tc.pinned, tc.reported, model, hostModel, tc.model, tc.hostModel)
+		}
+	}
+}
