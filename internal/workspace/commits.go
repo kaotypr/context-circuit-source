@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os/exec"
-	"regexp"
 	"slices"
 	"strings"
 )
@@ -38,12 +37,9 @@ func (s *Store) UncommittedRecords(ctx context.Context, ids ...string) (files []
 	if err != nil {
 		return files, gitUnavailable(err)
 	}
-	var patterns []*regexp.Regexp
+	var matchers []func(string) bool
 	for _, id := range ids {
-		quoted := regexp.QuoteMeta(id)
-		patterns = append(patterns,
-			regexp.MustCompile(`^intent/(archive/)?`+quoted+`-[a-z][a-z0-9-]*\.md$`),
-			regexp.MustCompile(`^plans/(archive/)?`+quoted+`-[a-z][a-z0-9-]*(\.md|/.+)$`))
+		matchers = append(matchers, placement.GitPathMatcher(id))
 	}
 	concerns := func(rel string) bool {
 		if rel == "" {
@@ -52,8 +48,8 @@ func (s *Store) UncommittedRecords(ctx context.Context, ids ...string) (files []
 		if IsIDFile(rel) {
 			return true
 		}
-		for _, pattern := range patterns {
-			if pattern.MatchString(rel) {
+		for _, matches := range matchers {
+			if matches(rel) {
 				return true
 			}
 		}
