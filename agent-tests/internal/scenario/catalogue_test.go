@@ -17,7 +17,7 @@ func TestCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != 10 {
+	if len(loaded) != 12 {
 		t.Fatalf("scenarios %d", len(loaded))
 	}
 	entries, err := os.ReadDir(dir)
@@ -60,6 +60,7 @@ func TestCatalogue(t *testing.T) {
 		wantSetup := map[string]bool{
 			"join": true, "intent-lang": true, "plan": true,
 			"execute": true, "complete": true, "borrowed": true, "archive": true,
+			"push-records": true, "push-records-conflict": true,
 		}
 		if wantSetup[sc.ID] {
 			if len(sc.Setup) == 0 || strings.TrimSpace(strings.Join(sc.Setup, "")) == "" {
@@ -105,6 +106,12 @@ func TestCatalogue(t *testing.T) {
 	}
 	if len(byID["execute"].AllowedBranches) != 1 || byID["execute"].AllowedBranches[0] != "cc/p1000/api" {
 		t.Fatalf("execute branches %v", byID["execute"].AllowedBranches)
+	}
+	for id, sc := range byID {
+		push := id == "push-records" || id == "push-records-conflict"
+		if sc.PushWorkspaceBase != push {
+			t.Fatalf("%s push_workspace_base %v", id, sc.PushWorkspaceBase)
+		}
 	}
 	if Registry["not-a-check"] != nil {
 		t.Fatal("an unknown check name is registered")

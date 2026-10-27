@@ -46,6 +46,9 @@ var mutationHost = map[string]string{
 	"direct-no-records":         "direct",
 	"borrowed-untouched":        "borrowed",
 	"borrowed-reply":            "borrowed",
+	"push-records-pushed":       "push-records",
+	"push-records-union":        "push-records",
+	"push-records-held":         "push-records-conflict",
 }
 
 func TestMutationCoverage(t *testing.T) {
@@ -495,6 +498,21 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if strings.Contains(readFile(t, oneGlob(t, st.w.WS, "plans", "p1000-*", "plan.md")), "completed_at:") {
 			t.Fatal("plan is already complete")
 		}
+	case "push-records", "push-records-conflict":
+		if len(issues) != 0 {
+			t.Fatalf("start check %s", checkBefore)
+		}
+		if strings.Contains(readFile(t, oneGlob(t, st.w.WS, "intent", "i100-*.md")), "approved_at:") {
+			t.Fatal("intent is already approved")
+		}
+		local := st.git(t, st.w.WS, "rev-parse", "refs/heads/main")
+		remote := st.git(t, filepath.Join(st.w.RunRoot, "remotes", "ws.git"), "rev-parse", "refs/heads/main")
+		if local == remote {
+			t.Fatal("the workspace remote did not move on")
+		}
+		if upstream := st.git(t, st.w.WS, "rev-parse", "--abbrev-ref", "main@{upstream}"); upstream != "origin/main" {
+			t.Fatalf("upstream %q", upstream)
+		}
 	case "borrowed":
 		note := filepath.Join(st.w.WS, "repositories", "handbook", "numbering.md")
 		if !strings.Contains(readFile(t, note), "Invoice numbers are global and never restart.") {
@@ -680,6 +698,31 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 			t.Fatal(err)
 		}
 		return func() { _ = os.Remove(path) }
+	case "push-records-pushed":
+		bare := filepath.Join(st.w.RunRoot, "remotes", "ws.git")
+		pushed := st.git(t, bare, "rev-parse", "refs/heads/main")
+		before := scenario.RemoteRefObject(st.before.RemoteRefs["ws.git"], "refs/heads/main")
+		st.git(t, bare, "update-ref", "refs/heads/main", before)
+		return func() { st.git(t, bare, "update-ref", "refs/heads/main", pushed) }
+	case "push-records-union":
+		bare := filepath.Join(st.w.RunRoot, "remotes", "ws.git")
+		pushed := st.git(t, st.w.WS, "rev-parse", "HEAD")
+		path := filepath.Join(st.w.WS, ".context-circuit", "ids", "maya.yaml")
+		raw := readFile(t, path)
+		if err := os.WriteFile(path, []byte(dropExactLine(raw, "- p1000")), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		st.git(t, st.w.WS, "commit", "-qam", "chore: drop a reservation")
+		st.git(t, st.w.WS, "push", "-q", "origin", "main")
+		return func() {
+			st.git(t, st.w.WS, "reset", "-q", "--hard", pushed)
+			st.git(t, bare, "update-ref", "refs/heads/main", pushed)
+		}
+	case "push-records-held":
+		bare := filepath.Join(st.w.RunRoot, "remotes", "ws.git")
+		held := st.git(t, bare, "rev-parse", "refs/heads/main")
+		st.git(t, bare, "update-ref", "refs/heads/main", held+"~1")
+		return func() { st.git(t, bare, "update-ref", "refs/heads/main", held) }
 	case "borrowed-untouched":
 		return editFile(t, filepath.Join(st.w.WS, "repositories", "handbook", "numbering.md"), func(s string) string {
 			return s + "\nEdited.\n"
@@ -699,16 +742,18 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 
 func streamFor(id string) string {
 	reply := map[string]string{
-		"orient":      "This workspace is Acme, for invoicing for small businesses. It works on the api repository. Run the command with sh .context-circuit/cli. A draft invoice is voided. An issued invoice is credited. The note is context/domains/invoices.md.",
-		"join":        "Dana is on band 2 and nothing was committed.",
-		"intent":      "I wrote the intent for invoice CSV export. Please approve it before anyone builds it.",
-		"intent-lang": "Intent sudah ditulis. Please approve it before anyone builds it.",
-		"plan":        "The plan is in the plan folder and it stops before implementation.",
-		"execute":     "The CSV export is on the worktree branch. Tests passed. Nothing was pushed.",
-		"complete":    "The plan is marked complete and the invoices note mentions CSV. Those edits are uncommitted, and committing them is recommended.",
-		"direct":      "The README typo is fixed and the change is not committed.",
-		"borrowed":    "The handbook is read-only here. The correction belongs upstream, in the handbook repository's own review.",
-		"archive":     "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
+		"orient":                "This workspace is Acme, for invoicing for small businesses. It works on the api repository. Run the command with sh .context-circuit/cli. A draft invoice is voided. An issued invoice is credited. The note is context/domains/invoices.md.",
+		"join":                  "Dana is on band 2 and nothing was committed.",
+		"intent":                "I wrote the intent for invoice CSV export. Please approve it before anyone builds it.",
+		"intent-lang":           "Intent sudah ditulis. Please approve it before anyone builds it.",
+		"plan":                  "The plan is in the plan folder and it stops before implementation.",
+		"execute":               "The CSV export is on the worktree branch. Tests passed. Nothing was pushed.",
+		"complete":              "The plan is marked complete and the invoices note mentions CSV. Those edits are uncommitted, and committing them is recommended.",
+		"direct":                "The README typo is fixed and the change is not committed.",
+		"borrowed":              "The handbook is read-only here. The correction belongs upstream, in the handbook repository's own review.",
+		"push-records":          "I recorded your approval of i100 and committed it. The first push was refused because the other clone had pushed plan p1000; I pulled with rebase, kept both sides' entries in the ID file, ran check, and pushed.",
+		"push-records-conflict": "I recorded your approval of i100 and committed it, but the push was refused: the other clone changed i100's open questions, and that conflicts with the approval. The rebase is in progress and nothing was pushed. Which version should i100 keep?",
+		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
 	extra := ""

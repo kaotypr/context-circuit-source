@@ -21,6 +21,7 @@ func TestCatalogue(t *testing.T) {
 	}
 	want := []string{
 		"archive", "borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan",
+		"push-records", "push-records-conflict",
 	}
 	var got []string
 	for id := range scenarios {
@@ -47,7 +48,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"archive", "borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan"}
+	all := []string{"archive", "borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan", "push-records", "push-records-conflict"}
 	cases := []struct {
 		path      string
 		scenarios []string
@@ -80,7 +81,7 @@ func TestSamplePaths(t *testing.T) {
 		{"template/workspace.yaml", []string{"join", "orient"}, nil},
 		{"internal/cli/topics.go", []string{"orient"}, nil},
 		{"internal/cli/commands.go", []string{"borrowed", "complete", "execute", "intent", "join", "plan"}, nil},
-		{"internal/cli/cli.go", []string{"complete", "intent", "plan"}, nil},
+		{"internal/cli/cli.go", []string{"complete", "intent", "plan", "push-records"}, nil},
 		{"internal/workspace/readme.go", []string{"join"}, nil},
 		{"internal/workspace/records.go", []string{"intent", "plan"}, nil},
 		{"internal/workspace/agents.go", []string{"execute", "plan"}, nil},

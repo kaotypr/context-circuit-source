@@ -40,6 +40,9 @@ func TestNames(t *testing.T) {
 		"orient-reply",
 		"plan-linked",
 		"plan-record",
+		"push-records-held",
+		"push-records-pushed",
+		"push-records-union",
 		"sources-passive",
 	}
 	got := Names()
@@ -550,5 +553,35 @@ func TestRemoteRefObject(t *testing.T) {
 	}
 	if got := RemoteRefObject(text, "refs/heads/gone"); got != "" {
 		t.Fatalf("gone %q", got)
+	}
+}
+
+// A push writes the workspace remote's objects; only a scenario allowed to
+// push its base branch may, and no other remote.
+func TestNoOutsideWritesWithWorkspaceBase(t *testing.T) {
+	before := map[string]string{"remotes/ws.git/refs/heads/main": "a", "remotes/api.git/refs/heads/main": "a"}
+	pushed := map[string]string{"remotes/ws.git/refs/heads/main": "b", "remotes/ws.git/objects/ab": "dir", "remotes/api.git/refs/heads/main": "a"}
+	other := map[string]string{"remotes/ws.git/refs/heads/main": "a", "remotes/api.git/refs/heads/main": "b"}
+	cases := []struct {
+		name  string
+		push  bool
+		after map[string]string
+		pass  bool
+	}{
+		{"pushed with the field", true, pushed, true},
+		{"pushed without it", false, pushed, false},
+		{"another remote", true, other, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Registry[nameNoOutsideWrites](CheckContext{
+				Scenario: Scenario{PushWorkspaceBase: tc.push},
+				Before:   Snapshot{RunDigest: before},
+				After:    Snapshot{RunDigest: tc.after},
+			})
+			if got.Pass != tc.pass || got.Inconclusive {
+				t.Fatalf("%+v", got)
+			}
+		})
 	}
 }

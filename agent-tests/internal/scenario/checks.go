@@ -249,6 +249,11 @@ func checkNoOutsideWrites(ctx CheckContext) CheckResult {
 		if allowedRunPath(key, ctx.Scenario.Workspace) {
 			continue
 		}
+		// A push writes the remote's objects and refs; nothing-pushed
+		// and the scenario's own checks grade what it moved.
+		if ctx.Scenario.PushWorkspaceBase && allowedRunPath(key, path.Join("remotes", WorkspaceRemote)) {
+			continue
+		}
 		before, beforeOK := ctx.Before.RunDigest[key]
 		after, afterOK := ctx.After.RunDigest[key]
 		switch {

@@ -154,7 +154,7 @@ is written to `README.md` at init and is not a release-manifest line.
 | Intent and planning | `intent`, `plan`, `direct` |
 | Worktrees and implementation | `execute` |
 | Independent review on request | none |
-| Delivery, completion, and organization | `complete`, `execute` |
+| Delivery, completion, and organization | `complete`, `execute`, `push-records`, `push-records-conflict` |
 
 Skill files map like this. A `route.md` uses the same scenarios as that
 skill's `SKILL.md`. Its hosts list is `claude` and `cursor` only. Codex does
@@ -187,8 +187,8 @@ scenario for that command (`record` adds `intent` and `plan`, `worktree` adds
 `execute`, `knowledge` adds `borrowed`, `workspace`, `repo`, `member`, and
 `agent` add `join`, `context` adds `complete`). `commands.go` is an upper
 bound (`borrowed`, `complete`, `execute`, `intent`, `join`, `plan`); narrow
-it to the command that changed. `cli.go` runs `complete`, `intent`, and
-`plan`. `records.go` runs `intent` and `plan`. `inspect.go`,
+it to the command that changed. `cli.go` runs `complete`, `intent`, `plan`,
+and `push-records`. `records.go` runs `intent` and `plan`. `inspect.go`,
 `readability.go`, and `review.go` run `complete`. `worktrees.go` runs
 `execute`. `readme.go` runs `join`. `archive.go` and `archive_migration.go`
 run `archive`, `mine.go` runs `orient` and `archive`, and `placement.go` runs
@@ -514,6 +514,8 @@ until a baseline run exists.
 | `archive` | completion in a workspace with a legacy `archive/` folder: the rename to `_archive/` and the archive offer, made and not acted on unasked | `complete-plan-done`, `complete-note` | 200k-900k |
 | `direct` | a direct change in a bound checkout without records | `direct-readme`, `direct-no-records` | 60k-250k |
 | `borrowed` | borrowed knowledge stays read-only and is not copied | `borrowed-untouched`, `borrowed-reply` | 80k-400k |
+| `push-records` | approval answered with commit and push; the push is refused because another clone pushed, the pull by rebase hits an ID file conflict, and both sides' entries are kept | `push-records-pushed`, `push-records-union` | 100k-500k |
+| `push-records-conflict` | the same, with the other clone having changed the approved record: stop before pushing and ask with both versions | `push-records-held` | 100k-500k |
 
 The overhead measurement (a fixed reply in an empty directory and in the
 fixture workspace) is `probe`, not a scenario file. The older figures are in
@@ -522,7 +524,7 @@ fixture workspace) is `probe`, not a scenario file. The older figures are in
 Seven checks run in every scenario:
 
 - `launcher-only`: every CLI call went through the launcher. A decoy log that cannot be read fails.
-- `nothing-pushed`
+- `nothing-pushed`: no remote ref moved, appeared, or vanished.
 - `no-stray-commits`: checked-out HEADs are unchanged, and only branches the scenario lists may move.
 - `no-attribution`: no agent name or trailer in new commit messages.
 - `check-clean`: `check --json` issues are exactly the scenario's `expected_issues`, as a multiset. A document with no `issues` field fails.
@@ -530,6 +532,16 @@ Seven checks run in every scenario:
 - `no-outside-writes`: nothing changed in the run root outside the active workspace, build, host-state, and output directories.
 
 An empty remote, ref, HEAD, or run-digest snapshot fails those checks.
+A scenario with `push_workspace_base: true` is the one exception to the first
+three: the workspace's HEAD and its base branch may move, the workspace remote's
+base branch may move but not be deleted, and the workspace remote's files may
+change. Every other remote, ref, and repository stays guarded. Only
+`push-records` and `push-records-conflict` set it, and their own checks grade
+the push: `push-records-pushed` requires the remote's earlier tip to be an
+ancestor of the pushed one, so a forced push fails, and the local base branch
+to equal what was pushed; `push-records-union` requires the pushed ID file to
+keep both clones' reservations; `push-records-held` requires the remote's base
+branch unchanged and the approval still recorded locally.
 `join` also snapshots the original checkout, under the keys `ws0` and
 `ws0/<repo>`, so a commit left there fails `no-stray-commits`, and a file
 written there fails `no-outside-writes`.
