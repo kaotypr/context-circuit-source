@@ -1,10 +1,12 @@
 # Host launch defaults.
 #
 # command: executable invoked for this host.
-# model: pinned model id sent on the command line. The pins are provisional
-# until a baseline run confirms them.
+# model: pinned model id sent on the command line. Each pin is the host's
+# smallest current model, so a baseline is a lower-bound reference. The pins
+# are provisional until a baseline run confirms them.
 # effort: optional effort setting. Empty means the flag is omitted.
-# host_version: recorded with each run.
+# host_version: recorded with each run when the host command does not
+# report --version. Written exactly as that command prints it.
 # provisional: true while the pin is still awaiting a baseline run.
 # timeout_seconds: wall-clock limit for one host process.
 # max_budget_usd: Claude Code runaway guard. 0 selects the adapter default.
@@ -21,9 +23,9 @@
 hosts:
   claude:
     command: claude
-    model: claude-sonnet-5-5
-    effort: ""
-    host_version: "2.1.304"
+    model: claude-haiku-5-5
+    effort: medium
+    host_version: "2.1.304 (Claude Code)"
     provisional: true
     timeout_seconds: 1800
     max_budget_usd: 3
@@ -32,12 +34,12 @@ hosts:
       - CLAUDE_CODE_OAUTH_TOKEN
   codex:
     command: codex
-    model: gpt-5.6-luna
+    model: gpt-6-luna
     effort: medium
-    host_version: "0.162.1"
+    host_version: "codex-cli 0.164.0"
     provisional: true
     timeout_seconds: 1800
-    price_row: gpt-5.6-luna
+    price_row: gpt-6-luna
     # auth: subscription is valid for this host. Leave it unset so a run
     # without --subscription-auth codex keeps using auth_env only.
     auth_env:

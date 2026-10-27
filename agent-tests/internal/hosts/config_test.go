@@ -13,17 +13,17 @@ func TestLoadHosts(t *testing.T) {
 		t.Fatal(err)
 	}
 	claude := hosts["claude"]
-	if claude.Name != "claude" || claude.Model != "claude-sonnet-5-5" || !claude.Provisional {
+	if claude.Name != "claude" || claude.Model != "claude-haiku-5-5" || claude.Effort != "medium" || !claude.Provisional {
 		t.Fatalf("%+v", claude)
 	}
-	if claude.Command != "claude" || claude.HostVersion != "2.1.304" || claude.MaxBudgetUSD != 3 {
+	if claude.Command != "claude" || claude.HostVersion != "2.1.304 (Claude Code)" || claude.MaxBudgetUSD != 3 {
 		t.Fatalf("%+v", claude)
 	}
 	if !reflectAuth(claude.AuthEnv, []string{"ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"}) {
 		t.Fatalf("auth %v", claude.AuthEnv)
 	}
 	codex := hosts["codex"]
-	if codex.Model != "gpt-5.6-luna" || codex.Effort != "medium" || codex.PriceRow != "gpt-5.6-luna" || codex.HostVersion != "0.162.1" {
+	if codex.Model != "gpt-6-luna" || codex.Effort != "medium" || codex.PriceRow != "gpt-6-luna" || codex.HostVersion != "codex-cli 0.164.0" {
 		t.Fatalf("%+v", codex)
 	}
 	cursor := hosts["cursor"]
@@ -109,14 +109,17 @@ func TestLoadPrices(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	luna := prices["gpt-5.6-luna"]
+	if _, ok := prices["gpt-5.6-luna"]; ok {
+		t.Fatal("the retired gpt-5.6-luna row is still listed")
+	}
+	luna := prices["gpt-6-luna"]
 	if luna.Source != "https://developers.openai.com/api/docs/pricing" || luna.Checked != "2026-10-27" {
 		t.Fatalf("%+v", luna)
 	}
-	if luna.InputPerM != 0.2 || luna.CachedInputPerM != 0.02 || luna.CacheWritePerM != 0.25 || luna.OutputPerM != 1.2 {
+	if luna.InputPerM != 0.1 || luna.CachedInputPerM != 0.01 || luna.CacheWritePerM != 0.125 || luna.OutputPerM != 0.5 {
 		t.Fatalf("%+v", luna)
 	}
-	if luna.LongContextThreshold != 272000 || luna.LongInputPerM != 0.4 || luna.LongOutputPerM != 1.8 {
+	if luna.LongContextThreshold != 272000 || luna.LongInputPerM != 0.2 || luna.LongCachedInputPerM != 0.02 || luna.LongCacheWritePerM != 0.25 || luna.LongOutputPerM != 0.75 {
 		t.Fatalf("%+v", luna)
 	}
 	composer := prices["composer-2.5"]
