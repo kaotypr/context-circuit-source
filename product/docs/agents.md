@@ -50,7 +50,8 @@ it only from its user configuration, so setup writes nothing for either; there,
 inspect each commit message and remove any trailer the host added. A Cursor user
 can turn it off for themselves: set `"attribution": {"attributeCommitsToAgent":
 false, "attributePRsToAgent": false}` in `~/.cursor/cli-config.json`, or turn off
-"Attribute commits to agent" in the CLI's settings.
+"Attribute commits to agent" in the CLI's settings; a Cursor team admin can
+turn attribution off for the whole team.
 
 A worker's brief depends on how it is parallelized. One worker per plan owns its
 whole worktree and cannot collide with a sibling plan, whose work arrives later
