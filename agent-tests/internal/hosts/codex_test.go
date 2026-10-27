@@ -127,10 +127,12 @@ func TestCodexBuildArgvSecretNotInEnv(t *testing.T) {
 		"exec",
 		"--json",
 		"--ignore-user-config",
+		"--skip-git-repo-check",
 		"-C", "/work/ws",
 		"-m", "gpt-6-sol",
 		"--sandbox", "workspace-write",
 		"--add-dir", filepath.Join(run, "gocache"),
+		"--add-dir", filepath.Join("/work/ws", ".codex"),
 		"-c", `model_reasoning_effort="medium"`,
 		"Reply OK",
 	}
@@ -162,6 +164,10 @@ func TestCodexBuildArgvSecretNotInEnv(t *testing.T) {
 	}
 	if env["CODEX_HOME"] != filepath.Join(run, "codex") {
 		t.Fatalf("CODEX_HOME %s", env["CODEX_HOME"])
+	}
+	wantDirs := []string{filepath.Join(run, "codex"), filepath.Join(run, "codex-home"), filepath.Join("/work/ws", ".codex")}
+	if !reflect.DeepEqual(launch.MkDirs, wantDirs) {
+		t.Fatalf("mkdirs %v", launch.MkDirs)
 	}
 
 	in.Caller = map[string]string{"PATH": "/usr/bin:/bin"}
