@@ -9,6 +9,7 @@ product/docs/workspace.md .context-circuit/docs/workspace.md
 product/docs/worktrees.md .context-circuit/docs/worktrees.md
 product/docs/working.md .context-circuit/docs/working.md
 template/gitignore.in .gitignore
+template/ignore.in .ignore
 template/workspace.yaml workspace.yaml
 template/members.yaml members.yaml
 template/context/INDEX.md context/INDEX.md

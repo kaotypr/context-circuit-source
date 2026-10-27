@@ -301,3 +301,30 @@ func TestAgentSetupTurnsOffClaudeCodeAttribution(t *testing.T) {
 		t.Fatal("setup wrote through a symlink")
 	}
 }
+
+// sources/ is passive evidence. The seed ships a root .ignore that keeps it out
+// of search tools reading that file, anchored so a sources/ folder inside a
+// cloned repository or a worktree stays searchable, and ignores the host's
+// local settings file setup merges into.
+func TestTemplateExportKeepsSourcesOutOfSearch(t *testing.T) {
+	f := setup(t)
+	blank := filepath.Join(f.home, "blank")
+	f.ok("template", "export", "--path", blank)
+	var rules []string
+	for line := range strings.SplitSeq(strings.ReplaceAll(read(t, filepath.Join(blank, ".ignore")), "\r\n", "\n"), "\n") {
+		if line != "" && !strings.HasPrefix(line, "#") {
+			rules = append(rules, line)
+		}
+	}
+	if strings.Join(rules, ",") != "/sources/" {
+		t.Fatalf(".ignore rules are %q, want only the anchored /sources/", rules)
+	}
+	if !strings.Contains(read(t, filepath.Join(blank, ".gitignore")), "\n/.claude/settings.local.json\n") {
+		t.Fatal("the seed .gitignore does not ignore the local Claude Code settings")
+	}
+	for _, rel := range []string{".ignore", "sources/README.md"} {
+		if _, err := os.Stat(filepath.Join(f.root, rel)); err != nil {
+			t.Fatal("an initialized workspace lacks", rel, err)
+		}
+	}
+}

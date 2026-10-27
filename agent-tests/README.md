@@ -179,7 +179,7 @@ and `complete`; `workspace.md` runs `join` and `borrowed`; `worktrees.md` runs
 
 Template data: `INDEX.md` and `glossary.md` run `orient`, `complete`, and
 `borrowed`; `intent/README.md` runs `intent`; `plans/README.md` runs `plan`;
-`sources/README.md` runs `orient` and `borrowed`; `gitignore.in` runs `join`
+`sources/README.md` and `ignore.in` run `orient` and `borrowed`; `gitignore.in` runs `join`
 and `execute`; `workspace.yaml` and `members.yaml` run `join` and `orient`.
 
 CLI output: `topics.go` runs `orient`, and a changed help topic adds the

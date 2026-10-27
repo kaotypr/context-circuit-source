@@ -191,6 +191,11 @@ rows:
     scenarios: [join, execute]
     kind: template-data
 
+  - match: template/ignore.in
+    scenarios: [orient, borrowed]
+    kind: template-data
+    note: Keeps sources/ out of ripgrep and editor search.
+
   - match: template/workspace.yaml
     scenarios: [join, orient]
     kind: template-data
