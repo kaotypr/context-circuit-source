@@ -146,6 +146,10 @@ func runAgainstStubs(t *testing.T, home, rootDir string) (map[string]string, str
 		"GITHUB_TOKEN":          "PLANTED-GITHUB-TOKEN-VALUE",
 		"SSH_AUTH_SOCK":         "/planted/ssh-agent.sock",
 		"AWS_SECRET_ACCESS_KEY": "PLANTED-AWS-SECRET-VALUE",
+		// run checks auth readiness before the first host starts.
+		"ANTHROPIC_API_KEY": "stub-anthropic-auth-value",
+		"OPENAI_API_KEY":    "stub-openai-auth-value",
+		"CURSOR_API_KEY":    "stub-cursor-auth-value",
 	}
 	dumps := map[string]string{}
 	for _, host := range hosts {
@@ -219,8 +223,9 @@ func assertHostOutput(t *testing.T, out string, host stubHost, secret, digest, p
 	if line.Scenario != "marker" || line.Side != "branch" || line.Run != 1 || line.Verdict != "pass" {
 		t.Fatalf("%s record %+v", host.name, line)
 	}
-	if line.Model != host.model || line.HostVersion != host.version || line.UsageSource != "reported" {
-		t.Fatalf("%s model %s version %s usage %s", host.name, line.Model, line.HostVersion, line.UsageSource)
+	// The stub prints stub-9 for --version; the configured value is not recorded.
+	if line.Model != host.model || line.HostVersion != "stub-9" || line.HostVersionSource != "command" || line.UsageSource != "reported" {
+		t.Fatalf("%s model %s version %s (%s) usage %s", host.name, line.Model, line.HostVersion, line.HostVersionSource, line.UsageSource)
 	}
 	if line.Tokens.InputTotal == nil || *line.Tokens.InputTotal != host.input {
 		t.Fatalf("%s input %v", host.name, line.Tokens.InputTotal)
@@ -278,21 +283,22 @@ func assertHostOutput(t *testing.T, out string, host stubHost, secret, digest, p
 }
 
 type runLine struct {
-	Scenario        string   `json:"scenario"`
-	ScenarioVersion string   `json:"scenario_version"`
-	FixtureDigest   string   `json:"fixture_digest"`
-	SrcCommit       string   `json:"src_commit"`
-	Side            string   `json:"side"`
-	CLIVersion      string   `json:"cli_version"`
-	Host            string   `json:"host"`
-	HostVersion     string   `json:"host_version"`
-	Model           string   `json:"model"`
-	Run             int      `json:"run"`
-	Verdict         string   `json:"verdict"`
-	UsageSource     string   `json:"usage_source"`
-	CostUSD         *float64 `json:"cost_usd"`
-	CostBasis       string   `json:"cost_basis"`
-	Tokens          struct {
+	Scenario          string   `json:"scenario"`
+	ScenarioVersion   string   `json:"scenario_version"`
+	FixtureDigest     string   `json:"fixture_digest"`
+	SrcCommit         string   `json:"src_commit"`
+	Side              string   `json:"side"`
+	CLIVersion        string   `json:"cli_version"`
+	Host              string   `json:"host"`
+	HostVersion       string   `json:"host_version"`
+	HostVersionSource string   `json:"host_version_source"`
+	Model             string   `json:"model"`
+	Run               int      `json:"run"`
+	Verdict           string   `json:"verdict"`
+	UsageSource       string   `json:"usage_source"`
+	CostUSD           *float64 `json:"cost_usd"`
+	CostBasis         string   `json:"cost_basis"`
+	Tokens            struct {
 		InputTotal *int64 `json:"input_total"`
 		Output     *int64 `json:"output"`
 	} `json:"tokens"`

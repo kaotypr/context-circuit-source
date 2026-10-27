@@ -168,6 +168,7 @@ func TestRunRealScenarios(t *testing.T) {
 			}
 			hostsFile := writeHostsFile(t, dir, []hostRow{{
 				name: "claude", command: stub, model: "stub-model", version: "stub", timeout: 180,
+				auth: []string{"ANTHROPIC_API_KEY"},
 			}})
 			prices := filepath.Join(dir, "prices.yaml")
 			if err := os.WriteFile(prices, []byte("prices: {}\n"), 0o644); err != nil {
@@ -186,7 +187,7 @@ func TestRunRealScenarios(t *testing.T) {
 				ScenariosDir: filepath.Join(root, "agent-tests", "scenarios"),
 				FixturesDir:  filepath.Join(root, "agent-tests", "fixtures"),
 				OutDir:       out,
-				Caller:       map[string]string{"PATH": os.Getenv("PATH")},
+				Caller:       map[string]string{"PATH": os.Getenv("PATH"), "ANTHROPIC_API_KEY": "stub-anthropic-auth-value"},
 				ParentTemp:   dir,
 				Confirm:      true,
 				Stdout:       &buf,

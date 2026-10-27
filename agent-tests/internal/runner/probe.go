@@ -68,6 +68,7 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 		return err
 	}
 	path := callerPath(opts.Caller)
+	versions := make(map[string]hostVersion, len(selected))
 	for _, cfg := range selected {
 		fmt.Fprintf(out, "host: %s\n", cfg.Name)
 		fmt.Fprintf(out, "configured version: %s\n", cfg.HostVersion)
@@ -76,6 +77,10 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 			fmt.Fprintf(out, "command version: unavailable (%s)\n", verr)
 		} else {
 			fmt.Fprintf(out, "command version: %s\n", ver)
+		}
+		versions[cfg.Name] = hostVersion{value: cfg.HostVersion}
+		if verr == nil && ver != "" {
+			versions[cfg.Name] = hostVersion{value: ver, measured: true}
 		}
 		if cfg.Model == "" {
 			fmt.Fprintln(out, "model: not pinned")
@@ -157,6 +162,7 @@ func Probe(ctx context.Context, opts ProbeOptions) error {
 		srcCommit:     srcCommit,
 		fixtureDigest: digest,
 		stdout:        out,
+		hostVersions:  versions,
 	}
 	if err := sweepBeforeHosts(out, opts.ParentTemp); err != nil {
 		return err

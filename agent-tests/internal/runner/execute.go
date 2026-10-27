@@ -703,6 +703,15 @@ func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string,
 	if harness != nil {
 		reasons["harness"] = rt.redact().text(harness.Error())
 	}
+	hostVer, hostVerSource := item.Config.HostVersion, "config"
+	if hv, ok := rt.hostVersions[item.Host]; ok {
+		hostVer = hv.value
+		if hv.measured {
+			hostVerSource = "command"
+		} else {
+			reasons["host_version"] = "the host command did not report --version; the configured version is recorded"
+		}
+	}
 	var nullReasons map[string]string
 	if len(reasons) > 0 {
 		nullReasons = reasons
@@ -716,32 +725,33 @@ func (rt *runtime) recordLine(item planned, parsed hosts.Parsed, verdict string,
 		usage = "not reported"
 	}
 	return record.Run{
-		Scenario:        item.Scenario.ID,
-		ScenarioVersion: atoiVersion(item.Scenario.Version),
-		FixtureDigest:   rt.fixtureDigest,
-		SrcCommit:       rt.srcCommit,
-		BaseCommit:      rt.baseCommit,
-		Side:            item.Side,
-		CLIVersion:      rt.pin,
-		Host:            item.Host,
-		HostVersion:     item.Config.HostVersion,
-		Model:           model,
-		Effort:          item.Config.Effort,
-		Run:             item.RunN,
-		Verdict:         verdict,
-		FailedChecks:    failed,
-		Soft:            soft,
-		Tokens:          parsed.Tokens,
-		UsageSource:     usage,
-		CostUSD:         cost,
-		CostBasis:       basis,
-		NullReasons:     nullReasons,
-		Turns:           parsed.Turns,
-		ToolCalls:       parsed.ToolCalls,
-		Subagents:       parsed.Subagents,
-		WallS:           wall.Seconds(),
-		ArtifactsDigest: digest,
-		Date:            time.Now().UTC().Format("2006-01-02"),
+		Scenario:          item.Scenario.ID,
+		ScenarioVersion:   atoiVersion(item.Scenario.Version),
+		FixtureDigest:     rt.fixtureDigest,
+		SrcCommit:         rt.srcCommit,
+		BaseCommit:        rt.baseCommit,
+		Side:              item.Side,
+		CLIVersion:        rt.pin,
+		Host:              item.Host,
+		HostVersion:       hostVer,
+		HostVersionSource: hostVerSource,
+		Model:             model,
+		Effort:            item.Config.Effort,
+		Run:               item.RunN,
+		Verdict:           verdict,
+		FailedChecks:      failed,
+		Soft:              soft,
+		Tokens:            parsed.Tokens,
+		UsageSource:       usage,
+		CostUSD:           cost,
+		CostBasis:         basis,
+		NullReasons:       nullReasons,
+		Turns:             parsed.Turns,
+		ToolCalls:         parsed.ToolCalls,
+		Subagents:         parsed.Subagents,
+		WallS:             wall.Seconds(),
+		ArtifactsDigest:   digest,
+		Date:              time.Now().UTC().Format("2006-01-02"),
 	}
 }
 
