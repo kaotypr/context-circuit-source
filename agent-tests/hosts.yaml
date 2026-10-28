@@ -46,9 +46,9 @@ hosts:
       - OPENAI_API_KEY
   cursor:
     command: cursor-agent
-    # auto, not composer-2.5: Cursor chooses the model per request. See
-    # "Hosts" in README.md for why this pin is not the smallest model.
-    model: auto
+    # grok-4.7-low, not composer-2.5. See "Hosts" in README.md for why this
+    # pin is not Cursor's smallest model.
+    model: grok-4.7-low
     effort: ""
     host_version: "2026.10.22-27dcf5f"
     provisional: true

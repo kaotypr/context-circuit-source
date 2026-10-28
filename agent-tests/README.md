@@ -267,16 +267,16 @@ disagreements and any change to the table.
 `hosts.yaml` names three hosts: `claude` (Claude Code), `codex` (Codex), and
 `cursor` (Cursor, command `cursor-agent`). Each has one pinned model:
 `claude-haiku-5-5` at effort `medium` on Claude Code, `gpt-6-luna` at effort
-`medium` on Codex, and `auto` on Cursor.
+`medium` on Codex, and `grok-4.7-low` on Cursor.
 
 The Claude Code and Codex pins are that host's smallest current model. A
 baseline made with them is a lower-bound reference: a stronger model usually
 copes with what the smallest one handles, but a baseline does not prove that it
-does. Cursor is pinned to `auto`, which lets Cursor choose the model for each
-request, because `composer-2.5`, its smallest model, kept writing a local note
-in `borrowed` where every other host left `context/` alone. A Cursor result is
-therefore not a lower bound, and the model `auto` picks can change between
-runs; the report keeps the name Cursor gives it in `host_model`.
+does. Cursor is pinned to `grok-4.7-low` instead of `composer-2.5`, its
+smallest model, because `composer-2.5` and `composer-2.5-fast` kept writing a
+local note in `borrowed` where every other host left `context/` alone. `auto`
+passed `borrowed` too, but lets Cursor choose the model per request and ran
+several minutes per scenario. A Cursor result is therefore not a lower bound.
 
 An empty hosts list means any one host. A non-empty list means exactly those
 hosts, and nothing else.
@@ -456,7 +456,7 @@ separately.
 - Claude Code sums input, cache-creation, and cache-read tokens, and sets that total only when all three figures are present. When the result includes `modelUsage`, the sum across the models named there replaces the total only when the input, cache-read, and cache-creation figures are all present. Those models include subagents. The dollar figure is `total_cost_usd` as the host reported it. The report calls the total a list-price equivalent. On a subscription you may not be billed that amount.
 - Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the model's row in `prices.yaml` (cost basis `price-table`) when `price_row` names one. The pinned `gpt-6-luna` row ($0.10 input, $0.01 cached input, $0.125 cache write at the 30-minute rate, $0.50 output per million tokens) has a long-context tier above 272,000 input tokens ($0.20, $0.02, $0.25, $0.75). The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
 - Claude Code's pin is `claude-haiku-5-5`, and its cost is what the host reports.
-- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. The `auto` pin names no `price_row`, because Cursor publishes no per-token price for it, so its cost is `n/a`. The `composer-2.5` row stays in `prices.yaml` for a run pinned to that model; Cursor publishes no cache-write price, so that row charges cache writes at the input rate as an estimate.
+- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. The `grok-4.7-low` pin names no `price_row`, because `prices.yaml` holds no row for it, so its cost is `n/a`. The `composer-2.5` row stays in `prices.yaml` for a run pinned to that model; Cursor publishes no cache-write price, so that row charges cache writes at the input rate as an estimate.
 
 A missing token or cost is `n/a`. The report never writes 0 for a missing
 number. A null total has no percentage.
