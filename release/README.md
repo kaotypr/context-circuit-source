@@ -1,12 +1,12 @@
 # Releasing
 
-@kaotypr is the only maintainer and the only person who merges. Contributors open pull requests into `development/v2`. The repository allows merge commits only, so every merge below is a merge commit. [CONTRIBUTING.md](CONTRIBUTING.md) is the same rule for contributors.
+@kaotypr is the only maintainer and the only person who merges. Contributors open pull requests into `development/v2`. The repository allows merge commits only, so every merge below is a merge commit. [CONTRIBUTING.md](../CONTRIBUTING.md) is the same rule for contributors.
 
 ## Release flow
 
 1. The maintainer cuts `development/X.Y.Z` from `development/v2`.
 2. The maintainer merges the work pull requests for that release into `development/X.Y.Z`. Contributors open their pull requests into `development/v2`.
-3. The maintainer opens a release-prep pull request. It sets `VERSION`, `CLI_VERSION`, or both, and adds the release request at `release/requests/cli/X.Y.Z.md`, `release/requests/template/X.Y.Z.md`, or both. [Publish](.github/workflows/publish.yml) runs on a push to `main` that touches `release/requests/**`, `VERSION`, or `CLI_VERSION`. The version that publishes is the text of the version file, unless a manual run names one, and `scripts/resolve-release-version.sh` requires `release/requests/<cli|template>/<version>.md` when that version is not out yet.
+3. The maintainer opens a release-prep pull request. It sets `VERSION`, `CLI_VERSION`, or both, and adds the release request at `release/requests/cli/X.Y.Z.md`, `release/requests/template/X.Y.Z.md`, or both. [Publish](../.github/workflows/publish.yml) runs on a push to `main` that touches `release/requests/**`, `VERSION`, or `CLI_VERSION`. The version that publishes is the text of the version file, unless a manual run names one, and `scripts/resolve-release-version.sh` requires `release/requests/<cli|template>/<version>.md` when that version is not out yet.
 4. The maintainer opens a pull request from `development/X.Y.Z` into `development/v2` and merges it.
 5. The maintainer opens a pull request from `development/v2` into `main` and merges it.
 6. The merge to `main` runs Publish when those paths changed. The CLI job runs first, then the template job.
@@ -31,7 +31,7 @@ Set both rows to release both products. Set one row to release that product only
 
 ## Checks
 
-[Check](.github/workflows/check.yml) decides by the branch a pull request targets which jobs run. A job that does not apply is skipped, and a skipped job counts as passed.
+[Check](../.github/workflows/check.yml) decides by the branch a pull request targets which jobs run. A job that does not apply is skipped, and a skipped job counts as passed.
 
 | Pull request into | Go tests and Filesystem clone tests | Release build | Required to merge |
 | --- | --- | --- | --- |
@@ -83,13 +83,13 @@ A note names the change and links the pull request. It carries no plan or intent
 | Template | A change that makes an existing workspace's records invalid, or that needs its owner to do something to keep working. | New skill text. A reworded instruction. A new optional file. |
 | Workspace schema | Any change that needs a migration. The schema number goes up. | Documentation of existing fields. |
 
-[product/docs/commands.md](product/docs/commands.md) is the command surface: `--json` for structured fields, and a nonzero exit status on errors (an unknown flag exits 2). [CLI.md](CLI.md) is the package page. CLI v2 writes workspace schema 3 and still reads schema 2. [product/docs/workspace.md](product/docs/workspace.md) lists the files. The schema number is `version` in `workspace.yaml`. Schema 3 is the per-member ID layout. Moving a schema 2 workspace there is a migration, and one person on the team has to make that split, commit it, and push it before anyone else changes anything. Writing down a field that is already in the layout leaves the number unchanged.
+[product/docs/commands.md](../product/docs/commands.md) is the command surface: `--json` for structured fields, and a nonzero exit status on errors (an unknown flag exits 2). [release/cli/README.md](cli/README.md) is the package page. CLI v2 writes workspace schema 3 and still reads schema 2. [product/docs/workspace.md](../product/docs/workspace.md) lists the files. The schema number is `version` in `workspace.yaml`. Schema 3 is the per-member ID layout. Moving a schema 2 workspace there is a migration, and one person on the team has to make that split, commit it, and push it before anyone else changes anything. Writing down a field that is already in the layout leaves the number unchanged.
 
-A breaking change ships in a new major version and is listed under Breaking in its release note. Separately, the pin guard protects a workspace from the wrong CLI. It applies when the running CLI is not the pinned one and it did not hand off. It refuses a writing change that would move the workspace to schema 3, `init` included, and it refuses any writing change when the running CLI and the pin are on different release lines. [internal/cli/release_line.go](internal/cli/release_line.go) calls `X.Y.Z` stable and `X.Y.Z-<label>.N` a variant line for that label. Two stable versions share the stable line, so a new major is still stable: the guard does not refuse it for the number alone. A version of neither shape is an unknown line. Reserved labels (`alpha`, `beta`, `rc`, `dev`, `test`, `pre`, `preview`, `snapshot`) keep a candidate on the unknown line. An unknown line is not a different line by itself; the schema refusal is what still applies. `CC_CLI_VERSION=local` never lifts a refusal. Read-only commands, a preview such as `record delete` without `--confirm`, and other changes on the same release line only warn. The 2.5.0 CLI request states this refusal.
+A breaking change ships in a new major version and is listed under Breaking in its release note. Separately, the pin guard protects a workspace from the wrong CLI. It applies when the running CLI is not the pinned one and it did not hand off. It refuses a writing change that would move the workspace to schema 3, `init` included, and it refuses any writing change when the running CLI and the pin are on different release lines. [internal/cli/release_line.go](../internal/cli/release_line.go) calls `X.Y.Z` stable and `X.Y.Z-<label>.N` a variant line for that label. Two stable versions share the stable line, so a new major is still stable: the guard does not refuse it for the number alone. A version of neither shape is an unknown line. Reserved labels (`alpha`, `beta`, `rc`, `dev`, `test`, `pre`, `preview`, `snapshot`) keep a candidate on the unknown line. An unknown line is not a different line by itself; the schema refusal is what still applies. `CC_CLI_VERSION=local` never lifts a refusal. Read-only commands, a preview such as `record delete` without `--confirm`, and other changes on the same release line only warn. The 2.5.0 CLI request states this refusal.
 
 Nothing in this repository deprecates a feature today. From here on, a feature is deprecated in the notes of one minor release, under Upgrade notes, before it is removed in a later release.
 
-Which versions receive fixes is in [SECURITY.md](SECURITY.md).
+Which versions receive fixes is in [SECURITY.md](../SECURITY.md).
 
 ### Variant forks
 
@@ -99,7 +99,7 @@ A published stable tag is left as published. `scripts/resolve-release-version.sh
 
 ## Publish
 
-[Publish](.github/workflows/publish.yml) runs three jobs:
+[Publish](../.github/workflows/publish.yml) runs three jobs:
 
 | Job | When it runs | What it does |
 | --- | --- | --- |
@@ -111,4 +111,4 @@ The template job is second because the template release names the CLI release. W
 
 A product is published only when its version file names a release that is not out yet. `workflow_dispatch` can name a version: `cli_version` blank means `CLI_VERSION`, and `template_version` blank means `VERSION`. A version that already has a release is left alone, and the other product can still publish.
 
-Publication is the maintainer's explicit act. The [README](README.md#release-assembly) says commits, tags, pushes, release publication, and deployment require an explicit maintainer request, and are never part of validation. Merging the version files and requests to `main`, or starting Publish by hand, is that act. A pull request does not publish.
+Publication is the maintainer's explicit act. The [README](../README.md#release-assembly) says commits, tags, pushes, release publication, and deployment require an explicit maintainer request, and are never part of validation. Merging the version files and requests to `main`, or starting Publish by hand, is that act. A pull request does not publish.
