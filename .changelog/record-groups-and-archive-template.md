@@ -9,7 +9,7 @@ pr: 209
 describe grouped records and the archive: a record may sit in one level of group
 folder with `_archive/` above or below it, `record list` and `status` show your
 own work first, and `record archive` moves your own finished records under
-`_archive/`. After completion the agent offers to archive, and a no changes
-nothing. This workspace version pins CLI 2.5.0, which renames an existing
-`intent/archive/` or `plans/archive/` to `_archive/` on its first changing
-command; no record's content changes.
+`_archive/`. After completion the agent offers to archive, and declining the
+offer changes nothing. This workspace version pins CLI 2.5.0, which renames an
+existing `intent/archive/` or `plans/archive/` to `_archive/` on its first
+changing command; no record's content changes.

@@ -42,7 +42,8 @@ change file describes, and that file has not shipped yet, it edits or deletes
 that file in the same pull request rather than adding another one:
 
 - a feature reworked before its release is described once, as it finally works,
-  and names every pull request that made it in `pr`;
+  and names every pull request that made it in `pr`, and everyone who wrote
+  them in `authors`, because `pr` alone credits no one new;
 - a change added and then reverted before its release appears nowhere;
 - a fix for something that never shipped is not a fix, and needs no file.
 
