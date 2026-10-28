@@ -101,7 +101,8 @@ relationships. The shared roster is `members.yaml`. The active member, this mach
 this machine starts work from are the documented, gitignored `member.local.yaml`
 and `repositories.local.yaml`. Read those bindings when needed; never inspect
 unrelated host settings, credentials, private provider payloads, or another
-session's state. Never store secrets in workspace records.
+session's state. Never store secrets in workspace records. These four files
+sit at the workspace root, beside this file, never under `.context-circuit/`.
 `.context-circuit/docs/workspace.md` describes what each file may hold.
 
 Initializing a workspace, describing the workspace's own repository, connecting
