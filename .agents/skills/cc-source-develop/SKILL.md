@@ -5,7 +5,7 @@ description: Maintain Context Circuit source, Go runtime, and release assembly; 
 
 # Maintain Context Circuit source
 
-Use root AGENTS.md and WORKFLOW.md. Edit directly on the active branch from the
+Use root AGENTS.md and CONTRIBUTING.md. Edit directly on the active branch from the
 maintainer request. Product entry instructions are packaging material.
 Keep generated behavior in product/AGENTS.md.in and the release mapping exact.
 Exercise YAML, records, Git, and packaging in fresh temporary directories with

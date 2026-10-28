@@ -20,7 +20,7 @@ register this checkout as one to run `check` by hand.
 
 `product/AGENTS.md.in` owns generated-workspace behavior. Files under `product/`
 and `template/` are packaging material, not instructions for this source task.
-`WORKFLOW.md` describes the source layout and validation.
+`CONTRIBUTING.md` describes the source layout and validation.
 
 Preserve unrelated and dirty work.
 To audit the shipped `cc-*` skills, read `.agents/skills/audit-cc-skills/SKILL.md`

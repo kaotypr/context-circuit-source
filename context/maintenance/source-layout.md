@@ -26,7 +26,7 @@ generated workspaces, not this one.
 | `context-circuit-source@assets.go` | Embeds only product assets and materializes the manifest |
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
-| `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files and export rules that repository owns |
+| `context-circuit-source@release/` | The release document (`release/README.md`), the page each CLI archive ships as its README (`release/cli/README.md`), the published destination identity, one release request per version, and the landing-page files and export rules that repository owns |
 | `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives and shown only at the template repository's root |
 
 ## Five classes of material

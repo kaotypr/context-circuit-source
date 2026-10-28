@@ -311,8 +311,6 @@ none:
   - release/**
   - README.md
   - CONTRIBUTING.md
-  - WORKFLOW.md
-  - CLI.md
   - SECURITY.md
   - CODE_OF_CONDUCT.md
   - context/**

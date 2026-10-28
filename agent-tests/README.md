@@ -229,7 +229,7 @@ case either. A normal pull-request description is enough:
 
 - `**/*_test.go`, `internal/cow/**`, and `internal/installer/**`
 - `.github/**`, `scripts/*.sh`, and `release/**`
-- `README.md`, `CONTRIBUTING.md`, `WORKFLOW.md`, `CLI.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md`
+- `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md`
 - `context/**`, `.agents/**`, and `agent-tests/**`
 - `product/README.md`, `product/assets/**`, and `product/LICENSE`
 - `VERSION` and `CLI_VERSION`

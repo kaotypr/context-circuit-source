@@ -18,8 +18,8 @@
 
 <p align="center">
   <a href="https://github.com/kaotypr/context-circuit">Product guide</a> ·
-  <a href="WORKFLOW.md">Source workflow</a> ·
-  <a href="CLI.md">CLI package guide</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="release/cli/README.md">CLI package guide</a> ·
   <a href="#development">Development</a> ·
   <a href="#release-assembly">Release assembly</a> ·
   <a href="#for-company-teams">For company teams</a> ·
@@ -190,7 +190,7 @@ release publication, and deployment require an explicit maintainer request.
 ## For company teams
 
 Install with the workspace's `cc-cli` skill, or take a package from a `cli-v*`
-release. [CLI.md](CLI.md) is the package guide: checksums, the version store,
+release. [release/cli/README.md](release/cli/README.md) is the package guide: checksums, the version store,
 and where a registry credential goes.
 
 The launcher `.context-circuit/cli` (`.context-circuit/cli.ps1` in Windows
@@ -203,7 +203,7 @@ among that label's releases. Moving to another line is a template change a
 person names by its exact tag.
 
 What is a breaking change, and how a fork publishes a variant, is in
-[RELEASING.md](RELEASING.md). Which versions receive fixes is in
+[release/README.md](release/README.md). Which versions receive fixes is in
 [SECURITY.md](SECURITY.md).
 
 ## Maintaining product behavior
@@ -223,8 +223,8 @@ What is a breaking change, and how a fork publishes a variant, is in
   exercised.
 - Do not revive retired v1 lifecycle machinery.
 
-See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
-[CLI.md](CLI.md) for the page every CLI archive carries as its README, and the
+See [CONTRIBUTING.md](CONTRIBUTING.md) for source ownership and validation details,
+[release/cli/README.md](release/cli/README.md) for the page every CLI archive carries as its README, and the
 [product documentation](product/docs/) for the workspace contract.
 
 ## Licensing
