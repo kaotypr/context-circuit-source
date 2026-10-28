@@ -23,6 +23,7 @@ One paragraph on what changes for someone using Context Circuit.
 | `kind` | `added`, `fixed`, `changed`, or `breaking`. Required. `changed` is anything that is neither a feature nor a fix, such as reworded guidance in a shipped skill. |
 | `upgrade` | Optional, one line: what the owner of an existing workspace has to do. It is listed under Upgrade notes. |
 | `authors` | Optional GitHub handles, starting with `@` and separated by spaces. Without it, the draft credits the account the pull request came from, which is `kaotypr` for any branch pushed to this repository. |
+| `pr` | Optional pull request numbers, separated by spaces, such as `pr: 177 180`. The entry links these instead of the pull request that added the file. Use it for a change several pull requests made, an entry written after its change merged, or a cherry-pick, which names the original fix. |
 
 The body is the entry. Write it for a user, not a reviewer: what they will see
 or have to do, not how the code changed. It is published, so it carries no
@@ -31,6 +32,24 @@ private names and no AI-assistance credit.
 Name the file after the change, using only letters, digits, `.`, `_` and `-`,
 for example `record-archive-flag.md`. Two pull requests that pick the same name
 conflict when the second one merges, and that one renames its file.
+
+## Describe the change since the last release
+
+A change file says what will be different for someone using Context Circuit
+between the last release and the next one. It is not a record of how the change
+was built. When a pull request reworks, extends or undoes something an earlier
+change file describes, and that file has not shipped yet, it edits or deletes
+that file in the same pull request rather than adding another one:
+
+- a feature reworked before its release is described once, as it finally works,
+  and names every pull request that made it in `pr`;
+- a change added and then reverted before its release appears nowhere;
+- a fix for something that never shipped is not a fix, and needs no file.
+
+So `.changelog/` always reads as the next release's notes would, and the draft
+does not have to be untangled when the release is cut.
+
+## When a pull request needs none
 
 A pull request that changes nothing users see adds no file, and writes `None`
 under Release note in its description. The Change files check fails a pull

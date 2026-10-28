@@ -55,7 +55,7 @@ parse() {
       if (first) for (i=first; i<=last; i++) print lines[i]
     }' > "$work/body"
   [ -s "$work/body" ] || fail "$file: has no entry text after its frontmatter"
-  product='' kind='' upgrade='' authors=''
+  product='' kind='' upgrade='' authors='' prs=''
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|'#'*) continue ;; esac
     key=${line%%:*}
@@ -67,7 +67,10 @@ parse() {
       kind) kind=$value ;;
       upgrade) upgrade=$value ;;
       authors) authors=$value ;;
-      *) fail "$file: unknown frontmatter key: $key (expected product, kind, upgrade, authors)" ;;
+      # Spaces between numbers collapse, and a value of spaces alone is no
+      # value, so it cannot replace the link a merge would give.
+      pr) prs=$(printf '%s' "$value" | tr -s ' \t' '  ' | sed -e 's/^ //' -e 's/ $//') ;;
+      *) fail "$file: unknown frontmatter key: $key (expected product, kind, upgrade, authors, pr)" ;;
     esac
   done < "$work/front"
   case "$product" in
@@ -80,6 +83,11 @@ parse() {
     '') fail "$file: no kind (expected added, fixed, changed, or breaking)" ;;
     *) fail "$file: unknown kind: $kind (expected added, fixed, changed, or breaking)" ;;
   esac
+  for n in $prs; do
+    case "$n" in
+      *[!0-9]*|0*) fail "$file: pr is not a list of pull request numbers: $prs" ;;
+    esac
+  done
   for handle in $authors; do
     case "$handle" in
       @*) ;;
@@ -152,18 +160,21 @@ for f in .changelog/*.md; do
   if [ -n "$subject" ]; then
     number=$(printf '%s\n' "$subject" | sed -E 's/^Merge pull request #([0-9]+) from .*/\1/')
     owner=$(printf '%s\n' "$subject" | sed -E 's/^Merge pull request #[0-9]+ from ([^/ ]+).*/\1/')
-  else
+  elif [ -z "$prs" ]; then
     note "$f reached this branch without a pull request merge, so its entry has no link"
   fi
-  if [ -n "$number" ]; then
+  # A file that names its pull requests links those: a change made by several
+  # pull requests, an entry added after the fact, or a cherry-pick pointing at
+  # the original fix. The merge still supplies the fallback contributor.
+  [ -z "$prs" ] || number=$prs
+  link='' key=999999999
+  for n in $number; do
     case "$target" in
-      cli) link="#$number" ;;
-      template) link="kaotypr/context-circuit-source#$number" ;;
+      cli) one="#$n" ;;
+      template) one="kaotypr/context-circuit-source#$n" ;;
     esac
-    key=$(printf '%09d' "$number")
-  else
-    link='' key=999999999
-  fi
+    if [ -z "$link" ]; then link=$one; key=$(printf '%09d' "$n"); else link="$link, $one"; fi
+  done
   {
     tr '\n' ' ' < "$work/body" | sed -e 's/[[:space:]]*$//'
     [ -z "$link" ] || printf ' (%s)' "$link"
