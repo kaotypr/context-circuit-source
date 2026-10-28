@@ -200,3 +200,33 @@ func TestCodexAuthReady(t *testing.T) {
 		t.Fatal("expected missing")
 	}
 }
+
+// A run allowed to commit and push names the workspace's .git and its remote
+// as writable roots after the fixed ones; without them workspace-write keeps
+// .git read-only and the remote outside the sandbox.
+func TestCodexBuildNamesWritableDirs(t *testing.T) {
+	h, err := ForName("codex")
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := LaunchInput{
+		Prompt:       "Reply OK",
+		Workspace:    "/work/ws",
+		RunRoot:      "/work/run",
+		Cfg:          HostConfig{Command: "codex", Model: "gpt-6-sol"},
+		Caller:       map[string]string{"PATH": "/usr/bin:/bin"},
+		WritableDirs: []string{"/work/ws/.git", "/work/run/remotes/ws.git"},
+	}
+	launch, err := h.Build(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	argv := strings.Join(launch.Argv, " ")
+	for _, want := range []string{
+		"--add-dir " + filepath.Join("/work/ws", ".codex") + " --add-dir /work/ws/.git --add-dir /work/run/remotes/ws.git",
+	} {
+		if !strings.Contains(argv, want) {
+			t.Fatalf("argv %q lacks %q", argv, want)
+		}
+	}
+}

@@ -52,6 +52,11 @@ type LaunchInput struct {
 	// The runner sets it from --subscription-auth. Adapters that do not
 	// support it leave CopyIn empty.
 	SubscriptionAuth bool
+	// WritableDirs are directories the run must be able to write although
+	// a host sandbox would keep them read-only. The runner sets them only
+	// for a scenario that lets the run commit and push the workspace's
+	// base branch: the workspace's .git and its remote.
+	WritableDirs []string
 }
 
 // Launch is a process the runner can start.
