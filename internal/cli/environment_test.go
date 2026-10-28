@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -222,7 +223,7 @@ func TestAgentSetupTurnsOffClaudeCodeAttribution(t *testing.T) {
 	if got := settings["attribution"]; len(got) != 2 || got["commit"] != "" || got["pr"] != "" {
 		t.Fatalf("attribution is not off: %s", read(t, path))
 	}
-	if !strings.Contains(read(t, filepath.Join(f.root, ".gitignore")), "/.claude/settings.local.json\n") {
+	if !strings.Contains(strings.ReplaceAll(read(t, filepath.Join(f.root, ".gitignore")), "\r\n", "\n"), "/.claude/settings.local.json\n") {
 		t.Fatal("the local settings file is not ignored")
 	}
 	for _, other := range []string{".cursor/cli.json", ".codex/config.toml"} {
@@ -250,7 +251,8 @@ func TestAgentSetupTurnsOffClaudeCodeAttribution(t *testing.T) {
 	if merged != want {
 		t.Fatalf("merge changed the person's settings:\n%s\nwant:\n%s", merged, want)
 	}
-	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0600 {
+	// Windows has no permission bits to keep.
+	if info, err := os.Stat(path); runtime.GOOS != "windows" && (err != nil || info.Mode().Perm() != 0600) {
 		t.Fatal("merge changed the file mode", info, err)
 	}
 	f.ok("agent", "setup", "--host", "claude-code")
@@ -319,7 +321,7 @@ func TestTemplateExportKeepsSourcesOutOfSearch(t *testing.T) {
 	if strings.Join(rules, ",") != "/sources/" {
 		t.Fatalf(".ignore rules are %q, want only the anchored /sources/", rules)
 	}
-	if !strings.Contains(read(t, filepath.Join(blank, ".gitignore")), "\n/.claude/settings.local.json\n") {
+	if !strings.Contains(strings.ReplaceAll(read(t, filepath.Join(blank, ".gitignore")), "\r\n", "\n"), "\n/.claude/settings.local.json\n") {
 		t.Fatal("the seed .gitignore does not ignore the local Claude Code settings")
 	}
 	for _, rel := range []string{".ignore", "sources/README.md"} {
