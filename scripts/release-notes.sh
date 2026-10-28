@@ -67,7 +67,9 @@ parse() {
       kind) kind=$value ;;
       upgrade) upgrade=$value ;;
       authors) authors=$value ;;
-      pr) prs=$value ;;
+      # Spaces between numbers collapse, and a value of spaces alone is no
+      # value, so it cannot replace the link a merge would give.
+      pr) prs=$(printf '%s' "$value" | tr -s ' \t' '  ' | sed -e 's/^ //' -e 's/ $//') ;;
       *) fail "$file: unknown frontmatter key: $key (expected product, kind, upgrade, authors, pr)" ;;
     esac
   done < "$work/front"

@@ -200,6 +200,12 @@ grep -qx '@hallode' "$work/stdout" || fail 'pr: changed who is credited'
 sh scripts/release-notes.sh template 2.5.1 --stdout > "$work/stdout" 2>/dev/null
 grep -qx 'Entry for named-prs. (kaotypr/context-circuit-source#180, kaotypr/context-circuit-source#177)' "$work/stdout" ||
   fail "pr: did not set the template links: $(cat "$work/stdout")"
+printf '%s\n' --- 'product: cli' 'kind: fixed' 'pr: " "' --- '' 'Entry for blank-pr.' > .changelog/blank-pr.md
+git add -A
+sh scripts/release-notes.sh cli 2.5.1 --stdout > "$work/stdout" 2> "$work/err" || fail "a blank pr: failed: $(cat "$work/err")"
+grep -q 'blank-pr.md reached this branch without a pull request merge' "$work/err" ||
+  fail "a blank pr: hid the missing link: $(cat "$work/err")"
+git rm -q -f .changelog/blank-pr.md
 for bad in abc '12 x' 012; do
   printf '%s\n' --- 'product: cli' 'kind: fixed' "pr: $bad" --- '' 'Body.' > "$work/bad-pr.md"
   if sh scripts/release-notes.sh --validate "$work/bad-pr.md" 2> "$work/err"; then fail "pr: $bad was accepted"; fi
