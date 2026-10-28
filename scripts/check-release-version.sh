@@ -130,4 +130,41 @@ printf '%s\n' --- 'version: 2.5.0' --- 'Fixture notes.' > "$repo/release/request
 if resolve 2.5.0 > "$work/resolve.log" 2>&1; then fail 'resolver accepted an explicit version under a variant label'; fi
 grep -q "is not this variant's 2.5.0-acme.3" "$work/resolve.log" || fail "resolver refused the explicit version for another reason: $(cat "$work/resolve.log")"
 
-printf 'PASS: release-version.sh guard table, and the resolver under a variant label\n'
+# The branch guard: a release publishes only from its own line's release branch,
+# and a version already out is a no-op wherever it runs. Here the fake gh says
+# 2.4.1 is out and nothing else is.
+rm -f "$repo/release/variant.env"
+mkdir -p "$repo/release/requests/template"
+for v in 2.5.0 2.5.0-rc.1 2.5.1 2.6.0; do
+  printf '%s\n' --- "version: $v" --- 'Fixture notes.' > "$repo/release/requests/cli/$v.md"
+done
+printf '#!/bin/sh\ncase "$*" in *cli-v2.4.1*) exit 0 ;; esac\nexit 1\n' > "$work/bin/gh"
+# on_branch <branch> <version>: resolves with RELEASE_BRANCH set (empty = unset).
+on_branch() {
+  (
+    cd "$repo"
+    unset GITHUB_OUTPUT RELEASE_BRANCH
+    [ -z "$1" ] || { RELEASE_BRANCH=$1; export RELEASE_BRANCH; }
+    : > "$work/resolved"
+    PATH="$work/bin:$PATH" FORGE=github CLI_REPOSITORY=fixture/cli INPUT_VERSION=$2 \
+      RESOLVE_OUTPUT="$work/resolved" CC_VERSION_SUFFIX='' \
+      sh scripts/resolve-release-version.sh cli
+  ) > "$work/resolve.log" 2>&1
+}
+for v in 2.5.0 2.5.0-rc.1 2.5.1; do
+  on_branch release/2.5 "$v" || fail "release/2.5 refused $v: $(cat "$work/resolve.log")"
+  grep -qx 'publish=true' "$work/resolved" || fail "release/2.5 did not publish $v: $(cat "$work/resolved")"
+done
+for branch in release/2.6 main release/foo development/2.5.0; do
+  if on_branch "$branch" 2.5.0; then fail "$branch published 2.5.0"; fi
+  grep -q "publishes from release/2.5, not from $branch" "$work/resolve.log" ||
+    fail "$branch refused 2.5.0 for another reason: $(cat "$work/resolve.log")"
+done
+if on_branch release/2.5 2.6.0; then fail 'release/2.5 published 2.6.0'; fi
+for branch in main release/2.5; do
+  on_branch "$branch" 2.4.1 || fail "an already-published version failed on $branch: $(cat "$work/resolve.log")"
+  grep -qx 'publish=false' "$work/resolved" || fail "an already-published version on $branch was not a no-op"
+done
+on_branch '' 2.6.0 || fail "an unset branch refused 2.6.0: $(cat "$work/resolve.log")"
+
+printf 'PASS: release-version.sh guard table, the resolver under a variant label, and the release-branch guard\n'
