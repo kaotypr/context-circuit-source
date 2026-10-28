@@ -31,7 +31,9 @@ checked assets.
 
 Continuous integration runs the native suite — including installer upgrade and
 rollback fixtures — on Linux, macOS, and Windows, plus the release check on
-Linux. The matrix exists because **cross-compilation alone is not proof of
+Linux for a pull request into a release branch. Every pull request also runs a
+check that it carries a change file for each product it changes, or says it
+changes nothing users see. The matrix exists because **cross-compilation alone is not proof of
 behavior on another operating system**, and the filesystem cloning this product
 depends on is exactly where that bites.
 
@@ -55,8 +57,10 @@ The two products publish separately, each from the repository that owns it. The
 workspace template publishes from its version file to the published template
 repository's `v*` release tags. The CLI is tagged `cli-v*` here, where its
 source is, and its release is created here too, on the commit that built it.
-Changing a version file does not publish — publication is explicitly invoked and
-requires authorization.
+Both publish from a release line's branch, `release/X.Y`, when a release-prep
+merge there sets a version file; the resolver refuses a version on any other
+branch, `main` included. That merge, or a run started by hand, is the explicit,
+authorized act — changing a version file on `main` publishes nothing.
 
 Publishing the template replaces the destination's whole tree, so the files that
 repository owns rather than a workspace — its license, conduct, contributing and

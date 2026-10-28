@@ -27,6 +27,7 @@ generated workspaces, not this one.
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
 | `context-circuit-source@release/` | The release document (`release/README.md`), the page each CLI archive ships as its README (`release/cli/README.md`), the published destination identity, one release request per version, and the landing-page files and export rules that repository owns |
+| `context-circuit-source@.changelog/` | One change file per user-visible change, waiting for the release that drafts it into a request |
 | `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives and shown only at the template repository's root |
 
 ## Five classes of material
@@ -37,7 +38,7 @@ generated workspaces, not this one.
 | Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
 | Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/` plus the guide and license restored from `product/`, marked `export-ignore` so the archive a project is created from carries none of it |
 | Contributor tool | The agent tests, a separate module that runs coding hosts against a fixture workspace and is run by contributors outside CI: `context-circuit-source@agent-tests/` |
-| Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer skills under `.agents/skills/` (`cc-source-develop`, `audit-cc-skills`) |
+| Never shipped | This knowledge tree, the workspace's own records, change files, release requests, the Go implementation, scripts, and the maintainer skills under `.agents/skills/` (`cc-source-develop`, `audit-cc-skills`) |
 
 Product history and maintainer data never reach a release asset. The
 destination-owned class exists because a workspace root belongs to somebody
