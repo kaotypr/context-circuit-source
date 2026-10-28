@@ -51,13 +51,11 @@ artifact_name="$name-v$version"
 # with a warm cache never sees it; one starting clean reads the empty directory
 # as a missing license and blames the dependency for its own environment.
 go mod download
-# The project's own NOTICE leads the file instead of shipping beside it: the
-# installers accept an exact archive file list, and an older one refuses an
-# archive holding a file it does not know.
-[ -s NOTICE ] || fail 'NOTICE is missing or empty'
+# The project's own copyright line travels in the archive's LICENSE, so this
+# file lists only third-party code. The installers accept an exact archive file
+# list, and an older one refuses an archive holding a file it does not know.
 notices="$staging_dir/THIRD_PARTY_NOTICES.txt"
-cat NOTICE > "$notices"
-printf '\nContext Circuit third-party notices\n\n' >> "$notices"
+printf 'Context Circuit third-party notices\n\n' > "$notices"
 for module in github.com/goccy/go-yaml github.com/gofrs/flock golang.org/x/sys; do
   module_dir=$(go list -m -f '{{.Dir}}' "$module")
   [ -n "$module_dir" ] || fail "module is not extracted in the cache: $module"
@@ -82,7 +80,7 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 wi
   [ "$target_os" != windows ] || binary=context-circuit-cli.exe
   CGO_ENABLED=0 GOOS=$target_os GOARCH=$target_arch go build -trimpath \
     -ldflags "-s -w -X main.version=${version#v}" -o "$package_dir/$binary" ./cmd/context-circuit
-  cp CLI.md "$package_dir/README.md"
+  cp release/cli/README.md "$package_dir/README.md"
   cp LICENSE "$package_dir/LICENSE"
   cp "$notices" "$package_dir/THIRD_PARTY_NOTICES.txt"
   package_name="$artifact_name-$target_os-$target_arch"
