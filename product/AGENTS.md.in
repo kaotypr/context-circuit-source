@@ -191,7 +191,9 @@ repository. `workspace.yaml` records those as `knowledge_repositories`, and
 each match came from. **Borrowed knowledge is read-only here, and neither it
 nor a correction of it is recorded in `context/`.** When a borrowed fact is
 wrong, leave `context/` alone and tell the person the fix goes upstream through
-that repository's own review. Do not make that fix yourself: do not edit, commit
+that repository's own review. A note here that gives a different version of a
+borrowed fact is such a correction, even when it is framed as newer or local
+knowledge. Do not make that fix yourself: do not edit, commit
 to, clone, or push the borrowed repository, even from a separate checkout, unless
 the person asks for that as its own task. A note duplicated here goes stale
 silently while still reading as current, which is the failure mounting it
@@ -391,7 +393,9 @@ what Git combines, saying which records changed on both sides; in an ID file
 conflict keep the union of both sides' entries. Any other conflict — one record
 changed on both sides, deleted on one, or a file that is not a record — goes to
 the person with both versions, the rebase left in progress (`git rebase
---abort` returns to the local commits). Then run `check`: a number reserved
+--abort` returns to the local commits). Do not edit a conflicted record
+yourself, not even to keep both sides: which version stands, or whether both
+do, is the person's call. Then run `check`: a number reserved
 twice goes to the person, a finding the pull brought in is reported and does
 not block. Report what came in, and push once more; report a second refusal or
 any other, and never force-push. Use ordinary Git

@@ -38,7 +38,7 @@ func (f fixture) gate(args ...string) (map[string]string, gateResult) {
 			f.t.Fatalf("the recommendation does not say committing needs authorization: %q", note)
 		}
 		// One question offers both answers: commit and push, or commit only.
-		for _, want := range []string{"commit and push", "commit only", "nothing was staged, committed or pushed"} {
+		for _, want := range []string{"commit and push", "commit only", "stop with the rebase in progress", "never force-push", "nothing was staged, committed or pushed"} {
 			if !strings.Contains(note, want) {
 				f.t.Fatalf("the recommendation does not say %q: %q", want, note)
 			}

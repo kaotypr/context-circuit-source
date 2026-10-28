@@ -164,7 +164,7 @@ func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]
 	if len(files) > 0 {
 		result["commit_recommended"] = commitRecommendation{
 			Files: files,
-			Note:  "these records and ID files are not committed, so other clones cannot see them yet: ask the person whether to commit and push them, or commit only; committing and pushing need the person's answer as their authorization, and nothing was staged, committed or pushed",
+			Note:  "these records and ID files are not committed, so other clones cannot see them yet: ask the person whether to commit and push them, or commit only; committing and pushing need the person's answer as their authorization; if the push is refused, pull with rebase and resolve only an ID file conflict, by keeping both sides' entries, and stop with the rebase in progress for any other conflict, even one where both sides could be kept, showing the person both versions; never force-push; nothing was staged, committed or pushed",
 		}
 	}
 }

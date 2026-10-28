@@ -240,7 +240,9 @@ match `borrowed`. That mark decides what you may do with it.
   nothing here can tell that it has; avoiding that is the whole reason the
   repository is mounted rather than vendored. Asked to fix knowledge that came
   from a borrowed repository, leave `context/` alone and tell the person the fix
-  goes upstream, through that repository's own review.
+  goes upstream, through that repository's own review. A new note here that gives
+  a different version of a borrowed fact is such a correction too, even framed as
+  newer or local knowledge.
 - **Never edit one here, and never fix one yourself.** The checkout's push URL
   is disabled, so an attempt fails rather than half-succeeding. An improvement
   is the person's merge request in that repository: do not clone, commit to, or
