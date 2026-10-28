@@ -46,11 +46,12 @@ hosts:
       - OPENAI_API_KEY
   cursor:
     command: cursor-agent
-    model: composer-2.5
+    # grok-4.7-low, not composer-2.5. See "Hosts" in README.md for why this
+    # pin is not Cursor's smallest model.
+    model: grok-4.7-low
     effort: ""
     host_version: "2026.10.22-27dcf5f"
     provisional: true
     timeout_seconds: 1800
-    price_row: composer-2.5
     auth_env:
       - CURSOR_API_KEY

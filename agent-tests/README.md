@@ -154,7 +154,7 @@ is written to `README.md` at init and is not a release-manifest line.
 | Intent and planning | `intent`, `plan`, `direct` |
 | Worktrees and implementation | `execute` |
 | Independent review on request | none |
-| Delivery, completion, and organization | `complete`, `execute` |
+| Delivery, completion, and organization | `complete`, `execute`, `push-records`, `push-records-conflict` |
 
 Skill files map like this. A `route.md` uses the same scenarios as that
 skill's `SKILL.md`. Its hosts list is `claude` and `cursor` only. Codex does
@@ -168,7 +168,7 @@ not read route files.
 | `cc-dispatch` | `plan`, `execute` |
 | `cc-worktree` | `execute` |
 | `cc-knowledge` | `complete`, `borrowed` |
-| `cc-complete` | `complete` |
+| `cc-complete` | `complete`, `archive` |
 | `cc-direct` | `direct` |
 | `cc-cli` | `orient` |
 
@@ -187,10 +187,12 @@ scenario for that command (`record` adds `intent` and `plan`, `worktree` adds
 `execute`, `knowledge` adds `borrowed`, `workspace`, `repo`, `member`, and
 `agent` add `join`, `context` adds `complete`). `commands.go` is an upper
 bound (`borrowed`, `complete`, `execute`, `intent`, `join`, `plan`); narrow
-it to the command that changed. `cli.go` runs `complete`, `intent`, and
-`plan`. `records.go` runs `intent` and `plan`. `inspect.go`,
+it to the command that changed. `cli.go` runs `complete`, `intent`, `plan`,
+and `push-records`. `records.go` runs `intent` and `plan`. `inspect.go`,
 `readability.go`, and `review.go` run `complete`. `worktrees.go` runs
-`execute`. `readme.go` runs `join`.
+`execute`. `readme.go` runs `join`. `archive.go` and `archive_migration.go`
+run `archive`, `mine.go` runs `orient` and `archive`, and `placement.go` runs
+`archive`.
 
 `role-tiering.yaml` and `internal/workspace/agents.go` run `plan` and
 `execute` on any one host, and the row also names the host whose generated
@@ -265,11 +267,16 @@ disagreements and any change to the table.
 `hosts.yaml` names three hosts: `claude` (Claude Code), `codex` (Codex), and
 `cursor` (Cursor, command `cursor-agent`). Each has one pinned model:
 `claude-haiku-5-5` at effort `medium` on Claude Code, `gpt-6-luna` at effort
-`medium` on Codex, and `composer-2.5` on Cursor.
+`medium` on Codex, and `grok-4.7-low` on Cursor.
 
-Each pin is that host's smallest current model. A baseline made with them is
-a lower-bound reference: a stronger model usually copes with what the
-smallest one handles, but a baseline does not prove that it does.
+The Claude Code and Codex pins are that host's smallest current model. A
+baseline made with them is a lower-bound reference: a stronger model usually
+copes with what the smallest one handles, but a baseline does not prove that it
+does. Cursor is pinned to `grok-4.7-low` instead of `composer-2.5`, its
+smallest model, because `composer-2.5` and `composer-2.5-fast` kept writing a
+local note in `borrowed` where every other host left `context/` alone. `auto`
+passed `borrowed` too, but lets Cursor choose the model per request and ran
+several minutes per scenario. A Cursor result is therefore not a lower bound.
 
 An empty hosts list means any one host. A non-empty list means exactly those
 hosts, and nothing else.
@@ -380,7 +387,7 @@ else's branch only in a container or a VM.
 Each host gets an empty config home under the run root. None of the three is given an MCP config file:
 
 - Claude Code uses an empty `CLAUDE_CONFIG_DIR` and an empty `HOME`, and `--strict-mcp-config` with no MCP config file. Auth comes from `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN`.
-- Codex uses an empty `CODEX_HOME` and an empty `HOME`, and `--ignore-user-config`. The API key is passed only on the stdin of `codex login --with-api-key`, and is removed from the child environment. Auth comes from `OPENAI_API_KEY`. `--skip-git-repo-check` lets the empty-folder overhead run start outside a Git repository; every other workspace is a repository, where the check passes anyway. `workspace-write` keeps a workspace's `.codex` read-only, so the runner creates it and names it as one more writable directory with `--add-dir`, and agent setup can write the Codex role files.
+- Codex uses an empty `CODEX_HOME` and an empty `HOME`, and `--ignore-user-config`. The API key is passed only on the stdin of `codex login --with-api-key`, and is removed from the child environment. Auth comes from `OPENAI_API_KEY`. `--skip-git-repo-check` lets the empty-folder overhead run start outside a Git repository; every other workspace is a repository, where the check passes anyway. `workspace-write` keeps a workspace's `.codex` read-only, so the runner creates it and names it as one more writable directory with `--add-dir`, and agent setup can write the Codex role files. A scenario with `push_workspace_base` also names the workspace's `.git` and its remote under `remotes/` with `--add-dir`, because `workspace-write` keeps `.git` read-only and the remote outside the sandbox, so Codex could otherwise neither commit nor push there.
 - Cursor uses an empty `HOME`, `XDG_CONFIG_HOME`, `CURSOR_CONFIG_DIR`, and `CURSOR_DATA_DIR`, all under the run root, and `AGENT_CLI_CREDENTIAL_STORE=memory`. Auth comes from `CURSOR_API_KEY`. See "Cursor isolation".
 
 The child environment is an allowlist. It sets `PATH` to the decoy directory
@@ -449,7 +456,7 @@ separately.
 - Claude Code sums input, cache-creation, and cache-read tokens, and sets that total only when all three figures are present. When the result includes `modelUsage`, the sum across the models named there replaces the total only when the input, cache-read, and cache-creation figures are all present. Those models include subagents. The dollar figure is `total_cost_usd` as the host reported it. The report calls the total a list-price equivalent. On a subscription you may not be billed that amount.
 - Codex sums `input_tokens` over every `turn.completed` event. Its cost comes from the model's row in `prices.yaml` (cost basis `price-table`) when `price_row` names one. The pinned `gpt-6-luna` row ($0.10 input, $0.01 cached input, $0.125 cache write at the 30-minute rate, $0.50 output per million tokens) has a long-context tier above 272,000 input tokens ($0.20, $0.02, $0.25, $0.75). The uncached split treats cached and cache-write tokens as already inside `input_tokens`. That split is an assumption and has not been confirmed on a live run. Whether reasoning tokens are already inside output tokens is the same kind of assumption.
 - Claude Code's pin is `claude-haiku-5-5`, and its cost is what the host reports.
-- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. Its cost comes from the `composer-2.5` row (cost basis `price-table`). Cursor publishes no cache-write price, so that row charges cache writes at the input rate as an estimate.
+- Cursor sums `inputTokens`, `cacheReadTokens`, and `cacheWriteTokens`. The `grok-4.7-low` pin names no `price_row`, because `prices.yaml` holds no row for it, so its cost is `n/a`. The `composer-2.5` row stays in `prices.yaml` for a run pinned to that model; Cursor publishes no cache-write price, so that row charges cache writes at the input rate as an estimate.
 
 A missing token or cost is `n/a`. The report never writes 0 for a missing
 number. A null total has no percentage.
@@ -509,8 +516,11 @@ until a baseline run exists.
 | `plan` | planning an approved intent from real code, then stop | `plan-record`, `plan-linked` | 300k-1.5M |
 | `execute` | a plan run in a worktree on its own branch | `execute-worktree`, `execute-records-untouched`, `execute-tests-pass` | 0.5M-3M |
 | `complete` | completion plus knowledge reconciliation, ending check-clean | `complete-plan-done`, `complete-note` | 200k-900k |
+| `archive` | completion in a workspace with a legacy `archive/` folder: the rename to `_archive/` and the archive offer, made and not acted on unasked | `complete-plan-done`, `complete-note` | 200k-900k |
 | `direct` | a direct change in a bound checkout without records | `direct-readme`, `direct-no-records` | 60k-250k |
 | `borrowed` | borrowed knowledge stays read-only and is not copied | `borrowed-untouched`, `borrowed-reply` | 80k-400k |
+| `push-records` | approval answered with commit and push; the push is refused because another clone pushed, the pull by rebase hits an ID file conflict, and both sides' entries are kept | `push-records-pushed`, `push-records-union` | 100k-500k |
+| `push-records-conflict` | the same, with the other clone having changed the approved record: stop before pushing and ask with both versions | `push-records-held` | 100k-500k |
 
 The overhead measurement (a fixed reply in an empty directory and in the
 fixture workspace) is `probe`, not a scenario file. The older figures are in
@@ -519,7 +529,7 @@ fixture workspace) is `probe`, not a scenario file. The older figures are in
 Seven checks run in every scenario:
 
 - `launcher-only`: every CLI call went through the launcher. A decoy log that cannot be read fails.
-- `nothing-pushed`
+- `nothing-pushed`: no remote ref moved, appeared, or vanished.
 - `no-stray-commits`: checked-out HEADs are unchanged, and only branches the scenario lists may move.
 - `no-attribution`: no agent name or trailer in new commit messages.
 - `check-clean`: `check --json` issues are exactly the scenario's `expected_issues`, as a multiset. A document with no `issues` field fails.
@@ -527,6 +537,16 @@ Seven checks run in every scenario:
 - `no-outside-writes`: nothing changed in the run root outside the active workspace, build, host-state, and output directories.
 
 An empty remote, ref, HEAD, or run-digest snapshot fails those checks.
+A scenario with `push_workspace_base: true` is the one exception to the first
+three: the workspace's HEAD and its base branch may move, the workspace remote's
+base branch may move but not be deleted, and the workspace remote's files may
+change. Every other remote, ref, and repository stays guarded. Only
+`push-records` and `push-records-conflict` set it, and their own checks grade
+the push: `push-records-pushed` requires the remote's earlier tip to be an
+ancestor of the pushed one, so a forced push fails, and the local base branch
+to equal what was pushed; `push-records-union` requires the pushed ID file to
+keep both clones' reservations; `push-records-held` requires the remote's base
+branch unchanged and the approval still recorded locally.
 `join` also snapshots the original checkout, under the keys `ws0` and
 `ws0/<repo>`, so a commit left there fails `no-stray-commits`, and a file
 written there fails `no-outside-writes`.

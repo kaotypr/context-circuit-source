@@ -119,21 +119,38 @@ func writes(cmd command, in *input) bool {
 	return !cmd.readOnly && (cmd.previews == nil || !cmd.previews(in))
 }
 
-// wouldMigrate reports whether a call would move the workspace to the current
-// schema. A check that fails counts as nothing pending, and the command then
-// reports that failure itself.
-func wouldMigrate(s *workspace.Store, name string, cmd command, in *input) bool {
-	pending := func() bool {
-		split, err := s.IDSplitPending()
-		return err == nil && split
+// migration names the change to the workspace's layout a call would make,
+// which only the pinned CLI makes, or "" when it would make none. A check that
+// fails counts as nothing pending, and the command then reports that failure
+// itself.
+func migration(s *workspace.Store, name string, cmd command, in *input) string {
+	split := func() bool {
+		pending, err := s.IDSplitPending()
+		return err == nil && pending
 	}
+	// The schema stays where it is for this one: a top-level archive/ reads as
+	// archived before and after, but a CLI that does not know _archive/ must
+	// not be the one to move the records there.
+	rename := func() bool {
+		pending, err := s.ArchiveRenamePending()
+		return err == nil && pending
+	}
+	schema := fmt.Sprintf("this change would move the workspace to schema %d, which the pinned CLI must make", workspace.CurrentSchema)
 	// Initialization writes the current schema itself, whatever its seed
 	// records, and a blank seed fails the strict decode IDSplitPending uses.
 	if name == "init" {
-		recorded, err := s.RecordedSchema()
-		return err == nil && recorded > 0 && recorded < workspace.CurrentSchema || pending()
+		if recorded, err := s.RecordedSchema(); err == nil && recorded > 0 && recorded < workspace.CurrentSchema || split() {
+			return schema
+		}
+	} else if !splitEnabled(cmd, in) {
+		return ""
+	} else if split() {
+		return schema
 	}
-	return splitEnabled(cmd, in) && pending()
+	if rename() {
+		return "this change would rename the workspace's archive/ folders to _archive/, which the pinned CLI must make"
+	}
+	return ""
 }
 
 // pinState is what the messages about one pin are written from.
@@ -184,11 +201,8 @@ func applyPin(s *workspace.Store, cmd command, in *input, original []string, run
 		}
 	}
 	if writes(cmd, in) {
-		reason := ""
-		switch {
-		case wouldMigrate(s, in.name, cmd, in):
-			reason = fmt.Sprintf("this change would move the workspace to schema %d, which the pinned CLI must make", workspace.CurrentSchema)
-		case differentLines(pin, running):
+		reason := migration(s, in.name, cmd, in)
+		if reason == "" && differentLines(pin, running) {
 			reason = "a CLI from a different release line"
 		}
 		if reason != "" {

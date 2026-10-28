@@ -11,7 +11,7 @@ init · status · check
 member add|band|use|list
 repo connect|clone|init|base|remote|relate|fetch|inspect
 workspace connect|base|remote
-record create|show|list|approve|complete|dependencies|order|delete
+record create|show|list|approve|complete|archive|dependencies|order|delete
 context find
 worktree prepare|list|inspect|move|repair|remove
 template export
@@ -44,6 +44,13 @@ knowledge tree, a reuse path pointing at control files — each is an error nami
 its reason, never a silent best-effort substitution. A refusal whose answer is a
 list the person must read, such as a deletion blocked by linked records, still
 returns that list as its result beside the reason, and still exits nonzero.
+
+**The caller's own work comes first.** Orientation opens with the active
+member's open work and the count of their finished records not archived, and
+the record listing defaults to that member's records, with another member's or
+everyone's on request. A gate that leaves files uncommitted, archiving
+included, names them as a commit recommendation, and completion carries an
+offer to archive; both are said to the person, never acted on unasked.
 
 **Read-only commands take no lock.** Inspection, listing, settings, dispatch
 specification, export, and the diagnostic run without serializing the workspace;

@@ -33,6 +33,12 @@ func TestOrientReplyShape(t *testing.T) {
 	if !Registry[nameOrientReply](good).Pass {
 		t.Fatal(Registry[nameOrientReply](good))
 	}
+	// A reply a host wrote that says "issue" rather than "issued".
+	issue := good
+	issue.Parsed.FinalReply = "The api repository. Use sh .context-circuit/cli. Void: only while the invoice is still a draft. After issue: do not void; reverse with a credit note instead. See domains/invoices.md."
+	if got := Registry[nameOrientReply](issue); !got.Pass {
+		t.Fatal(got)
+	}
 	bad := good
 	bad.Parsed.FinalReply = "No."
 	bad.Stream = ""
@@ -249,6 +255,25 @@ func TestCompleteNoteRejectsUnsupported(t *testing.T) {
 	write("Invoices export as a plain-text summary or as CSV.\n", today)
 	if !Registry[nameCompleteNote](ctx).Pass {
 		t.Fatal(Registry[nameCompleteNote](ctx))
+	}
+	// Notes a host wrote that record the export without the words "as CSV".
+	for _, note := range []string{
+		"Invoices export as either a plain-text summary or CSV.\n",
+		"Invoices can be exported as a plain-text summary or CSV.\n",
+	} {
+		write(note, today)
+		if got := Registry[nameCompleteNote](ctx); !got.Pass {
+			t.Fatalf("%q: %+v", note, got)
+		}
+	}
+	for _, note := range []string{
+		"Invoices export only as a plain-text summary, not CSV.\n",
+		"Invoices export as a plain-text summary; there is no CSV export.\n",
+	} {
+		write(note, today)
+		if got := Registry[nameCompleteNote](ctx); got.Pass {
+			t.Fatalf("%q passed", note)
+		}
 	}
 	yesterday := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02")
 	write("The CSV export now exists.\n", yesterday)

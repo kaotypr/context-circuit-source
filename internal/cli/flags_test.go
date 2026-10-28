@@ -54,7 +54,7 @@ func TestAnUnknownFlagPrintsTheCommandsUsage(t *testing.T) {
 		args []string
 		want string
 	}{
-		{[]string{"status", "--nope"}, "status                inspect workspace"},
+		{[]string{"status", "--nope"}, "status                your open work first"},
 		{[]string{"record", "delete", "--nope"}, "record delete         --member ID | --all | --id ID"},
 		{[]string{"worktree", "prepare", "--nope"}, "worktree prepare      --repo ID [--plan ID]"},
 	} {

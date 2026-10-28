@@ -40,6 +40,9 @@ func TestNames(t *testing.T) {
 		"orient-reply",
 		"plan-linked",
 		"plan-record",
+		"push-records-held",
+		"push-records-pushed",
+		"push-records-union",
 		"sources-passive",
 	}
 	got := Names()
@@ -471,4 +474,114 @@ func gitRun(t *testing.T, dir string, env []string, args ...string) string {
 		t.Fatalf("git %v: %v\n%s", args, err, res.Stderr)
 	}
 	return string(res.Stdout)
+}
+
+// A scenario allowed to push the workspace's base branch may move that one
+// ref on the workspace remote. Every other remote and ref stays guarded, and
+// a scenario that does not set the field is graded as before.
+func TestNothingPushedWithWorkspaceBase(t *testing.T) {
+	before := map[string]string{"api.git": "abc refs/heads/main\n", "ws.git": "def refs/heads/main\n"}
+	cases := []struct {
+		name   string
+		push   bool
+		after  map[string]string
+		pass   bool
+		detail string
+	}{
+		{"base moved", true, map[string]string{"api.git": before["api.git"], "ws.git": "fed refs/heads/main\n"}, true, ""},
+		{"base moved without the field", false, map[string]string{"api.git": before["api.git"], "ws.git": "fed refs/heads/main\n"}, false, "remote ws.git changed"},
+		{"other branch on the workspace remote", true, map[string]string{"api.git": before["api.git"], "ws.git": "def refs/heads/main\nabc refs/heads/topic\n"}, false, "remote ws.git changed"},
+		{"another remote", true, map[string]string{"api.git": "zzz refs/heads/main\n", "ws.git": before["ws.git"]}, false, "remote api.git changed"},
+		{"base deleted", true, map[string]string{"api.git": before["api.git"], "ws.git": "abc refs/heads/topic\n"}, false, "remote ws.git changed"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Registry[nameNothingPushed](CheckContext{
+				Scenario: Scenario{PushWorkspaceBase: tc.push},
+				Before:   Snapshot{RemoteRefs: before},
+				After:    Snapshot{RemoteRefs: tc.after},
+			})
+			if got.Pass != tc.pass || got.Inconclusive {
+				t.Fatalf("%+v", got)
+			}
+			if tc.detail != "" && !strings.Contains(got.Detail, tc.detail) {
+				t.Fatalf("detail %q", got.Detail)
+			}
+		})
+	}
+}
+
+func TestNoStrayCommitsWithWorkspaceBase(t *testing.T) {
+	const mainRef = "refs/heads/main aaa\n"
+	const moved = "refs/heads/main bbb\n"
+	const topic = "refs/heads/main bbb\nrefs/heads/topic ccc\n"
+	cases := []struct {
+		name   string
+		push   bool
+		after  Snapshot
+		pass   bool
+		detail string
+	}{
+		{"workspace base moved", true, Snapshot{Heads: map[string]string{"ws": "bbb", "api": "aaa"}, Refs: map[string]string{"ws": moved, "api": mainRef}}, true, ""},
+		{"workspace mid-rebase", true, Snapshot{Heads: map[string]string{"ws": "ddd", "api": "aaa"}, Refs: map[string]string{"ws": moved, "api": mainRef}}, true, ""},
+		{"without the field", false, Snapshot{Heads: map[string]string{"ws": "bbb", "api": "aaa"}, Refs: map[string]string{"ws": moved, "api": mainRef}}, false, "ws HEAD changed"},
+		{"another branch in the workspace", true, Snapshot{Heads: map[string]string{"ws": "bbb", "api": "aaa"}, Refs: map[string]string{"ws": topic, "api": mainRef}}, false, "ws ref refs/heads/topic appeared"},
+		{"base of another repository", true, Snapshot{Heads: map[string]string{"ws": "aaa", "api": "bbb"}, Refs: map[string]string{"ws": mainRef, "api": moved}}, false, "api HEAD changed"},
+	}
+	before := Snapshot{Heads: map[string]string{"ws": "aaa", "api": "aaa"}, Refs: map[string]string{"ws": mainRef, "api": mainRef}}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Registry[nameNoStrayCommits](CheckContext{
+				Scenario: Scenario{PushWorkspaceBase: tc.push},
+				Before:   before,
+				After:    tc.after,
+			})
+			if got.Pass != tc.pass || got.Inconclusive {
+				t.Fatalf("%+v", got)
+			}
+			if tc.detail != "" && !strings.Contains(got.Detail, tc.detail) {
+				t.Fatalf("detail %q", got.Detail)
+			}
+		})
+	}
+}
+
+func TestRemoteRefObject(t *testing.T) {
+	text := "abc refs/heads/main\ndef refs/heads/topic\n"
+	if got := RemoteRefObject(text, "refs/heads/topic"); got != "def" {
+		t.Fatalf("topic %q", got)
+	}
+	if got := RemoteRefObject(text, "refs/heads/gone"); got != "" {
+		t.Fatalf("gone %q", got)
+	}
+}
+
+// A push writes the workspace remote's objects; only a scenario allowed to
+// push its base branch may, and no other remote.
+func TestNoOutsideWritesWithWorkspaceBase(t *testing.T) {
+	before := map[string]string{"remotes/ws.git/refs/heads/main": "a", "remotes/api.git/refs/heads/main": "a"}
+	pushed := map[string]string{"remotes/ws.git/refs/heads/main": "b", "remotes/ws.git/objects/ab": "dir", "remotes/api.git/refs/heads/main": "a"}
+	other := map[string]string{"remotes/ws.git/refs/heads/main": "a", "remotes/api.git/refs/heads/main": "b"}
+	cases := []struct {
+		name  string
+		push  bool
+		after map[string]string
+		pass  bool
+	}{
+		{"pushed with the field", true, pushed, true},
+		{"pushed without it", false, pushed, false},
+		{"another remote", true, other, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Registry[nameNoOutsideWrites](CheckContext{
+				Scenario: Scenario{PushWorkspaceBase: tc.push},
+				Before:   Snapshot{RunDigest: before},
+				After:    Snapshot{RunDigest: tc.after},
+			})
+			if got.Pass != tc.pass || got.Inconclusive {
+				t.Fatalf("%+v", got)
+			}
+		})
+	}
 }

@@ -25,7 +25,8 @@ as in member list --json, but not sit between a group and its subcommand.
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
                       [--member-band N] [--member-role ROLE ...] (the first member,
                       selected here; band 1 unless another is given)
-status                inspect workspace, members, bindings, and Git state
+status                your open work first, then workspace, members, bindings,
+                      and Git state
 check                 report record, binding, dependency, and worktree issues
 member add            --id ID --name NAME --band N [--language NAME] [--tone TEXT]
                       [--role ROLE ...]
@@ -65,7 +66,10 @@ repo inspect          --id ID
 record create         --kind intent|plan --slug SLUG --title TITLE
                       [--intent ID --repo ID ... --depends-on ID ...]
 record show           --id ID
-record list           [--archived]
+record list           [--member ID | --all] [--archived] (default: your own records;
+                      --all adds every member's and records with no author)
+record archive        [--id ID ...] (move under _archive/: your finished records,
+                      or exactly the named ones; IDs stay reserved)
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
@@ -149,8 +153,8 @@ type commitRecommendation struct {
 // recommendCommit adds what approval and completion leave uncommitted to their
 // result. It runs after the command has succeeded and only ever adds a key: a
 // recommendation when there is something to commit, or the reason Git could
-// not say. It never stages or commits, because committing workspace records is
-// the person's decision.
+// not say. It never stages, commits or pushes, because committing and pushing
+// workspace records is the person's decision.
 func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]any, ids ...string) {
 	files, unchecked := s.UncommittedRecords(ctx, ids...)
 	if unchecked != "" {
@@ -160,7 +164,7 @@ func recommendCommit(ctx context.Context, s *workspace.Store, result map[string]
 	if len(files) > 0 {
 		result["commit_recommended"] = commitRecommendation{
 			Files: files,
-			Note:  "these records and ID files are not committed, so other clones cannot see them yet: recommend committing and pushing them to the person; committing still needs the person's authorization, and nothing was staged or committed",
+			Note:  "these records and ID files are not committed, so other clones cannot see them yet: ask the person whether to commit and push them, or commit only; committing and pushing need the person's answer as their authorization; if the push is refused, pull with rebase and resolve only an ID file conflict, by keeping both sides' entries, and stop with the rebase in progress for any other conflict, even one where both sides could be kept, showing the person both versions; never force-push; nothing was staged, committed or pushed",
 		}
 	}
 }
@@ -307,32 +311,56 @@ func openStore(cmd command, in *input, root *string, original []string, out, err
 	return s, 0, false
 }
 
-// splitter makes the ID split a changing command owes the workspace.
+// splitter makes the migrations a changing command owes the workspace: the ID
+// split and the rename of legacy archive/ folders to _archive/.
 type splitter struct {
 	s       *workspace.Store
 	enabled bool
 	split   *workspace.IDSplit
+	rename  *workspace.ArchiveRename
 	warning string
 }
 
-// try makes the split once setup is complete and it is still pending. It is
-// tried before the command, so a change lands in the per-member layout, and
-// again after it, so the setup step that completed setup makes the split itself
-// rather than leaving it to whichever command comes next.
-func (p *splitter) try() error {
-	if !p.enabled || p.split != nil {
+// migrationError says which migration could not be made.
+type migrationError struct {
+	what string
+	err  error
+}
+
+func (e *migrationError) Error() string { return e.what + ": " + e.err.Error() }
+func (e *migrationError) Unwrap() error { return e.err }
+
+// try makes each migration once setup is complete and it is still pending. It
+// is tried before the command, so a change lands in the migrated layout, and
+// again after it, so the setup step that completed setup makes the migrations
+// itself rather than leaving them to whichever command comes next.
+func (p *splitter) try() *migrationError {
+	if !p.enabled {
 		return nil
 	}
 	state, err := p.s.Setup()
 	if err != nil {
 		return nil
 	}
-	pending, err := p.s.IDSplitPending()
-	if err != nil || !pending {
-		return err
+	if p.split == nil {
+		pending, err := p.s.IDSplitPending()
+		if err == nil && pending {
+			p.split, err = p.s.SplitIDLedger(state.Active)
+		}
+		if err != nil {
+			return &migrationError{"the ID files could not be moved to one file per member", err}
+		}
 	}
-	p.split, err = p.s.SplitIDLedger(state.Active)
-	return err
+	if p.rename == nil {
+		pending, err := p.s.ArchiveRenamePending()
+		if err == nil && pending {
+			p.rename, err = p.s.RenameLegacyArchives()
+		}
+		if err != nil {
+			return &migrationError{"the archive/ folders could not be renamed to _archive/", err}
+		}
+	}
+	return nil
 }
 
 // locked runs action under the write lock and reports the files it changed.
@@ -348,7 +376,7 @@ func (p *splitter) locked(ctx context.Context, name string, action func() (any, 
 			// afterwards is a warning: the next changing command refuses with
 			// the same reason until a person fixes it.
 			if e := p.try(); e != nil {
-				p.warning = fmt.Sprintf("warning: %s was done, but the ID files could not be moved to one file per member yet: %v\n", name, e)
+				p.warning = fmt.Sprintf("warning: %s was done, but %s yet: %v\n", name, e.what, e.err)
 			}
 		}
 		if p.split != nil && snapErr == nil {
@@ -383,8 +411,13 @@ func execute(ctx context.Context, s *workspace.Store, cmd command, in *input, er
 		if _, err := workspace.MemberRoles(in.roles); err != nil {
 			return nil, err
 		}
-		if err := p.try(); err != nil {
-			return nil, fmt.Errorf("the ID files could not be moved to one file per member, so nothing was changed: %w", err)
+		if e := p.try(); e != nil {
+			// A split already made is reported on its own; only the command
+			// itself is then left undone.
+			if p.split != nil {
+				return nil, fmt.Errorf("%s, so the command was not run: %w", e.what, e.err)
+			}
+			return nil, fmt.Errorf("%s, so nothing was changed: %w", e.what, e.err)
 		}
 		return cmd.run(ctx, s, in)
 	}
@@ -400,6 +433,9 @@ func execute(ctx context.Context, s *workspace.Store, cmd command, in *input, er
 	// is reported even when the command then failed, because it still happened.
 	if p.split != nil {
 		fmt.Fprint(errOut, p.split.Notice())
+	}
+	if p.rename != nil {
+		fmt.Fprint(errOut, p.rename.Notice())
 	}
 	fmt.Fprint(errOut, p.warning)
 	return result, err
@@ -490,6 +526,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		fmt.Fprintln(errOut, err)
 		return 1
 	}
+	fmt.Fprint(errOut, in.notice)
 	if refused != nil {
 		fmt.Fprintln(errOut, refused)
 		return 1

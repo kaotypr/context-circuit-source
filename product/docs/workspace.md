@@ -16,6 +16,7 @@ the shared instruction and folders alongside these small records:
 | plans/pNNNN-slug/plan.md | New plan entry, repositories, dependencies, optional intent and required_files, created_by, created_at, completed_at | Yes |
 | plans/pNNNN-slug/* | Optional supporting design files assigned in the plan entry | Yes |
 | plans/pNNNN-slug.md | Legacy single-file plan, still readable and editable | Yes |
+| intent/, plans/ group and _archive/ folders | One optional level of group folder, with `_archive/` above or below it; a record under `_archive/` is archived, and a top-level `archive/` is the legacy archive the first changing command renames | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
 | member.local.yaml | Active member ID on this machine; written by init, and by member use on every other machine | No |
 | repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
@@ -350,9 +351,9 @@ IDs and moves the workspace to schema 3, then commits and pushes it. Everyone
 else pulls that commit before making any change of their own. Teammates who
 upgrade at the same time and each make a change before pulling will each have
 written the same member files with different content, and Git reports a conflict
-in `.context-circuit/ids/*.yaml`. That conflict is theirs to resolve by hand:
-keep the union of both sides' entries in each member file, then run `check`,
-which reports any number reserved twice.
+in `.context-circuit/ids/*.yaml`. That conflict is resolved by keeping the union
+of both sides' entries in each member file, then running `check`, which reports
+any number reserved twice; a number reserved twice is the person's to settle.
 
 A member ID that is a Windows device name, which a 2.3.0 roster could hold,
 stops the split: it names the member, or the author and their records, and

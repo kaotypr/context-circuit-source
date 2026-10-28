@@ -44,7 +44,20 @@ type Scenario struct {
 	// scenario may create or advance. The name is the part after
 	// refs/heads/.
 	AllowedBranches []string `yaml:"allowed_branches"`
+	// PushWorkspaceBase lets the run commit on the workspace's base
+	// branch and push that branch, and only that branch, to the
+	// workspace remote. Scenario checks then decide what the push must
+	// hold. It is omitted from the canonical YAML when false, so the
+	// hash of a scenario that does not set it is unchanged.
+	PushWorkspaceBase bool `yaml:"push_workspace_base,omitempty"`
 }
+
+// The workspace remote and the base branch the world binds the workspace
+// to. world.Setup creates both.
+const (
+	WorkspaceRemote     = "ws.git"
+	WorkspaceBaseBranch = "main"
+)
 
 // Snapshot is the workspace state a check can read. Status, Heads, Refs,
 // and Worktrees are keyed by "ws" for the active workspace and by

@@ -57,7 +57,11 @@ func uniqueFindings(values []Finding) []Finding {
 }
 
 type Orientation struct {
-	Workspace Config `json:"workspace"`
+	// MyWork opens the output: the active member's own open work, and how
+	// many of their finished records are not archived. It is absent while no
+	// member is selected, and nobody else's records are counted in it.
+	MyWork    *MyWork `json:"my_work,omitempty"`
+	Workspace Config  `json:"workspace"`
 	// Self is the Git state of the workspace's own repository, present only
 	// once it has been described. Shared records are read from whatever commit
 	// this checkout is sitting on, so a stale or dirty workspace is part of
@@ -127,6 +131,16 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 			result.Issues = append(result.Issues, schema2Roles(members)...)
 		}
 		result.Issues = append(result.Issues, deviceNameMembers(members)...)
+	}
+	if result.ActiveMember != "" {
+		// A record that cannot be read is reported, not fatal: status is
+		// where a person looks first when something is wrong.
+		if work, err := s.myWork(result.ActiveMember); err != nil {
+			result.Issues = append(result.Issues, found(err.Error(),
+				needsAPerson+"the records could not be listed; inspect "+recordRootsText()+" for an unreadable file"))
+		} else {
+			result.MyWork = work
+		}
 	}
 	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
 		result.Issues = append(result.Issues, found("workspace repository: "+err.Error(),
@@ -250,10 +264,11 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	issues := state.Issues
 	issues = append(issues, s.workspaceRepositoryIssues(ctx, state)...)
 	issues = append(issues, s.planFolderIssues()...)
+	issues = append(issues, placement.LayoutIssues(s)...)
 	records, err := s.ListRecords(false)
 	if err != nil {
 		return append(issues, found(err.Error(),
-			needsAPerson+"the records could not be listed; inspect intent/ and plans/ for an unreadable file")), nil
+			needsAPerson+"the records could not be listed; inspect "+recordRootsText()+" for an unreadable file")), nil
 	}
 	issues, reserved, err := s.checkIDFiles(issues)
 	if err != nil {
@@ -288,10 +303,19 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	return uniqueFindings(issues), nil
 }
 
+// recordRootsText names the record folders for a finding, as "intent/ and plans/".
+func recordRootsText() string {
+	var names []string
+	for _, root := range placement.Roots() {
+		names = append(names, root+"/")
+	}
+	return strings.Join(names, " and ")
+}
+
 // planFolderIssues reports plan folders whose plan.md is missing or unusable.
 func (s *Store) planFolderIssues() []Finding {
 	var issues []Finding
-	for _, baseRel := range []string{"plans", "plans/archive"} {
+	for _, baseRel := range placement.PlanFolderParents(s) {
 		base, err := s.Path(baseRel)
 		if err != nil {
 			continue
@@ -306,6 +330,11 @@ func (s *Store) planFolderIssues() []Finding {
 			}
 			rel := filepath.ToSlash(filepath.Join(baseRel, entry.Name(), "plan.md"))
 			if _, err := s.Read(rel); err != nil {
+				// A folder named like a plan that holds records is a group,
+				// which the layout findings report as ambiguous.
+				if holdsRecords(filepath.Join(base, entry.Name())) {
+					continue
+				}
 				// An interrupted record delete can leave a plan folder emptied of
 				// everything; there is nothing in it to restore.
 				if left, err := os.ReadDir(filepath.Join(base, entry.Name())); err == nil && len(left) == 0 {

@@ -144,6 +144,7 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 		Caller:           rt.opts.Caller,
 		DecoyDir:         w.Decoy,
 		SubscriptionAuth: containsHost(rt.opts.SubscriptionAuth, item.Host),
+		WritableDirs:     pushWritableDirs(item.Scenario, w),
 	})
 	if err != nil {
 		return err
@@ -788,4 +789,18 @@ func priceOf(cfg hosts.HostConfig, prices map[string]hosts.PriceRow, parsed host
 		return nil, "none", why
 	}
 	return &usd, "price-table", ""
+}
+
+// pushWritableDirs is what a scenario that lets the run commit and push the
+// workspace's base branch needs writable beyond the workspace itself: the
+// workspace's .git and its remote. Any other scenario gets none, so a host
+// sandbox keeps guarding them there.
+func pushWritableDirs(s scenario.Scenario, w world.World) []string {
+	if !s.PushWorkspaceBase {
+		return nil
+	}
+	return []string{
+		filepath.Join(w.WS, ".git"),
+		filepath.Join(w.RunRoot, "remotes", scenario.WorkspaceRemote),
+	}
 }

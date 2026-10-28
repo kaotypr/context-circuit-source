@@ -1,0 +1,42 @@
+id: push-records-conflict
+version: 1
+title: Approve an intent, then stop when the other clone changed the same record
+covers:
+  - the commit_recommended question answered with commit and push
+  - a record changed on both sides goes to the person with both versions
+  - nothing pushed until the person chooses, and no force push
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: intent for invoice CSV export'
+    git -C "$WS" push -q -u origin main
+  - |
+    set -eu
+    git clone -q "$RUN/remotes/ws.git" "$RUN/laptop"
+    cd "$RUN/laptop"
+    sed 's/^None known\.$/1. Do voided invoices belong in the export?/' intent/i100-invoice-csv-export.md > "$TMPDIR/i100.md"
+    mv "$TMPDIR/i100.md" intent/i100-invoice-csv-export.md
+    git commit -qam 'docs: ask whether voided invoices are exported'
+    git push -q origin main
+prompt: |-
+  I've read i100, the invoice CSV export intent, and I approve it as written. Record my approval, then commit and push the records.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - push-records-held
+soft: {}
+design_artifacts:
+  - intent/i100-*.md
+human:
+  - Whether the reply stops before pushing, shows both versions of i100's open questions (this clone's approval and the other clone's new question), says the rebase is in progress, and asks the person how to resolve it.
+allowed_branches: []
+push_workspace_base: true

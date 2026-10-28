@@ -26,6 +26,11 @@ type Store struct {
 	// Command is the PATH command the running CLI is installed as, named in a
 	// remedy the workspace has no launcher for; empty means the public one.
 	Command string
+
+	// archivesMoved names the legacy archive folders and the _archive/ folders
+	// they moved to in this run, so the commit recommendation of the command
+	// that renamed them names the moved records too.
+	archivesMoved []string
 }
 
 func Open(root string) (*Store, error) {

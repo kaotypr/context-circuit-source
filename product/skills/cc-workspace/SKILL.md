@@ -212,9 +212,9 @@ person on a team upgrades first. Before that first change, tell the person so:
 they make it, then commit and push the files its notice names, and everyone else
 pulls before changing anything. A
 teammate who upgraded at the same time gets a Git conflict in
-`.context-circuit/ids/*.yaml`. That is theirs to resolve by hand, not yours to
-pick: suggest keeping the union of both sides' entries in each member file, then
-run `check`, which reports any number reserved twice. A member whose ID is a
+`.context-circuit/ids/*.yaml`. Resolve it by keeping the union of both sides'
+entries in each member file, then run `check`, which reports any number reserved
+twice; a number reserved twice is the person's to settle, not yours to pick. A member whose ID is a
 Windows device name, such as `con`, stops the split; `status` names them, and
 the person renames them by hand.
 

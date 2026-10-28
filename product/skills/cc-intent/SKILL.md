@@ -107,8 +107,9 @@ in the same request that approved the intent; then go straight on through
 `.agents/skills/cc-plan/SKILL.md`, and do not ask for approval a second time.
 
 In a Git workspace approval also returns `commit_recommended`, naming the
-intent and ID files it left uncommitted. Pass it on, and commit them only when
-the person authorizes it.
+intent and ID files it left uncommitted. Ask the person once whether to commit
+and push them, or commit only; their answer is the authorization, and a refused
+push is handled as `AGENTS.md` says under delivery.
 
 ## What belongs here and what does not
 

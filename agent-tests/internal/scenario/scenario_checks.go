@@ -47,8 +47,9 @@ const (
 var draftVoid = regexp.MustCompile(`(?is)draft.{0,80}void|void.{0,80}draft`)
 
 // issuedCredit matches a reply that connects an issued invoice with a credit.
-// The two words may appear in either order, up to 80 characters apart.
-var issuedCredit = regexp.MustCompile(`(?is)issued.{0,80}credit|credit.{0,80}issued`)
+// The two words may appear in either order, up to 80 characters apart, and
+// "issue" counts as well as "issued" ("after issue, credit it").
+var issuedCredit = regexp.MustCompile(`(?is)\bissue[ds]?\b.{0,80}credit|credit.{0,80}\bissue[ds]?\b`)
 
 // approvalAsk matches a reply that asks for approval. It looks for the stem
 // "approv", so "approve" and "approval" both count.
@@ -103,10 +104,11 @@ var mdLink = regexp.MustCompile(`\]\(([^)\s]+)\)`)
 var csvWord = regexp.MustCompile(`(?i)\bcsv\b`)
 
 // csvDenied matches a sentence that says CSV is unsupported.
-var csvDenied = regexp.MustCompile(`(?i)\bunsupported\b|\bnot supported\b`)
+var csvDenied = regexp.MustCompile(`(?i)\bunsupported\b|\bnot supported\b|\bnot\s+(?:as\s+|to\s+|in\s+)?csv\b|\bno\s+csv\b`)
 
-// csvAffirmed matches a sentence that records a CSV export.
-var csvAffirmed = regexp.MustCompile(`(?i)\bcsv export\b|\bas csv\b|\bto csv\b`)
+// csvAffirmed matches a sentence that records a CSV export, including one
+// that names CSV beside another format ("export as a summary or CSV").
+var csvAffirmed = regexp.MustCompile(`(?i)\bcsv export\b|\bas csv\b|\bto csv\b|\bexport\w*\b[^.]*\bcsv\b|\bcsv\b[^.]*\bexport\w*\b`)
 
 // recordIDMention matches the fixture record ids inside a knowledge note.
 var recordIDMention = regexp.MustCompile(`\b(?:i100|p1000)\b`)

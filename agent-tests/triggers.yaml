@@ -94,7 +94,7 @@ rows:
     note: Codex does not read route files.
 
   - match: product/skills/cc-complete/SKILL.md
-    scenarios: [complete]
+    scenarios: [complete, archive]
     kind: skill-text
 
   - match: product/skills/cc-complete/route.md
@@ -215,13 +215,13 @@ rows:
     note: Also the host whose generated definition changed.
 
   - match: scripts/release-manifest.txt
-    scenarios: [borrowed, complete, direct, execute, intent, intent-lang, join, orient, plan]
+    scenarios: [archive, borrowed, complete, direct, execute, intent, intent-lang, join, orient, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
 
   - match: assets.go
-    scenarios: [borrowed, complete, direct, execute, intent, intent-lang, join, orient, plan]
+    scenarios: [archive, borrowed, complete, direct, execute, intent, intent-lang, join, orient, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
@@ -237,9 +237,9 @@ rows:
     note: Upper bound. The author narrows this list to the command that changed.
 
   - match: internal/cli/cli.go
-    scenarios: [complete, intent, plan]
+    scenarios: [complete, intent, plan, push-records]
     kind: cli-action
-    note: Next-step messages. Used when CLI output changed.
+    note: Next-step messages, and the commit_recommended note behind the commit-and-push question. Used when CLI output changed.
 
   - match: internal/workspace/records.go
     scenarios: [intent, plan]
@@ -257,6 +257,21 @@ rows:
   - match: internal/workspace/review.go
     scenarios: [complete]
     kind: check-findings
+
+  - match: internal/workspace/archive*.go
+    scenarios: [archive]
+    kind: cli-action
+    note: record archive, the archive offer, and the rename of a legacy archive/ folder.
+
+  - match: internal/workspace/mine.go
+    scenarios: [orient, archive]
+    kind: cli-action
+    note: status my_work, the record list default, and the finished-record count behind the archive offer.
+
+  - match: internal/workspace/placement.go
+    scenarios: [archive]
+    kind: structure
+    note: Where records are found and placed, and the layout findings check reports.
 
   - match: internal/workspace/worktrees.go
     scenarios: [execute]
@@ -285,7 +300,7 @@ sections:
   - heading: Independent review on request
     scenarios: []
   - heading: Delivery, completion, and organization
-    scenarios: [complete, execute]
+    scenarios: [complete, execute, push-records, push-records-conflict]
 
 none:
   - "**/*_test.go"

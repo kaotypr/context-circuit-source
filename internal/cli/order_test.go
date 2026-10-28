@@ -819,7 +819,7 @@ func TestIntentRefusesPlanFlags(t *testing.T) {
 func TestRecordLookupsReadTheTreeOnlyWhenTheyResolveAnID(t *testing.T) {
 	f := setup(t)
 	diamond(f)
-	archive := filepath.Join(f.root, "plans", "archive")
+	archive := filepath.Join(f.root, "plans", "_archive")
 	if err := os.MkdirAll(archive, 0755); err != nil {
 		t.Fatal(err)
 	}

@@ -35,6 +35,12 @@ func (codexHost) Build(in LaunchInput) (Launch, error) {
 		"--add-dir", gocache,
 		"--add-dir", wsCodex,
 	}
+	// workspace-write keeps .git read-only and any path outside the
+	// workspace unwritable, so a run allowed to commit and push names the
+	// workspace's .git and its remote as writable roots too.
+	for _, dir := range in.WritableDirs {
+		argv = append(argv, "--add-dir", dir)
+	}
 	if in.Effort != "" {
 		argv = append(argv, "-c", `model_reasoning_effort="`+in.Effort+`"`)
 	}

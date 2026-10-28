@@ -82,8 +82,12 @@ sh .context-circuit/cli record create --kind plan --slug specified-change --titl
   --repo api
 sh .context-circuit/cli record show --id p1000
 sh .context-circuit/cli record list
+sh .context-circuit/cli record list --member alex
+sh .context-circuit/cli record list --all --archived
 sh .context-circuit/cli record dependencies --id p1001 --depends-on p1000
 sh .context-circuit/cli record complete --id p1000 --text 'User requested completion.'
+sh .context-circuit/cli record archive
+sh .context-circuit/cli record archive --id i101 --id p1003
 sh .context-circuit/cli record order --intent i100 --mode waves
 sh .context-circuit/cli record order --plan p1002 --mode waves
 sh .context-circuit/cli record delete --member alex
@@ -116,6 +120,36 @@ a full band is refused naming the member, the band, and its range. The new
 number is reserved in the author's own `.context-circuit/ids/MEMBER.yaml` and in
 no other file. Assigning or changing a band never renumbers an existing record or
 releases its reservation.
+
+`record list` shows the active member's records; `--member ID` shows that
+member's, and `--all` every record, including any an earlier version wrote
+without an author, which only `--all` and `--id` reach. `--archived` adds
+archived records to either. Scripts that relied on the old full listing pass
+`--all`. With no member selected, `record list` lists every record and says so
+in a `notice:` on stderr. `status` opens with `my_work`, the active member's own
+open work: `awaiting_approval` (intents not approved), `approved_without_plans`,
+`open_plans` (plans not completed), each an `id` and `path`, and
+`unarchived_finished`, the count of their finished records not archived yet. A
+record is finished when it is a completed plan, or an approved intent whose
+plans are all completed. Nobody else's records are counted, and `my_work` is
+absent while no member is selected; a record it cannot read becomes an issue.
+
+`record archive` moves records under the `_archive/` beside them: a record at
+the top level into `intent/_archive/` or `plans/_archive/`, one in a group into
+that group's `_archive/`, and a plan folder whole. Without `--id` it takes the
+active member's finished records; repeatable `--id` takes exactly the named
+records, whoever wrote them, finished or not, and lists any unfinished one under
+`unfinished`. The result lists each move under `archived` with its `id`,
+`created_by`, `status`, `from`, and `to`; a record already archived is named under
+`already_archived` and left where it is. No ID file changes, so every number stays
+reserved, and lookup by ID finds the record in its new place. Inline relative
+Markdown links into and out of the moved records are rewritten and listed under
+`links_rewritten`; a link the move breaks that it cannot rewrite, such as a
+reference-style definition, is listed under `links_reported` with the path it
+should now have, and is edited by hand. Links inside a plan folder move with it
+and still hold. `record complete` returns `archive_offer`, with
+`unarchived_finished`, while the active member has finished records not
+archived: the agent offers to archive them, and a no changes nothing.
 
 `record delete` is the one command that releases reservations. `--member` takes
 every intent and plan that member created, active and archived. `--all` takes
@@ -199,13 +233,28 @@ writes a file for every author, so only one person on a team upgrades first:
 they make the first changing command, then commit and push the files the notice
 names; committing is the person's decision. Everyone else pulls
 before making any change. Teammates who upgrade at the same time get a Git
-conflict in `.context-circuit/ids/*.yaml`, which is theirs to resolve by hand:
-keep the union of both sides' entries in each member file, then run `check`,
-which reports any number reserved twice. If a merge leaves Git conflict markers
+conflict in `.context-circuit/ids/*.yaml`, which is resolved by keeping the
+union of both sides' entries in each member file, then running `check`, which
+reports any number reserved twice. If a merge leaves Git conflict markers
 in `ids.yaml`, the split refuses until a person resolves them, keeping every
 entry. A member or record author whose ID is a Windows device name stops the
 split, which names them; `status` and `check` report a roster member like that
 beforehand, and the rename is made by hand.
+
+Before 2.5.0 the archive folder was `archive/`. The first changing command run
+once setup is complete renames a top-level `intent/archive/` and
+`plans/archive/` to `_archive/`, merging into an `_archive/` that already exists
+and refusing, moving nothing, when both hold the same name with different
+content. The schema stays at 3 and no ID file changes, so every record stays
+archived and keeps its number. A top-level `archive/` is a reserved legacy name:
+it reads as archived until it is renamed, and is never a group, while an
+`archive/` inside a group is an ordinary folder. The rename is reported as a
+`notice:` paragraph on stderr naming the folders moved, and the command that
+made it, if it returns `commit_recommended`, lists the moved records too. A
+2.4.x CLI does not read `_archive/`, so every member installs the 2.5.0 CLI
+before pulling a renamed workspace; as with the ID split, one person runs the
+first changing command, commits and pushes the moved records, and everyone else
+pulls before changing anything.
 
 Setup is complete when the roster lists at least one member, every member holds a
 band, and this machine has selected one of them. Until then every changing
@@ -243,19 +292,26 @@ canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; other dates are ISO
 8601 `YYYY-MM-DD` in UTC.
 
 After it succeeds, approval reads the workspace's Git status for the approved
-intent's file, and completion for the plan's files and its intent's file,
-wherever each lives, archives included; both also read every ID file, the
-shared `.context-circuit/ids.yaml` and each per-member file. Whatever is not
+intent's file, completion for the plan's files and its intent's file, and
+`record archive` for every record it moved or whose links it rewrote, wherever
+each lives, archives included; each also reads every ID file, the shared
+`.context-circuit/ids.yaml` and each per-member file, and every record an
+`archive/` rename moved in the same run. Whatever is not
 committed is returned as `commit_recommended`: `files`, each a `path` relative
 to the workspace root with `/` separators and a `change` of `new`, `modified`,
 or `deleted`, and a `note`. A renamed record is listed as its new path `new` and
-its old path `deleted`. Other uncommitted records are not listed. Approval and
-completion always rewrite the record they touch, so in a Git workspace that
-record is always listed. The key is omitted when nothing is listed. When Git is
+its old path `deleted`, so an archived record is listed at both. Other
+uncommitted records are not listed. Approval and completion always rewrite the
+record they touch, so in a Git workspace that record is always listed. The key is omitted when nothing is listed. When Git is
 not installed, or the workspace is not in a Git repository, the result carries
 `commit_unchecked` with the reason instead. Neither ever blocks or undoes the
-command, and the CLI never stages, commits, or pushes: committing the records
-still needs the person's authorization. A workspace inside another repository
+command, and the CLI never stages, commits, or pushes. The agent asks the person
+one question, commit and push the listed files or commit only; the answer is the
+authorization for those files, that once, and covers pushing only the
+workspace's base branch to its upstream, never by force. A push refused because
+the remote moved on is brought up to date with `git pull --rebase`, ID file
+conflicts resolved by keeping both sides' entries, and any other conflict
+brought to the person, as `AGENTS.md` describes. A workspace inside another repository
 is reported relative to its own root, leaving out files outside it; one that
 repository ignores lists nothing.
 
@@ -326,6 +382,13 @@ issues:
       in the file of the member who created the record and remove the extra entry by hand"
 ok: false
 ```
+
+For record folders, `check` reports a `reserved folder name`, a folder whose
+name starts with `_` other than `_archive/`, whose records no command reads; a
+`folder named like a record holds records`, a group named like a plan folder; a
+`record file outside the folders records are read from`, deeper than one group
+and its `_archive/`; and a `legacy archive folder awaits its rename to
+_archive/`, discharged by any changing command with the pinned CLI.
 
 For ID files, `check` reports a file it cannot read, a malformed or misplaced
 ID, a number reserved twice in one file or across member files, a record whose
