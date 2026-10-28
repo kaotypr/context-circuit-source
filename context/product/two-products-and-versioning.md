@@ -83,10 +83,11 @@ already exists and doing nothing. That is what makes the two lines independent
 in practice rather than only in principle. Each carries its own release request,
 under `release/requests/cli/` or `release/requests/template/`, and that
 request's body is the notes that release is published with — so a reader
-upgrading one product is not handed the other's changes. A request is drafted
-from the change files under `.changelog/`, each naming the product it belongs
-to, so the split is made when a change is written rather than when a release
-is cut.
+upgrading one product is not handed the other's changes.
+
+A request is drafted from the change files under `.changelog/`, each naming the
+product it belongs to, so the split is made when a change is written rather
+than when a release is cut.
 
 That was not always so. While this checkout was private, installing could not
 depend on reading it, so the CLI's assets were published on the template
