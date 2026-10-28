@@ -26,13 +26,18 @@ func productFile(t *testing.T, rel string) string {
 	return strings.ReplaceAll(string(data), "\r\n", "\n")
 }
 
-// documentedCommands returns every complete `context-circuit-cli ...` invocation in
-// fenced examples, rejoining the backslash continuations the docs wrap with.
+// launcherCall is the workspace launcher as the examples run it: from the root
+// as `sh .context-circuit/cli`, or as `sh <root>/.context-circuit/cli`.
+var launcherCall = regexp.MustCompile(`^sh \S*\.context-circuit/cli `)
+
+// documentedCommands returns every complete `context-circuit-cli ...` or launcher
+// invocation in fenced examples, rejoining the backslash continuations the docs
+// wrap with.
 func documentedCommands(text string) []string {
 	var commands []string
 	var pending string
 	fenced := false
-	for _, line := range strings.Split(text, "\n") {
+	for line := range strings.SplitSeq(text, "\n") {
 		if strings.HasPrefix(strings.TrimSpace(line), "```") {
 			fenced = !fenced
 			continue
@@ -41,11 +46,11 @@ func documentedCommands(text string) []string {
 			continue
 		}
 		line = strings.TrimSpace(line)
-		if pending == "" && !strings.HasPrefix(line, "context-circuit-cli ") {
+		if pending == "" && !strings.HasPrefix(line, "context-circuit-cli ") && !launcherCall.MatchString(line) {
 			continue
 		}
-		if strings.HasSuffix(line, "\\") {
-			pending += strings.TrimSuffix(line, "\\") + " "
+		if before, ok := strings.CutSuffix(line, "\\"); ok {
+			pending += before + " "
 			continue
 		}
 		commands = append(commands, strings.TrimSpace(pending+line))
@@ -57,7 +62,7 @@ func documentedCommands(text string) []string {
 // A usage template teaches shape, not a runnable line; its metavariables stand
 // in for arguments rather than naming a command.
 func isTemplate(command string) bool {
-	for _, token := range strings.Fields(command) {
+	for token := range strings.FieldsSeq(command) {
 		if token == "COMMAND" || token == "help" {
 			return true
 		}
@@ -78,7 +83,11 @@ func TestDocumentedCommandsExist(t *testing.T) {
 			if isTemplate(command) {
 				continue
 			}
+			// The launcher form is two tokens, `sh` and the launcher's path.
 			args := strings.Fields(command)[1:]
+			if launcherCall.MatchString(command) {
+				args = args[1:]
+			}
 			// Drop a documented --workspace so every example runs against the
 			// fixture; the rest of the line is checked exactly as written.
 			for i := 0; i+1 < len(args); i++ {
@@ -108,6 +117,43 @@ func TestDocumentedCommandsExist(t *testing.T) {
 	}
 	if checked < 20 {
 		t.Fatalf("expected the docs to teach a real command surface, only found %d", checked)
+	}
+}
+
+// The command on PATH is whichever version was installed last, so an
+// instruction that runs it can run the wrong CLI for the workspace. Every
+// instruction runs the launcher instead. Naming the installed command, as the
+// cc-cli skill does, is not running it; the installers are not instructions.
+func TestNoInstructionRunsTheBareCommand(t *testing.T) {
+	commands := []string{"help"}
+	for name := range cli.Topics {
+		commands = append(commands, regexp.QuoteMeta(name))
+	}
+	bare := regexp.MustCompile("context-circuit-cli\\s+(-|(" + strings.Join(commands, "|") + ")\\b)")
+	if !bare.MatchString("context-circuit-cli --workspace . status") ||
+		!bare.MatchString("context-circuit-cli\nrecord list") ||
+		bare.MatchString("installs the command `context-circuit-cli`; a") {
+		t.Fatal("the bare-command pattern no longer tells a call from a mention")
+	}
+	sources := []string{"AGENTS.md.in", "CLAUDE.md.in", "CURSOR.md.in", "cursor.mdc.in"}
+	for _, doc := range shippedDocs(t) {
+		sources = append(sources, filepath.Join("docs", doc))
+	}
+	for _, name := range shippedSkills(t) {
+		for _, file := range []string{"SKILL.md", "route.md"} {
+			rel := filepath.Join("skills", name, file)
+			if _, err := os.Stat(filepath.Join("..", "..", "product", rel)); err == nil {
+				sources = append(sources, rel)
+			}
+		}
+	}
+	for _, source := range sources {
+		text := productFile(t, source)
+		for _, at := range bare.FindAllStringIndex(text, -1) {
+			line := strings.Count(text[:at[0]], "\n") + 1
+			t.Errorf("%s:%d runs the command on PATH instead of the workspace launcher: %q",
+				source, line, text[at[0]:at[1]])
+		}
 	}
 }
 
@@ -152,10 +198,11 @@ var humanFacingDocs = map[string]bool{"how-it-works.md": true}
 // reachable too, from the README that person actually opens.
 func TestEverythingShippedIsReachableFromItsReader(t *testing.T) {
 	agents := productFile(t, "AGENTS.md.in")
-	reachable := agents
+	var reachable strings.Builder
+	reachable.WriteString(agents)
 	for _, name := range shippedSkills(t) {
 		if strings.Contains(agents, "`.agents/skills/"+name+"/SKILL.md`") {
-			reachable += productFile(t, filepath.Join("skills", name, "SKILL.md"))
+			reachable.WriteString(productFile(t, filepath.Join("skills", name, "SKILL.md")))
 		}
 	}
 	for _, name := range shippedSkills(t) {
@@ -164,7 +211,7 @@ func TestEverythingShippedIsReachableFromItsReader(t *testing.T) {
 		}
 	}
 	for _, doc := range shippedDocs(t) {
-		named := strings.Contains(reachable, "`.context-circuit/docs/"+doc+"`")
+		named := strings.Contains(reachable.String(), "`.context-circuit/docs/"+doc+"`")
 		if humanFacingDocs[doc] {
 			if named {
 				t.Errorf("%s is written for a person, so naming it in the entry instruction "+
@@ -289,7 +336,7 @@ func TestApprovalRecommendsPlanningEverywhere(t *testing.T) {
 		if !strings.Contains(text, "plan") {
 			t.Errorf("%s no longer mentions planning", rel)
 		}
-		for _, paragraph := range strings.Split(text, "\n\n") {
+		for paragraph := range strings.SplitSeq(text, "\n\n") {
 			if strings.Contains(paragraph, "planning_required") &&
 				!strings.Contains(paragraph, "older") && !strings.Contains(paragraph, "behind") {
 				t.Errorf("%s names planning_required other than as an old CLI's output:\n%s", rel, paragraph)
@@ -316,6 +363,10 @@ func TestCommitRecommendationNeedsAuthorizationEverywhere(t *testing.T) {
 		"AGENTS.md.in",
 		filepath.Join("docs", "commands.md"),
 		filepath.Join("skills", "cc-complete", "SKILL.md"),
+		// Approval returns it as well, so the two skills an agent follows at
+		// approval name it too.
+		filepath.Join("skills", "cc-intent", "SKILL.md"),
+		filepath.Join("skills", "cc-plan", "SKILL.md"),
 	} {
 		text := strings.Join(strings.Fields(productFile(t, rel)), " ")
 		if !strings.Contains(text, "commit_recommended") {
@@ -379,7 +430,7 @@ func TestGroupWithOptionReportsTheOption(t *testing.T) {
 // describe commands that exist, or one side has drifted from the other.
 func TestEveryCommandHasATopic(t *testing.T) {
 	seen := map[string]bool{}
-	for _, line := range strings.Split(cli.Help, "\n") {
+	for line := range strings.SplitSeq(cli.Help, "\n") {
 		if line == "" || strings.HasPrefix(line, " ") || !strings.Contains(line, "  ") && line != "version" {
 			continue
 		}
@@ -440,7 +491,7 @@ func TestTheProductGuideStaysWithTheRepositoryThatShowsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, line := range strings.Split(string(manifest), "\n") {
+	for line := range strings.SplitSeq(string(manifest), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) != 2 {
 			continue
@@ -496,7 +547,7 @@ func TestTheTwoLicensesStaySeparate(t *testing.T) {
 	// else's project with this one's terms; under .context-circuit it would be a
 	// second copy of terms that ask nothing, in a directory nobody reads for
 	// them.
-	for _, line := range strings.Split(manifest, "\n") {
+	for line := range strings.SplitSeq(manifest, "\n") {
 		if fields := strings.Fields(line); len(fields) == 2 && fields[0] == "product/LICENSE" {
 			t.Errorf("a license installs into a workspace: %s", line)
 		}

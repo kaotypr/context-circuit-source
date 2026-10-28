@@ -8,13 +8,21 @@ the maintainers. Please do not open a public issue for a suspected vulnerability
 
 Include what you did, what happened, and what you expected — a reproduction
 against a scratch workspace is more useful than a description. You will get an
-acknowledgement, and a fix or an explanation of why the behavior is intended.
+acknowledgement within 7 days, and a fix or an explanation of why the behavior is
+intended.
 
 ## Supported versions
 
-Fixes land in the current release line. Prereleases (`-rc`, `-beta`, `-alpha`)
-are candidates, and a fix for one is published as the next candidate rather than
-backported.
+| Version | Fixes |
+| --- | --- |
+| Latest stable minor (2.5.x once 2.5.0 is out) | Yes |
+| Older minors | No: update to the latest stable minor |
+| Prereleases (`-rc`, `-beta`, `-alpha`) | The next candidate, not a backport |
+
+A variant build, whose version carries a label such as `acme` in
+`2.5.0-acme.1`, is on that label's own release line. The fork that builds it
+supports it; this project does not. The compatibility policy and the variant
+contract are in [release/README.md](release/README.md).
 
 ## What the products do and do not touch
 
@@ -31,10 +39,14 @@ is a security report:
 - Commit, push, merge, publication, deployment, and deletion of workspace data
   are gated on explicit human authorization and are never inferred.
 
+The authorization gate, like the other rules an agent follows in a workspace,
+binds an agent through the instructions it reads. The CLI does not enforce it.
+The agent tests grade named checks, such as nothing being pushed, on short runs
+of real coding hosts. That is evidence, not a guarantee. An agent that crosses a
+gate listed above is still a security report.
+
 ## Out of scope
 
 - Anything a coding agent decides to write. The workspace constrains where an
   agent works and what it must ask about; it does not review generated code.
 - Vulnerabilities in a project you connect to a workspace.
-- Missing hardening in `sources/`, which is passive design history and is
-  never shipped.

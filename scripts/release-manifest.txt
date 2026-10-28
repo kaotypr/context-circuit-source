@@ -9,6 +9,7 @@ product/docs/workspace.md .context-circuit/docs/workspace.md
 product/docs/worktrees.md .context-circuit/docs/worktrees.md
 product/docs/working.md .context-circuit/docs/working.md
 template/gitignore.in .gitignore
+template/ignore.in .ignore
 template/workspace.yaml workspace.yaml
 template/members.yaml members.yaml
 template/context/INDEX.md context/INDEX.md
@@ -18,6 +19,9 @@ template/plans/README.md plans/README.md
 template/sources/README.md sources/README.md
 VERSION .context-circuit/VERSION
 CLI_VERSION .context-circuit/CLI_VERSION
+product/launcher/cli.sh .context-circuit/cli
+product/launcher/cli.ps1 .context-circuit/cli.ps1
+product/launcher/gitattributes .context-circuit/.gitattributes
 template/role-tiering.yaml .context-circuit/role-tiering.yaml
 product/docs/agents.md .context-circuit/docs/agents.md
 product/skills/cc-cli/SKILL.md .agents/skills/cc-cli/SKILL.md
@@ -61,3 +65,4 @@ product/skills/cc-complete/route.md .cursor/skills/cc-complete/SKILL.md
 product/skills/cc-deliver/SKILL.md .agents/skills/cc-deliver/SKILL.md
 product/skills/cc-deliver/route.md .claude/skills/cc-deliver/SKILL.md
 product/skills/cc-deliver/route.md .cursor/skills/cc-deliver/SKILL.md
+product/host/claude-settings.json .claude/settings.json

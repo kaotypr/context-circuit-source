@@ -1,0 +1,34 @@
+id: intent-lang
+version: 2
+title: An intent in the author's language
+covers:
+  - the language section
+  - English headings
+  - a body in the author's language
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" member language --id maya --language Indonesian
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: member language'
+prompt: |-
+  Customers need to download their invoices as CSV from the api. Write it up for me to approve before anyone builds it.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - intent-record
+  - intent-no-plan
+  - intent-lang-body
+soft:
+  code-canary-seen: CODE-CANARY-41b2 appeared in the host stream
+design_artifacts:
+  - intent/i100-*.md
+human:
+  - Whether the intent body is Indonesian.
+allowed_branches: []

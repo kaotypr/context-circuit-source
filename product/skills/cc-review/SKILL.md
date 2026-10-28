@@ -14,7 +14,7 @@ Use `.agents/skills/cc-dispatch/SKILL.md` to invoke an independent
 review-capable agent or session when it is requested and available:
 
 ```sh
-context-circuit-cli --workspace <root> --json agent dispatch --host codex --role reviewer --path . --review-requested --task 'Review the billing change against its success criteria'
+sh <root>/.context-circuit/cli --json agent dispatch --host codex --role reviewer --path . --review-requested --task 'Review the billing change against its success criteria'
 ```
 
 `--review-requested` represents the actual user request. It supplies no human

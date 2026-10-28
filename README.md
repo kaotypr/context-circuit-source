@@ -18,10 +18,11 @@
 
 <p align="center">
   <a href="https://github.com/kaotypr/context-circuit">Product guide</a> ·
-  <a href="WORKFLOW.md">Source workflow</a> ·
-  <a href="CLI.md">CLI architecture</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="release/cli/README.md">CLI package guide</a> ·
   <a href="#development">Development</a> ·
   <a href="#release-assembly">Release assembly</a> ·
+  <a href="#for-company-teams">For company teams</a> ·
   <a href="#licensing">Licensing</a>
 </p>
 
@@ -84,11 +85,14 @@ context-circuit-source/
 │   ├── docs/                  Workspace and command documentation
 │   └── skills/                Agent procedures for each workflow stage
 ├── template/                  Blank workspace records and configuration
-├── context/                   Maintainer product knowledge; never shipped
+├── context/                   Product knowledge; never shipped
+├── .changelog/                One change file per user-visible change, until it ships
 ├── release/
+│   ├── README.md              How releases are cut, checked, and published
 │   ├── binding.yaml           Where the workspace template publishes
+│   ├── cli/README.md          The README inside every CLI archive
 │   ├── template-repo/         Landing page and export rules that repo owns
-│   └── requests/              cli/ and template/, one request per version
+│   └── requests/              cli/ and template/, one request per version, drafted from .changelog/
 ├── scripts/
 │   ├── release-manifest.txt   Exact source-to-workspace mapping
 │   └── …                      Build, validation, and publication tooling
@@ -101,9 +105,15 @@ context-circuit-source/
 `product/` and `template/` are the two shipped trees; `scripts/release-manifest.txt`
 maps every file in them to its destination in a generated workspace.
 
-`sources/` is passive maintainer design history: not the current product
-specification, and never shipped. `release/` is not history — `binding.yaml`
-names the published destination, and each product's requests live beside it.
+`context/` is the product's one knowledge tree, and it stays public on purpose:
+a generated workspace keeps its knowledge to itself, but contributors, forks,
+and the maintainer all read this one. It must always match what the code does
+and how agents behave in the generated template, so a pull request that changes
+either one updates `context/` in the same pull request.
+
+`release/` is not history — `binding.yaml` names the published destination, and
+each product's requests live beside it. A request is drafted from the change
+files under `.changelog/` when a release is cut, and edited before it ships.
 
 This checkout is not a Context Circuit workspace and carries no workspace
 records. The product's intent and plan flow is not used here; maintainer changes
@@ -112,8 +122,7 @@ are made directly on the current branch, as `AGENTS.md` sets out.
 `context/` is still validated by the product's own diagnostic. `go test` builds a
 throwaway workspace around the real tree, binds it to this checkout so each
 note's code anchors resolve, and fails on any finding a command or an edit can
-discharge. That runs for every clone and every pull request, where registering
-this checkout by hand only ever ran on the machine that did it.
+discharge. CI runs it on every pull request.
 
 ## Development
 
@@ -126,14 +135,7 @@ go build -o /tmp/context-circuit-cli ./cmd/context-circuit
 /tmp/context-circuit-cli version
 ```
 
-Run the normal validation:
-
-```sh
-gofmt -w path/to/changed.go
-go test ./...
-go vet ./...
-sh scripts/check-release.sh
-```
+The validation commands are in [CONTRIBUTING.md](CONTRIBUTING.md#validating).
 
 `scripts/check-release.sh` is the full product check. In fresh temporary
 directories it tests the Go packages, builds the workspace archive, builds all
@@ -166,9 +168,9 @@ artwork that guide renders — is restored over the artifact by
 To keep a checked build in a specific location, provide a new directory:
 
 ```sh
-sh scripts/build-dist.sh v2.0.0-dev /tmp/context-circuit-workspace
-sh scripts/build-cli.sh 2.0.0-dev /tmp/context-circuit-cli
-sh scripts/check-release.sh /tmp/context-circuit-release-check
+sh scripts/build-dist.sh v2.0.0-dev "$(mktemp -d)/out"
+sh scripts/build-cli.sh 2.0.0-dev "$(mktemp -d)/out"
+sh scripts/check-release.sh "$(mktemp -d)/out"
 ```
 
 Explicit output directories must not already exist. Release assembly never
@@ -184,12 +186,29 @@ The products have separate version lines and package inventories:
 | Native CLI | `CLI_VERSION` | `cli-v*` | macOS, Linux, and Windows archives for amd64/arm64 |
 
 The CLI embeds the blank workspace seed as a convenience for `init` and
-`template export`. That seed does not make the two products one release: an
-existing workspace pins its expected CLI version in
-`.context-circuit/CLI_VERSION`, and installed CLI versions coexist side by side.
+`template export`. That seed does not make the two products one release.
 
 Publication is never an implicit part of validation. Commits, tags, pushes,
 release publication, and deployment require an explicit maintainer request.
+
+## For company teams
+
+Install with the workspace's `cc-cli` skill, or take a package from a `cli-v*`
+release. [release/cli/README.md](release/cli/README.md) is the package guide: checksums, the version store,
+and where a registry credential goes.
+
+The launcher `.context-circuit/cli` (`.context-circuit/cli.ps1` in Windows
+PowerShell or cmd) runs exactly the version `.context-circuit/CLI_VERSION`
+pins, from the installers' version store. It refuses, and names the install
+step, when that version is not installed. Installed versions coexist, so a
+workspace keeps its pin while another workspace on the same machine keeps a
+different one. A stable pin updates among stable releases, and a `<label>` pin
+among that label's releases. Moving to another line is a template change a
+person names by its exact tag.
+
+What is a breaking change, and how a fork publishes a variant, is in
+[release/README.md](release/README.md). Which versions receive fixes is in
+[SECURITY.md](SECURITY.md).
 
 ## Maintaining product behavior
 
@@ -202,11 +221,15 @@ release publication, and deployment require an explicit maintainer request.
 - Keep a context note and its catalog entry in the same change.
 - Preserve unrelated working-tree changes and validate release behavior in
   fresh temporary directories.
+- Behavior that agents can see is measured by the agent tests under `agent-tests/`,
+  which contributors run on their own accounts and which are not part of CI. Say
+  which host, model, and date a claim rests on, and say so when a host was not
+  exercised.
 - Do not revive retired v1 lifecycle machinery.
 
-See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
-[CLI.md](CLI.md) for the CLI boundary and packaging behavior, and the [product
-documentation](product/docs/) for the workspace contract.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for source ownership and validation details,
+[release/cli/README.md](release/cli/README.md) for the page every CLI archive carries as its README, and the
+[product documentation](product/docs/) for the workspace contract.
 
 ## Licensing
 

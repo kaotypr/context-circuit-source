@@ -1,0 +1,2 @@
+# sources/ is passive evidence: search tools that read this file skip it, and a named file still opens.
+/sources/

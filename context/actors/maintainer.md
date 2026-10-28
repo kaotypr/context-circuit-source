@@ -18,9 +18,9 @@ Owns this checkout and decides what reaches a workspace.
    implemented surface.
 2. **As a maintainer, I want the release check to build and exercise a real
    binary,** so that a candidate is proven by running rather than by compiling.
-3. **As a maintainer, I want host behavior reported as unverified when it was
-   not exercised,** so that a claim about a coding host is never stronger than
-   the evidence behind it.
+3. **As a maintainer, I want host behavior reported as measured on a named
+   host, model, and date, and as not exercised when it was not,** so that a
+   claim about a coding host is never stronger than the evidence behind it.
 4. **As a maintainer, I want a new shipped document to fail the build until I
    have said who reads it,** so that one written for a person cannot quietly
    start spending an agent's always-loaded context, and one written for the

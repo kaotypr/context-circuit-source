@@ -12,3 +12,7 @@
 /.codex/agents/cc-*.toml
 /.claude/agents/cc-*.md
 /.cursor/agents/cc-*.md
+# Host settings `agent setup` merges into this machine's local file, such as
+# turning off Claude Code's commit attribution. The file holds a person's own
+# settings too, so it stays on this machine.
+/.claude/settings.local.json

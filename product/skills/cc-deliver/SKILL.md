@@ -27,7 +27,7 @@ checkout is already on. Deliver that branch; there is no `cc/*` branch involved.
 than reading the dependency graph yourself:
 
 ```sh
-context-circuit-cli --workspace <root> --json record order --plan p0001 --plan p0002
+sh <root>/.context-circuit/cli --json record order --plan p0001 --plan p0002
 ```
 
 Use the exact `plan_ids` selected for the execution run, whether the plans are
@@ -67,8 +67,8 @@ The base branch is this machine's recorded base for that repository, falling bac
 to the repository's default branch when the binding records none:
 
 ```sh
-context-circuit-cli --workspace <root> --json worktree inspect --repo api --path <worktree>
-context-circuit-cli --workspace <root> --json repo inspect --id api
+sh <root>/.context-circuit/cli --json worktree inspect --repo api --path <worktree>
+sh <root>/.context-circuit/cli --json repo inspect --id api
 ```
 
 Read `base_branch` from the worktree you are delivering, or from the repository

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"regexp"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -213,32 +213,8 @@ func (s *Store) Config() (Config, error) {
 	if cfg.Repositories == nil || cfg.Relationships == nil {
 		return cfg, errors.New("workspace.yaml needs repositories and relationships collections")
 	}
-	if registry := cfg.CLIRegistry; registry != nil {
-		if err := Text(registry.Repository); err != nil {
-			return cfg, fmt.Errorf("cli_registry repository: %w", err)
-		}
-		switch registry.Source {
-		case "github":
-		case "gitlab":
-			// Without it the installer has no host to ask, and a registry that
-			// cannot be reached is worse than none: the default it would
-			// otherwise have used is a registry that works.
-			if registry.API == "" {
-				return cfg, errors.New("cli_registry: a gitlab source needs api")
-			}
-		default:
-			return cfg, fmt.Errorf("cli_registry: unknown source %q; expected github or gitlab", registry.Source)
-		}
-		if registry.API != "" {
-			if err := Text(registry.API); err != nil {
-				return cfg, fmt.Errorf("cli_registry api: %w", err)
-			}
-			// The installer refuses a plain-HTTP download, so an api recorded
-			// here that it would refuse is a workspace that cannot install.
-			if !strings.HasPrefix(registry.API, "https://") {
-				return cfg, errors.New("cli_registry api must be an https URL")
-			}
-		}
+	if err := checkCLIRegistry(cfg.CLIRegistry); err != nil {
+		return cfg, err
 	}
 	for id, repo := range cfg.Repositories {
 		if err := Name(id); err != nil {
@@ -254,6 +230,40 @@ func (s *Store) Config() (Config, error) {
 		}
 	}
 	return cfg, nil
+}
+
+// checkCLIRegistry validates the registry the installer downloads the CLI from.
+// A workspace without one uses the installer's default.
+func checkCLIRegistry(registry *CLIRegistry) error {
+	if registry == nil {
+		return nil
+	}
+	if err := Text(registry.Repository); err != nil {
+		return fmt.Errorf("cli_registry repository: %w", err)
+	}
+	switch registry.Source {
+	case "github":
+	case "gitlab":
+		// Without it the installer has no host to ask, and a registry that
+		// cannot be reached is worse than none: the default it would
+		// otherwise have used is a registry that works.
+		if registry.API == "" {
+			return errors.New("cli_registry: a gitlab source needs api")
+		}
+	default:
+		return fmt.Errorf("cli_registry: unknown source %q; expected github or gitlab", registry.Source)
+	}
+	if registry.API != "" {
+		if err := Text(registry.API); err != nil {
+			return fmt.Errorf("cli_registry api: %w", err)
+		}
+		// The installer refuses a plain-HTTP download, so an api recorded
+		// here that it would refuse is a workspace that cannot install.
+		if !strings.HasPrefix(registry.API, "https://") {
+			return errors.New("cli_registry api must be an https URL")
+		}
+	}
+	return nil
 }
 
 // conflictMarker matches a line Git leaves behind when a merge of two clones'
@@ -302,11 +312,7 @@ func (s *Store) Members() (Members, error) {
 
 // IDs lists the roster's member IDs in order.
 func (m Members) IDs() []string {
-	ids := make([]string, 0, len(m.Members))
-	for id := range m.Members {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(m.Members))
 	return ids
 }
 
@@ -518,48 +524,22 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 			return fmt.Errorf("existing local state: %s", rel)
 		}
 	}
+	// The front page is written last, after every other file. A README it could
+	// not read then (a symlink, a directory, an oversized file) has to stop
+	// initialization here, while nothing is written yet.
+	if _, err := s.Read("README.md"); err != nil && !os.IsNotExist(err) {
+		return err
+	}
 	// A previously exported blank seed is also supported, but only identical seed
 	// text files may already occupy generated destinations. Treat Git's CRLF/LF
 	// checkout conversion as equivalent, but never overwrite content edits.
-	missing := map[string][]byte{}
-	// The template and CLI have independent versions. A blank compatible
-	// template owns its own instructions; initialization changes its data only.
-	var blank Config
-	existingSeed := false
-	if err := s.YAML("workspace.yaml", &blank); err == nil {
-		// Separate the two reasons a template cannot be initialized. An
-		// incompatible schema is a CLI problem; data is a workspace problem.
-		// A seed exported before schema 3 is still blank, and initializing it
-		// moves it forward like any other schema 2 workspace.
-		if blank.Version != 2 && blank.Version != CurrentSchema {
-			return fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schemas 2 and %d", blank.Version, CurrentSchema)
-		}
-		if blank.Name != "" || blank.Purpose != "" || blank.WorkspaceRepository != nil || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
-			return errors.New("existing workspace data; initialization stopped")
-		}
-		var members Members
-		if err := s.YAML("members.yaml", &members); err != nil {
-			return err
-		}
-		if len(members.Members) != 0 {
-			return errors.New("existing members; initialization stopped")
-		}
-		existingSeed = true
-	} else if !os.IsNotExist(err) {
+	blank, existingSeed, err := s.blankSeed()
+	if err != nil {
 		return err
 	}
-	for rel, seed := range files {
-		if existingSeed {
-			continue
-		}
-		current, err := s.Read(rel)
-		if os.IsNotExist(err) {
-			missing[rel] = seed
-		} else if err != nil {
-			return err
-		} else if !bytes.Equal(bytes.ReplaceAll(current, []byte("\r\n"), []byte("\n")), bytes.ReplaceAll(seed, []byte("\r\n"), []byte("\n"))) {
-			return fmt.Errorf("initialization would overwrite existing data: %s", rel)
-		}
+	missing, err := s.missingSeedFiles(files, existingSeed)
+	if err != nil {
+		return err
 	}
 	if paths, err := s.RecordPaths(true); err != nil {
 		return err
@@ -593,6 +573,11 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if _, err := s.SplitIDLedger(member); err != nil {
 		return err
 	}
+	// A seed that still carries an empty archive/ folder starts with _archive/
+	// instead, so a new workspace never holds the legacy name.
+	if _, err := s.RenameLegacyArchives(); err != nil {
+		return err
+	}
 	// The README travels with the workspace, so it carries the workspace's name
 	// and the versions it received rather than the product's newest release. It
 	// is written here rather than exported, because a blank seed has no name to
@@ -606,8 +591,59 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	// records, which a later version reads as a customization and refuses to
 	// replace. These carry the shipped inherit settings; `agent configure`
 	// still needs `agent setup` afterwards.
-	_, err := s.SetupAgents("")
-	return err
+	if _, err := s.SetupAgents(""); err != nil {
+		return fmt.Errorf("workspace initialized, but agent setup failed: %w; resolve it, then run `agent setup`", err)
+	}
+	return nil
+}
+
+// blankSeed reads the workspace.yaml of an exported blank template, if any. The
+// template and CLI have independent versions, so a blank compatible template
+// owns its own instructions and initialization changes its data only.
+func (s *Store) blankSeed() (blank Config, existingSeed bool, err error) {
+	if err := s.YAML("workspace.yaml", &blank); err == nil {
+		// Separate the two reasons a template cannot be initialized. An
+		// incompatible schema is a CLI problem; data is a workspace problem.
+		// A seed exported before schema 3 is still blank, and initializing it
+		// moves it forward like any other schema 2 workspace.
+		if blank.Version != 2 && blank.Version != CurrentSchema {
+			return blank, false, fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schemas 2 and %d", blank.Version, CurrentSchema)
+		}
+		if blank.Name != "" || blank.Purpose != "" || blank.WorkspaceRepository != nil || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
+			return blank, false, errors.New("existing workspace data; initialization stopped")
+		}
+		var members Members
+		if err := s.YAML("members.yaml", &members); err != nil {
+			return blank, false, err
+		}
+		if len(members.Members) != 0 {
+			return blank, false, errors.New("existing members; initialization stopped")
+		}
+		existingSeed = true
+	} else if !os.IsNotExist(err) {
+		return blank, false, err
+	}
+	return blank, existingSeed, nil
+}
+
+// missingSeedFiles returns the seed files not yet on disk, refusing any that
+// exist with different content. An already exported seed needs none.
+func (s *Store) missingSeedFiles(files map[string][]byte, existingSeed bool) (map[string][]byte, error) {
+	missing := map[string][]byte{}
+	for rel, seed := range files {
+		if existingSeed {
+			continue
+		}
+		current, err := s.Read(rel)
+		if os.IsNotExist(err) {
+			missing[rel] = seed
+		} else if err != nil {
+			return nil, err
+		} else if !bytes.Equal(bytes.ReplaceAll(current, []byte("\r\n"), []byte("\n")), bytes.ReplaceAll(seed, []byte("\r\n"), []byte("\n"))) {
+			return nil, fmt.Errorf("initialization would overwrite existing data: %s", rel)
+		}
+	}
+	return missing, nil
 }
 
 func (s *Store) AddMember(id, name string, band int, language, tone string, roles []string) error {
@@ -643,25 +679,7 @@ func (s *Store) AddMember(id, name string, band int, language, tone string, role
 		return err
 	}
 	if existing, ok := members.Members[id]; ok {
-		if existing.Name != name {
-			return fmt.Errorf("member %s already has another name", id)
-		}
-		if language != "" && existing.Language != language {
-			return fmt.Errorf("member %s already writes in %s; use member language to change it", id, existingLanguage(existing))
-		}
-		if tone != "" && existing.Tone != tone {
-			return fmt.Errorf("member %s already records a tone; use member tone to change it", id)
-		}
-		if len(roles) > 0 && !slices.Equal(existing.Roles, roles) {
-			return fmt.Errorf("member %s already records roles; use member roles to change them", id)
-		}
-		if existing.Band == nil {
-			return fmt.Errorf("member %s holds no band yet; use member band to give it one", id)
-		}
-		if *existing.Band == band {
-			return nil
-		}
-		return fmt.Errorf("member %s already holds band %d; use member band to change it", id, *existing.Band)
+		return checkExistingMember(existing, id, name, language, tone, roles, band)
 	}
 	// A new member's ID becomes the name of their ID file on every clone.
 	if err := MemberID(id); err != nil {
@@ -671,6 +689,30 @@ func (s *Store) AddMember(id, name string, band int, language, tone string, role
 		return err
 	}
 	return s.Update("members.yaml", []string{"members", id}, Member{Name: name, Band: BandOf(band), Language: language, Tone: tone, Roles: roles}, 0644)
+}
+
+// checkExistingMember accepts a repeated add only when it restates what the
+// roster already records.
+func checkExistingMember(existing Member, id, name, language, tone string, roles []string, band int) error {
+	if existing.Name != name {
+		return fmt.Errorf("member %s already has another name", id)
+	}
+	if language != "" && existing.Language != language {
+		return fmt.Errorf("member %s already writes in %s; use member language to change it", id, existingLanguage(existing))
+	}
+	if tone != "" && existing.Tone != tone {
+		return fmt.Errorf("member %s already records a tone; use member tone to change it", id)
+	}
+	if len(roles) > 0 && !slices.Equal(existing.Roles, roles) {
+		return fmt.Errorf("member %s already records roles; use member roles to change them", id)
+	}
+	if existing.Band == nil {
+		return fmt.Errorf("member %s holds no band yet; use member band to give it one", id)
+	}
+	if *existing.Band == band {
+		return nil
+	}
+	return fmt.Errorf("member %s already holds band %d; use member band to change it", id, *existing.Band)
 }
 
 // requireRolesSchema refuses to write roles below schema 3. A 2.3.0 CLI reads the
@@ -713,12 +755,11 @@ func (s *Store) SetMemberLanguage(id, language string) error {
 	if err != nil {
 		return err
 	}
-	member, ok := members.Members[id]
-	if !ok {
+	if _, ok := members.Members[id]; !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
-	member.Language = language
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	// Only the field changes, so the rest of the entry keeps its comments.
+	return s.Update("members.yaml", []string{"members", id, "language"}, language, 0644)
 }
 
 // SetMemberTone records the register a member's intents and plans are written
@@ -742,8 +783,12 @@ func (s *Store) SetMemberTone(id, tone string, clear bool) error {
 	if !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
-	member.Tone = tone
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	if clear {
+		// Clearing removes the key, which only a rewrite of the entry can do.
+		member.Tone = ""
+		return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	}
+	return s.Update("members.yaml", []string{"members", id, "tone"}, tone, 0644)
 }
 
 // SetMemberRoles records what a member contributes, replacing any roles already
@@ -766,13 +811,16 @@ func (s *Store) SetMemberRoles(id string, roles []string, clear bool) error {
 	if !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
-	if len(roles) > 0 {
-		if err := s.requireRolesSchema(); err != nil {
-			return err
-		}
+	if len(roles) == 0 {
+		// Clearing removes the key, which only a rewrite of the entry can do.
+		member.Roles = nil
+		return s.Update("members.yaml", []string{"members", id}, member, 0644)
 	}
-	member.Roles = roles
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	if err := s.requireRolesSchema(); err != nil {
+		return err
+	}
+	// Only the field changes, so the rest of the entry keeps its comments.
+	return s.Update("members.yaml", []string{"members", id, "roles"}, roles, 0644)
 }
 
 // SetMemberBand assigns or moves an existing member's allocation band. There is
@@ -787,15 +835,13 @@ func (s *Store) SetMemberBand(id string, band int) error {
 	if err != nil {
 		return err
 	}
-	member, ok := members.Members[id]
-	if !ok {
+	if _, ok := members.Members[id]; !ok {
 		return fmt.Errorf("unknown member: %s", id)
 	}
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
 	}
-	member.Band = BandOf(band)
-	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+	return s.Update("members.yaml", []string{"members", id, "band"}, band, 0644)
 }
 
 func (s *Store) freeBand(members Members, id string, band int) error {
@@ -835,10 +881,8 @@ func (s *Store) Relate(from, to, description string) error {
 		return err
 	}
 	relation := Relationship{from, to, description}
-	for _, existing := range cfg.Relationships {
-		if existing == relation {
-			return nil
-		}
+	if slices.Contains(cfg.Relationships, relation) {
+		return nil
 	}
 	return s.Update("workspace.yaml", []string{"relationships"}, append(cfg.Relationships, relation), 0644)
 }

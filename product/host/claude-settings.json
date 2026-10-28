@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sh .context-circuit/cli:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .context-circuit/cli.ps1:*)"
+    ]
+  }
+}

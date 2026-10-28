@@ -26,10 +26,10 @@ values in force and names what this machine overrode; `agent configure --local`
 writes there instead of the shared file.
 
 ```sh
-context-circuit-cli agent settings
-context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit-cli agent configure --host codex --role worker --model MY_MODEL --effort low --local
-context-circuit-cli agent setup
+sh .context-circuit/cli agent settings
+sh .context-circuit/cli agent configure --host codex --role worker --model MODEL_ID --effort high
+sh .context-circuit/cli agent configure --host codex --role worker --model MY_MODEL --effort low --local
+sh .context-circuit/cli agent setup
 ```
 
 Configure the actual host (`codex`, `claude-code`, or `cursor`) and verify that its
@@ -38,6 +38,20 @@ account supports the requested pair. Changes are shared workspace preferences.
 these files and their update inventory are local and ignored. A customized native
 file is preserved and reported instead of overwritten. Restart/reload the coding
 host when it does not discover newly written definitions in the current session.
+
+Setup also turns off commit and pull request attribution where the host has a
+project setting for it. For Claude Code it adds `"attribution": {"commit": "",
+"pr": ""}` to `.claude/settings.local.json`, which is gitignored and holds this
+machine's own settings too. The key is added only when it is absent: every other
+key, the file's formatting, and any attribution value a person set stay as they
+are, the file is written only when it changes, and a file that is not one JSON
+object is refused and left untouched. Codex has no such setting, and Cursor reads
+it only from its user configuration, so setup writes nothing for either; there,
+inspect each commit message and remove any trailer the host added. A Cursor user
+can turn it off for themselves: set `"attribution": {"attributeCommitsToAgent":
+false, "attributePRsToAgent": false}` in `~/.cursor/cli-config.json`, or turn off
+"Attribute commits to agent" in the CLI's settings; a Cursor team admin can
+turn attribution off for the whole team.
 
 A worker's brief depends on how it is parallelized. One worker per plan owns its
 whole worktree and cannot collide with a sibling plan, whose work arrives later

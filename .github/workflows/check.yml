@@ -1,33 +1,109 @@
-name: Check v2
+name: Check
 on:
   pull_request:
   push:
-    branches: [main, development/v2]
+    branches: [main, 'release/**']
 permissions:
   contents: read
+# A newer run for the same pull request or branch cancels the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+# Where each job runs (a skipped job reports as skipped, which satisfies a
+# required check):
+#   Go tests, Filesystem clone tests: every pull request, and pushes to main and
+#     release branches. main and release/* require them.
+#   Release build: pull requests into release branches, and pushes to main and
+#     release branches. It builds and checks what a release-prep merge would
+#     publish. The Change files check is its own workflow.
 jobs:
   native:
+    name: Go tests
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The knowledge checks count commits under each note's code anchors,
           # so a shallow clone would make the reviewed-date pass see nothing.
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
+      # Linux only: Windows checks files out with CRLF line endings, and
+      # gofmt -l would report every Go file there.
+      - name: Check formatting
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # Committed agent-test baselines hold files a host produced, which
+          # may include unformatted Go; they are evidence, not source.
+          unformatted="$(find . -path ./agent-tests/baselines -prune -o -name '*.go' -print0 | xargs -0 gofmt -l)"
+          if [ -n "$unformatted" ]; then
+            echo "These files are not formatted; run gofmt -w:"
+            echo "$unformatted"
+            exit 1
+          fi
       - run: go test ./...
       - run: go vet ./...
+  native-clone:
+    name: Filesystem clone tests
+    # The runners' default ext4 and NTFS volumes cannot clone, so the native
+    # clone code only runs on a volume mounted for it here.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go.mod
+      - name: Mount an XFS volume with reflink
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xfsprogs
+          truncate -s 1G "$RUNNER_TEMP/cow.img"
+          mkfs.xfs -m reflink=1 "$RUNNER_TEMP/cow.img"
+          sudo mkdir -p /mnt/cow
+          sudo mount -o loop "$RUNNER_TEMP/cow.img" /mnt/cow
+          sudo chown "$USER" /mnt/cow
+          echo "CC_COW_NATIVE_DIR=/mnt/cow" >> "$GITHUB_ENV"
+      - name: Mount a ReFS volume on a VHDX
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $script = Join-Path $env:RUNNER_TEMP 'cow.diskpart'
+          $vhdx = Join-Path $env:RUNNER_TEMP 'cow.vhdx'
+          @(
+            "create vdisk file=`"$vhdx`" maximum=2048 type=expandable"
+            "select vdisk file=`"$vhdx`""
+            'attach vdisk'
+            'create partition primary'
+            'format fs=refs quick label=cow'
+            'assign letter=R'
+          ) | Set-Content -Path $script -Encoding ascii
+          diskpart /s $script
+          if ($LASTEXITCODE -ne 0) { throw "diskpart failed with exit code $LASTEXITCODE" }
+          $fs = (Get-Volume -DriveLetter R).FileSystem
+          if ($fs -ne 'ReFS') { throw "R: is $fs, not ReFS" }
+          New-Item -ItemType Directory -Path 'R:\cow' | Out-Null
+          "CC_COW_NATIVE_DIR=R:\cow" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - run: go test ./internal/cow -run NativeClone -count=1 -v
   release:
+    name: Release build
+    if: >-
+      (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release/'))
+      || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
       - run: sh scripts/check-release.sh

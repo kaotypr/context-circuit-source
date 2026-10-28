@@ -14,7 +14,7 @@ import (
 // global options is the test's to choose.
 func run(args ...string) (int, string, string) {
 	var out, errOut bytes.Buffer
-	code := cli.Run(context.Background(), args, &out, &errOut, "2.0.0-test")
+	code := cli.Run(context.Background(), args, &out, &errOut, testVersion)
 	return code, out.String(), errOut.String()
 }
 
@@ -54,7 +54,7 @@ func TestAnUnknownFlagPrintsTheCommandsUsage(t *testing.T) {
 		args []string
 		want string
 	}{
-		{[]string{"status", "--nope"}, "status                inspect workspace"},
+		{[]string{"status", "--nope"}, "status                your open work first"},
 		{[]string{"record", "delete", "--nope"}, "record delete         --member ID | --all | --id ID"},
 		{[]string{"worktree", "prepare", "--nope"}, "worktree prepare      --repo ID [--plan ID]"},
 	} {
@@ -72,5 +72,45 @@ func TestAnUnknownFlagPrintsTheCommandsUsage(t *testing.T) {
 	// Asking for help is an answer, on the result stream.
 	if code, out, _ := run("status", "-h"); code != 0 || !strings.Contains(out, "Read-only: it changes nothing") {
 		t.Fatalf("status -h: exit=%d %s", code, out)
+	}
+}
+
+// Every hint names the command the running version is installed as, so a
+// variant build never sends its caller to the public command.
+func TestHelpHintsNameTheRunningCommand(t *testing.T) {
+	for version, command := range map[string]string{
+		"2.5.0":        "context-circuit-cli",
+		"2.5.0-acme.1": "acme-context-circuit-cli",
+		"2.5.0-rc.1":   "context-circuit-cli",
+	} {
+		for _, c := range []struct {
+			args []string
+			want string
+		}{
+			{nil, "Usage: " + command + " [--workspace PATH]"},
+			{[]string{"help"}, "Usage: " + command + " [--workspace PATH]"},
+			{[]string{"--help"}, "Usage: " + command + " [--workspace PATH]"},
+			{[]string{"record"}, "Usage: " + command + " [--workspace PATH]"},
+			{[]string{"help", "bogus"}, "try: " + command + " help\n"},
+			{[]string{"record", "--nope"}, "try: " + command + " help record\n"},
+			{[]string{"record", "bogus"}, "try: " + command + " help record\n"},
+			{[]string{"status", "--nope"}, "usage: " + command + " [--workspace PATH] [--json] status [OPTIONS]"},
+			{[]string{"status", "--nope"}, "try: " + command + " help status\n"},
+			{[]string{"--nope"}, "Usage of " + command + ":"},
+		} {
+			var out, errOut bytes.Buffer
+			cli.Run(context.Background(), c.args, &out, &errOut, version)
+			text := out.String() + errOut.String()
+			if !strings.Contains(text, c.want) {
+				t.Errorf("%s %v: want %q in:\n%s", version, c.args, c.want, text)
+			}
+			if command == "context-circuit-cli" && strings.Contains(text, "-context-circuit-cli") {
+				t.Errorf("%s %v: a labelled command in public output:\n%s", version, c.args, text)
+			}
+		}
+	}
+	// The signatures a topic prints are read out of the public text unchanged.
+	if text, ok := cli.CommandHelp("status"); !ok || !strings.HasPrefix(text, "status ") {
+		t.Fatalf("status topic: %v %s", ok, text)
 	}
 }

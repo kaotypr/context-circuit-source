@@ -134,26 +134,8 @@ func (s *Store) ConnectWorkspace(ctx context.Context, input, base, remote, defau
 		if defaultBranch != "" && defaultBranch != cfg.WorkspaceRepository.DefaultBranch {
 			return errors.New("the workspace repository already records another default branch; use workspace remote to change it explicitly")
 		}
-	} else {
-		if defaultBranch == "" {
-			defaultBranch = base
-		}
-		if err := checkBranch(ctx, path, defaultBranch); err != nil {
-			return err
-		}
-		if remote == "" {
-			// Git already records where this checkout came from. A workspace
-			// with no origin simply has no shared URL to record.
-			remote, _ = Git(ctx, path, "remote", "get-url", "origin")
-		}
-		if remote != "" {
-			if err := checkRemote(remote); err != nil {
-				return err
-			}
-		}
-		if err := s.Update("workspace.yaml", []string{"workspace_repository"}, Repository{remote, defaultBranch}, 0644); err != nil {
-			return err
-		}
+	} else if err := s.registerWorkspaceRepository(ctx, path, base, remote, defaultBranch); err != nil {
+		return err
 	}
 	local := "."
 	if path != s.Root {
@@ -170,6 +152,28 @@ func (s *Store) ConnectWorkspace(ctx context.Context, input, base, remote, defau
 		return err
 	}
 	return s.Update("repositories.local.yaml", []string{"workspace"}, binding, 0600)
+}
+
+// registerWorkspaceRepository writes the shared record for the workspace's own
+// repository, defaulting what the caller left out from the checkout.
+func (s *Store) registerWorkspaceRepository(ctx context.Context, path, base, remote, defaultBranch string) error {
+	if defaultBranch == "" {
+		defaultBranch = base
+	}
+	if err := checkBranch(ctx, path, defaultBranch); err != nil {
+		return err
+	}
+	if remote == "" {
+		// Git already records where this checkout came from. A workspace
+		// with no origin simply has no shared URL to record.
+		remote, _ = Git(ctx, path, "remote", "get-url", "origin")
+	}
+	if remote != "" {
+		if err := checkRemote(remote); err != nil {
+			return err
+		}
+	}
+	return s.Update("workspace.yaml", []string{"workspace_repository"}, Repository{remote, defaultBranch}, 0644)
 }
 
 // within reports whether root contains path, which is how the workspace's own
@@ -213,19 +217,5 @@ func (s *Store) SetWorkspaceRemote(ctx context.Context, remote, defaultBranch st
 	if cfg.WorkspaceRepository == nil {
 		return errors.New("describe the workspace repository first with workspace connect")
 	}
-	if remote != "" {
-		if err := checkRemote(remote); err != nil {
-			return err
-		}
-		if err := s.Update("workspace.yaml", []string{"workspace_repository", "url"}, remote, 0644); err != nil {
-			return err
-		}
-	}
-	if defaultBranch == "" {
-		return nil
-	}
-	if err := checkBranch(ctx, s.Root, defaultBranch); err != nil {
-		return err
-	}
-	return s.Update("workspace.yaml", []string{"workspace_repository", "default_branch"}, defaultBranch, 0644)
+	return s.writeSharedRemote(ctx, []string{"workspace_repository"}, remote, defaultBranch)
 }

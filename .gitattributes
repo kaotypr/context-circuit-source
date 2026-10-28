@@ -1,0 +1,4 @@
+# The embedded seed carries these bytes into every new workspace, so a Windows
+# checkout must not convert them: sh fails on a CRLF launcher.
+product/launcher/cli.sh text eol=lf
+product/launcher/cli.ps1 text eol=crlf

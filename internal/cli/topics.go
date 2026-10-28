@@ -23,8 +23,12 @@ It neither migrates a v1 workspace nor
 reinitializes an active v2 one; on a second machine, select an existing member
 and connect local checkouts instead.`,
 
-	"status": `Reports the workspace, its members, this machine's bindings, and Git state for
-each bound repository. Read-only: it changes nothing and waits on nothing.`,
+	"status": `Opens with my_work, the active member's own open work: intents awaiting
+approval, approved intents without plans, plans not completed, and
+unarchived_finished, the count of their finished records not yet archived.
+Nobody else's records are counted. Then it reports the workspace, its members,
+this machine's bindings, and Git state for each bound repository.
+Read-only: it changes nothing and waits on nothing.`,
 
 	"check": `Reports record, binding, dependency, and worktree problems, including a note
 that names a record or evidence path it should not.
@@ -106,7 +110,20 @@ directories are warned about rather than refused. IDs are released only after
 the files are gone, so a deletion that stops part-way names the --id call that
 finishes it. Order derives
 dependency waves, starting references, and integration merges without running or
-reserving anything.`,
+reserving anything.
+
+List shows the active member's own records; --member ID shows another member's,
+and --all every record, including any written without an author. Archive moves
+records under the _archive/ beside them, a record in a group folder into that
+group's _archive/: without --id the active member's finished records (a
+completed plan, or an approved intent whose plans are all completed), with
+repeatable --id exactly the named records, whoever wrote them, marking any
+unfinished one. It never touches an ID file, so every number stays reserved and
+lookup by ID still finds the record. Inline relative links into and out of the
+moved records are rewritten; any other link the move breaks is reported as
+links_reported. Approve, complete, and archive return commit_recommended naming
+the files they leave uncommitted; complete also returns archive_offer while the
+active member has finished records not archived.`,
 
 	"context": `Finds catalog entries in context/INDEX.md by substring, or, with --repo, the
 entries claiming one repository and the reconciliation they leave outstanding —
@@ -151,8 +168,12 @@ read an entry there as somewhere work happens. No command commits, pushes, or
 merges the workspace.`,
 
 	"version": `Prints the running CLI version. A workspace pins its own in
-.context-circuit/CLI_VERSION, and the two need not match; the CLI warns when they
-differ.`,
+.context-circuit/CLI_VERSION and runs it through .context-circuit/cli.
+A CLI that is not the pinned version runs the pinned one instead when it
+is installed in the same version store, and says so on stderr;
+CC_CLI_VERSION=local skips that for one command. When it is not
+installed, the CLI warns, and refuses a change from another release line
+or one that would migrate the workspace schema.`,
 }
 
 // CommandHelp answers a question about one command. It returns the command's
@@ -183,7 +204,7 @@ func CommandHelp(topic string) (string, bool) {
 func signatures(topic string) []string {
 	var lines []string
 	keep := false
-	for _, line := range strings.Split(Help, "\n") {
+	for line := range strings.SplitSeq(Help, "\n") {
 		switch {
 		case line == topic || strings.HasPrefix(line, topic+" "):
 			keep = true
@@ -203,13 +224,13 @@ func signatures(topic string) []string {
 // signature, where the global options may go, and the topic to read. The flag
 // package's own usage listed only flag names, and nothing at all for a command
 // that takes none, which read as a command with no usage.
-func commandUsage(command string) string {
+func commandUsage(cliCommand, command string) string {
 	var text strings.Builder
-	text.WriteString("usage: context-circuit-cli [--workspace PATH] [--json] " + command + " [OPTIONS]\n")
+	text.WriteString("usage: " + cliCommand + " [--workspace PATH] [--json] " + command + " [OPTIONS]\n")
 	if lines := signatures(command); len(lines) > 0 {
 		text.WriteString(strings.Join(lines, "\n") + "\n")
 	}
 	text.WriteString("--workspace PATH and --json may also follow the full command.\n")
-	text.WriteString("try: context-circuit-cli help " + command + "\n")
+	text.WriteString("try: " + cliCommand + " help " + command + "\n")
 	return text.String()
 }

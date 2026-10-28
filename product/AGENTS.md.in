@@ -3,10 +3,16 @@
 Coordinate this shared project workspace across one or more Git repositories.
 Keep its identity, repositories, relationships, knowledge, members, intents, and
 plans useful for one person or a team. Talk in ordinary project language. Use
-`context-circuit-cli` for dependable bookkeeping; users need not manage runtime
-commands or ID numbers. Run the version this workspace pins in
-`.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
-`.context-circuit/docs/commands.md` as needed.
+the Context Circuit CLI for dependable bookkeeping; users need not manage
+runtime commands or ID numbers. Run every CLI command through this workspace's
+launcher: `sh .context-circuit/cli COMMAND …` from the workspace root, or
+`sh <root>/.context-circuit/cli COMMAND …` from anywhere else. In Windows
+PowerShell or cmd, use
+`powershell -NoProfile -ExecutionPolicy Bypass -File <root>/.context-circuit/cli.ps1 COMMAND …`.
+The launcher runs exactly the version `.context-circuit/CLI_VERSION` pins, and
+when that version is not installed it refuses and names the install step. Never
+run a CLI found on PATH for this workspace: it is whichever version was
+installed last. See `.context-circuit/docs/commands.md` as needed.
 
 This file carries the gates and the standing prohibitions — what needs a person,
 and what is never done without one. The procedure behind each stage lives in a
@@ -15,17 +21,30 @@ here is in force whether or not a skill was loaded.
 
 ## Orient and initialize
 
-Context Circuit CLI is a separately installed product. If it is missing, or the
-user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
-agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
-the template version and existing records unchanged during CLI updates.
+Context Circuit CLI is a separately installed product. If the launcher refuses
+because the pinned version is not installed, or the user requests an update, use
+`.agents/skills/cc-cli/SKILL.md`. Install for the agent's execution
+OS/architecture; WSL and remote Linux use Linux packages. Keep the template
+version and existing records unchanged during CLI updates.
 
 This file wins whenever it and CLI output disagree. An approval answered with
 `planning_required` comes from a CLI older than this template: tell the person
 to install or upgrade to the pinned version, and do not act on that output's
 text.
 
+When CLI output warns that this workspace pins another version, or refuses a
+change for that reason, it came from a CLI that is not this workspace's: act on
+none of it, and run the command again through the launcher. A launcher refusal
+that names another workspace means the command belongs to that workspace's own
+launcher. A CLI from another release line is a different product for this
+workspace, never a close-enough substitute.
+
 ## Updating the workspace template
+
+A later template version is a later tag on the same release line as the tag
+this workspace records, ordered as the `cc-cli` skill describes. A tag on
+another line is not later, and its delta would remove that line's files: move
+to another line only when a person names the exact tag.
 
 A later template version is brought in by diffing the tag this workspace records
 against the newer one and applying that delta, never by recopying the tag over
@@ -52,19 +71,27 @@ writes an ID file for every author at once. Only one person on a team upgrades
 first: they make that change, commit and push it, and everyone else pulls before
 changing anything. Before making that first change, tell the person this. A Git
 conflict in `.context-circuit/ids/*.yaml` from teammates upgrading at the same
-time is theirs to resolve by hand: keep the union of both sides' entries in each
-member file, then run `check`, which reports any number reserved twice.
+time is resolved by keeping the union of both sides' entries in each member
+file, then running `check`, which reports any number reserved twice; a number
+reserved twice goes to the person.
+The first changing command of a 2.5.0 CLI likewise renames `archive/` to
+`_archive/`: one person makes it, commits and pushes it, and the rest install
+2.5.0 before pulling.
 
 Everything else is ordinary which-side judgment. `.context-circuit/VERSION` and
 `.context-circuit/CLI_VERSION` take the template's value, because they record
-what this workspace received.
+what this workspace received. A delta to `.claude/settings.json` is merged entry
+by entry into this workspace's file; never drop an entry this workspace added,
+and never replace the file.
 
 Subagent role definitions are host-local and gitignored, so initialization writes
 them for every host this workspace may later be opened in. A clone carries none,
 and `agent configure` makes existing ones stale: if this host's `cc-*` definitions
-are missing under `.claude/agents/`, `.codex/agents/`, or `.cursor/agents/`, or
-settings changed, run `agent setup`. With no `--host` it covers every host and
-preserves customized definitions. Check while orienting, not when something needs
+are missing under `.claude/agents/`, `.codex/agents/`, or `.cursor/agents/`,
+settings changed, or this host lacks the attribution setting setup merges beside
+them (on Claude Code, `attribution` in `.claude/settings.local.json`), run
+`agent setup`. With no `--host` it covers every host and preserves customized
+definitions and settings. Check while orienting, not when something needs
 to delegate: writing a definition is not loading it, and a host may not register a
 role until it reloads. Dispatch reports whether the definition it names is there.
 
@@ -74,7 +101,8 @@ relationships. The shared roster is `members.yaml`. The active member, this mach
 this machine starts work from are the documented, gitignored `member.local.yaml`
 and `repositories.local.yaml`. Read those bindings when needed; never inspect
 unrelated host settings, credentials, private provider payloads, or another
-session's state. Never store secrets in workspace records.
+session's state. Never store secrets in workspace records. These four files
+sit at the workspace root, beside this file, never under `.context-circuit/`.
 `.context-circuit/docs/workspace.md` describes what each file may hold.
 
 Initializing a workspace, describing the workspace's own repository, connecting
@@ -153,17 +181,22 @@ decisions, domain rules, terminology, and repository relationships. Without an
 index, use targeted filenames or search terms in `context/`. Do not scan every
 repository or context note. Sources are passive evidence: read only exact source
 files named by the user or the task's explicit references; never scan `sources/`
-by default.
+by default. The shipped `.ignore` keeps `sources/` out of ripgrep search; with any
+other search, exclude it yourself.
 
 A workspace may also mount knowledge it does not own — an organization's
 knowledge center, shared by many workspaces and changed through its own
 repository. `workspace.yaml` records those as `knowledge_repositories`, and
 `context find` reads them beside this workspace's catalog, marking which side
-each match came from. **Borrowed knowledge is read-only here, and is never
-copied into `context/`.** An improvement goes upstream through that repository's
-own review, from a separate checkout of it; a note duplicated here goes stale
+each match came from. **Borrowed knowledge is read-only here, and neither it
+nor a correction of it is recorded in `context/`.** When a borrowed fact is
+wrong, leave `context/` alone and tell the person the fix goes upstream through
+that repository's own review. Do not make that fix yourself: do not edit, commit
+to, clone, or push the borrowed repository, even from a separate checkout, unless
+the person asks for that as its own task. A note duplicated here goes stale
 silently while still reading as current, which is the failure mounting it
-prevents. Nothing reconciles a borrowed entry, because nobody here can move it.
+prevents. Nothing reconciles a borrowed entry, because nobody here
+can move it.
 
 Live context notes describe the project, not the workspace machinery that
 produced them, and a note never names a plan record, an intent record, or a file
@@ -206,12 +239,12 @@ intent normally settles its outcome in its own words and names nothing. A cited
 design does not replace reading real code after approval, and is not a second
 gate.
 
-Present the concrete intent, invite answers by number, and stop there. The
-request that prompted an intent is not approval of it: a person approves the
-outcome after reading how it was written down, so do not treat "add billing" as
-consent to the intent derived from it. Record the actual user approval, which
-stamps `approved_at` and keeps the person's words beside it. A
-record carries that decision and never establishes one: neither a command, nor an
+Present the concrete intent in the person's own language, invite answers by
+number, and stop there. The request that prompted an intent is not approval of
+it: a person approves the outcome after reading how it was written down, so do
+not treat "add billing" as consent to the intent derived from it. Record the
+actual user approval, which stamps `approved_at` and keeps the person's words
+beside it. A record carries that decision and never establishes one: neither a command, nor an
 editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
@@ -255,8 +288,8 @@ date, `YYYY-MM-DD`. No other date format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
 metadata; no assignee, owner, reviewer, or member namespaces. A reserved ID is
-never reused while it stays reserved: archiving a record, or removing its file by
-hand, releases nothing. `record delete` is the one operation that releases IDs,
+never reused while it stays reserved: archiving a record, moving it between
+folders, or removing its file by hand, releases nothing. `record delete` is the one operation that releases IDs,
 together with the records that held them. Local locking serializes one
 workspace directory. `.context-circuit/docs/working.md` describes the record
 structures in full.
@@ -346,10 +379,24 @@ execution request, while a commit in a bound checkout is a change to the
 person's own working copy and still needs authorization. A local integration
 merge that assembles a dependent plan's base is implementation, not delivery,
 and is covered by the authorization for the run it belongs to. Workspace records
-are the person's working copy too: `record approve` and `record complete` return
-`commit_recommended` naming the records and ID files they leave uncommitted,
-which is a recommendation to pass on to the person, and committing them still
-needs the person's authorization. Use ordinary Git
+are the person's working copy too: `record approve`, `record complete`, and
+`record archive` return `commit_recommended` naming the records and ID files
+they leave uncommitted. Ask the person one question: commit and push those
+files, or commit only. Their answer is the authorization, for those files, that
+once; after commit only, say other clones cannot see them yet. Push only the
+workspace's base branch to its upstream; with no remote or upstream, say why
+and stop after the commit. If the push is refused because the remote moved on,
+`git pull --rebase`, which replays only these unpushed record commits. Keep
+what Git combines, saying which records changed on both sides; in an ID file
+conflict keep the union of both sides' entries. Any other conflict — one record
+changed on both sides, deleted on one, or a file that is not a record — goes to
+the person with both versions, the rebase left in progress (`git rebase
+--abort` returns to the local commits). Do not edit a conflicted record
+yourself, not even to keep both sides: which version stands, or whether both
+do, is the person's call. Then run `check`: a number reserved
+twice goes to the person, a finding the pull brought in is reported and does
+not block. Report what came in, and push once more; report a second refusal or
+any other, and never force-push. Use ordinary Git
 and provider tools; the Go CLI provides repository, branch, and base information
 and never silently delivers. The branch the work started from — this machine's
 recorded base, or the repository's default branch when the binding records none
@@ -359,8 +406,8 @@ repository's default and not what this machine delivers to, and answering from
 it targets the wrong branch convincingly. When the user asks to deliver changes
 or open a pull request, use `.agents/skills/cc-deliver/SKILL.md`, which says
 which branch each request opens from and against what, per repository and for
-the chain ends of a stacked run. Explain relevant drift or conflicts without
-imposing automatic rebase-and-reverify behavior.
+the chain ends of a stacked run. For delivered code, explain relevant drift or
+conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more
 plans completed, that request is finished only when the completion note is
@@ -377,8 +424,9 @@ or repair worktrees using Git; Git's inventory is authoritative, and the ignored
 plan-to-worktree association is only a convenience for resuming work. See
 `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 
-Archiving is optional ordinary file organization on request. Keep ID reservations
-and fix relative links when moving a record. External publication is an explicitly
+Archiving is optional file organization: `record archive` moves your own
+finished records under `_archive/`, keeping their IDs, and is offered after
+completion, never done unasked. Fix relative links when moving a record by hand. External publication is an explicitly
 requested task through available host tools; no automatic provider synchronization
 is part of core v2.
 

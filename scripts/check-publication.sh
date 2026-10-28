@@ -12,12 +12,16 @@ export GIT_CONFIG_GLOBAL="$work/gitconfig"
 export GIT_CONFIG_NOSYSTEM=1
 printf '[commit]\n  gpgsign = false\n[tag]\n  gpgsign = false\n' > "$GIT_CONFIG_GLOBAL"
 export MAINTAINER_NAME=Fixture MAINTAINER_EMAIL=fixture@example.invalid
+# Set rather than inherited: the GitLab template job runs this with FORGE=gitlab.
+export FORGE=github CLI_REPOSITORY_URL=https://example.invalid/fixture/cli
 export CC_FIXTURE_BINARY="$cc_fixture_binary"
 mkdir -p "$work/source/scripts" "$work/source/release/requests/template" "$work/template"
 cp "$source_root/scripts/publish-template.sh" "$work/source/scripts/"
 mkdir -p "$work/source/product" "$work/source/release/template-repo"
 printf 'Zero Clause fixture license\n' > "$work/source/product/LICENSE"
-printf '%s\n' '# Product guide fixture' '--tag v__TEMPLATE_VERSION__' > "$work/source/product/README.md"
+printf '%s\n' '# Product guide fixture' '--tag v__TEMPLATE_VERSION__' \
+  '<a href="__TEMPLATE_RELEASES_URL__"><img src="__TEMPLATE_RELEASE_BADGE__"></a> <a href="__CLI_RELEASES_URL__"><img src="__CLI_RELEASE_BADGE__"></a> <a href="__TEMPLATE_LICENSE_URL__">' \
+  > "$work/source/product/README.md"
 mkdir -p "$work/source/product/assets/readme"
 printf 'WEBPfixture\n' > "$work/source/product/assets/readme/logo.webp"
 printf '# Contributing fixture\n' > "$work/source/release/template-repo/CONTRIBUTING.md"
@@ -45,7 +49,7 @@ printf '*.local\n' > "$work/template/.gitignore"
 git -C "$work/template" add .
 git -C "$work/template" -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m 'test: seed publication fixture'
 original=$(git -C "$work/template" rev-parse HEAD)
-publish() { sh "$work/source/scripts/publish-template.sh" 2.0.0-test "$work/template" https://example.invalid/fixture-template.git; }
+publish() { sh "$work/source/scripts/publish-template.sh" 2.0.0-test "$work/template" https://example.invalid/fixture/template.git; }
 # The published README is the product guide and the published LICENSE is the
 # 0BSD text; a copy among the destination's own files would silently replace one
 # of them with something nothing else validates.
@@ -79,6 +83,15 @@ unset CC_FIXTURE_DIRTY_TARGET
 rm "$work/template/keep.local"
 # Only discard this test's generated output so the success case can run.
 rm -rf "$work/source/dist"
+# The README's badges cannot be filled without the CLI's project or a known
+# forge, and a refusal stops before a release is assembled. Subshells, because
+# an assignment prefixed to a function call may outlive the call.
+if (CLI_REPOSITORY_URL=; publish) > "$work/no-cli-url.log" 2>&1; then printf 'FAIL: published without CLI_REPOSITORY_URL\n' >&2; exit 1; fi
+grep -q 'set CLI_REPOSITORY_URL' "$work/no-cli-url.log"
+if (FORGE=bogus; publish) > "$work/bogus-forge.log" 2>&1; then printf 'FAIL: published for an unknown FORGE\n' >&2; exit 1; fi
+grep -q 'unknown FORGE' "$work/bogus-forge.log"
+[ "$(git -C "$work/template" rev-parse HEAD)" = "$original" ]
+[ ! -e "$work/source/dist/v2.0.0-test" ]
 publish > "$work/published.log"
 [ "$(git -C "$work/template" log -1 --format='%B')" = 'chore(release): publish v2.0.0-test' ]
 [ "$(cat "$work/template/.context-circuit/VERSION")" = 2.0.0-test ]
@@ -95,6 +108,20 @@ grep -q -- '--tag v2.0.0-test' "$work/template/README.md" || {
 if grep -q '__TEMPLATE_VERSION__' "$work/template/README.md"; then
   printf 'FAIL: published README retained the template version placeholder\n' >&2; exit 1
 fi
+if grep -q '__[A-Z_]*__' "$work/template/README.md"; then
+  printf 'FAIL: published README retained a placeholder\n' >&2; exit 1
+fi
+# The exact URLs, because an unescaped & in a sed replacement leaves no
+# placeholder behind and still breaks the badge.
+for form in \
+  'href="https://example.invalid/fixture/template/releases"' \
+  'src="https://img.shields.io/github/v/release/fixture/template?filter=v*&display_name=tag&include_prereleases&sort=date&label=workspace&color=1f6feb"' \
+  'href="https://example.invalid/fixture/cli/releases"' \
+  'src="https://img.shields.io/github/v/release/fixture/cli?filter=cli-v*&display_name=tag&include_prereleases&sort=date&label=cli&color=1f6feb"' \
+  'href="https://example.invalid/fixture/template/blob/main/LICENSE"'; do
+  grep -qF -- "$form" "$work/template/README.md" || {
+    printf 'FAIL: published README lacks the GitHub form %s\n' "$form" >&2; exit 1; }
+done
 cmp -s "$work/source/product/assets/readme/logo.webp" "$work/template/assets/readme/logo.webp"
 # None of them reach a workspace, whose root belongs to somebody else's project.
 "$CC_FIXTURE_BINARY" template export --path "$work/exported" >/dev/null
@@ -119,7 +146,17 @@ grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
 # commit rather than by a person deleting the file on the published repository.
 printf '%s\n' --- 'version: 2.0.0-keep' --- 'Second fixture notes.' \
   > "$work/source/release/requests/template/2.0.0-keep.md"
-sh "$work/source/scripts/publish-template.sh" 2.0.0-keep "$work/template" https://example.invalid/fixture-template.git >/dev/null
+# Published from GitLab, the badges and links take that forge's forms.
+FORGE=gitlab sh "$work/source/scripts/publish-template.sh" 2.0.0-keep "$work/template" https://example.invalid/fixture/template.git >/dev/null
+for form in \
+  'href="https://example.invalid/fixture/template/-/releases"' \
+  'src="https://example.invalid/fixture/template/-/badges/release.svg"' \
+  'href="https://example.invalid/fixture/cli/-/releases"' \
+  'src="https://example.invalid/fixture/cli/-/badges/release.svg"' \
+  'href="https://example.invalid/fixture/template/-/blob/main/LICENSE"'; do
+  grep -qF -- "$form" "$work/template/README.md" || {
+    printf 'FAIL: published README lacks the GitLab form %s\n' "$form" >&2; exit 1; }
+done
 grep -q 'Second fixture notes.' "$work/template/CHANGELOG.md" || {
   printf 'FAIL: a later release did not reach the changelog\n' >&2; exit 1; }
 grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
@@ -127,7 +164,7 @@ grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
 
 printf '%s\n' --- 'version: 2.0.0-reset' 'changelog: reset' --- 'Only entry.' \
   > "$work/source/release/requests/template/2.0.0-reset.md"
-sh "$work/source/scripts/publish-template.sh" 2.0.0-reset "$work/template" https://example.invalid/fixture-template.git >/dev/null
+sh "$work/source/scripts/publish-template.sh" 2.0.0-reset "$work/template" https://example.invalid/fixture/template.git >/dev/null
 grep -q 'Only entry.' "$work/template/CHANGELOG.md" || {
   printf 'FAIL: the resetting release wrote no entry\n' >&2; exit 1; }
 for stale in 'Fixture release notes.' 'Second fixture notes.'; do
@@ -136,11 +173,23 @@ for stale in 'Fixture release notes.' 'Second fixture notes.'; do
   fi
 done
 
+# A candidate's notes appear on its release alone: the changelog is left exactly
+# as the previous release wrote it.
+cp "$work/template/CHANGELOG.md" "$work/changelog.before"
+printf '%s\n' --- 'version: 2.0.1-skip' 'changelog: skip' --- 'Candidate entry.' \
+  > "$work/source/release/requests/template/2.0.1-skip.md"
+sh "$work/source/scripts/publish-template.sh" 2.0.1-skip "$work/template" https://example.invalid/fixture/template.git >/dev/null
+cmp -s "$work/changelog.before" "$work/template/CHANGELOG.md" || {
+  printf 'FAIL: a skipping release changed the changelog\n' >&2; exit 1; }
+git -C "$work/template" rev-parse -q --verify refs/tags/v2.0.1-skip >/dev/null || {
+  printf 'FAIL: a skipping release was not published\n' >&2; exit 1; }
+
 printf '%s\n' --- 'version: 2.0.0-bogus' 'changelog: sometimes' --- 'x.' \
   > "$work/source/release/requests/template/2.0.0-bogus.md"
-if sh "$work/source/scripts/publish-template.sh" 2.0.0-bogus "$work/template" https://example.invalid/fixture-template.git >/dev/null 2>&1; then
+if sh "$work/source/scripts/publish-template.sh" 2.0.0-bogus "$work/template" https://example.invalid/fixture/template.git >/dev/null 2>&1; then
   printf 'FAIL: published with an unknown changelog mode\n' >&2; exit 1
 fi
 
-printf 'PASS: a release prepends to the changelog, and a resetting release starts it over\n'
+printf 'PASS: the published README names the releases and license of the forge publishing it\n'
+printf 'PASS: a release prepends to the changelog, a resetting release starts it over, and a skipping one leaves it alone\n'
 printf 'PASS: publication preserves user files and creates a clean versioned fixture\n'

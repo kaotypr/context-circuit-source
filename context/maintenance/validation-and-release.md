@@ -1,11 +1,11 @@
 # Validation and release checks
 
-How a change here is proven before it ships, and what stays unproven.
+How a change here is proven before it ships, and what the tests do not establish.
 
 ## What a change here runs
 
-Format changed Go files, then the test suite, then vetting, then the release
-check. Tests use temporary directories and disposable Git repositories, so they
+The contributor guide, `CONTRIBUTING.md`, lists the commands a change here runs.
+Tests use temporary directories and disposable Git repositories, so they
 establish real file and Git behavior rather than mocked behavior.
 
 The suite also validates this project's own product knowledge with the product's
@@ -23,10 +23,6 @@ Continuous integration clones full history for it, because that pass counts
 commits under those anchors and a shallow clone would let it pass without
 looking.
 
-This replaces registering the checkout as a workspace and running the diagnostic
-by hand, which put the same checks behind two machine-local files: they ran
-where someone had set them up, and nowhere else.
-
 The release check is the broad one: it builds and exercises a native binary,
 verifies the embedded seed inventory against the manifest, cross-compiles every
 supported target, and tests the publication guards and commit and tag behavior
@@ -35,7 +31,9 @@ checked assets.
 
 Continuous integration runs the native suite — including installer upgrade and
 rollback fixtures — on Linux, macOS, and Windows, plus the release check on
-Linux. The matrix exists because **cross-compilation alone is not proof of
+Linux for a pull request into a release branch. Every pull request also runs a
+check that it carries a change file for each product it changes, or says it
+changes nothing users see. The matrix exists because **cross-compilation alone is not proof of
 behavior on another operating system**, and the filesystem cloning this product
 depends on is exactly where that bites.
 
@@ -59,8 +57,10 @@ The two products publish separately, each from the repository that owns it. The
 workspace template publishes from its version file to the published template
 repository's `v*` release tags. The CLI is tagged `cli-v*` here, where its
 source is, and its release is created here too, on the commit that built it.
-Changing a version file does not publish — publication is explicitly invoked and
-requires authorization.
+Both publish from a release line's branch, `release/X.Y`, when a release-prep
+merge there sets a version file; the resolver refuses a version on any other
+branch, `main` included. That merge, or a run started by hand, is the explicit,
+authorized act — changing a version file on `main` publishes nothing.
 
 Publishing the template replaces the destination's whole tree, so the files that
 repository owns rather than a workspace — its license, conduct, contributing and
@@ -78,13 +78,14 @@ installed Git, with no other language runtime.
 
 ## What validation does not establish
 
-Markdown scenarios are validated against the shared entry instruction by
-reading, not by execution. Deterministic tests establish file and Git behavior;
-they do not establish whether a coding host loads or follows the shared
-instruction. **Host behavior is reported as unverified unless it was actually
-exercised.**
+Deterministic tests establish file and Git behavior. They do not establish
+whether a coding host loads or follows the shared instruction, and a green
+pipeline does not either.
 
-This is the honest limit of the whole test story, and it is stated in the
-shipped release notes too, because a green pipeline would otherwise imply it.
-The instruction surface is the product, and it is unverified in the way that
-matters most.
+That is measured separately, by the agent tests (see
+[Agent tests](agent-tests.md)). A result there is a statement about one host,
+one model, and one date: host H, model M, k of N runs passed, on date D. It is
+produced outside CI, by whoever changes what agents see. No 2.5.0 baseline is
+recorded yet, so no figures are cited here. Host behavior that was not exercised
+is reported as not exercised, and a claim about a host is never stronger than
+the runs behind it.

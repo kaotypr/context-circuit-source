@@ -1,0 +1,30 @@
+name: Change files
+# A pull request that changes CLI or template files adds a .changelog/ change
+# file for each, or says None under Release note. This is its own workflow so
+# editing the description re-runs it without cancelling the test runs in Check.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  change-files:
+    name: Change files
+    # Dependency updates carry no note; a skipped job satisfies a required check.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      # The body reaches the script through the environment, never through the
+      # script text, so nothing a description says is run as shell.
+      - name: Check change files
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: sh scripts/check-change-files.sh "$BASE_SHA" "$HEAD_SHA"

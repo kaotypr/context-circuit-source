@@ -1,0 +1,42 @@
+name: Proposal
+description: Propose a behaviour change or a new command, so the design is agreed before it is built.
+labels:
+  - "triage: behaviour change"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A behaviour change or a new command is agreed in an issue before a pull request is opened. A bug fix, documentation or tests can go straight to a pull request.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Context Circuit the change touches.
+      options:
+        - CLI
+        - Template
+        - Docs
+        - Release
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard or wrong today, and who it affects.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Proposed change
+      description: What should change, and which behaviour it moves. Say whether it belongs to the coding agent or to the CLI.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways to solve the problem, and why you prefer this one.
+    validations:
+      required: false

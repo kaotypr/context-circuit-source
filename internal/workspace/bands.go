@@ -1,6 +1,9 @@
 package workspace
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // BandSuggestions are the bands the CLI offers a person to confirm or replace:
 // one for each member who holds none, and one for the next member added.
@@ -42,7 +45,7 @@ func (s *Store) SuggestBands() (BandSuggestions, error) {
 				return candidate, nil
 			}
 		}
-		return 0, fmt.Errorf("every band from 1 to 9999 is held or already holds records")
+		return 0, errors.New("every band from 1 to 9999 is held or already holds records")
 	}
 	for _, id := range members.IDs() {
 		if members.Members[id].Band != nil {

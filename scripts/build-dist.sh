@@ -11,7 +11,11 @@ set -eu
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 [ "$#" -le 2 ] || { printf 'usage: sh scripts/build-dist.sh [version] [new-output-dir]\n' >&2; exit 2; }
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-v$(cat "$source_root/VERSION")}
+if [ -z "${1:-}" ]; then
+  version=v$(sh "$source_root/scripts/release-version.sh" template)
+else
+  version=$1
+fi
 case "$version" in ''|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $version" ;; esac
 if [ "$#" -ge 2 ]; then
   output_dir=$2

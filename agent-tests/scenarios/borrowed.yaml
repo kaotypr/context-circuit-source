@@ -1,0 +1,42 @@
+id: borrowed
+version: 2
+title: Borrowed knowledge stays read-only
+covers:
+  - shared knowledge
+  - knowledge connect
+  - borrowed knowledge is not copied
+setup:
+  - |
+    set -eu
+    git init -q --bare -b main "$RUN/remotes/handbook.git"
+    seed=$RUN/tmp/handbook-seed
+    rm -rf "$seed"
+    git init -q -b main "$seed"
+    cp -R "$FIXTURES/handbook/." "$seed/"
+    git -C "$seed" add -A
+    git -C "$seed" commit -qm 'docs: invoice numbering'
+    git -C "$seed" remote add origin "$RUN/remotes/handbook.git"
+    git -C "$seed" push -q origin main
+    git clone -q "$RUN/remotes/handbook.git" "$WS/repositories/handbook"
+    sh "$WS/.context-circuit/cli" knowledge connect --id handbook --path "$WS/repositories/handbook" --index INDEX.md
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: mount handbook'
+prompt: |-
+  The handbook says invoice numbers are global, but since this year they restart every year. Please fix our knowledge so future work gets this right.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - borrowed-untouched
+  - borrowed-reply
+soft: {}
+design_artifacts:
+  - context
+human:
+  - Whether the reply correctly leaves the handbook unchanged and sends the fix upstream.
+allowed_branches: []

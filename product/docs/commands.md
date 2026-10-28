@@ -1,16 +1,24 @@
 # Agent-facing commands
 
-Run the CLI version this workspace pins in `.context-circuit/CLI_VERSION`. Versions
-install side by side, so the shared command on PATH may select a different one; the
-`cc-cli` skill resolves the pinned path. The CLI warns on stderr when it is run
-against a workspace pinning another version.
+Run every command through this workspace's launcher:
+`sh .context-circuit/cli COMMAND ...` from the workspace root, or
+`sh <root>/.context-circuit/cli COMMAND ...` from anywhere else. In Windows
+PowerShell or cmd, use
+`powershell -NoProfile -ExecutionPolicy Bypass -File <root>/.context-circuit/cli.ps1 COMMAND ...`.
+The launcher runs exactly the version `.context-circuit/CLI_VERSION` pins from the
+installer's version store, passing its own workspace root, so an example needs no
+`--workspace`; a `--workspace` naming another workspace is refused. When the
+pinned version is not installed, it refuses, runs nothing, and names the install
+step. Versions install side by side, so the shared command on PATH may be a
+different one. For a version store installed with `--bin-dir`, set
+`CONTEXT_CIRCUIT_BIN_DIR` to that directory.
 
-Use `context-circuit-cli --workspace PATH --json COMMAND ...` for structured output.
+Use `sh .context-circuit/cli --json COMMAND ...` for structured output.
 The global flags `--workspace PATH` and `--json` may precede the command or follow
-the full command, as in `context-circuit-cli status --workspace PATH --json` or
-`context-circuit-cli member list --json`; they do not go between a group such as
-`member` and its subcommand. Run
-`context-circuit-cli help` for the full surface, and `help` with a command name for
+the full command, as in `sh .context-circuit/cli status --json` or
+`sh .context-circuit/cli member list --json`; they do not go between a group such
+as `member` and its subcommand. Run
+`sh .context-circuit/cli help` for the full surface, and `help` with a command name for
 that command's signatures and what it decides, refuses, or leaves to the caller. A
 fully resolved command also takes `--help`, which prints that same help; a flag it
 does not take is named, followed by the command's signature and the `help` topic
@@ -21,33 +29,33 @@ Normal output is readable YAML; `--json` gives the agent structured values.
 The examples assume the current directory is the initialized workspace.
 
 ```sh
-context-circuit-cli status
-context-circuit-cli member add --id alex --name Alex --band 2
-context-circuit-cli member band --id alex --band 3
-context-circuit-cli member language --id alex --language 'Bahasa Indonesia'
-context-circuit-cli member tone --id alex --tone 'semi-formal; keep technical terms in English'
-context-circuit-cli member roles --id alex --role maintainer --role docs
-context-circuit-cli member use --id alex
-context-circuit-cli member list
-context-circuit-cli repo connect --id api --path ../api --base main
-context-circuit-cli repo clone --id web --path repositories/web --base main --url GIT_URL
-context-circuit-cli repo clone --id api --path repositories/api --base main
-context-circuit-cli repo init --id docs --path repositories/docs --base main
-context-circuit-cli repo base --id api --branch development
-context-circuit-cli repo remote --id api --url GIT_URL --default-branch main
-context-circuit-cli repo relate --from web --to api --description 'Consumes the API'
-context-circuit-cli repo inspect --id api
-context-circuit-cli repo fetch --id api --remote origin
-context-circuit-cli workspace connect --base main
-context-circuit-cli workspace base --branch development
-context-circuit-cli workspace remote --url GIT_URL --default-branch main
-context-circuit-cli knowledge clone --id core-service-knowledge --url GIT_URL
-context-circuit-cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge --index index.md
-context-circuit-cli knowledge sync --id core-service-knowledge
-context-circuit-cli knowledge remote --id core-service-knowledge --index docs/index.md
-context-circuit-cli knowledge list
-context-circuit-cli context find --query billing
-context-circuit-cli context find --repo api
+sh .context-circuit/cli status
+sh .context-circuit/cli member add --id alex --name Alex --band 2
+sh .context-circuit/cli member band --id alex --band 3
+sh .context-circuit/cli member language --id alex --language 'Bahasa Indonesia'
+sh .context-circuit/cli member tone --id alex --tone 'semi-formal; keep technical terms in English'
+sh .context-circuit/cli member roles --id alex --role maintainer --role docs
+sh .context-circuit/cli member use --id alex
+sh .context-circuit/cli member list
+sh .context-circuit/cli repo connect --id api --path ../api --base main
+sh .context-circuit/cli repo clone --id web --path repositories/web --base main --url GIT_URL
+sh .context-circuit/cli repo clone --id api --path repositories/api --base main
+sh .context-circuit/cli repo init --id docs --path repositories/docs --base main
+sh .context-circuit/cli repo base --id api --branch development
+sh .context-circuit/cli repo remote --id api --url GIT_URL --default-branch main
+sh .context-circuit/cli repo relate --from web --to api --description 'Consumes the API'
+sh .context-circuit/cli repo inspect --id api
+sh .context-circuit/cli repo fetch --id api --remote origin
+sh .context-circuit/cli workspace connect --base main
+sh .context-circuit/cli workspace base --branch development
+sh .context-circuit/cli workspace remote --url GIT_URL --default-branch main
+sh .context-circuit/cli knowledge clone --id core-service-knowledge --url GIT_URL
+sh .context-circuit/cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge --index index.md
+sh .context-circuit/cli knowledge sync --id core-service-knowledge
+sh .context-circuit/cli knowledge remote --id core-service-knowledge --index docs/index.md
+sh .context-circuit/cli knowledge list
+sh .context-circuit/cli context find --query billing
+sh .context-circuit/cli context find --repo api
 ```
 
 A knowledge repository is one this workspace reads and never owns. It records no
@@ -64,25 +72,29 @@ improvements go upstream from a separate checkout.
 Records:
 
 ```sh
-context-circuit-cli record create --kind intent --slug add-billing --title 'Add billing'
-context-circuit-cli record approve --id i100 --text 'User approved the billing outcome'
-context-circuit-cli record create --kind plan --slug billing-api --title 'Billing API' \
+sh .context-circuit/cli record create --kind intent --slug add-billing --title 'Add billing'
+sh .context-circuit/cli record approve --id i100 --text 'User approved the billing outcome'
+sh .context-circuit/cli record create --kind plan --slug billing-api --title 'Billing API' \
   --intent i100 --repo api
-context-circuit-cli record create --kind plan --slug billing-web --title 'Billing UI' \
+sh .context-circuit/cli record create --kind plan --slug billing-web --title 'Billing UI' \
   --intent i100 --repo web --depends-on p1000
-context-circuit-cli record create --kind plan --slug specified-change --title 'Specified change' \
+sh .context-circuit/cli record create --kind plan --slug specified-change --title 'Specified change' \
   --repo api
-context-circuit-cli record show --id p1000
-context-circuit-cli record list
-context-circuit-cli record dependencies --id p1001 --depends-on p1000
-context-circuit-cli record complete --id p1000 --text 'User requested completion.'
-context-circuit-cli record order --intent i100 --mode waves
-context-circuit-cli record order --plan p1002 --mode waves
-context-circuit-cli record delete --member alex
-context-circuit-cli record delete --member alex --confirm
-context-circuit-cli record delete --all
-context-circuit-cli record delete --id p1002
-context-circuit-cli record delete --id i101 --id p1003 --confirm
+sh .context-circuit/cli record show --id p1000
+sh .context-circuit/cli record list
+sh .context-circuit/cli record list --member alex
+sh .context-circuit/cli record list --all --archived
+sh .context-circuit/cli record dependencies --id p1001 --depends-on p1000
+sh .context-circuit/cli record complete --id p1000 --text 'User requested completion.'
+sh .context-circuit/cli record archive
+sh .context-circuit/cli record archive --id i101 --id p1003
+sh .context-circuit/cli record order --intent i100 --mode waves
+sh .context-circuit/cli record order --plan p1002 --mode waves
+sh .context-circuit/cli record delete --member alex
+sh .context-circuit/cli record delete --member alex --confirm
+sh .context-circuit/cli record delete --all
+sh .context-circuit/cli record delete --id p1002
+sh .context-circuit/cli record delete --id i101 --id p1003 --confirm
 ```
 
 `context find` takes one of the two: a query searches this workspace's catalog
@@ -108,6 +120,36 @@ a full band is refused naming the member, the band, and its range. The new
 number is reserved in the author's own `.context-circuit/ids/MEMBER.yaml` and in
 no other file. Assigning or changing a band never renumbers an existing record or
 releases its reservation.
+
+`record list` shows the active member's records; `--member ID` shows that
+member's, and `--all` every record, including any an earlier version wrote
+without an author, which only `--all` and `--id` reach. `--archived` adds
+archived records to either. Scripts that relied on the old full listing pass
+`--all`. With no member selected, `record list` lists every record and says so
+in a `notice:` on stderr. `status` opens with `my_work`, the active member's own
+open work: `awaiting_approval` (intents not approved), `approved_without_plans`,
+`open_plans` (plans not completed), each an `id` and `path`, and
+`unarchived_finished`, the count of their finished records not archived yet. A
+record is finished when it is a completed plan, or an approved intent whose
+plans are all completed. Nobody else's records are counted, and `my_work` is
+absent while no member is selected; a record it cannot read becomes an issue.
+
+`record archive` moves records under the `_archive/` beside them: a record at
+the top level into `intent/_archive/` or `plans/_archive/`, one in a group into
+that group's `_archive/`, and a plan folder whole. Without `--id` it takes the
+active member's finished records; repeatable `--id` takes exactly the named
+records, whoever wrote them, finished or not, and lists any unfinished one under
+`unfinished`. The result lists each move under `archived` with its `id`,
+`created_by`, `status`, `from`, and `to`; a record already archived is named under
+`already_archived` and left where it is. No ID file changes, so every number stays
+reserved, and lookup by ID finds the record in its new place. Inline relative
+Markdown links into and out of the moved records are rewritten and listed under
+`links_rewritten`; a link the move breaks that it cannot rewrite, such as a
+reference-style definition, is listed under `links_reported` with the path it
+should now have, and is edited by hand. Links inside a plan folder move with it
+and still hold. `record complete` returns `archive_offer`, with
+`unarchived_finished`, while the active member has finished records not
+archived: the agent offers to archive them, and a no changes nothing.
 
 `record delete` is the one command that releases reservations. `--member` takes
 every intent and plan that member created, active and archived. `--all` takes
@@ -176,7 +218,8 @@ command's result changes shape. The notice names every shared file the command
 changed, from what actually changed: `workspace.yaml`, the ID files written or
 removed, and `members.yaml` when the command changed it, as `member band` does.
 Records the command writes are in its own result. `status`, `check`, the other reading commands,
-and `record delete` without `--confirm` never split. Nor do a few refusals
+`repo fetch`, which changes only Git refs in a bound checkout, and `record delete`
+without `--confirm` never split. Nor do a few refusals
 checked before the split: `member add` without `--band`, a malformed `member
 roles` call, and a confirmed `record delete` its preview would refuse. A refusal
 found while the command runs, such as an unknown member or record ID, comes
@@ -190,13 +233,28 @@ writes a file for every author, so only one person on a team upgrades first:
 they make the first changing command, then commit and push the files the notice
 names; committing is the person's decision. Everyone else pulls
 before making any change. Teammates who upgrade at the same time get a Git
-conflict in `.context-circuit/ids/*.yaml`, which is theirs to resolve by hand:
-keep the union of both sides' entries in each member file, then run `check`,
-which reports any number reserved twice. If a merge leaves Git conflict markers
+conflict in `.context-circuit/ids/*.yaml`, which is resolved by keeping the
+union of both sides' entries in each member file, then running `check`, which
+reports any number reserved twice. If a merge leaves Git conflict markers
 in `ids.yaml`, the split refuses until a person resolves them, keeping every
 entry. A member or record author whose ID is a Windows device name stops the
 split, which names them; `status` and `check` report a roster member like that
 beforehand, and the rename is made by hand.
+
+Before 2.5.0 the archive folder was `archive/`. The first changing command run
+once setup is complete renames a top-level `intent/archive/` and
+`plans/archive/` to `_archive/`, merging into an `_archive/` that already exists
+and refusing, moving nothing, when both hold the same name with different
+content. The schema stays at 3 and no ID file changes, so every record stays
+archived and keeps its number. A top-level `archive/` is a reserved legacy name:
+it reads as archived until it is renamed, and is never a group, while an
+`archive/` inside a group is an ordinary folder. The rename is reported as a
+`notice:` paragraph on stderr naming the folders moved, and the command that
+made it, if it returns `commit_recommended`, lists the moved records too. A
+2.4.x CLI does not read `_archive/`, so every member installs the 2.5.0 CLI
+before pulling a renamed workspace; as with the ID split, one person runs the
+first changing command, commits and pushes the moved records, and everyone else
+pulls before changing anything.
 
 Setup is complete when the roster lists at least one member, every member holds a
 band, and this machine has selected one of them. Until then every changing
@@ -234,19 +292,26 @@ canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; other dates are ISO
 8601 `YYYY-MM-DD` in UTC.
 
 After it succeeds, approval reads the workspace's Git status for the approved
-intent's file, and completion for the plan's files and its intent's file,
-wherever each lives, archives included; both also read every ID file, the
-shared `.context-circuit/ids.yaml` and each per-member file. Whatever is not
+intent's file, completion for the plan's files and its intent's file, and
+`record archive` for every record it moved or whose links it rewrote, wherever
+each lives, archives included; each also reads every ID file, the shared
+`.context-circuit/ids.yaml` and each per-member file, and every record an
+`archive/` rename moved in the same run. Whatever is not
 committed is returned as `commit_recommended`: `files`, each a `path` relative
 to the workspace root with `/` separators and a `change` of `new`, `modified`,
 or `deleted`, and a `note`. A renamed record is listed as its new path `new` and
-its old path `deleted`. Other uncommitted records are not listed. Approval and
-completion always rewrite the record they touch, so in a Git workspace that
-record is always listed. The key is omitted when nothing is listed. When Git is
+its old path `deleted`, so an archived record is listed at both. Other
+uncommitted records are not listed. Approval and completion always rewrite the
+record they touch, so in a Git workspace that record is always listed. The key is omitted when nothing is listed. When Git is
 not installed, or the workspace is not in a Git repository, the result carries
 `commit_unchecked` with the reason instead. Neither ever blocks or undoes the
-command, and the CLI never stages, commits, or pushes: committing the records
-still needs the person's authorization. A workspace inside another repository
+command, and the CLI never stages, commits, or pushes. The agent asks the person
+one question, commit and push the listed files or commit only; the answer is the
+authorization for those files, that once, and covers pushing only the
+workspace's base branch to its upstream, never by force. A push refused because
+the remote moved on is brought up to date with `git pull --rebase`, ID file
+conflicts resolved by keeping both sides' entries, and any other conflict
+brought to the person, as `AGENTS.md` describes. A workspace inside another repository
 is reported relative to its own root, leaving out files outside it; one that
 repository ignores lists nothing.
 
@@ -269,15 +334,15 @@ branch is gone. The report is advice: it runs, merges, and reserves nothing, and
 Worktrees:
 
 ```sh
-context-circuit-cli worktree prepare --repo api --plan p0001 --copy-mode auto
-context-circuit-cli worktree prepare --repo web --plan p0002 --start origin/main
-context-circuit-cli worktree list --repo api
-context-circuit-cli worktree inspect --repo api --path .worktrees/p0001/api
-context-circuit-cli worktree move --repo api --path .worktrees/p0001/api --to ../api-billing
-context-circuit-cli worktree repair --repo api --path ../api-billing
-context-circuit-cli worktree remove --repo api --path ../api-billing
-context-circuit-cli worktree prune --repo api
-context-circuit-cli check
+sh .context-circuit/cli worktree prepare --repo api --plan p0001 --copy-mode auto
+sh .context-circuit/cli worktree prepare --repo web --plan p0002 --start origin/main
+sh .context-circuit/cli worktree list --repo api
+sh .context-circuit/cli worktree inspect --repo api --path .worktrees/p0001/api
+sh .context-circuit/cli worktree move --repo api --path .worktrees/p0001/api --to ../api-billing
+sh .context-circuit/cli worktree repair --repo api --path ../api-billing
+sh .context-circuit/cli worktree remove --repo api --path ../api-billing
+sh .context-circuit/cli worktree prune --repo api
+sh .context-circuit/cli check
 ```
 
 `worktree prune` drops the plan-to-worktree associations of one repository whose
@@ -318,6 +383,13 @@ issues:
 ok: false
 ```
 
+For record folders, `check` reports a `reserved folder name`, a folder whose
+name starts with `_` other than `_archive/`, whose records no command reads; a
+`folder named like a record holds records`, a group named like a plan folder; a
+`record file outside the folders records are read from`, deeper than one group
+and its `_archive/`; and a `legacy archive folder awaits its rename to
+_archive/`, discharged by any changing command with the pinned CLI.
+
 For ID files, `check` reports a file it cannot read, a malformed or misplaced
 ID, a number reserved twice in one file or across member files, a record whose
 ID no file reserves, and a file in `.context-circuit/ids/` not named after a
@@ -354,16 +426,16 @@ It cannot migrate an existing v1 or reinitialize an active v2 workspace.
 Subagent setup and dispatch:
 
 ```sh
-context-circuit-cli agent settings
-context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit-cli agent setup
-context-circuit-cli --json agent dispatch --host codex --role planner \
+sh .context-circuit/cli agent settings
+sh .context-circuit/cli agent configure --host codex --role worker --model MODEL_ID --effort high
+sh .context-circuit/cli agent setup
+sh .context-circuit/cli --json agent dispatch --host codex --role planner \
   --intent i001 --path /actual/repository
-context-circuit-cli --json agent dispatch --host codex --role planner \
+sh .context-circuit/cli --json agent dispatch --host codex --role planner \
   --task 'Plan the specified outcome' --path /actual/repository
-context-circuit-cli --json agent dispatch --host codex --role worker \
+sh .context-circuit/cli --json agent dispatch --host codex --role worker \
   --plan p0001 --repo api --path /actual/worktree
-context-circuit-cli --json agent dispatch --host codex --role explorer \
+sh .context-circuit/cli --json agent dispatch --host codex --role explorer \
   --path /actual/repository --task 'Which module owns invoice voiding?'
 ```
 
@@ -371,7 +443,10 @@ Settings default to host inheritance. `agent setup` applies settings to native
 agent files for every host unless `--host` narrows it, because one workspace is
 opened in several; the host may need to reload them. Initialization runs it, so a
 new workspace needs it again only after `agent configure` or in a fresh clone,
-where the ignored definitions never arrive. `agent dispatch` returns the
+where the ignored definitions never arrive. Setup also adds Claude Code's
+`attribution` setting, turning its commit and pull request trailers off, to the
+gitignored `.claude/settings.local.json` when that key is absent, and keeps
+everything else in the file. `agent dispatch` returns the
 resolved invocation for the cc-dispatch skill to launch through the host's tools.
 `--task` is the assignment for a role no record assigns: an explorer's question,
 a reviewer's diff and criteria, or the one slice a worker owns when several share

@@ -83,6 +83,44 @@ func TestTheFirstChangeSplitsASchema2Workspace(t *testing.T) {
 	f.ok("check")
 }
 
+// Deriving an order only reads records, and a fetch changes only Git refs in a
+// bound checkout, so neither moves the ID file: the split waits for a command
+// that changes the workspace itself.
+func TestOrderAndFetchLeaveTheIDFileAlone(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	f.ok("repo", "clone", "--id", "copy", "--path", filepath.Join(f.home, "copy"), "--base", "main", "--url", api)
+	intent := f.intent("billing")
+	plan := f.plan(intent.ID, "billing-api", "api")
+	schema2(t, f, []string{intent.ID}, []string{plan.ID})
+	legacy := filepath.Join(f.root, ".context-circuit", "ids.yaml")
+	config := filepath.Join(f.root, "workspace.yaml")
+	wantLegacy, wantConfig := read(t, legacy), read(t, config)
+
+	for _, args := range [][]string{
+		{"record", "order"},
+		{"record", "order", "--intent", intent.ID},
+		{"record", "order", "--plan", plan.ID},
+		{"repo", "fetch", "--id", "copy"},
+	} {
+		code, out, errOut := call(f.root, args...)
+		if code != 0 || strings.Contains(errOut, "notice:") {
+			t.Fatalf("%v: exit=%d %s %s", args, code, out, errOut)
+		}
+		if !exists(legacy) || read(t, legacy) != wantLegacy || read(t, config) != wantConfig {
+			t.Fatalf("%v changed the ID file or the schema", args)
+		}
+	}
+
+	code, out, errOut := call(f.root, "record", "create", "--kind", "intent", "--slug", "next", "--title", "Next")
+	if code != 0 || !strings.Contains(errOut, "notice: moved this workspace's ID reservations") {
+		t.Fatalf("the next change did not split: exit=%d %s %s", code, out, errOut)
+	}
+	if exists(legacy) || !strings.Contains(read(t, config), "version: 3") {
+		t.Fatal("the next change did not remove the shared file and move the schema")
+	}
+}
+
 // A workspace that cannot say who is working has nobody to give authorless
 // reservations to, so nothing splits until it can. The selection that completes
 // setup then splits it itself, rather than leaving it to the next command.

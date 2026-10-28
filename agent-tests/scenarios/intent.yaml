@@ -1,0 +1,26 @@
+id: intent
+version: 2
+title: An intent from a request, then stop
+covers:
+  - intent and planning
+  - record create
+  - grounding through the index
+prompt: |-
+  Customers need to download their invoices as CSV from the api. Write it up for me to approve before anyone builds it.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - intent-record
+  - intent-no-plan
+soft:
+  code-canary-seen: CODE-CANARY-41b2 appeared in the host stream
+design_artifacts:
+  - intent/i100-*.md
+human: []
+allowed_branches: []

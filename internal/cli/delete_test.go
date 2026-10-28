@@ -96,7 +96,7 @@ func TestDeletingOneRecordByID(t *testing.T) {
 func TestDeletingByIDReachesEveryKindOfRecord(t *testing.T) {
 	f := team(t)
 	archived := f.intent("old-idea")
-	archive := filepath.Join(f.root, "intent", "archive", filepath.Base(archived.Path))
+	archive := filepath.Join(f.root, "intent", "_archive", filepath.Base(archived.Path))
 	write(t, archive, read(t, filepath.Join(f.root, archived.Path)))
 	os.Remove(filepath.Join(f.root, archived.Path))
 	f.ok("member", "use", "--id", "alex")
@@ -120,7 +120,7 @@ func TestDeletingByIDReachesEveryKindOfRecord(t *testing.T) {
 	if r := deletedRecord(t, preview, "i050"); r.CreatedBy != "" || r.Status != "draft" {
 		t.Fatalf("an authorless record must show no author: %+v", r)
 	}
-	if r := deletedRecord(t, preview, archived.ID); !strings.HasPrefix(r.Path, "intent/archive/") {
+	if r := deletedRecord(t, preview, archived.ID); !strings.HasPrefix(r.Path, "intent/_archive/") {
 		t.Fatalf("the archived record's path is not shown: %+v", r)
 	}
 
@@ -216,7 +216,7 @@ func TestARefusedDeletionStillShowsItsPreview(t *testing.T) {
 
 	// A person reading YAML sees the same preview.
 	var out, errOut bytes.Buffer
-	code := cli.Run(context.Background(), []string{"--workspace", f.root, "record", "delete", "--id", intent.ID}, &out, &errOut, "2.0.0-test")
+	code := cli.Run(context.Background(), []string{"--workspace", f.root, "record", "delete", "--id", intent.ID}, &out, &errOut, testVersion)
 	for _, want := range []string{"blocked_by:", "id: " + plan.ID, "link: belongs to intent " + intent.ID, "add_ids:", "refused:", "status: approved"} {
 		if code != 1 || !strings.Contains(out.String(), want) {
 			t.Fatalf("the YAML preview lacks %q: exit=%d %s %s", want, code, out.String(), errOut.String())
@@ -336,7 +336,7 @@ func TestPreparingAReusedPlanNumberRefusesTheOldWorktree(t *testing.T) {
 	// made before the new plan existed, say the same.
 	assocs := filepath.Join(f.root, ".context-circuit", "local", "worktrees.yaml")
 	lines := []string{}
-	for _, line := range strings.Split(read(t, assocs), "\n") {
+	for line := range strings.SplitSeq(read(t, assocs), "\n") {
 		if !strings.Contains(line, "plan_created_at") {
 			lines = append(lines, line)
 		}
@@ -374,7 +374,7 @@ func legacyAssociations(t *testing.T, f fixture) {
 	t.Helper()
 	path := filepath.Join(f.root, ".context-circuit", "local", "worktrees.yaml")
 	lines := []string{}
-	for _, line := range strings.Split(read(t, path), "\n") {
+	for line := range strings.SplitSeq(read(t, path), "\n") {
 		if !strings.Contains(line, "plan_created_at") {
 			lines = append(lines, line)
 		}

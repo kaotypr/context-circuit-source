@@ -2,7 +2,7 @@
 
 This optional catalog points to durable architecture, conventions, decisions,
 terminology, domain rules, and repository relationships. Retrieve relevant
-entries instead of scanning every note. Keep task progress in the plan records.
+entries instead of scanning every note.
 
 ## Writing an entry
 
@@ -59,12 +59,11 @@ to stay passive. Anchor to code instead, with the logical repository ID from
 `workspace.yaml`, exact or patterned: `api@internal/billing/dunning/`, or
 `web@src/features/<feature>/`.
 
-An anchor earns its place by saying what it anchors. Write one into the sentence
-that explains it — *the format layer in `api@internal/billing/format/` owns the
-schema* — which is where an anchor belongs whenever a sentence can carry it.
-
-A note covering several surfaces may close with an `Owner:` block naming where
-its subject lives, one bullet per anchor, each saying what that path owns:
+An anchor earns its place by saying what it anchors. The readability check
+accepts one in two places only: the note's closing `Owner:` block, or a table
+row that pairs a path with what it owns. An anchor in a running sentence is
+reported. The `Owner:` block names where the note's subject lives, one bullet per
+anchor, each saying what that path owns:
 
 ```
 Owner:
@@ -97,8 +96,8 @@ as concerns earn them, each with its own scope line.*
 is built is `architecture/`.*
 
 - [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, planning request, coordination · reviewed 2026-10-20
-- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, publication target, publication order, release request, release repository, precedence, behind, outdated cli, schema 3, cut-over, template delta · reviewed 2026-10-20
-- [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the CLI, which cover a workspace, and why a workspace holds no license file · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge, export-ignore, gitattributes · reviewed 2026-09-19
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, publication target, publication order, release request, release repository, precedence, behind, outdated cli, schema 3, cut-over, template delta, launcher, release line, variant label, GitLab, pin switch, pin guard, command name, change file, release branch · reviewed 2026-10-29
+- [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the CLI, which cover a workspace, why a workspace holds no license file, and where the CLI archives carry the copyright notice · license, licensing, apache, 0bsd, attribution, notice, copyright, third-party notices, archive inventory, landing page, contributing, security, code of conduct, badge, export-ignore, gitattributes · reviewed 2026-10-29
 
 ### Architecture
 
@@ -106,9 +105,9 @@ is built is `architecture/`.*
 and agent, the command surface, the instruction layers, the file contract.*
 
 - [The CLI and agent seam](architecture/cli-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go CLI and which to the agent · seam, boundary, cli, refusals, model-blind, judgment, mechanism, remedy, id file · reviewed 2026-10-20
-- [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the CLI exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, global flags, flag position, unknown flag, usage, help, refusal preview, documentation parity · reviewed 2026-10-21
+- [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the CLI exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, global flags, flag position, unknown flag, usage, help, refusal preview, documentation parity, my work, record list default, record archive, archive offer · reviewed 2026-10-28
 - [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability, audience, next step · reviewed 2026-10-20
-- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema, interrupted deletion, roster, band, id file, split, split notice, schema 3, roles, member roles · reviewed 2026-10-21
+- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema, interrupted deletion, roster, band, id file, split, split notice, schema 3, roles, member roles, group folder, _archive, archive rename, legacy archive · reviewed 2026-10-28
 
 ### Actors
 
@@ -124,20 +123,21 @@ does for them is `domains/`.*
 *What the product does for a project, and the rules that govern each area. Who
 it does that for is `actors/`.*
 
-- [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen, kept unique across clones, and released by deletion, who is allocating, and which language each record is written in · id, allocation, band, band 0, band suggestion, band_required, next_band, reservation, ledger, id file, per-member id file, split, re-split, split notice, setup step, schema 3, member, setup, team of one, identity, identity_required, member use, member band, roster conflict, delete, delete by id, reservation only, unlink, refusal preview, blocked_by, add_ids, leftover branch, interrupted deletion, re-run, still reserved, empty plan folder, release, reset, offline, collision, language, approval gate, planning request · reviewed 2026-10-21
+- [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen, kept unique across clones, and released by deletion, who is allocating, and which language each record is written in · id, allocation, band, band 0, band suggestion, band_required, next_band, reservation, ledger, id file, per-member id file, split, re-split, split notice, setup step, schema 3, member, setup, team of one, identity, identity_required, member use, member band, roster conflict, delete, delete by id, reservation only, unlink, refusal preview, blocked_by, add_ids, leftover branch, interrupted deletion, re-run, still reserved, empty plan folder, release, reset, offline, collision, language, approval gate, planning request, placement, group folder, _archive, legacy archive, archive rename, reserved folder name, finished record, my work, record list default, record archive, archive offer, link rewrite · reviewed 2026-10-28
 - [Grounding an intent and its open questions](domains/intent-grounding.md) {context-circuit-source} — what an intent is written against and how unsettled decisions reach the person · intent, grounding, open questions, numbered, answer, assumption, contradiction · reviewed 2026-09-19
 - [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, search terms, rewrite terms, split, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors, mermaid, fence · reviewed 2026-10-20
-- [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, explicit start, stale start, diverged, sync_required, isolation, execution, copy-on-write, clone, dependency, environment, predecessor start, prune, stale association, dropped, checked out elsewhere, reused plan number, plan_created_at, earlier plan, legacy association, base tip, remove, empty folder, removed_directories · reviewed 2026-10-21
+- [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, explicit start, stale start, diverged, sync_required, isolation, execution, copy-on-write, clone, dependency, environment, predecessor start, prune, stale association, dropped, checked out elsewhere, reused plan number, plan_created_at, earlier plan, legacy association, base tip, remove, empty folder, removed_directories · reviewed 2026-10-23
 - [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how selected plans are sequenced, merged, and released · order, selection, waves, chain, chain end, deliver, dependency, integration merge, concurrency, stop · reviewed 2026-09-23
 - [Plan artifacts and their reading map](domains/plan-artifacts.md) {context-circuit-source} — how standalone and linked folder plans organize detail for each repository · plan, standalone, folder, required_files, supporting files, dispatch, selection, legacy, planning request · reviewed 2026-10-20
-- [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do, how a brief is composed, and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, brief, prompt, integration, review, commit · reviewed 2026-09-23
+- [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do, how a brief is composed, and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, brief, prompt, integration, review, commit, attribution, settings.local.json · reviewed 2026-10-27
 - [Changing something directly](domains/direct-changes.md) {context-circuit-source} — when a person skips intent and planning, and what still holds when they do · direct, bypass, small change, quick fix, bound checkout, lane, routing, uncommitted, reconcile · reviewed 2026-09-19
-- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, standalone plan, execution request, authorization, delivery, completion, cleanup, scope, consent, gate, obligation, planning_recommended, planning request, recommendation, reconcile_required, commit, commit_recommended, uncommitted, git status, ancestry, bypass, record deletion, preview, confirm, identity · reviewed 2026-10-20
+- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, standalone plan, execution request, authorization, delivery, completion, cleanup, scope, consent, gate, obligation, planning_recommended, planning request, recommendation, reconcile_required, commit, commit_recommended, uncommitted, git status, push, rebase, rejected push, force push, ID file conflict, union, ancestry, bypass, record deletion, preview, confirm, identity · reviewed 2026-10-28
 
 ### Maintaining this source
 
 *How this checkout is laid out, validated, and released. Not what the product
 does once installed.*
 
-- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-09-19
-- [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, destination-owned, knowledge tree, unverified · reviewed 2026-09-19
+- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history, knowledge tree, maintainer skills · reviewed 2026-10-29
+- [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what is and is not established by tests · test, vet, format, ci, release check, build output, publish, destination-owned, knowledge tree, host behavior, change file, release branch · reviewed 2026-10-29
+- [Agent tests: what agent behavior is measured](maintenance/agent-tests.md) {context-circuit-source} — what is measured about coding-agent behavior, where, why it is not CI, and what it does not prove · agent tests, scenarios, hosts, design case, surface diff, baseline, refresh, host behavior, measured · reviewed 2026-10-27

@@ -1,0 +1,432 @@
+package scenario
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/kaotypr/context-circuit-source/agent-tests/internal/hosts"
+	"github.com/kaotypr/context-circuit-source/agent-tests/internal/proc"
+	"github.com/kaotypr/context-circuit-source/agent-tests/internal/world"
+)
+
+func TestExecNilIsInconclusive(t *testing.T) {
+	for _, name := range []string{"execute-worktree", "execute-tests-pass"} {
+		got := Registry[name](CheckContext{})
+		if !got.Pass || !got.Inconclusive {
+			t.Fatalf("%s %+v", name, got)
+		}
+	}
+	if softCommitSubjects(CheckContext{}) != "inconclusive" {
+		t.Fatal(softCommitSubjects(CheckContext{}))
+	}
+}
+
+func TestOrientReplyShape(t *testing.T) {
+	good := CheckContext{
+		Parsed: hosts.Parsed{FinalReply: "The api repository. Use sh .context-circuit/cli. A draft invoice is voided. An issued invoice is credited. See domains/invoices.md."},
+		Stream: `{"file_path":"context/INDEX.md"}`,
+	}
+	if !Registry[nameOrientReply](good).Pass {
+		t.Fatal(Registry[nameOrientReply](good))
+	}
+	// A reply a host wrote that says "issue" rather than "issued".
+	issue := good
+	issue.Parsed.FinalReply = "The api repository. Use sh .context-circuit/cli. Void: only while the invoice is still a draft. After issue: do not void; reverse with a credit note instead. See domains/invoices.md."
+	if got := Registry[nameOrientReply](issue); !got.Pass {
+		t.Fatal(got)
+	}
+	bad := good
+	bad.Parsed.FinalReply = "No."
+	bad.Stream = ""
+	if Registry[nameOrientReply](bad).Pass {
+		t.Fatal("short reply passed")
+	}
+	canary := good
+	canary.Stream += codeCanary
+	if Registry[nameOrientReply](canary).Pass {
+		t.Fatal("canary passed")
+	}
+}
+
+func TestLanguageHeuristic(t *testing.T) {
+	id := `
+# Ekspor CSV faktur
+## Goal
+Pelanggan perlu mengunduh faktur sebagai berkas CSV dari layanan api.
+## Non-goals
+Pembatalan faktur draf dan nota kredit faktur terbit tetap seperti sekarang.
+## Constraints
+Perubahan berada di repositori api pada paket internal/invoice tanpa dependensi baru.
+## Success criteria
+- Pemanggil dapat menuliskan faktur sebagai CSV beserta nomor, pelanggan, status, dan total dalam sen.
+## Repository scope
+Repositori api.
+## Open questions
+1. Tidak ada pertanyaan terbuka.
+`
+	words := proseWords(id)
+	if len(words) < 20 {
+		t.Fatalf("words %d", len(words))
+	}
+	if englishRatio(words) >= notEnglishRatio {
+		t.Fatalf("ratio %v", englishRatio(words))
+	}
+	english, err := os.ReadFile(filepath.Join("..", "..", "fixtures", "records", "intent-csv.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if englishRatio(proseWords(string(english))) < notEnglishRatio {
+		t.Fatalf("english ratio %v", englishRatio(proseWords(string(english))))
+	}
+}
+
+func TestDirectReadmePorcelain(t *testing.T) {
+	dir := t.TempDir()
+	readme := filepath.Join(dir, "README.md")
+	if err := os.WriteFile(readme, []byte("Customers receive a text summary.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ctx := CheckContext{
+		World:  world.World{API: dir},
+		Before: Snapshot{Heads: map[string]string{"api": "abc"}},
+		After: Snapshot{
+			Heads:  map[string]string{"api": "abc"},
+			Status: map[string]string{"api": " M README.md\n"},
+		},
+	}
+	if !Registry[nameDirectReadme](ctx).Pass {
+		t.Fatal(Registry[nameDirectReadme](ctx))
+	}
+	if err := os.WriteFile(readme, []byte("Customers recieve a text summary.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if Registry[nameDirectReadme](ctx).Pass {
+		t.Fatal("typo passed")
+	}
+}
+
+func TestMissingCheckoutFails(t *testing.T) {
+	empty := CheckContext{}
+	for _, name := range []string{nameOrientClean, nameIntentNoPlan, namePlanLinked} {
+		got := Registry[name](empty)
+		if got.Pass || !strings.Contains(got.Detail, "HEAD is missing") {
+			t.Fatalf("%s %+v", name, got)
+		}
+	}
+	recorded := func() CheckContext {
+		heads := map[string]string{"ws": "aaa", "api": "bbb"}
+		status := map[string]string{"ws": "", "api": ""}
+		return CheckContext{
+			Before: Snapshot{Heads: heads, Status: status},
+			After:  Snapshot{Heads: heads, Status: status},
+		}
+	}
+	if !Registry[nameOrientClean](recorded()).Pass {
+		t.Fatal(Registry[nameOrientClean](recorded()))
+	}
+	if !Registry[nameIntentNoPlan](recorded()).Pass {
+		t.Fatal(Registry[nameIntentNoPlan](recorded()))
+	}
+	noStatus := recorded()
+	delete(noStatus.After.Status, "api")
+	if Registry[nameIntentNoPlan](noStatus).Pass {
+		t.Fatal("missing api status passed")
+	}
+}
+
+func TestJoinBindingAndRoles(t *testing.T) {
+	ws := t.TempDir()
+	api := filepath.Join(ws, "repositories", "api")
+	if err := os.MkdirAll(api, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ws, "member.local.yaml"), []byte("member: dana\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeRoles := func(host string) {
+		t.Helper()
+		dir, ext, ok := roleLocation(host)
+		if !ok {
+			t.Fatal(host)
+		}
+		base := filepath.Join(ws, filepath.FromSlash(dir))
+		if err := os.MkdirAll(base, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range roleFileNames {
+			if err := os.WriteFile(filepath.Join(base, name+ext), []byte(name+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	bindings := func(workspace, apiPath string) {
+		t.Helper()
+		body := fmt.Sprintf("workspace:\n  path: %q\nbindings:\n  api:\n    path: %q\n", workspace, apiPath)
+		if err := os.WriteFile(filepath.Join(ws, "repositories.local.yaml"), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx := CheckContext{World: world.World{WS: ws}, Host: "claude"}
+	bindings(".", api)
+	writeRoles("claude")
+	if !Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal(Registry[nameJoinLocal](ctx))
+	}
+	bindings("/tmp/elsewhere", api)
+	if got := Registry[nameJoinLocal](ctx); got.Pass || !strings.Contains(got.Detail, "active workspace") {
+		t.Fatalf("%+v", got)
+	}
+	bindings(".", "/tmp/elsewhere")
+	if got := Registry[nameJoinLocal](ctx); got.Pass || !strings.Contains(got.Detail, "repositories/api") {
+		t.Fatalf("%+v", got)
+	}
+	bindings(".", api)
+	if err := os.Remove(filepath.Join(ws, ".claude", "agents", "cc-worker.md")); err != nil {
+		t.Fatal(err)
+	}
+	if got := Registry[nameJoinLocal](ctx); got.Pass || !strings.Contains(got.Detail, "claude") {
+		t.Fatalf("%+v", got)
+	}
+	writeRoles("codex")
+	if Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal("claude run accepted another host's roles")
+	}
+	ctx.Host = ""
+	if !Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal(Registry[nameJoinLocal](ctx))
+	}
+	for _, name := range roleFileNames {
+		if err := os.Remove(filepath.Join(ws, ".codex", "agents", name+".toml")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if Registry[nameJoinLocal](ctx).Pass {
+		t.Fatal("partial role sets passed")
+	}
+}
+
+func TestCSVExportMustCallEncodingCSV(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "internal", "invoice")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	comment := "package invoice\n\n// CSV export is mentioned here.\nfunc Note() string { return \"CSV\" }\n"
+	if err := os.WriteFile(filepath.Join(dir, "export.go"), []byte(comment), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if treeHasCSV(root) {
+		t.Fatal("a comment counted as a CSV export")
+	}
+	real := "package invoice\n\nimport \"encoding/csv\"\n\nfunc CSV() { csv.NewWriter(nil) }\n"
+	if err := os.WriteFile(filepath.Join(dir, "export.go"), []byte(real), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !treeHasCSV(root) {
+		t.Fatal("encoding/csv function was not seen")
+	}
+}
+
+func TestCompleteNoteRejectsUnsupported(t *testing.T) {
+	ws := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(ws, "context", "domains"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(note, date string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(ws, "context", "domains", "invoices.md"), []byte(note), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		index := "- [Invoices](domains/invoices.md) — voiding · anchor · reviewed " + date + "\n"
+		if err := os.WriteFile(filepath.Join(ws, "context", "INDEX.md"), []byte(index), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx := CheckContext{World: world.World{WS: ws}}
+	today := time.Now().UTC().Format("2006-01-02")
+	write("Invoices export as a plain-text summary. CSV is not supported.\n", today)
+	if got := Registry[nameCompleteNote](ctx); got.Pass {
+		t.Fatal("unsupported note passed")
+	}
+	write("Invoices export as a plain-text summary or as CSV.\n", today)
+	if !Registry[nameCompleteNote](ctx).Pass {
+		t.Fatal(Registry[nameCompleteNote](ctx))
+	}
+	// Notes a host wrote that record the export without the words "as CSV".
+	for _, note := range []string{
+		"Invoices export as either a plain-text summary or CSV.\n",
+		"Invoices can be exported as a plain-text summary or CSV.\n",
+	} {
+		write(note, today)
+		if got := Registry[nameCompleteNote](ctx); !got.Pass {
+			t.Fatalf("%q: %+v", note, got)
+		}
+	}
+	for _, note := range []string{
+		"Invoices export only as a plain-text summary, not CSV.\n",
+		"Invoices export as a plain-text summary; there is no CSV export.\n",
+	} {
+		write(note, today)
+		if got := Registry[nameCompleteNote](ctx); got.Pass {
+			t.Fatalf("%q passed", note)
+		}
+	}
+	yesterday := time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02")
+	write("The CSV export now exists.\n", yesterday)
+	if !Registry[nameCompleteNote](ctx).Pass {
+		t.Fatal(Registry[nameCompleteNote](ctx))
+	}
+	write("The CSV export now exists.\n", "2020-01-01")
+	if got := Registry[nameCompleteNote](ctx); got.Pass || !strings.Contains(got.Detail, "reviewed date") {
+		t.Fatalf("%+v", got)
+	}
+}
+
+func TestSoftCanaryAndReads(t *testing.T) {
+	if softCodeCanary(CheckContext{Stream: "x CODE-CANARY-41b2 y"}) != true {
+		t.Fatal("canary")
+	}
+	if softCodeCanary(CheckContext{Stream: "quiet"}) != false {
+		t.Fatal("quiet")
+	}
+	seen := softReadAPI(CheckContext{Stream: "read repositories/api/internal/invoice/export.go", Parsed: hosts.Parsed{ReadsAvailable: true}})
+	if seen != true {
+		t.Fatal(seen)
+	}
+	miss := softReadAPI(CheckContext{Parsed: hosts.Parsed{ReadsAvailable: false}})
+	if miss != "inconclusive" {
+		t.Fatal(miss)
+	}
+}
+
+func execCommand(t *testing.T, argv ...string) string {
+	t.Helper()
+	res, err := proc.Run(t.Context(), proc.Spec{Argv: argv, Env: []string{"PATH=" + os.Getenv("PATH")}})
+	if err != nil {
+		return err.Error()
+	}
+	if res.ExitCode != 0 {
+		return string(res.Stderr)
+	}
+	return ""
+}
+
+func TestPlanRecordDetailsOnlyWithSupportingFiles(t *testing.T) {
+	const rel = "plans/p1000-invoice-csv-export/plan.md"
+	sections := `
+## Outcome and repository scope
+
+The api repository gains a CSV export for invoices.
+
+## Approach
+
+Add a CSV writer next to the plain-text summary.
+
+## Tasks and order
+
+- Add the writer and its test.
+
+## Risks and checks
+
+Run go test in the api repository.
+`
+	details := "\n## Details\n\nThe design is in [design](design.md).\n"
+	front := func(extra string) string {
+		return "---\nid: p1000\nintent: i100\nrepositories:\n- api\n" + extra + "---\n\n# Invoice CSV export\n"
+	}
+	required := "required_files:\n  shared:\n  - design.md\n"
+	cases := []struct {
+		name string
+		text string
+		pass bool
+	}{
+		{"no supporting files, no Details", front("") + sections, true},
+		{"links leave the folder, no Details", front("") + sections + "\nSee [the intent](../../intent/i100-invoice-csv-export.md), [docs](https://example.com/x.md) and [above](#approach).\n", true},
+		{"required_files without Details", front(required) + sections, false},
+		{"linked file without Details", front("") + sections + "\nThe design is in [design](design.md).\n", false},
+		{"linked subfolder file without Details", front("") + sections + "\nSee [notes](./notes/api.md).\n", false},
+		{"Details with assigned link", front(required) + sections + details, true},
+		{"Details with unassigned link", front("") + sections + details, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ws := t.TempDir()
+			full := filepath.Join(ws, filepath.FromSlash(rel))
+			if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(full, []byte(tc.text), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			ctx := CheckContext{
+				World:  world.World{WS: ws},
+				After:  Snapshot{Files: []string{rel}},
+				Parsed: hosts.Parsed{FinalReply: "Here is the plan."},
+			}
+			got := checkPlanRecord(ctx)
+			if got.Pass != tc.pass {
+				t.Fatalf("pass %v, want %v: %s", got.Pass, tc.pass, got.Detail)
+			}
+		})
+	}
+}
+
+// codexIntentReply is a real Codex reply to the intent prompt. It invites a
+// numbered answer and stops before planning without the word "approve".
+const codexIntentReply = "I drafted [intent i100: Download invoices as CSV]($RUN/ws/intent/i100-invoice-csv-download.md).\n\n" +
+	"It states that customers can download their invoices as CSV through the API, scoped to `api`. " +
+	"The existing product context says invoices export as a plain-text summary, so I left one question for you:\n\n" +
+	"1. Should CSV be added alongside that summary export, or replace it?\n\n" +
+	"Reply with your answer (for example, “1: add alongside”) or any edits you want. " +
+	"I’ll wait for your review before planning or anyone builds it."
+
+func TestAsksForReview(t *testing.T) {
+	cases := []struct {
+		name  string
+		reply string
+		want  bool
+	}{
+		{"codex real reply", codexIntentReply, true},
+		{"asks for approval", "I wrote the intent. Please approve it before anyone builds it.", true},
+		{"approval noun", "The intent is ready for your approval.", true},
+		{"numbered list and wait", "Open questions:\n\n1. Which columns?\n2. Which date range?\n\nI will wait for your answers before planning.", true},
+		{"answer by number and won't plan", "Answer by number when you can. I won't plan anything yet.", true},
+		{"colon form and before anyone builds", "Reply like `1: yes`. Nothing happens before anyone builds it.", true},
+		{"plain statement", "I wrote the intent for invoice CSV export.", false},
+		{"numbered question without stop", "1. Which columns should the CSV have?\n\nLet me know.", false},
+		{"stop without numbered invite", "I will wait for your review before planning.", false},
+		{"time is not a numbered answer", "Drafted at 10:30. I will wait for your review before planning.", false},
+		{"empty", "", false},
+	}
+	for _, tc := range cases {
+		if got := asksForReview(tc.reply); got != tc.want {
+			t.Errorf("%s: asksForReview = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// The borrowed reply passes when it sends the fix to the handbook's own
+// review, whether or not it says "upstream".
+func TestBorrowedReplyNamesTheOwningRepository(t *testing.T) {
+	cases := []struct {
+		reply string
+		want  bool
+	}{
+		{"Because the handbook is mounted read-only, I can't correct it in this workspace. The correction needs to be made in the handbook repository through its own review.", true},
+		{"The handbook is borrowed; the fix goes upstream through its review.", true},
+		{"I didn't change anything. If you give me the rule, I can draft the replacement text for the handbook's review.", true},
+		{"I updated the handbook and pushed the fix.", false},
+		{"The handbook note is wrong. Please review it.", false},
+		{"", false},
+	}
+	for _, c := range cases {
+		got := borrowedUpstream.MatchString(c.reply) && borrowedHandbook.MatchString(c.reply) && borrowedReview.MatchString(c.reply)
+		if got != c.want {
+			t.Errorf("%q: got %v, want %v", c.reply, got, c.want)
+		}
+	}
+}

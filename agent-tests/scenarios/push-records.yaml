@@ -1,0 +1,44 @@
+id: push-records
+version: 1
+title: Approve an intent, then commit and push it past a remote that moved on
+covers:
+  - the commit_recommended question answered with commit and push
+  - a push refused because the remote moved on, brought up to date by pull --rebase
+  - an ID file conflict resolved by keeping both sides' entries, then check
+  - no force push, and only the workspace's base branch pushed
+setup:
+  - |
+    set -eu
+    git -C "$WS" branch -q --set-upstream-to=origin/main main
+    git clone -q "$RUN/remotes/ws.git" "$RUN/laptop"
+    cd "$RUN/laptop"
+    sh .context-circuit/cli member use --id maya
+    sh .context-circuit/cli record create --kind plan --slug invoice-numbering --title 'Invoice numbering' --repo api
+    git add -A
+    git commit -qm 'chore: plan invoice numbering'
+    git push -q origin main
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+prompt: |-
+  I've read i100, the invoice CSV export intent, and I approve it as written. Record my approval, then commit and push the records.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - push-records-pushed
+  - push-records-union
+soft: {}
+design_artifacts:
+  - intent/i100-*.md
+  - .context-circuit/ids/maya.yaml
+human:
+  - Whether the reply says the push was first refused, that the pull brought in plan p1000 from the other clone, and that the ID file kept both sides' entries.
+allowed_branches: []
+push_workspace_base: true

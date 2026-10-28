@@ -11,13 +11,34 @@ and remote Linux hosts use Linux packages. Each environment installs independent
 Each workspace pins its own CLI version in `.context-circuit/CLI_VERSION`. Versions
 install side by side, so several workspaces on one machine can pin different ones.
 Read that file first and treat it as the version to run for that workspace.
-For an explicit update request, resolve the requested version, or the latest stable
-compatible `cli-v2.*` release from
-[CLI releases](https://github.com/kaotypr/context-circuit-source/releases).
-Use available GitHub tools or the releases API; exclude drafts/prereleases unless
-requested. The workspace template and the CLI release on the same repository:
-template releases are tagged `v*` and CLI releases `cli-v*`. Pass
-an exact version to the installer; do not guess an unpublished version exists.
+For an explicit update request, resolve the requested version, or the latest
+release within this workspace's own release line, from the registry
+`cli_registry` names (none means the public
+[CLI releases](https://github.com/kaotypr/context-circuit-source/releases)).
+The pin says which line:
+
+- A pin `X.Y.Z` is the stable line. Only `cli-vX.Y.Z` releases without a
+  suffix are candidates. Exclude drafts and prereleases.
+- A pin `X.Y.Z-<label>.<N>` is that label's line, where the label is 1-20
+  lowercase letters and not `alpha`, `beta`, `rc`, `dev`, `test`, `pre`,
+  `preview` or `snapshot`. Only `cli-vX.Y.Z-<label>.<N>` releases with the
+  same label are candidates.
+- A pin with one of those reserved labels, such as `2.5.0-rc.1`, is a
+  prerelease of the stable line. It installs as `context-circuit-cli` and is
+  used only because the workspace pins it exactly; never offer a prerelease as
+  an update.
+
+Order candidates by X, Y, Z, then N, as numbers, never as text. Never offer a
+release from another line as an update: moving lines is a template change a
+person names. Use available GitHub tools or the releases API; on GitLab, list
+releases through its API with the same token the installer uses. The workspace
+template and the CLI release on the same repository: template releases are
+tagged `v*` and CLI releases `cli-v*`. Pass an exact version to the installer,
+without a `v` prefix; the installers accept only `2.*` versions and refuse
+anything else;
+do not guess that an unpublished version exists. A stable version installs the
+command `context-circuit-cli`; a `<label>` version installs
+`<label>-context-circuit-cli`. Both share one version store.
 
 Run the bundled script, using absolute paths when outside this skill directory:
 
@@ -70,41 +91,43 @@ that the version is missing. Offline `--archive` / `-Archive` installation from 
 trusted release needs no token.
 
 Both install and update use the same script. `--bin-dir` / `-BinDir` selects a
-user-writable command directory. No administrator access is needed. The
-installer verifies SHA-256 and the CLI's version before switching the command to
-the new version. Old versions remain available for rollback by reinstalling that
-version. Offline use accepts `--archive` and `--checksums` (PowerShell
-`-Archive` and `-Checksums`) from the same trusted release.
+user-writable command directory. `CONTEXT_CIRCUIT_BIN_DIR` sets the same
+directory for the installers and the workspace launcher; set it when you install
+with `--bin-dir`. No administrator access is needed. The installer verifies
+SHA-256 and the CLI's version before switching the command to the new version.
+Old versions remain available for rollback by reinstalling that version. Offline
+use accepts `--archive` and `--checksums` (PowerShell `-Archive` and
+`-Checksums`) from the same trusted release.
 
-Use the reported command path immediately. If its directory is outside PATH,
-explain the directory to add; do not rewrite shell profiles or unrelated host
-configuration.
+Check the reported versioned command's `version`, then run workspace commands
+through the launcher. If the command directory is outside PATH, explain the
+directory to add; do not rewrite shell profiles or unrelated host configuration.
 
 ## Run the version a workspace pins
 
-The shared `context-circuit-cli` command on PATH points at whichever version was
-installed last, which is not necessarily the one a given workspace pins. For every
-workspace operation, resolve the pinned version instead of assuming the shared
-command is correct:
+Every workspace carries `.context-circuit/cli` and `.context-circuit/cli.ps1`.
+They read the pin and run exactly that version from the version store. Call the
+launcher for every workspace command. When it refuses because the pinned version
+is missing, install exactly that version with this skill, then call the launcher
+again.
 
-1. Read `.context-circuit/CLI_VERSION` in that workspace.
-2. Locate the version store. The installer reports it as `version store`; it can
-   also be recovered from the shared command, which is a symlink (a `.cmd`
-   launcher on Windows) into `<store>/<version>-<os>-<arch>/`.
-3. If `<store>/<version>-<os>-<arch>/context-circuit-cli` exists, run that path.
-4. Otherwise install that exact version first, then run the reported
-   `versioned command`.
+A CLI called any other way hands off to the pinned version when that version is
+installed in the same version store, with one note on its error stream. When it
+is not installed, that CLI warns, and refuses a change that would migrate the
+workspace schema or cross release lines. Treat the warning or refusal as the
+wrong CLI. `CC_CLI_VERSION=local` runs the called binary for one command without
+the hand-off, only when a person asks to try a specific build; it never lifts a
+refusal.
 
-Installing a version for one workspace repoints the shared command and must not
-change which version another workspace runs. The CLI warns on its error stream
-when it is run against a workspace that pins a different version; treat that
-warning as an instruction to re-resolve, not as a workspace fault. Verify `version`, then run `--workspace <root> check` only for an
-initialized workspace. A blank template still needs `init` when the user requests
-workspace initialization. Installation never initializes or migrates a workspace.
+Verify `version` through the launcher, then run `check` only for an initialized
+workspace. A blank template still needs `init` when the user requests workspace
+initialization. Installation never initializes or migrates a workspace.
 
 ## Recognize a CLI that is behind the template
 
-The workspace's `AGENTS.md` wins whenever it and CLI output disagree. A CLI is
+The workspace's `AGENTS.md` wins whenever it and CLI output disagree. A running
+version on a different release line is not behind; it is the wrong CLI for this
+workspace: run the launcher. A CLI is
 behind the template when the running version is older than the pin, or when its
 output has a shape the template no longer expects — before 2.4.0, `record
 approve` returned `planning_required` and told the agent to plan without asking.

@@ -11,7 +11,7 @@ record, **and** reconcile the durable product knowledge those plans changed. The
 request is finished only when both are done.
 
 ```sh
-context-circuit-cli --workspace <root> --json record complete --id p0001 --text 'User requested completion.'
+sh <root>/.context-circuit/cli --json record complete --id p0001 --text 'User requested completion.'
 ```
 
 Write the note in the words the person used, including their language. It
@@ -19,11 +19,13 @@ records that someone asked for this, so a translation of it is a paraphrase of
 evidence rather than a tidier form of it. The knowledge reconciled afterwards is
 English regardless.
 
-The result carries `completed_at`, the catalog entries scoped to that plan's
+The command stamps `completed_at` in the plan's frontmatter. Its result carries
+`completed`, the ID of the plan it marked, the catalog entries scoped to that plan's
 repositories, and `reconcile_required` naming the judging whenever there are any.
 In a Git workspace it also carries `commit_recommended`, the plan, intent, and ID
-files left uncommitted: pass it on, and commit them only when the person
-authorizes it. Completion reporting success is the record written, not the request finished.
+files left uncommitted: ask the person once whether to commit and push them, or
+commit only. Their answer authorizes that and nothing more; a refused push is
+handled as `AGENTS.md` says under delivery. Completion reporting success is the record written, not the request finished.
 
 ## Judge, do not rewrite
 
@@ -44,10 +46,23 @@ Keep implementation-specific evidence in the plan, and keep those plans' own
 identifiers out of every note reconciled from them. Run the diagnostic afterwards:
 
 ```sh
-context-circuit-cli --workspace <root> check
+sh <root>/.context-circuit/cli check
 ```
 
 Other work need not wait for unrelated knowledge updates.
+
+## Offer to archive
+
+When the result carries `archive_offer`, the person has that many finished
+records of their own not archived. Once the request is finished, offer to
+archive them, and run `record archive` only on a yes; a no changes nothing.
+It moves only their own finished records and returns `commit_recommended`,
+which is asked about like any other: commit and push, or commit only, on their
+authorization.
+
+```sh
+sh <root>/.context-circuit/cli --json record archive
+```
 
 ## What completion is not
 

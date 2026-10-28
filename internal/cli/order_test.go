@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,6 +74,21 @@ func TestOrderRecommendsLinearForSingleRepositoryFanIn(t *testing.T) {
 		if len(plan.Start["api"].Merge) != 0 {
 			t.Fatalf("%s asked for a merge in linear mode", plan.ID)
 		}
+	}
+}
+
+// An order only reads records and bindings, so it works while setup is
+// incomplete, the way status and record list do.
+func TestOrderNeedsNoSetup(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	upgraded(t, f, "members:\n  maya:\n    name: Maya\n    band: 0\n")
+	f.fail("record", "create", "--kind", "intent", "--slug", "x", "--title", "X")
+	if result := order(t, f.ok("record", "order", "--intent", "i001")); len(result.Chain) != 5 {
+		t.Fatalf("an order before setup did not cover every plan: %+v", result)
+	}
+	if result := order(t, f.ok("record", "order", "--plan", "p0001", "--plan", "p0002")); len(result.PlanIDs) != 2 {
+		t.Fatalf("an order of selected plans before setup did not cover them: %+v", result)
 	}
 }
 
@@ -745,5 +761,76 @@ func TestLinearChainMarksItsLastMemberPerRepository(t *testing.T) {
 	marks := deliverMarks(o)
 	if len(marks) != 1 || len(marks["p0005"]) != 1 || marks["p0005"][0] != "api" {
 		t.Errorf("a linear chain ends at its last member alone: %v", marks)
+	}
+}
+
+// A plan sharing ancestors with its siblings is walked once, not once per path.
+// Forty plans that each depend on the two before them have more paths than any
+// check could finish walking, so a walk without that memory never returns.
+func TestDependencyChecksWalkEachPlanOnce(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	f.ok("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing")
+	for n := 1; n <= 40; n++ {
+		args := []string{"record", "create", "--kind", "plan", "--slug", fmt.Sprintf("step-%d", n), "--title", "Step",
+			"--intent", "i001", "--repo", "api"}
+		for _, back := range []int{n - 1, n - 2} {
+			if back > 0 {
+				args = append(args, "--depends-on", fmt.Sprintf("p%04d", back))
+			}
+		}
+		f.ok(args...)
+	}
+	if code, out, errOut := call(f.root, "check"); code != 0 || strings.Contains(out, "dependency cycle") {
+		t.Fatalf("a ladder passes check: exit=%d\n%s%s", code, out, errOut)
+	}
+	f.ok("record", "dependencies", "--id", "p0040", "--depends-on", "p0039", "--depends-on", "p0038")
+	if out := f.fail("record", "dependencies", "--id", "p0001", "--depends-on", "p0040"); !strings.Contains(out, "dependency cycle") {
+		t.Fatalf("a path back to the edited plan is a cycle: %s", out)
+	}
+}
+
+// The worker brief says "implement the plan above", so a worker launched with
+// no plan and no task would be told to implement nothing and commit it.
+func TestWorkerDispatchNeedsAnAssignment(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--path", f.root); !strings.Contains(out, "a worker needs --plan") {
+		t.Fatalf("worker without an assignment: %s", out)
+	}
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--task", "Fix it", "--repo", "api", "--path", f.root); !strings.Contains(out, "pass --plan") {
+		t.Fatalf("--repo without --plan was dropped silently: %s", out)
+	}
+}
+
+// Repositories and dependencies are read only for a plan, so an intent given
+// them used to drop them silently while the caller believed them recorded.
+func TestIntentRefusesPlanFlags(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	if out := f.fail("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing", "--repo", "api"); !strings.Contains(out, "describe a plan") {
+		t.Fatalf("an intent accepted --repo: %s", out)
+	}
+}
+
+// One index serves every lookup in a command, but it reads the record tree no
+// earlier and no more than looking each ID up did: a call refused for its own
+// arguments reports that, and an order needing no lookup never enters archives.
+func TestRecordLookupsReadTheTreeOnlyWhenTheyResolveAnID(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	archive := filepath.Join(f.root, "plans", "_archive")
+	if err := os.MkdirAll(archive, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(f.home, filepath.Join(archive, "elsewhere")); err != nil {
+		t.Fatal(err)
+	}
+	f.ok("record", "order")
+	if out := f.fail("record", "order", "--mode", "bogus"); !strings.Contains(out, "mode") || strings.Contains(out, "symlink") {
+		t.Fatalf("expected the mode to be refused: %s", out)
+	}
+	if out := f.fail("record", "show", "--id", "BAD"); !strings.Contains(out, "invalid record ID") {
+		t.Fatalf("expected the ID to be refused: %s", out)
 	}
 }

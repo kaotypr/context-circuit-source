@@ -8,7 +8,7 @@ description: Run several Context Circuit plans at once — deriving the dependen
 To execute several plans at once, derive the order instead of guessing it:
 
 ```sh
-context-circuit-cli --workspace <root> --json record order --mode auto
+sh <root>/.context-circuit/cli --json record order --mode auto
 ```
 
 For an explicitly selected run, pass each plan with repeatable `--plan ID`.
@@ -35,9 +35,10 @@ the person has not chosen one.
 ## Then run it
 
 Run to completion without further prompting: prepare each worktree from the
-reported start, perform any reported integration merge with ordinary Git,
-dispatch a worker per plan, wait, and carry what each worker reports into
-completion.
+reported start through `.agents/skills/cc-worktree/SKILL.md`, perform any
+reported integration merge with ordinary Git, dispatch a worker per plan through
+`.agents/skills/cc-dispatch/SKILL.md`, wait, and carry what each worker reports
+into completion.
 
 Completion is a later human request. Follow the selected order's waves and use
 reported worker results and actual Git ancestry to decide what can proceed;
@@ -63,7 +64,8 @@ run, not about trusting your own.
 Resolve a conflict from an integration merge directly when both sides are in the
 person's selected run and their records and diffs are available. Preserve
 both plans' behavior, then run the repository's checks — a resolved merge is not
-trusted until they pass. Record the resolution in the plan so it can be audited.
+trusted until they pass. Describe the resolution in the merge commit and in the
+report to the person, so it can be audited; the plan record is not edited.
 A conflict against anything outside the run, or one where preserving both sides
 is impossible, is a stop.
 

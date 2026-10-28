@@ -1,0 +1,26 @@
+id: orient
+version: 1
+title: Orientation and retrieval
+covers:
+  - always-loaded files
+  - launcher discipline
+  - context/INDEX.md retrieval
+  - sources staying passive
+prompt: |-
+  I'm new to this project. What is this workspace for, which repositories does it work on, how do I run the Context Circuit command here, and what does our project knowledge say about when an invoice is voided rather than credited? Please don't change anything.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - orient-reply
+  - orient-clean-trees
+soft: {}
+design_artifacts: []
+human:
+  - Whether the summary of the workspace, its repositories, the command, and voiding versus crediting is accurate.
+allowed_branches: []

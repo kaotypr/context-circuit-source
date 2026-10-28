@@ -47,7 +47,8 @@ prefix exists so an intent cannot be mistaken for a plan in a reference, a
 branch name, or conversation.
 
 A reserved number is **not reused while it stays reserved**, and archiving a
-record or removing its file by hand leaves it reserved. Allocation inventories
+record, moving it between folders, or removing its file by hand leaves it
+reserved. Allocation inventories
 filenames including archives without reading archived content, and the
 diagnostic reports a number present in a record but reserved in no ID file. The
 reverse — a reservation with no record — is not a fault: it is what an
@@ -76,7 +77,8 @@ split to whatever command comes next:
 
 A shared file merged back later from a clone that had not pulled the split is
 split again, skipping numbers a member file already holds. Reading commands and
-a deletion preview never split, because neither may change anything. The notice
+a deletion preview never split, because neither may change anything, and nor
+does `repo fetch`, which changes only Git refs in a bound checkout. The notice
 reporting a split names the shared files the command actually changed, the
 roster included when a band or member was written, because those are what the
 person commits and a list written ahead of time leaves one out.
@@ -85,6 +87,53 @@ Two clones that each split before pulling the other give the same authorless
 numbers to two different members. That race is accepted: nothing is handed out
 twice because allocation reads every file, the diagnostic reports each number
 reserved in two files, and a person removes the extra entry.
+
+## Where records live
+
+One placement seam decides where records are found and where a new one is
+written, so a fork that lays records out differently changes one file. The
+shipped layout writes a new record at the top of its kind's folder and reads it
+from there or from one level of **group folder** below it, with the
+**archive folder**, `_archive/`, above or below that group. A group is ordinary
+file organization: a team may group by member, by area, or not at all, and a
+folder name never says whose a record is, which is what keeps the author field
+the only member metadata. Folder names starting with `_` are kept for the CLI,
+and the archive folder is the only one it gives meaning to. What the seam would
+pass over silently — a reserved folder name, a group named like a plan folder,
+a record nested deeper than it reads — the diagnostic reports instead.
+
+Before the underscore name the archive folder was `archive/`, which a group of
+the same name could collide with. The schema did not move, so a top-level
+`archive/` stays a reserved **legacy archive**: it always reads as archived and
+is never a group. The first changing command renames it, merging into an
+archive folder that already exists and refusing on a clash before moving
+anything; an older CLI does not read the new name, so one member renames,
+commits, and pushes, and the rest upgrade before pulling — the same cut-over
+shape as the ID split.
+
+## Mine first, archived by its author
+
+Every member sees their own work first. The record listing defaults to the
+active member's records, another member's or everyone's on request, and
+orientation opens with the active member's open work: intents awaiting
+approval, approved intents without plans, plans not completed, and a count of
+their **finished** records not yet archived. A record is finished when it is a
+completed plan, or an approved intent whose plans are all completed; an approved
+intent with no plans is still waiting for planning.
+
+Archiving stays file organization, and each member archives their own:
+
+- run without IDs, it moves the active member's finished records into the
+  archive folder beside them, a grouped record into its group's;
+- another member's records, or unfinished ones, move only when named, which
+  covers a member who has left;
+- no ID file changes, and lookup by ID finds a record wherever it sits;
+- inline relative links into and out of the moved records are rewritten, links
+  inside a moved plan folder still hold, and anything else the move would break
+  is reported, never broken silently.
+
+Completion carries an offer to archive, so the agent does the remembering and
+the person decides.
 
 ## Releasing numbers
 
@@ -230,6 +279,16 @@ allocation service, and none is claimed.
 
 Owner:
 
+- `context-circuit-source@internal/workspace/placement.go` `Placement` and
+  `flatPlacement` — where records are found and placed, and what the layout
+  findings report.
+- `context-circuit-source@internal/workspace/archive_migration.go`
+  `Store.RenameLegacyArchives` — the rename of the legacy archive folder.
+- `context-circuit-source@internal/workspace/mine.go` `finished`,
+  `Store.SelectRecords`, and `MyWork` — what counts as finished, the default
+  listing, and a member's open work.
+- `context-circuit-source@internal/workspace/archive.go` `Store.ArchiveRecords`
+  — which records archiving moves, and how links are rewritten or reported.
 - `context-circuit-source@internal/workspace/records.go` `Store.allocate`,
   `takenNumbers`, and `bandWidth` — how a number is chosen and which band it
   falls in.

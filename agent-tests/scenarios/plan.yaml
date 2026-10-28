@@ -1,0 +1,36 @@
+id: plan
+version: 2
+title: Plan an approved intent, then stop
+covers:
+  - linked plan folders
+  - required files
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+prompt: |-
+  i100 is approved. Please plan it.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - plan-record
+  - plan-linked
+soft:
+  read-api-code: whether api code was read
+  subagents: subagent count
+design_artifacts:
+  - plans/p1000-*
+  - intent/i100-*.md
+human:
+  - Whether the reply presents the plan and does not claim the work is already implemented.
+allowed_branches: []

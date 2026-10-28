@@ -9,6 +9,44 @@ template_dir=$2
 template_repo_url=$3
 [ -n "$template_repo_url" ] || fail 'template repo url must not be empty'
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $version" ;; esac
+# The README's release badges and links name the forge publishing this template
+# and the CLI source project beside it, so a fork publishing elsewhere needs no
+# edit to the shared guide. Settled before anything is assembled or written.
+[ -n "${CLI_REPOSITORY_URL:-}" ] || fail "set CLI_REPOSITORY_URL to the CLI source project's web URL"
+forge=${FORGE:-github}
+case "$forge" in github|gitlab) ;; *) fail 'unknown FORGE: expected github or gitlab' ;; esac
+template_web=${template_repo_url%.git}
+cli_web=${CLI_REPOSITORY_URL%.git}
+# The last two path segments of a web URL, which shields.io reads as a GitHub
+# owner and repository.
+github_slug() {
+  slug=${1#*://}
+  case "$slug" in */*) slug=${slug#*/} ;; *) slug= ;; esac
+  slug=${slug%/}
+  case "$slug" in */*) ;; *) fail "expected an owner and repository in $1" ;; esac
+  slug_owner=${slug%/*}
+  slug_owner=${slug_owner##*/}
+  [ -n "$slug_owner" ] && [ -n "${slug##*/}" ] || fail "expected an owner and repository in $1"
+  printf '%s/%s\n' "$slug_owner" "${slug##*/}"
+}
+if [ "$forge" = github ]; then
+  template_slug=$(github_slug "$template_web")
+  cli_slug=$(github_slug "$cli_web")
+  template_releases_url="$template_web/releases"
+  template_release_badge="https://img.shields.io/github/v/release/$template_slug?filter=v*&display_name=tag&include_prereleases&sort=date&label=workspace&color=1f6feb"
+  cli_releases_url="$cli_web/releases"
+  cli_release_badge="https://img.shields.io/github/v/release/$cli_slug?filter=cli-v*&display_name=tag&include_prereleases&sort=date&label=cli&color=1f6feb"
+  template_license_url="$template_web/blob/main/LICENSE"
+else
+  template_releases_url="$template_web/-/releases"
+  template_release_badge="$template_web/-/badges/release.svg"
+  cli_releases_url="$cli_web/-/releases"
+  cli_release_badge="$cli_web/-/badges/release.svg"
+  template_license_url="$template_web/-/blob/main/LICENSE"
+fi
+# A sed replacement reads & as the matched text and \ as an escape, and | is
+# the delimiter below; the shields.io URLs carry &.
+sed_escape() { printf '%s\n' "$1" | sed -e 's/[\\&|]/\\&/g'; }
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
 request="$source_root/release/requests/template/$version.md"
 [ -f "$request" ] || fail "missing release request: release/requests/template/$version.md"
@@ -18,13 +56,16 @@ request="$source_root/release/requests/template/$version.md"
 # than what it is. The request declares this, so the decision is reviewed in
 # source and carried out by the release commit — not by a hand-made deletion
 # on the published repository, which would put "I removed the changelog" in
-# that repository's history as a change nobody made to the product.
+# that repository's history as a change nobody made to the product. A release
+# candidate's request says skip: its notes repeat what the stable release will
+# list again, so they appear on its release alone and the changelog lists each
+# change once.
 changelog=$(awk 'BEGIN{fm=0}
   /^---[[:space:]]*$/{fm++; if (fm>=2) exit; next}
   fm==1 && /^changelog:[[:space:]]*/{sub(/^changelog:[[:space:]]*/,""); print; exit}' "$request")
 case "${changelog:=keep}" in
-  keep|reset) ;;
-  *) fail "unknown changelog mode in $version.md: $changelog (expected keep or reset)" ;;
+  keep|reset|skip) ;;
+  *) fail "unknown changelog mode in $version.md: $changelog (expected keep, reset, or skip)" ;;
 esac
 [ -d "$template_dir/.git" ] || fail "expected a standalone template checkout: $template_dir"
 template_dir=$(CDPATH= cd -- "$template_dir" && pwd -P)
@@ -110,23 +151,31 @@ find "$template_dir" -mindepth 1 -maxdepth 1 ! -name .git ! -name CHANGELOG.md -
 # Restore the destination's own landing-page files over the assembled artifact.
 for owned in $repo_owned; do cp "$repo_owned_dir/$owned" "$template_dir/$owned"; done
 cp "$source_root/product/LICENSE" "$template_dir/LICENSE"
-# The quick-start block names this template's own clone URL, which differs by
-# where this release is published; the source carries a placeholder because
-# the same product/README.md is the source for every publish target.
-sed -e "s|__TEMPLATE_REPO_URL__|$template_repo_url|g" \
+# The quick-start block names this template's own clone URL, and the badges its
+# releases, the CLI's releases, and its license, all of which differ by where
+# this release is published; the source carries placeholders because the same
+# product/README.md is the source for every publish target.
+sed -e "s|__TEMPLATE_REPO_URL__|$(sed_escape "$template_repo_url")|g" \
   -e "s|__TEMPLATE_VERSION__|$version|g" \
+  -e "s|__TEMPLATE_RELEASES_URL__|$(sed_escape "$template_releases_url")|g" \
+  -e "s|__TEMPLATE_RELEASE_BADGE__|$(sed_escape "$template_release_badge")|g" \
+  -e "s|__CLI_RELEASES_URL__|$(sed_escape "$cli_releases_url")|g" \
+  -e "s|__CLI_RELEASE_BADGE__|$(sed_escape "$cli_release_badge")|g" \
+  -e "s|__TEMPLATE_LICENSE_URL__|$(sed_escape "$template_license_url")|g" \
   "$source_root/product/README.md" > "$template_dir/README.md"
 mkdir -p "$template_dir/assets/readme"
 for art in "$source_root"/product/assets/readme/*.webp; do cp "$art" "$template_dir/assets/readme/"; done
-{
-  printf '# Changelog\n\n## v%s — %s\n\n' "$version" "$(date +%Y-%m-%d)"
-  awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' "$request"
-  printf '\n'
-  if [ "$changelog" = keep ] && [ -f "$template_dir/CHANGELOG.md" ]; then
-    tail -n +3 "$template_dir/CHANGELOG.md"
-  fi
-} > "$work/CHANGELOG.md"
-mv "$work/CHANGELOG.md" "$template_dir/CHANGELOG.md"
+if [ "$changelog" != skip ]; then
+  {
+    printf '# Changelog\n\n## v%s — %s\n\n' "$version" "$(date +%Y-%m-%d)"
+    awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' "$request"
+    printf '\n'
+    if [ "$changelog" = keep ] && [ -f "$template_dir/CHANGELOG.md" ]; then
+      tail -n +3 "$template_dir/CHANGELOG.md"
+    fi
+  } > "$work/CHANGELOG.md"
+  mv "$work/CHANGELOG.md" "$template_dir/CHANGELOG.md"
+fi
 # Disable hooks for this release commit so hosts cannot inject agent attribution.
 mkdir "$work/no-hooks"
 git -C "$template_dir" add -A

@@ -1,0 +1,51 @@
+name: Design case
+description: Agree the design of a larger change that affects agents in a generated workspace, before any agent runs are paid for.
+labels:
+  - "triage: behaviour change"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a larger change that affects agents: one that adds, removes or moves shipped files; changes the shape of what a skill produces; adds or changes a CLI action or a `check` rule; touches a gate such as approval, commit or push; or needs existing workspaces to migrate. Wait for the maintainer's answer before you pay for any agent runs. A smaller change puts its design case in the pull request instead; see "Changes that affect agents" in CONTRIBUTING.md.
+  - type: textarea
+    id: change
+    attributes:
+      label: Change
+      description: What an agent in a generated workspace will now read, do or produce differently. Name the files.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What the current design gets wrong, with evidence, such as a run artifact quoted with file and lines, a failing check, a token number, a reported issue, or a redacted excerpt from a real workspace. "It could be cleaner" is not a problem statement.
+    validations:
+      required: true
+  - type: textarea
+    id: before-after
+    attributes:
+      label: Before / after
+      description: The agent-visible output before and after the change, from the same scenario, fixture, prompt, host and model. Before any paid run, a hand-written sketch is fine.
+    validations:
+      required: true
+  - type: textarea
+    id: better
+    attributes:
+      label: What is better
+      description: Each claim tied to something in the after output or a check.
+    validations:
+      required: true
+  - type: textarea
+    id: costs
+    attributes:
+      label: Costs
+      description: What this makes worse, with a size or "none" for each, such as tokens, results on each host, existing workspaces and customized templates that must take the change, and longer output for readers.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: At least one, including leaving it as it is, and why not.
+    validations:
+      required: true

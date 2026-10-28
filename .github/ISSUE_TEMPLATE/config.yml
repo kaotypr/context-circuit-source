@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage questions
+    url: https://github.com/kaotypr/context-circuit-source/discussions/categories/q-a
+    about: Ask how to use Context Circuit in GitHub Discussions, Q&A.
+  - name: Security vulnerability
+    url: https://github.com/kaotypr/context-circuit-source/security/advisories/new
+    about: Report a vulnerability privately, as SECURITY.md describes. Never in a public issue.

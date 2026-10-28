@@ -1,0 +1,57 @@
+# Host launch defaults.
+#
+# command: executable invoked for this host.
+# model: pinned model id sent on the command line. Each pin is the host's
+# smallest current model, so a baseline is a lower-bound reference. The pins
+# are provisional until a baseline run confirms them.
+# effort: optional effort setting. Empty means the flag is omitted.
+# host_version: recorded with each run when the host command does not
+# report --version. Written exactly as that command prints it.
+# provisional: true while the pin is still awaiting a baseline run.
+# timeout_seconds: wall-clock limit for one host process.
+# max_budget_usd: Claude Code runaway guard. 0 selects the adapter default.
+# price_row: key in prices.yaml, used when the host reports no cost of its
+# own. Empty when the host reports its own cost; a host with neither records a
+# null cost, which is not zero.
+# auth_env: credential variable names taken from the caller when auth is
+#   env, the default. Without --subscription-auth the login file is not read.
+# auth: optional. env (default) or subscription. subscription is accepted
+#   only for codex. The field does not start that mode: the login file is
+#   copied only when run or probe is passed --subscription-auth codex.
+#   The codex entry below leaves auth unset, so the default stays env.
+
+hosts:
+  claude:
+    command: claude
+    model: claude-haiku-5-5
+    effort: medium
+    host_version: "2.1.304 (Claude Code)"
+    provisional: true
+    timeout_seconds: 1800
+    max_budget_usd: 3
+    auth_env:
+      - ANTHROPIC_API_KEY
+      - CLAUDE_CODE_OAUTH_TOKEN
+  codex:
+    command: codex
+    model: gpt-6-luna
+    effort: medium
+    host_version: "codex-cli 0.164.0"
+    provisional: true
+    timeout_seconds: 1800
+    price_row: gpt-6-luna
+    # auth: subscription is valid for this host. Leave it unset so a run
+    # without --subscription-auth codex keeps using auth_env only.
+    auth_env:
+      - OPENAI_API_KEY
+  cursor:
+    command: cursor-agent
+    # grok-4.7-low, not composer-2.5. See "Hosts" in README.md for why this
+    # pin is not Cursor's smallest model.
+    model: grok-4.7-low
+    effort: ""
+    host_version: "2026.10.22-27dcf5f"
+    provisional: true
+    timeout_seconds: 1800
+    auth_env:
+      - CURSOR_API_KEY

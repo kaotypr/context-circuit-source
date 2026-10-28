@@ -20,9 +20,9 @@ what roles they contribute in, such as maintainer or docs; the question may be
 skipped, and a skipped one records no roles.
 
 ```sh
-context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
+sh <root>/.context-circuit/cli init --name NAME --purpose TEXT \
   --member ID --member-name NAME
-context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
+sh <root>/.context-circuit/cli init --name NAME --purpose TEXT \
   --member ID --member-name NAME --member-band N --member-role maintainer
 ```
 
@@ -55,12 +55,12 @@ Unless the request says otherwise, put checkouts under `repositories/<id>`,
 which is gitignored and is where the workspace expects its working copies.
 
 ```sh
-context-circuit-cli --workspace <root> member add --id ID --name NAME --band N
-context-circuit-cli --workspace <root> member use --id ID
-context-circuit-cli --workspace <root> workspace connect --base BRANCH
-context-circuit-cli --workspace <root> repo clone --id ID --path repositories/ID --base main
-context-circuit-cli --workspace <root> knowledge clone --id ID
-context-circuit-cli --workspace <root> agent setup
+sh <root>/.context-circuit/cli member add --id ID --name NAME --band N
+sh <root>/.context-circuit/cli member use --id ID
+sh <root>/.context-circuit/cli workspace connect --base BRANCH
+sh <root>/.context-circuit/cli repo clone --id ID --path repositories/ID --base main
+sh <root>/.context-circuit/cli knowledge clone --id ID
+sh <root>/.context-circuit/cli agent setup
 ```
 
 Add the member only when the roster does not already carry them; someone may
@@ -91,9 +91,9 @@ requested. Resolve the correct destination and base branch from the request and
 repository evidence; ask only when the choice is ambiguous.
 
 ```sh
-context-circuit-cli --workspace <root> repo connect --id ID --path PATH --base BRANCH
-context-circuit-cli --workspace <root> repo clone --id ID --path NEW_PATH --base BRANCH --url URL
-context-circuit-cli --workspace <root> repo init --id ID --path NEW_PATH --base BRANCH
+sh <root>/.context-circuit/cli repo connect --id ID --path PATH --base BRANCH
+sh <root>/.context-circuit/cli repo clone --id ID --path NEW_PATH --base BRANCH --url URL
+sh <root>/.context-circuit/cli repo init --id ID --path NEW_PATH --base BRANCH
 ```
 
 Logical IDs, repository URLs, and default branches are shared. Checkout paths and
@@ -112,8 +112,8 @@ workspaces read — mounts it here instead of copying from it. Do this on reques
 naming the repository:
 
 ```sh
-context-circuit-cli --workspace <root> knowledge clone --id core-service-knowledge --url GIT_URL
-context-circuit-cli --workspace <root> knowledge connect --id core-service-knowledge --path ../core-service-knowledge
+sh <root>/.context-circuit/cli knowledge clone --id core-service-knowledge --url GIT_URL
+sh <root>/.context-circuit/cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge
 ```
 
 `clone` puts the checkout under `repositories/<id>`, beside the working copies
@@ -148,9 +148,9 @@ when the workspace is under version control, on the first machine and on every
 machine that clones it:
 
 ```sh
-context-circuit-cli --workspace <root> workspace connect --base BRANCH
-context-circuit-cli --workspace <root> workspace base --branch BRANCH
-context-circuit-cli --workspace <root> workspace remote --url URL --default-branch BRANCH
+sh <root>/.context-circuit/cli workspace connect --base BRANCH
+sh <root>/.context-circuit/cli workspace base --branch BRANCH
+sh <root>/.context-circuit/cli workspace remote --url URL --default-branch BRANCH
 ```
 
 It splits like a repository: the URL and default branch are shared, while the
@@ -174,8 +174,8 @@ starts at `i500` and `p5000`. Band 0 is a band like any other, covering
 what lets two clones that cannot see each other allocate without colliding.
 
 ```sh
-context-circuit-cli --workspace <root> member add --id ID --name NAME --band 2
-context-circuit-cli --workspace <root> member band --id ID --band 3
+sh <root>/.context-circuit/cli member add --id ID --name NAME --band 2
+sh <root>/.context-circuit/cli member band --id ID --band 3
 ```
 
 The CLI suggests a band and the person confirms it or picks another. Suggestions
@@ -205,16 +205,16 @@ suggested band, record what the person confirms with `member band`, and return
 to their request.
 
 A workspace an earlier CLI wrote is at schema 2, with one shared
-`.context-circuit/ids.yaml`, and the first changing command a 2.4.0 CLI runs
+`.context-circuit/ids.yaml`, and the first changing command a CLI from 2.4.0 on runs
 there splits it into a file for every author. When setup is incomplete, that is
 the `member band`, `member add`, or `member use` that completes it. Only one
 person on a team upgrades first. Before that first change, tell the person so:
 they make it, then commit and push the files its notice names, and everyone else
 pulls before changing anything. A
 teammate who upgraded at the same time gets a Git conflict in
-`.context-circuit/ids/*.yaml`. That is theirs to resolve by hand, not yours to
-pick: suggest keeping the union of both sides' entries in each member file, then
-run `check`, which reports any number reserved twice. A member whose ID is a
+`.context-circuit/ids/*.yaml`. Resolve it by keeping the union of both sides'
+entries in each member file, then run `check`, which reports any number reserved
+twice; a number reserved twice is the person's to settle, not yours to pick. A member whose ID is a
 Windows device name, such as `con`, stops the split; `status` names them, and
 the person renames them by hand.
 
@@ -230,7 +230,7 @@ the language's name as a person says it, because a dispatch brief quotes it into
 a sentence:
 
 ```sh
-context-circuit-cli --workspace <root> member language --id ID --language 'Bahasa Indonesia'
+sh <root>/.context-circuit/cli member language --id ID --language 'Bahasa Indonesia'
 ```
 
 Unset means English. Knowledge is English whatever this says — a note outlives
@@ -242,8 +242,8 @@ repository's instructions and never reads these.
 Beside it, a member may record the register that language is written in:
 
 ```sh
-context-circuit-cli --workspace <root> member tone --id ID --tone 'semi-formal; keep technical terms in English'
-context-circuit-cli --workspace <root> member tone --id ID --clear
+sh <root>/.context-circuit/cli member tone --id ID --tone 'semi-formal; keep technical terms in English'
+sh <root>/.context-circuit/cli member tone --id ID --clear
 ```
 
 One line of prose, quoted into the instruction that writes a record rather than
@@ -260,9 +260,9 @@ A member may record roles: free text saying what they contribute, such as
 maintainer or docs, so people reading the roster can see who works on what.
 
 ```sh
-context-circuit-cli --workspace <root> member add --id ID --name NAME --band N --role docs
-context-circuit-cli --workspace <root> member roles --id ID --role maintainer --role docs
-context-circuit-cli --workspace <root> member roles --id ID --clear
+sh <root>/.context-circuit/cli member add --id ID --name NAME --band N --role docs
+sh <root>/.context-circuit/cli member roles --id ID --role maintainer --role docs
+sh <root>/.context-circuit/cli member roles --id ID --clear
 ```
 
 `member roles` replaces whatever roles were recorded. Record the roles the person

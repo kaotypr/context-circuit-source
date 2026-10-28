@@ -1,6 +1,13 @@
 name: Publish
 
-# Publishes both products from one merge to main, CLI first.
+# Publishes both products from one merge into a release branch, CLI first.
+#
+# Work lands on main, which never publishes. A minor release cuts release/X.Y
+# from main at its freeze, and that branch publishes the minor and its patches:
+# merging a release-prep pull request that sets VERSION, CLI_VERSION, or both
+# runs this workflow, and resolve-release-version.sh refuses a version that is
+# not on its own line's release branch. Cutting the branch publishes nothing,
+# because its version files still name releases that are already out.
 #
 # The order is not a preference. The template points at the CLI — its README
 # badge reads the CLI's release list, and `.context-circuit/CLI_VERSION` is what
@@ -30,7 +37,7 @@ on:
         description: "Template version to publish (blank = VERSION)"
         required: false
   push:
-    branches: [main]
+    branches: ["release/[0-9]*.[0-9]*"]
     paths:
       - "release/requests/**"
       - "VERSION"
@@ -56,14 +63,14 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The knowledge checks count commits under each note's code anchors,
           # so a shallow clone leaves the reviewed-date pass with nothing to
           # read and it passes vacuously. A release gate weaker than the
           # pull-request gate is not one.
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
       - run: go test ./...
@@ -78,11 +85,11 @@ jobs:
       published: ${{ steps.resolve.outputs.publish }}
       version: ${{ steps.resolve.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
 
@@ -94,6 +101,7 @@ jobs:
           # The CLI publishes from whichever source repository is running this,
           # so this side needs no variable to name itself.
           CLI_REPOSITORY: ${{ github.repository }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
         run: sh scripts/resolve-release-version.sh cli
 
       - name: Build
@@ -151,11 +159,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
 
@@ -165,6 +173,7 @@ jobs:
           INPUT_VERSION: ${{ github.event.inputs.template_version }}
           GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
           TEMPLATE_REPOSITORY: ${{ vars.TEMPLATE_REPO }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
         run: sh scripts/resolve-release-version.sh template
 
       - name: Check workspace and CLI compatibility
@@ -173,7 +182,7 @@ jobs:
 
       - name: Checkout template repository
         if: steps.resolve.outputs.publish == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: ${{ vars.TEMPLATE_REPO }}
           ref: main
@@ -200,6 +209,8 @@ jobs:
           # The clone URL the published quick start tells a reader to use, which
           # is this forge's address for the repository being published to.
           TEMPLATE_REPO_URL: ${{ github.server_url }}/${{ vars.TEMPLATE_REPO }}.git
+          # The published README's CLI release badge and link read this project.
+          CLI_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           out=$(sh scripts/publish-template.sh "$RELEASE_VERSION" .template-repo "$TEMPLATE_REPO_URL")
           printf '%s\n' "$out"

@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -170,59 +171,15 @@ func (s *Store) ConnectKnowledge(ctx context.Context, id, input, url, defaultBra
 	if err != nil {
 		return err
 	}
-	// A checkout registered both as a repository and as knowledge would be
-	// fast-forwarded under work someone is doing in it.
-	for other, binding := range bindings.Bindings {
-		otherPath, err := s.LocalPath(binding.Path)
-		if err != nil {
-			continue
-		}
-		if otherCommon, err := Git(ctx, otherPath, "rev-parse", "--path-format=absolute", "--git-common-dir"); err == nil && otherCommon == common {
-			return fmt.Errorf("this checkout is already connected as repository %s, where work happens; knowledge is read-only", other)
-		}
+	if err := rejectConnectedRepository(ctx, s, bindings, common); err != nil {
+		return err
 	}
 	if existing, registered := cfg.KnowledgeRepositories[id]; registered {
-		if url != "" && url != existing.URL {
-			return fmt.Errorf("%s already records another URL; use knowledge remote to change it explicitly", id)
-		}
-		if defaultBranch != "" && defaultBranch != existing.DefaultBranch {
-			return fmt.Errorf("%s already records another default branch; use knowledge remote to change it explicitly", id)
-		}
-		if index != "" && index != existing.Index {
-			return fmt.Errorf("%s already records another index; use knowledge remote to change it explicitly", id)
-		}
-	} else {
-		if defaultBranch == "" {
-			defaultBranch, err = Git(ctx, path, "symbolic-ref", "--quiet", "--short", "HEAD")
-			if err != nil || defaultBranch == "" {
-				return errors.New("provide --default-branch; this checkout is not on a branch")
-			}
-		}
-		if err := checkBranch(ctx, path, defaultBranch); err != nil {
+		if err := checkKnowledgeRecord(id, existing, url, defaultBranch, index); err != nil {
 			return err
 		}
-		if url == "" {
-			url, _ = Git(ctx, path, "remote", "get-url", "origin")
-		}
-		if url != "" {
-			if err := checkRemote(url); err != nil {
-				return err
-			}
-		}
-		if index == "" {
-			index = detectKnowledgeIndex(path)
-		}
-		// A workspace that has never borrowed knowledge carries no such key,
-		// including every workspace initialized before this existed. Writing the
-		// whole map creates it; an entry is added to it once it is there.
-		record := KnowledgeRepository{url, defaultBranch, index}
-		keys, value := []string{"knowledge_repositories", id}, any(record)
-		if len(cfg.KnowledgeRepositories) == 0 {
-			keys, value = []string{"knowledge_repositories"}, map[string]KnowledgeRepository{id: record}
-		}
-		if err := s.Update("workspace.yaml", keys, value, 0644); err != nil {
-			return err
-		}
+	} else if err := s.registerKnowledge(ctx, cfg, id, path, url, defaultBranch, index); err != nil {
+		return err
 	}
 	disableKnowledgePush(ctx, path)
 	binding := Binding{Path: path}
@@ -235,6 +192,71 @@ func (s *Store) ConnectKnowledge(ctx context.Context, id, input, url, defaultBra
 		return s.Update("repositories.local.yaml", []string{"knowledge"}, map[string]Binding{id: binding}, 0600)
 	}
 	return s.Update("repositories.local.yaml", []string{"knowledge", id}, binding, 0600)
+}
+
+// rejectConnectedRepository refuses a checkout already bound as a work
+// repository, which would be fast-forwarded under work someone is doing in it.
+func rejectConnectedRepository(ctx context.Context, s *Store, bindings Bindings, common string) error {
+	for other, binding := range bindings.Bindings {
+		otherPath, err := s.LocalPath(binding.Path)
+		if err != nil {
+			continue
+		}
+		if otherCommon, err := Git(ctx, otherPath, "rev-parse", "--path-format=absolute", "--git-common-dir"); err == nil && otherCommon == common {
+			return fmt.Errorf("this checkout is already connected as repository %s, where work happens; knowledge is read-only", other)
+		}
+	}
+	return nil
+}
+
+// checkKnowledgeRecord rejects values that contradict the shared record, since
+// connecting a second machine describes that machine, never the repository.
+func checkKnowledgeRecord(id string, existing KnowledgeRepository, url, defaultBranch, index string) error {
+	if url != "" && url != existing.URL {
+		return fmt.Errorf("%s already records another URL; use knowledge remote to change it explicitly", id)
+	}
+	if defaultBranch != "" && defaultBranch != existing.DefaultBranch {
+		return fmt.Errorf("%s already records another default branch; use knowledge remote to change it explicitly", id)
+	}
+	if index != "" && index != existing.Index {
+		return fmt.Errorf("%s already records another index; use knowledge remote to change it explicitly", id)
+	}
+	return nil
+}
+
+// registerKnowledge writes the shared record for a knowledge repository new to
+// this workspace, filling what the caller left out from the checkout.
+func (s *Store) registerKnowledge(ctx context.Context, cfg Config, id, path, url, defaultBranch, index string) error {
+	var err error
+	if defaultBranch == "" {
+		defaultBranch, err = Git(ctx, path, "symbolic-ref", "--quiet", "--short", "HEAD")
+		if err != nil || defaultBranch == "" {
+			return errors.New("provide --default-branch; this checkout is not on a branch")
+		}
+	}
+	if err := checkBranch(ctx, path, defaultBranch); err != nil {
+		return err
+	}
+	if url == "" {
+		url, _ = Git(ctx, path, "remote", "get-url", "origin")
+	}
+	if url != "" {
+		if err := checkRemote(url); err != nil {
+			return err
+		}
+	}
+	if index == "" {
+		index = detectKnowledgeIndex(path)
+	}
+	// A workspace that has never borrowed knowledge carries no such key,
+	// including every workspace initialized before this existed. Writing the
+	// whole map creates it; an entry is added to it once it is there.
+	record := KnowledgeRepository{url, defaultBranch, index}
+	keys, value := []string{"knowledge_repositories", id}, any(record)
+	if len(cfg.KnowledgeRepositories) == 0 {
+		keys, value = []string{"knowledge_repositories"}, map[string]KnowledgeRepository{id: record}
+	}
+	return s.Update("workspace.yaml", keys, value, 0644)
 }
 
 // CloneKnowledge obtains a borrowed repository and binds it. Cloning an ID the
@@ -329,6 +351,11 @@ func (s *Store) SyncKnowledge(ctx context.Context, id string) (KnowledgeState, e
 		return state, nil
 	}
 	before := snapshot.Head
+	// A branch the fetch pruned is not divergence; say what git said instead.
+	if _, err := Git(ctx, path, "rev-parse", "--verify", "--quiet", "--end-of-options", "refs/remotes/origin/"+repo.DefaultBranch); err != nil {
+		state.Status, state.Detail = "unreachable", fmt.Sprintf("origin has no branch %q; nothing was changed. Point the workspace at the branch the repository now uses with `knowledge remote --id %s --default-branch BRANCH`", repo.DefaultBranch, id)
+		return state, nil
+	}
 	if _, err := Git(ctx, path, "merge", "--ff-only", "--quiet", "--end-of-options", "refs/remotes/origin/"+repo.DefaultBranch); err != nil {
 		state.Status = "diverged"
 		state.Detail = fmt.Sprintf("this checkout holds commits that are not on origin/%s; nothing was changed or discarded. Push them from a separate checkout of %s, then sync again", repo.DefaultBranch, id)
@@ -350,11 +377,7 @@ func (s *Store) KnowledgeStates(ctx context.Context) ([]KnowledgeState, error) {
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]string, 0, len(cfg.KnowledgeRepositories))
-	for id := range cfg.KnowledgeRepositories {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
+	ids := slices.Sorted(maps.Keys(cfg.KnowledgeRepositories))
 	states := make([]KnowledgeState, 0, len(ids))
 	for _, id := range ids {
 		repo := cfg.KnowledgeRepositories[id]
@@ -453,21 +476,8 @@ func (s *Store) SetKnowledgeRemote(ctx context.Context, id, url, defaultBranch, 
 	if _, ok := cfg.KnowledgeRepositories[id]; !ok {
 		return fmt.Errorf("unknown knowledge repository: %s", id)
 	}
-	if url != "" {
-		if err := checkRemote(url); err != nil {
-			return err
-		}
-		if err := s.Update("workspace.yaml", []string{"knowledge_repositories", id, "url"}, url, 0644); err != nil {
-			return err
-		}
-	}
-	if defaultBranch != "" {
-		if err := checkBranch(ctx, s.Root, defaultBranch); err != nil {
-			return err
-		}
-		if err := s.Update("workspace.yaml", []string{"knowledge_repositories", id, "default_branch"}, defaultBranch, 0644); err != nil {
-			return err
-		}
+	if err := s.writeSharedRemote(ctx, []string{"knowledge_repositories", id}, url, defaultBranch); err != nil {
+		return err
 	}
 	if index == "" {
 		return nil

@@ -1,8 +1,10 @@
 package workspace
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -22,7 +24,7 @@ func (s *Store) requiredPlanFiles(record Record, repo string) ([]string, error) 
 		return nil, nil
 	}
 	if !folderPlan(record) {
-		return nil, fmt.Errorf("required_files needs a folder plan")
+		return nil, errors.New("required_files needs a folder plan")
 	}
 	for key := range record.RequiredFiles.ByRepository {
 		if !slices.Contains(record.Repositories, key) {
@@ -83,7 +85,7 @@ func (s *Store) planFileIssues(record Record) []Finding {
 	var issues []Finding
 	assigned := map[string]bool{}
 	if record.RequiredFiles != nil {
-		for _, files := range append([][]string{record.RequiredFiles.Shared}, values(record.RequiredFiles.ByRepository)...) {
+		for _, files := range slices.AppendSeq([][]string{record.RequiredFiles.Shared}, maps.Values(record.RequiredFiles.ByRepository)) {
 			for _, file := range files {
 				assigned[file] = true
 			}
@@ -129,12 +131,4 @@ func (s *Store) planFileIssues(record Record) []Finding {
 		return nil
 	})
 	return issues
-}
-
-func values(m map[string][]string) [][]string {
-	var out [][]string
-	for _, v := range m {
-		out = append(out, v)
-	}
-	return out
 }

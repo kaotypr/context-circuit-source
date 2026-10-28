@@ -87,11 +87,11 @@ func (s *Store) Worktrees(ctx context.Context, repoID string) ([]Worktree, error
 	}
 	list := []Worktree{}
 	var current *Worktree
-	for _, field := range strings.Split(text, "\x00") {
-		if strings.HasPrefix(field, "worktree ") {
+	for field := range strings.SplitSeq(text, "\x00") {
+		if after, ok := strings.CutPrefix(field, "worktree "); ok {
 			// Git prints forward slashes on Windows. Return the same canonical
 			// native path for a new worktree, listing, and later reuse.
-			path := filepath.Clean(strings.TrimPrefix(field, "worktree "))
+			path := filepath.Clean(after)
 			if resolved, err := filepath.EvalSymlinks(path); err == nil {
 				path = resolved
 			}
@@ -139,16 +139,9 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		return Worktree{}, err
 	}
 	repo := checkout.Path
-	var record Record
-	if plan != "" {
-		r, err := s.FindRecord(plan)
-		if err != nil {
-			return Worktree{}, err
-		}
-		if !strings.HasPrefix(plan, "p") || !slices.Contains(r.Repositories, repoID) {
-			return Worktree{}, errors.New("plan does not include this repository")
-		}
-		record = r
+	record, err := s.planRecord(plan, repoID)
+	if err != nil {
+		return Worktree{}, err
 	}
 	if branch == "" && plan != "" {
 		branch = PlanBranch(plan, repoID)
@@ -175,43 +168,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	}
 	for _, tree := range list {
 		if filepath.Clean(tree.Path) == filepath.Clean(path) {
-			if tree.Main || tree.Branch != branch || tree.Prunable {
-				return Worktree{}, errors.New("destination is an existing different or unavailable worktree")
-			}
-			if (tree.Plan != plan || tree.StartCommit == "") && !reuse {
-				return Worktree{}, errors.New("worktree has another association; use --reuse to select it explicitly")
-			}
-			// The same plan ID is not the same plan once a deletion released
-			// the number: another machine's leftover worktree for the old plan
-			// matches on path, branch, and ID alike.
-			if !reuse {
-				if why := earlierPlan(ctx, repo, record, tree.planCreatedAt, tree.StartCommit, branch); why != "" {
-					return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
-				}
-			}
-			snapshot, err := Inspect(ctx, tree.Path)
-			if err != nil {
-				return Worktree{}, err
-			}
-			if !reuse && record.ID != "" && tree.planCreatedAt == "" {
-				if why := unprovenWorktree(ctx, repo, checkout.BaseBranch, record, tree, snapshot); why != "" {
-					return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
-				}
-			}
-			if tree.Plan != plan || tree.StartCommit == "" || tree.planCreatedAt != string(record.CreatedAt) {
-				tree.Plan, tree.planCreatedAt = plan, string(record.CreatedAt)
-				if tree.StartCommit == "" {
-					tree.StartCommit = tree.Head
-				}
-				if err := s.saveAssociation(repoID, tree); err != nil {
-					return tree, err
-				}
-			}
-			// A resumed worktree carries on from its own branch, which is what it
-			// starts from now whatever it was first prepared from.
-			tree.Reused, tree.Start = true, tree.Branch
-			tree.Environment, err = ReuseEnvironment(ctx, repo, tree.Path, options)
-			return tree, err
+			return s.resumeWorktree(ctx, repoID, plan, branch, reuse, options, checkout, record, tree)
 		}
 		if tree.Branch == branch {
 			return Worktree{}, checkedOutElsewhere(repoID, plan, branch, tree)
@@ -221,72 +178,16 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		return Worktree{}, fmt.Errorf("destination already exists: %s", path)
 	}
 	var commit, stale, unmerged, started string
-	derived := false
 	if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err == nil {
 		started = branch
-		if !reuse {
-			// A clone with only origin's base branch would otherwise date the
-			// branch's whole history.
-			base, _ := baseRef(ctx, repo, checkout.BaseBranch)
-			if why := earlierPlan(ctx, repo, record, "", base, branch); why != "" {
-				return Worktree{}, fmt.Errorf("branch %s already exists and %s, so it is likely left from an earlier plan given the number %s. Delete that branch once its work no longer matters, or pass --reuse to start from its commits deliberately. Nothing was checked out", branch, why, plan)
-			}
-			return Worktree{}, errors.New("branch already exists; use --reuse to preserve and check out its existing commits")
-		}
-		commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", "refs/heads/"+branch+"^{commit}")
+		commit, err = checkoutExistingBranch(ctx, repo, checkout, record, plan, branch, path, reuse)
 		if err != nil {
 			return Worktree{}, err
 		}
-		_, err = Git(ctx, repo, "worktree", "add", "--", path, branch)
-		if err != nil {
-			// The inventory above catches a branch Git lists anywhere, but a
-			// worktree mid-rebase or mid-bisect lists as detached while Git
-			// still refuses to check its branch out twice. Git's text names the
-			// place and varies by version and locale, so it is kept, not parsed.
-			return Worktree{}, fmt.Errorf("branch %s could not be checked out; if Git says it is used by another worktree, finish or abort the operation there, switch that checkout to another branch, or remove that worktree (dirty work is kept unless discard is explicitly authorized), then prepare again. Nothing was checked out, switched, or reset: %w", branch, err)
-		}
 	} else {
-		if start == "" {
-			derived = true
-			// Preparation does not derive order, so a dependent plan started
-			// from the base branch gets a worktree missing the work it was
-			// meant to build on — which reads as the dependency having produced
-			// nothing. Name the start rather than choose it: with several
-			// predecessors the extras are integration merges, and that is the
-			// coordinator's to perform.
-			if dependency := s.dependencyStart(record, repoID); dependency.Base != "" {
-				return Worktree{}, dependencyStartError(ctx, repo, plan, dependency)
-			}
-			start, started = "refs/heads/"+checkout.BaseBranch, checkout.BaseBranch
-			if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}"); err != nil {
-				start, started = "refs/remotes/origin/"+checkout.BaseBranch, "origin/"+checkout.BaseBranch
-			} else if n, remote := behindRemote(ctx, repo, checkout.BaseBranch); n > 0 {
-				// A local base branch nobody synchronized is the quietest way to
-				// get a worktree missing work that already exists: preparation
-				// reports the branch it used and nothing about how old it is, so
-				// the gap is found at review or not at all.
-				stale = fmt.Sprintf("%s is %d commit(s) behind %s and this worktree starts from it, so that work is not here. Fast-forward %s in the bound checkout and rebase %s onto it, or remove this worktree and prepare again.",
-					checkout.BaseBranch, n, remote, checkout.BaseBranch, branch)
-			}
-		} else {
-			started = start
-		}
-		commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}")
+		commit, started, stale, unmerged, err = s.addNewBranch(ctx, repoID, plan, branch, start, path, checkout, repo, record)
 		if err != nil {
-			return Worktree{}, fmt.Errorf("cannot resolve starting point %s (new repositories need a first commit): %w", start, err)
-		}
-		if !derived {
-			stale = staleStart(ctx, repo, repoID, start, commit, branch)
-		}
-		// An explicit --start is the coordinator saying what they meant, so only
-		// a start this command derived is questioned.
-		if derived {
-			remoteBase := remoteCounterpart(ctx, repo, checkout.BaseBranch)
-			unmerged = describeUnmerged(s.unmergedSiblings(ctx, repo, repoID, plan, commit, remoteBase), repoID, plan, checkout.BaseBranch)
-		}
-		_, err = Git(ctx, repo, "worktree", "add", "-b", branch, "--", path, commit)
-		if err != nil {
-			return Worktree{}, fmt.Errorf("worktree preparation failed; inspect branch %s and path %s: %w", branch, path, err)
+			return Worktree{}, err
 		}
 	}
 	actual, err := filepath.EvalSymlinks(path)
@@ -299,6 +200,140 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	}
 	result.Environment, err = ReuseEnvironment(ctx, repo, result.Path, options)
 	return result, err
+}
+
+// planRecord finds the plan a worktree is prepared for; no plan means no record.
+func (s *Store) planRecord(plan, repoID string) (Record, error) {
+	if plan == "" {
+		return Record{}, nil
+	}
+	record, err := s.FindRecord(plan)
+	if err != nil {
+		return Record{}, err
+	}
+	if !strings.HasPrefix(plan, "p") || !slices.Contains(record.Repositories, repoID) {
+		return Record{}, errors.New("plan does not include this repository")
+	}
+	return record, nil
+}
+
+// resumeWorktree validates and adopts a worktree that already sits at the
+// destination, saving its association when it is new or changed.
+func (s *Store) resumeWorktree(ctx context.Context, repoID, plan, branch string, reuse bool, options ReuseOptions, checkout Checkout, record Record, tree Worktree) (Worktree, error) {
+	repo := checkout.Path
+	if tree.Main || tree.Branch != branch || tree.Prunable {
+		return Worktree{}, errors.New("destination is an existing different or unavailable worktree")
+	}
+	if (tree.Plan != plan || tree.StartCommit == "") && !reuse {
+		return Worktree{}, errors.New("worktree has another association; use --reuse to select it explicitly")
+	}
+	// The same plan ID is not the same plan once a deletion released
+	// the number: another machine's leftover worktree for the old plan
+	// matches on path, branch, and ID alike.
+	if !reuse {
+		if why := earlierPlan(ctx, repo, record, tree.planCreatedAt, tree.StartCommit, branch); why != "" {
+			return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
+		}
+	}
+	snapshot, err := Inspect(ctx, tree.Path)
+	if err != nil {
+		return Worktree{}, err
+	}
+	if !reuse && record.ID != "" && tree.planCreatedAt == "" {
+		if why := unprovenWorktree(ctx, repo, checkout.BaseBranch, record, tree, snapshot); why != "" {
+			return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
+		}
+	}
+	if tree.Plan != plan || tree.StartCommit == "" || tree.planCreatedAt != string(record.CreatedAt) {
+		tree.Plan, tree.planCreatedAt = plan, string(record.CreatedAt)
+		if tree.StartCommit == "" {
+			tree.StartCommit = tree.Head
+		}
+		if err := s.saveAssociation(repoID, tree); err != nil {
+			return tree, err
+		}
+	}
+	// A resumed worktree carries on from its own branch, which is what it
+	// starts from now whatever it was first prepared from.
+	tree.Reused, tree.Start = true, tree.Branch
+	tree.Environment, err = ReuseEnvironment(ctx, repo, tree.Path, options)
+	return tree, err
+}
+
+// checkoutExistingBranch checks out a branch that already exists, which is only
+// allowed when the caller chose to reuse it.
+func checkoutExistingBranch(ctx context.Context, repo string, checkout Checkout, record Record, plan, branch, path string, reuse bool) (commit string, err error) {
+	if !reuse {
+		// A clone with only origin's base branch would otherwise date the
+		// branch's whole history.
+		base, _ := baseRef(ctx, repo, checkout.BaseBranch)
+		if why := earlierPlan(ctx, repo, record, "", base, branch); why != "" {
+			return "", fmt.Errorf("branch %s already exists and %s, so it is likely left from an earlier plan given the number %s. Delete that branch once its work no longer matters, or pass --reuse to start from its commits deliberately. Nothing was checked out", branch, why, plan)
+		}
+		return "", errors.New("branch already exists; use --reuse to preserve and check out its existing commits")
+	}
+	commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", "refs/heads/"+branch+"^{commit}")
+	if err != nil {
+		return "", err
+	}
+	_, err = Git(ctx, repo, "worktree", "add", "--", path, branch)
+	if err != nil {
+		// The inventory above catches a branch Git lists anywhere, but a
+		// worktree mid-rebase or mid-bisect lists as detached while Git
+		// still refuses to check its branch out twice. Git's text names the
+		// place and varies by version and locale, so it is kept, not parsed.
+		return "", fmt.Errorf("branch %s could not be checked out; if Git says it is used by another worktree, finish or abort the operation there, switch that checkout to another branch, or remove that worktree (dirty work is kept unless discard is explicitly authorized), then prepare again. Nothing was checked out, switched, or reset: %w", branch, err)
+	}
+	return commit, nil
+}
+
+// addNewBranch creates the branch and its worktree from the explicit start or
+// the derived base, reporting a derived start that is stale or unmerged.
+func (s *Store) addNewBranch(ctx context.Context, repoID, plan, branch, start, path string, checkout Checkout, repo string, record Record) (commit, started, stale, unmerged string, err error) {
+	derived := false
+	if start == "" {
+		derived = true
+		// Preparation does not derive order, so a dependent plan started
+		// from the base branch gets a worktree missing the work it was
+		// meant to build on — which reads as the dependency having produced
+		// nothing. Name the start rather than choose it: with several
+		// predecessors the extras are integration merges, and that is the
+		// coordinator's to perform.
+		if dependency := s.dependencyStart(record, repoID); dependency.Base != "" {
+			return "", "", "", "", dependencyStartError(ctx, repo, plan, dependency)
+		}
+		start, started = "refs/heads/"+checkout.BaseBranch, checkout.BaseBranch
+		if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}"); err != nil {
+			start, started = "refs/remotes/origin/"+checkout.BaseBranch, "origin/"+checkout.BaseBranch
+		} else if n, remote := behindRemote(ctx, repo, checkout.BaseBranch); n > 0 {
+			// A local base branch nobody synchronized is the quietest way to
+			// get a worktree missing work that already exists: preparation
+			// reports the branch it used and nothing about how old it is, so
+			// the gap is found at review or not at all.
+			stale = fmt.Sprintf("%s is %d commit(s) behind %s and this worktree starts from it, so that work is not here. Fast-forward %s in the bound checkout and rebase %s onto it, or remove this worktree and prepare again.",
+				checkout.BaseBranch, n, remote, checkout.BaseBranch, branch)
+		}
+	} else {
+		started = start
+	}
+	commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}")
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("cannot resolve starting point %s (new repositories need a first commit): %w", start, err)
+	}
+	if !derived {
+		stale = staleStart(ctx, repo, repoID, start, commit, branch)
+	}
+	// An explicit --start is the coordinator saying what they meant, so only
+	// a start this command derived is questioned.
+	if derived {
+		remoteBase := remoteCounterpart(ctx, repo, checkout.BaseBranch)
+		unmerged = describeUnmerged(s.unmergedSiblings(ctx, repo, repoID, plan, commit, remoteBase), repoID, plan, checkout.BaseBranch)
+	}
+	_, err = Git(ctx, repo, "worktree", "add", "-b", branch, "--", path, commit)
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("worktree preparation failed; inspect branch %s and path %s: %w", branch, path, err)
+	}
+	return commit, started, stale, unmerged, nil
 }
 
 // staleStart questions an explicit --start that names a local branch behind its
@@ -391,7 +426,7 @@ func earlierPlan(ctx context.Context, repo string, plan Record, recorded, start,
 	if err != nil {
 		return ""
 	}
-	for _, field := range strings.Fields(times) {
+	for field := range strings.FieldsSeq(times) {
 		if at, err := strconv.ParseInt(field, 10, 64); err == nil && at < created.Unix() {
 			return fmt.Sprintf("it holds commits made before this %s was created at %s", plan.ID, plan.CreatedAt)
 		}
@@ -413,7 +448,7 @@ func unprovenWorktree(ctx context.Context, repo, base string, plan Record, tree 
 		return ""
 	}
 	if len(snapshot.Changes) > 0 {
-		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and its uncommitted changes are tied to no %s", plan.ID)
+		return "its association predates 2.4.0, it holds no commit to date it by, and its uncommitted changes are tied to no " + plan.ID
 	}
 	if ref, commit := baseRef(ctx, repo, base); ref == "" || snapshot.Head != tree.StartCommit || commit != snapshot.Head {
 		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and it is not at the tip of %s, where a fresh prepare for this %s would start", base, plan.ID)

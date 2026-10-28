@@ -65,7 +65,7 @@ is for.
 Create the record through the CLI, which reserves the ID:
 
 ```sh
-context-circuit-cli --workspace <root> record create --kind intent --slug SLUG --title TITLE
+sh <root>/.context-circuit/cli record create --kind intent --slug SLUG --title TITLE
 ```
 
 Then write its body from that grounding: goal, non-goals, constraints,
@@ -92,6 +92,12 @@ written; a placeholder would invent a pending decision.
 A question the request already answers is applied without asking. An
 implementation question belongs in the plan, not here.
 
+## Presenting it
+
+The record is in its author's language; the conversation is not. Present the
+intent, its open questions, and everything you say around them in the language
+the person is writing to you in, even when the record itself is in another.
+
 ## After approval
 
 Record the person's approval in their own words. `record approve` returns
@@ -99,6 +105,11 @@ Record the person's approval in their own words. `record approve` returns
 next step, and stop. Planning starts when the person asks for it, which may be
 in the same request that approved the intent; then go straight on through
 `.agents/skills/cc-plan/SKILL.md`, and do not ask for approval a second time.
+
+In a Git workspace approval also returns `commit_recommended`, naming the
+intent and ID files it left uncommitted. Ask the person once whether to commit
+and push them, or commit only; their answer is the authorization, and a refused
+push is handled as `AGENTS.md` says under delivery.
 
 ## What belongs here and what does not
 

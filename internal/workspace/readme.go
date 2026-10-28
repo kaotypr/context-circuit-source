@@ -3,8 +3,10 @@ package workspace
 import (
 	"fmt"
 	"html"
+	"io/fs"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -39,9 +41,16 @@ const (
 // records data; rewriting somebody's prose to find an anchor is not a judgment
 // it may make, and neither is replacing a front page they wrote.
 func (s *Store) WriteReadme(seed []byte, name, purpose string) error {
+	// An existing front page keeps its own permissions; only a new one is 0644.
+	mode := fs.FileMode(0644)
 	data, err := s.Read("README.md")
 	if os.IsNotExist(err) {
 		data, err = seed, nil
+	} else if err == nil {
+		var info fs.FileInfo
+		if info, err = os.Stat(filepath.Join(s.Root, "README.md")); err == nil {
+			mode = info.Mode().Perm()
+		}
 	}
 	if err != nil {
 		return err
@@ -64,25 +73,15 @@ func (s *Store) WriteReadme(seed []byte, name, purpose string) error {
 			readmeTitleClose,
 		}, nl))
 	text, badged := replaceMarked(text, readmeBadgesOpen, readmeBadgesClose, badges)
-	// An empty purpose collapses the span rather than rendering a stray heading
-	// over nothing; `workspace set` can fill it in later.
-	rendered := strings.Join([]string{readmePurposeOpen, readmePurposeClose}, nl)
-	if purpose != "" {
-		rendered = strings.Join([]string{
-			readmePurposeOpen,
-			fmt.Sprintf("<p align=%q><strong>%s</strong></p>", "center", html.EscapeString(purpose)),
-			readmePurposeClose,
-		}, nl)
-	}
-	text, _ = replaceMarked(text, readmePurposeOpen, readmePurposeClose, rendered)
+	text, _ = replaceMarked(text, readmePurposeOpen, readmePurposeClose, strings.Join([]string{
+		readmePurposeOpen,
+		fmt.Sprintf("<p align=%q><strong>%s</strong></p>", "center", html.EscapeString(purpose)),
+		readmePurposeClose,
+	}, nl))
 	if !titled && !badged {
 		return nil
 	}
-	p, err := s.Path("README.md")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(p, []byte(text), 0644)
+	return s.Write("README.md", []byte(text), mode)
 }
 
 // replaceMarked swaps the whole span from open through close, reporting whether

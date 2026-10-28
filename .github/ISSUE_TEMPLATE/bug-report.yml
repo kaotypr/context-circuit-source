@@ -1,0 +1,84 @@
+name: Bug report
+description: Report a defect in the CLI, the workspace template, the documentation or a release.
+labels:
+  - "bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a defect. Usage questions go to GitHub Discussions, Q&A. A security vulnerability is reported privately, as SECURITY.md describes.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Context Circuit the defect is in.
+      options:
+        - CLI
+        - Template
+        - Docs
+        - Release
+    validations:
+      required: true
+  - type: input
+    id: cli-version
+    attributes:
+      label: CLI version
+      description: The output of `context-circuit-cli version`.
+      placeholder: "2.5.0"
+    validations:
+      required: true
+  - type: input
+    id: template-version
+    attributes:
+      label: Template version
+      description: The number in `.context-circuit/VERSION` at the root of your workspace. It is separate from the CLI version.
+      placeholder: "2.5.0"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: The system and architecture the CLI runs on, for example macOS arm64, Ubuntu 24.04 amd64, Windows 11 amd64, or WSL.
+    validations:
+      required: true
+  - type: input
+    id: coding-host
+    attributes:
+      label: Coding host
+      description: The coding agent host you were using, for example Claude Code, Cursor or Codex, or "none" if you ran the CLI yourself.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, in order, including the commands you ran.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What happened instead, with any error output.
+    validations:
+      required: true
+  - type: textarea
+    id: check-output
+    attributes:
+      label: Workspace check output
+      description: An excerpt from `context-circuit-cli --workspace . check --json`, run at the workspace root. Remove anything private, such as local paths or repository URLs, before pasting.
+      render: json
+    validations:
+      required: false

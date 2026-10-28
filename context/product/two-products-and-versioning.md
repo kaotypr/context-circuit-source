@@ -11,8 +11,12 @@ The tag and the assets under it are named differently on purpose. A tag is read
 in a release list that already says which product it belongs to, so `cli-v2.0.0`
 sits beside the template's `v2.0.0` and the two are told apart at a glance. An
 asset is read wherever somebody downloaded it, where nothing says what it is, so
-it keeps the CLI's own name — `context-circuit-cli-v2.0.0-darwin-arm64`. Neither
-name reaches the installed binary, which is always `context-circuit-cli`.
+it keeps the CLI's own name — `context-circuit-cli-v2.0.0-darwin-arm64`.
+
+Neither name reaches the installed binary, which is always `context-circuit-cli`
+in the version store. The command on PATH has that name too for a stable or
+unknown version, while a variant installs it as `<label>-context-circuit-cli`,
+so a variant never repoints the public command.
 
 They change for different reasons and at different rates. A wording fix in the
 shared instruction should not force anyone to reinstall a binary, and a
@@ -28,12 +32,31 @@ version store, one directory per version and platform, and the shared command on
 PATH is a link into one of them. Installing a version for one workspace repoints
 that shared command and must not change which version another workspace runs.
 
-Resolution is therefore: read the workspace's pinned version, locate the store,
-run that exact path, and install it first if it is absent. When the CLI notices
-it is running against a workspace pinning a different version it warns on the
-error stream and continues, leaving structured output untouched. The warning is
-framed as a caller mistake — the workspace recorded what it wanted and something
-ran the wrong binary.
+Resolution therefore goes through the workspace's launcher, a shell script and
+a PowerShell twin the template ships beside the pin. It reads the pin and runs
+exactly that version from the version store; it never installs and never reads
+PATH, and when the pinned version is missing it refuses and names the install
+step.
+
+A CLI started any other way, such as the PATH command running whichever version
+was installed last, reads the pin first:
+
+- When the pinned version is installed in the same store, it hands off to it,
+  with one note on the error stream.
+- Otherwise it warns on the error stream and continues, leaving structured
+  output untouched.
+- When it runs instead of the pin, it refuses, before anything is written, a
+  change that would migrate the workspace schema or that crosses release lines.
+  Nothing overrides that refusal: `CC_CLI_VERSION=local` keeps the running CLI
+  and skips only the hand-off.
+
+Warning and carrying on is how a newer CLI once moved a workspace to a schema
+its members' pinned CLIs refused, which is why those two changes are refused
+rather than warned about.
+
+A version's release line is stable for `X.Y.Z`, one variant line per label for
+`X.Y.Z-<label>.N`, and unknown for anything else. An unknown version, a developer
+build or a candidate, crosses no line, so only the schema rule holds it back.
 
 The template's entry instruction takes precedence whenever it and CLI output
 disagree. A CLI is behind the template when the running version is older than
@@ -49,7 +72,7 @@ its source is, so a released binary is traceable to the commit that produced it
 by the tag itself. The template's `v*` releases live on the published template
 repository, whose tree is what they ship.
 
-Both publish from one merge, and the CLI publishes first. The dependency runs
+Both publish from one merge into their release line's branch, `release/X.Y`, and the CLI publishes first; `main` is where work lands and never publishes. The dependency runs
 one way: the template names a CLI version and reads its release list, while the
 CLI names nothing in the template. Publishing the template first leaves a window
 where it points at a release that does not exist yet.
@@ -62,6 +85,10 @@ under `release/requests/cli/` or `release/requests/template/`, and that
 request's body is the notes that release is published with — so a reader
 upgrading one product is not handed the other's changes.
 
+A request is drafted from the change files under `.changelog/`, each naming the
+product it belongs to, so the split is made when a change is written rather
+than when a release is cut.
+
 That was not always so. While this checkout was private, installing could not
 depend on reading it, so the CLI's assets were published on the template
 repository instead. It cost a tag that meant two things in two places, a token
@@ -69,21 +96,31 @@ with write access to another repository, and Apache-2.0 assets served under a
 0BSD label. Opening this checkout removed the reason, and the release followed
 the code.
 
-Publication targets GitHub only, and installation reads it directly. An
-organization is free to mirror either published repository into its own hosting,
-but that is a copy of a Git repository and asks nothing of this product: a
-workspace initialized from a mirrored template still installs its CLI from the
-GitHub release. Carrying a second install path would mean a version that
-resolves in one place and not another, and a credential whose destination
-depends on a recorded field — both for an arrangement the product cannot verify
-is current.
+Publication targets GitHub, and the same pipeline definition publishes to a
+GitLab project pair when that forge runs it (`.gitlab-ci.yml`). Neither half
+mirrors the other: each runs when its own remote is pushed and asks its own
+release list what is already out. A template published from GitLab records
+`cli_registry` in its `workspace.yaml`, naming the project and instance its CLI
+is published from, so its workspaces install the CLI from there, and its README's
+release badges point at that forge. A template that records none installs from
+the GitHub release, and so does one that was only copied into other hosting.
+
+A downstream variant labels its versions `X.Y.Z-<label>.N` through
+`scripts/release-version.sh`, which every release script asks for the version it
+builds, checks and publishes; a public checkout gets its version file unchanged.
+A variant installs its command as `<label>-context-circuit-cli`. Versions with
+different labels are different release lines, and an update's "latest" is
+chosen within the workspace's own line, so an update never moves a workspace
+onto another line.
 
 ## Installation properties
 
 Installation targets the **execution environment**, not the user's desktop: a
-container or remote Linux host installs Linux packages. There is one source for
-a release, so a pinned version resolves the same way from every environment, and
-the credential an install may need is a GitHub one or none at all.
+container or remote Linux host installs Linux packages. The registry a workspace
+records is where its pinned version comes from, so that version resolves the same
+way from every environment, and the credential an install may need is one for
+that registry: for GitHub a token or none, and for GitLab always one, because its
+releases have no public download path.
 
 Installation itself:
 
@@ -115,8 +152,14 @@ deletion by hand would drop reservations no record file holds.
 
 Owner:
 
-- `context-circuit-source@internal/cli/cli.go` `pinnedVersionWarning` — the
-  warning a workspace gets when the wrong binary runs against it.
+- `context-circuit-source@internal/cli/pin.go` — the switch to the pinned CLI
+  and the guard that refuses a migrating or cross-line change.
+- `context-circuit-source@internal/cli/release_line.go` — the release-line rule
+  and the command name each line installs as.
+- `context-circuit-source@product/launcher/` — the workspace launcher that runs
+  exactly the pinned version.
+- `context-circuit-source@scripts/release-version.sh` — each product's effective
+  version, plain or labeled.
 - `context-circuit-source@product/skills/cc-cli/` — the installer, its version
   store, and the pinned resolution.
 - `context-circuit-source@scripts/release-manifest.txt` — the exact

@@ -120,11 +120,20 @@ not descend into arbitrary ignored parent directories.
 
 Safety properties, each one a refusal that makes copying safe to automate:
 
-- Entries are staged and published only when complete, so a failure preserves
-  the worktree and the finished entries, and a rerun resumes.
+- Entries are staged and published only when complete, so nothing partial is
+  ever left at a destination.
+- Outside the required mode, an entry that cannot be reused is skipped and
+  reported with its reason. It leaves no destination behind, so a rerun tries
+  it again and skips it again until its source changes.
+- Any other failure, such as a full disk or a permission error, stops
+  preparation but keeps the worktree and the finished entries, and a rerun
+  resumes from there.
 - Existing destination files are preserved and never overwritten.
-- Internal symlinks are translated; external symlinks and special files are
-  rejected.
+- Internal symlinks are translated; an entry holding an external symlink (an
+  `npm link` inside `node_modules`) or a special file is rejected whole. Outside
+  the required mode that entry is skipped and reported with its reason while
+  the others are reused, because reuse is a convenience; under the required
+  mode it fails preparation.
 - Hard links to the source are never created.
 - Paths naming control directories are refused.
 - Environment contents are copied opaquely — never printed, never placed in a

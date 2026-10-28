@@ -18,5 +18,4 @@ dist/
 /template/member.local.yaml
 /template/.worktrees/
 /bin/
-# Tool-generated local graph cache; never project material.
-.code-review-graph/
+agent-tests/out/

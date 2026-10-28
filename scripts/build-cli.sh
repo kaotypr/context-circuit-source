@@ -6,7 +6,26 @@ set -eu
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 [ "$#" -le 2 ] || fail 'usage: build-cli.sh [version-without-v] [new-output-dir]'
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-$(cat "$source_root/CLI_VERSION")}
+if [ -z "${1:-}" ]; then
+  version=$(sh "$source_root/scripts/release-version.sh" cli)
+else
+  version=$1
+fi
+# A variant version X.Y.Z-<label>.N builds and installs under its own command
+# name, so it never shares a PATH command with the public CLI. The binary inside
+# each package keeps the public name. The same rule is in the cc-cli installers.
+# Read by a Go test; keep each on one line.
+reserved_labels='alpha beta rc dev test pre preview snapshot'
+label_pattern='^[a-z]{1,20}$'
+name=context-circuit-cli
+base=${version%%-*} rest=${version#*-}
+if [ "$rest" != "$version" ] && printf '%s\n' "$base" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+  label=${rest%%.*} counter=${rest#*.}
+  if [ "$label.$counter" = "$rest" ] && printf '%s\n' "$label" | grep -Eq "$label_pattern" &&
+    printf '%s\n' "$counter" | grep -Eq '^[1-9][0-9]*$'; then
+    case " $reserved_labels " in *" $label "*) ;; *) name=$label-context-circuit-cli ;; esac
+  fi
+fi
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid CLI version: $version" ;; esac
 if [ "$#" -ge 2 ]; then
   output_dir=$2
@@ -22,7 +41,7 @@ output_dir=$(CDPATH= cd -- "$output_dir" && pwd)
 staging_dir=$(mktemp -d)
 trap 'rm -rf "$staging_dir"' EXIT HUP INT TERM
 cd "$source_root"
-artifact_name="context-circuit-cli-v$version"
+artifact_name="$name-v$version"
 # Include the licenses for dependencies and the Go runtime in each binary asset.
 # The CLI's own license ships beside them: Apache-2.0 asks a redistributor
 # to pass the License on with the work, and an archive is read wherever it was
@@ -32,6 +51,9 @@ artifact_name="context-circuit-cli-v$version"
 # with a warm cache never sees it; one starting clean reads the empty directory
 # as a missing license and blames the dependency for its own environment.
 go mod download
+# The project's own copyright line travels in the archive's LICENSE, so this
+# file lists only third-party code. The installers accept an exact archive file
+# list, and an older one refuses an archive holding a file it does not know.
 notices="$staging_dir/THIRD_PARTY_NOTICES.txt"
 printf 'Context Circuit third-party notices\n\n' > "$notices"
 for module in github.com/goccy/go-yaml github.com/gofrs/flock golang.org/x/sys; do
@@ -58,7 +80,7 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 wi
   [ "$target_os" != windows ] || binary=context-circuit-cli.exe
   CGO_ENABLED=0 GOOS=$target_os GOARCH=$target_arch go build -trimpath \
     -ldflags "-s -w -X main.version=${version#v}" -o "$package_dir/$binary" ./cmd/context-circuit
-  cp CLI.md "$package_dir/README.md"
+  cp release/cli/README.md "$package_dir/README.md"
   cp LICENSE "$package_dir/LICENSE"
   cp "$notices" "$package_dir/THIRD_PARTY_NOTICES.txt"
   package_name="$artifact_name-$target_os-$target_arch"
@@ -79,3 +101,4 @@ done
 ) > "$output_dir/SHA256SUMS"
 printf 'cli_version: %s\n' "$version"
 printf 'cli_assets_dir: %s\n' "$output_dir"
+printf 'cli_command: %s\n' "$name"

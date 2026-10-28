@@ -1,0 +1,37 @@
+# List prices used when a host does not report a dollar cost.
+#
+# input_per_m: USD per million uncached input tokens.
+# cached_input_per_m: USD per million cache-read input tokens.
+# cache_write_per_m: USD per million cache-write input tokens.
+# output_per_m: USD per million output tokens.
+# long_context_threshold: input-token count above which the long_* rates
+# apply to the whole request. 0 means there is no second tier.
+# long_input_per_m, long_cached_input_per_m, long_cache_write_per_m,
+# long_output_per_m: rates used above that threshold.
+# source: public page the numbers were copied from.
+# checked: calendar date the source was read (YYYY-MM-DD).
+# notes: what the row does not include.
+
+prices:
+  gpt-6-luna:
+    input_per_m: 0.10
+    cached_input_per_m: 0.01
+    cache_write_per_m: 0.125
+    output_per_m: 0.50
+    long_context_threshold: 272000
+    long_input_per_m: 0.20
+    long_cached_input_per_m: 0.02
+    long_cache_write_per_m: 0.25
+    long_output_per_m: 0.75
+    source: https://developers.openai.com/api/docs/pricing
+    checked: "2026-10-27"
+    notes: "standard processing, short and long context; cache write at the 30-minute rate; fast, batch and flex tiers not applied"
+  composer-2.5:
+    input_per_m: 0.50
+    cached_input_per_m: 0.20
+    cache_write_per_m: 0.50
+    output_per_m: 2.50
+    long_context_threshold: 0
+    source: https://cursor.com/docs/models
+    checked: "2026-10-27"
+    notes: "standard, not the Fast variant; Cursor publishes no cache-write price, so cache writes are charged at the input rate as an estimate"

@@ -13,8 +13,11 @@ generated workspaces, not this one.
 | `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus CLI installation and subagent dispatch |
 | `context-circuit-source@product/README.md`, `product/assets/readme/` | The published template repository's guide and the artwork it renders; restored at publication, shipped to no workspace |
 | `context-circuit-source@product/workspace-README.md` | The front page initialization writes into a new workspace |
+| `context-circuit-source@product/launcher/` | The workspace launcher, which runs exactly the CLI version the workspace pins |
+| `context-circuit-source@product/host/` | Host settings the template ships into a new workspace |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
+| `context-circuit-source@agent-tests/` | The contributor tool that runs coding hosts against a fixture workspace and grades the result: a separate Go module, run by contributors outside CI, shipped nowhere |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
 | `context-circuit-source@internal/installer/` | Acceptance tests for the shipped install scripts; it carries no non-test source |
 | `context-circuit-source@cmd/context-circuit/` | CLI entry point |
@@ -23,17 +26,19 @@ generated workspaces, not this one.
 | `context-circuit-source@assets.go` | Embeds only product assets and materializes the manifest |
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
-| `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files and export rules that repository owns |
+| `context-circuit-source@release/` | The release document (`release/README.md`), the page each CLI archive ships as its README (`release/cli/README.md`), the published destination identity, one release request per version, and the landing-page files and export rules that repository owns |
+| `context-circuit-source@.changelog/` | One change file per user-visible change, waiting for the release that drafts it into a request |
 | `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives and shown only at the template repository's root |
 
-## Four classes of material
+## Five classes of material
 
 | Class | What it holds |
 | --- | --- |
 | Shipped instruction | The product's behavior: `context-circuit-source@product/` |
 | Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
 | Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/` plus the guide and license restored from `product/`, marked `export-ignore` so the archive a project is created from carries none of it |
-| Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer design and evidence material |
+| Contributor tool | The agent tests, a separate module that runs coding hosts against a fixture workspace and is run by contributors outside CI: `context-circuit-source@agent-tests/` |
+| Never shipped | This knowledge tree, the workspace's own records, change files, release requests, the Go implementation, scripts, and the maintainer skills under `.agents/skills/` (`cc-source-develop`, `audit-cc-skills`) |
 
 Product history and maintainer data never reach a release asset. The
 destination-owned class exists because a workspace root belongs to somebody
@@ -48,11 +53,18 @@ Artwork is shipped on the same terms as instruction — named once in the manife
 and once in the embed list — so removing an image means editing both, and an
 image nothing references keeps shipping until someone does.
 
+## One knowledge tree
+
+`context/` is the product's one knowledge tree, and it stays public on purpose.
+A generated workspace keeps its knowledge to itself; this tree is the deliberate
+exception, because contributors, forks, and the maintainer all read it. It must
+always match what the code does and how agents behave in the generated template,
+so a pull request that changes either one updates this tree in the same pull
+request.
+
 ## Working rules for this checkout
 
-Preserve unrelated and dirty work. Maintainer design and evidence material is
-passive: read only exact files a request names, and never scan it by default.
-Historical knowledge, records, and publication material are source history
+Preserve unrelated and dirty work. Historical knowledge, records, and publication material are source history
 rather than a specification for the current line, and are retrieved only to
 answer a specific question.
 
