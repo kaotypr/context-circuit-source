@@ -33,6 +33,12 @@ func TestOrientReplyShape(t *testing.T) {
 	if !Registry[nameOrientReply](good).Pass {
 		t.Fatal(Registry[nameOrientReply](good))
 	}
+	// A reply a host wrote that says "issue" rather than "issued".
+	issue := good
+	issue.Parsed.FinalReply = "The api repository. Use sh .context-circuit/cli. Void: only while the invoice is still a draft. After issue: do not void; reverse with a credit note instead. See domains/invoices.md."
+	if got := Registry[nameOrientReply](issue); !got.Pass {
+		t.Fatal(got)
+	}
 	bad := good
 	bad.Parsed.FinalReply = "No."
 	bad.Stream = ""

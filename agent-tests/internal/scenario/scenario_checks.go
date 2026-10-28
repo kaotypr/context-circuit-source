@@ -47,8 +47,9 @@ const (
 var draftVoid = regexp.MustCompile(`(?is)draft.{0,80}void|void.{0,80}draft`)
 
 // issuedCredit matches a reply that connects an issued invoice with a credit.
-// The two words may appear in either order, up to 80 characters apart.
-var issuedCredit = regexp.MustCompile(`(?is)issued.{0,80}credit|credit.{0,80}issued`)
+// The two words may appear in either order, up to 80 characters apart, and
+// "issue" counts as well as "issued" ("after issue, credit it").
+var issuedCredit = regexp.MustCompile(`(?is)\bissue[ds]?\b.{0,80}credit|credit.{0,80}\bissue[ds]?\b`)
 
 // approvalAsk matches a reply that asks for approval. It looks for the stem
 // "approv", so "approve" and "approval" both count.
