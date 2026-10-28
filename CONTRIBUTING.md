@@ -327,6 +327,10 @@ of a pull request.
   change file, `.changelog/<slug>.md`, in the same pull request.
   [.changelog/README.md](.changelog/README.md) is the format: which product,
   what kind of change, an optional upgrade note, and the entry itself.
+- A change file describes what will differ from the last release, not your
+  pull request's history. If your pull request reworks or undoes something an
+  unreleased change file already describes, edit or delete that file instead
+  of adding another.
 - If users see no change, add no file, and write `None` under "Release note"
   in the pull request description. The Change files check fails a pull request
   that changes CLI or template files with neither.

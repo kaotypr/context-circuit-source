@@ -187,6 +187,27 @@ sh scripts/release-notes.sh cli 2.5.1 --stdout > "$work/stdout" 2>/dev/null || f
 grep -qx 'None.' "$work/stdout" || fail 'an empty draft does not say None. under Upgrade notes'
 if grep -q '^## Added' "$work/stdout"; then fail 'an empty draft printed an empty heading'; fi
 
+# A file can name the pull requests it describes: entries added after the fact,
+# a change several pull requests made, or a cherry-pick of an earlier fix.
+topic named-prs
+printf '%s\n' --- 'product: both' 'kind: added' 'pr: 180 177' 'authors: "@hallode"' --- '' 'Entry for named-prs.' > .changelog/named-prs.md
+commit 'docs(changelog): describe earlier pull requests'
+merge 30 kaotypr named-prs
+sh scripts/release-notes.sh cli 2.5.1 --stdout > "$work/stdout" 2> "$work/err" || fail "a draft with pr: failed: $(cat "$work/err")"
+grep -qx 'Entry for named-prs. (#180, #177)' "$work/stdout" || fail "pr: did not set the links: $(cat "$work/stdout")"
+[ ! -s "$work/err" ] || fail "a file with pr: was reported as unlinked: $(cat "$work/err")"
+grep -qx '@hallode' "$work/stdout" || fail 'pr: changed who is credited'
+sh scripts/release-notes.sh template 2.5.1 --stdout > "$work/stdout" 2>/dev/null
+grep -qx 'Entry for named-prs. (kaotypr/context-circuit-source#180, kaotypr/context-circuit-source#177)' "$work/stdout" ||
+  fail "pr: did not set the template links: $(cat "$work/stdout")"
+for bad in abc '12 x' 012; do
+  printf '%s\n' --- 'product: cli' 'kind: fixed' "pr: $bad" --- '' 'Body.' > "$work/bad-pr.md"
+  if sh scripts/release-notes.sh --validate "$work/bad-pr.md" 2> "$work/err"; then fail "pr: $bad was accepted"; fi
+  grep -q 'pr is not a list of pull request numbers' "$work/err" || fail "pr: $bad failed for another reason: $(cat "$work/err")"
+done
+git rm -q .changelog/named-prs.md
+commit 'chore: clear'
+
 # A variant's own label is a release of that variant, not a candidate.
 sh scripts/release-notes.sh template 2.5.0-acme.1 --stdout > "$work/stdout" 2>/dev/null || fail 'a variant draft failed'
 grep -qx 'changelog: keep' "$work/stdout" || fail 'a variant release was treated as a candidate'
