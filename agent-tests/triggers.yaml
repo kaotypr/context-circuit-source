@@ -309,6 +309,7 @@ none:
   - .github/**
   - scripts/*.sh
   - release/**
+  - .changelog/**
   - README.md
   - CONTRIBUTING.md
   - SECURITY.md

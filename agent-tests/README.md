@@ -29,10 +29,10 @@ go build -o /dev/null ./cmd/agent-tests
 and grades a scripted solution.
 
 Compare your branch with the branch the pull request targets. That branch is
-`development/v2` unless you were asked to target another:
+`main` unless you were asked to target another:
 
 ```sh
-go run ./cmd/agent-tests surface-diff --base development/v2
+go run ./cmd/agent-tests surface-diff --base main
 ```
 
 The command prints the report and writes it under `agent-tests/out/`, which is
@@ -59,7 +59,7 @@ combination per line (`scenario x host x side x rN`), and notes each pinned
 model. Narrow it the same way a live run is narrowed:
 
 ```sh
-go run ./cmd/agent-tests run --scenarios orient --hosts claude --runs 1 --base development/v2 --dry-run
+go run ./cmd/agent-tests run --scenarios orient --hosts claude --runs 1 --base main --dry-run
 ```
 
 With `--base`, run 1 is the base ref and then your branch. The model note says
@@ -96,7 +96,7 @@ surface report names. Repeat for each required pair. `--yes` starts the host
 and spends on your account:
 
 ```sh
-go run ./cmd/agent-tests run --scenarios orient --hosts claude --runs 1 --base development/v2 --yes
+go run ./cmd/agent-tests run --scenarios orient --hosts claude --runs 1 --base main --yes
 ```
 
 Before the first host starts, `run` checks each selected host's auth the way
@@ -228,7 +228,7 @@ These paths need no scenarios when they are the whole change, and no design
 case either. A normal pull-request description is enough:
 
 - `**/*_test.go`, `internal/cow/**`, and `internal/installer/**`
-- `.github/**`, `scripts/*.sh`, and `release/**`
+- `.github/**`, `scripts/*.sh`, `release/**`, and `.changelog/**`
 - `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md`
 - `context/**`, `.agents/**`, and `agent-tests/**`
 - `product/README.md`, `product/assets/**`, and `product/LICENSE`

@@ -8,6 +8,7 @@ for script in scripts/*.sh product/skills/cc-cli/scripts/*.sh product/launcher/c
 go test ./...
 go vet ./...
 sh scripts/check-release-version.sh
+sh scripts/check-release-notes.sh
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 version=v$(sh scripts/release-version.sh template)

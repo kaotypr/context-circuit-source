@@ -173,6 +173,17 @@ for stale in 'Fixture release notes.' 'Second fixture notes.'; do
   fi
 done
 
+# A candidate's notes appear on its release alone: the changelog is left exactly
+# as the previous release wrote it.
+cp "$work/template/CHANGELOG.md" "$work/changelog.before"
+printf '%s\n' --- 'version: 2.0.1-skip' 'changelog: skip' --- 'Candidate entry.' \
+  > "$work/source/release/requests/template/2.0.1-skip.md"
+sh "$work/source/scripts/publish-template.sh" 2.0.1-skip "$work/template" https://example.invalid/fixture/template.git >/dev/null
+cmp -s "$work/changelog.before" "$work/template/CHANGELOG.md" || {
+  printf 'FAIL: a skipping release changed the changelog\n' >&2; exit 1; }
+git -C "$work/template" rev-parse -q --verify refs/tags/v2.0.1-skip >/dev/null || {
+  printf 'FAIL: a skipping release was not published\n' >&2; exit 1; }
+
 printf '%s\n' --- 'version: 2.0.0-bogus' 'changelog: sometimes' --- 'x.' \
   > "$work/source/release/requests/template/2.0.0-bogus.md"
 if sh "$work/source/scripts/publish-template.sh" 2.0.0-bogus "$work/template" https://example.invalid/fixture/template.git >/dev/null 2>&1; then
@@ -180,5 +191,5 @@ if sh "$work/source/scripts/publish-template.sh" 2.0.0-bogus "$work/template" ht
 fi
 
 printf 'PASS: the published README names the releases and license of the forge publishing it\n'
-printf 'PASS: a release prepends to the changelog, and a resetting release starts it over\n'
+printf 'PASS: a release prepends to the changelog, a resetting release starts it over, and a skipping one leaves it alone\n'
 printf 'PASS: publication preserves user files and creates a clean versioned fixture\n'

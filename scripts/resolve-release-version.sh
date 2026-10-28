@@ -16,6 +16,9 @@
 #   CI_API_V4_URL       API base for the lookup (gitlab)
 #   TEMPLATE_REPOSITORY where the template publishes (product: template)
 #   CLI_REPOSITORY      where the CLI publishes (product: cli)
+#   RELEASE_BRANCH      the branch the pipeline runs on (optional); when set, a
+#                       release that would publish must be on release/X.Y for
+#                       its own X.Y
 #   RESOLVE_OUTPUT      file to append key=value lines to; defaults to
 #                       GITHUB_OUTPUT so the GitHub workflow needs no change
 # Arg:
@@ -100,6 +103,18 @@ if published; then
     printf 'version=%s\npublish=false\n' "$version" >> "$output_file"
   fi
   exit 0
+fi
+
+# A release publishes from its own line's release branch and nowhere else: main
+# is the trunk and never publishes, and a 2.6.0 on release/2.5 is a version file
+# set on the wrong branch. The guard sits after the lookup, so a push whose
+# version files name releases already out stays a quiet no-op on any branch,
+# cutting a release branch included. Unset, as in a local run, it is skipped.
+if [ -n "${RELEASE_BRANCH:-}" ]; then
+  line=$(printf '%s\n' "$version" | sed -n -E 's/^([0-9]+\.[0-9]+)\.[0-9]+([-+].*)?$/\1/p')
+  [ -n "$line" ] || fail "cannot read a release line from version $version"
+  [ "$RELEASE_BRANCH" = "release/$line" ] ||
+    fail "$product $version publishes from release/$line, not from $RELEASE_BRANCH"
 fi
 
 # Each product carries its own request, so a release of one describes only what

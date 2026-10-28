@@ -56,13 +56,16 @@ request="$source_root/release/requests/template/$version.md"
 # than what it is. The request declares this, so the decision is reviewed in
 # source and carried out by the release commit — not by a hand-made deletion
 # on the published repository, which would put "I removed the changelog" in
-# that repository's history as a change nobody made to the product.
+# that repository's history as a change nobody made to the product. A release
+# candidate's request says skip: its notes repeat what the stable release will
+# list again, so they appear on its release alone and the changelog lists each
+# change once.
 changelog=$(awk 'BEGIN{fm=0}
   /^---[[:space:]]*$/{fm++; if (fm>=2) exit; next}
   fm==1 && /^changelog:[[:space:]]*/{sub(/^changelog:[[:space:]]*/,""); print; exit}' "$request")
 case "${changelog:=keep}" in
-  keep|reset) ;;
-  *) fail "unknown changelog mode in $version.md: $changelog (expected keep or reset)" ;;
+  keep|reset|skip) ;;
+  *) fail "unknown changelog mode in $version.md: $changelog (expected keep, reset, or skip)" ;;
 esac
 [ -d "$template_dir/.git" ] || fail "expected a standalone template checkout: $template_dir"
 template_dir=$(CDPATH= cd -- "$template_dir" && pwd -P)
@@ -162,15 +165,17 @@ sed -e "s|__TEMPLATE_REPO_URL__|$(sed_escape "$template_repo_url")|g" \
   "$source_root/product/README.md" > "$template_dir/README.md"
 mkdir -p "$template_dir/assets/readme"
 for art in "$source_root"/product/assets/readme/*.webp; do cp "$art" "$template_dir/assets/readme/"; done
-{
-  printf '# Changelog\n\n## v%s — %s\n\n' "$version" "$(date +%Y-%m-%d)"
-  awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' "$request"
-  printf '\n'
-  if [ "$changelog" = keep ] && [ -f "$template_dir/CHANGELOG.md" ]; then
-    tail -n +3 "$template_dir/CHANGELOG.md"
-  fi
-} > "$work/CHANGELOG.md"
-mv "$work/CHANGELOG.md" "$template_dir/CHANGELOG.md"
+if [ "$changelog" != skip ]; then
+  {
+    printf '# Changelog\n\n## v%s — %s\n\n' "$version" "$(date +%Y-%m-%d)"
+    awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' "$request"
+    printf '\n'
+    if [ "$changelog" = keep ] && [ -f "$template_dir/CHANGELOG.md" ]; then
+      tail -n +3 "$template_dir/CHANGELOG.md"
+    fi
+  } > "$work/CHANGELOG.md"
+  mv "$work/CHANGELOG.md" "$template_dir/CHANGELOG.md"
+fi
 # Disable hooks for this release commit so hosts cannot inject agent attribution.
 mkdir "$work/no-hooks"
 git -C "$template_dir" add -A

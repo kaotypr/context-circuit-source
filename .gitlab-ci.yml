@@ -1,10 +1,13 @@
-# Publishes both products from one push to the default branch, CLI first.
+# Publishes both products from one push to a release branch, CLI first.
 #
 # This is the GitLab half of a source checkout that is hosted on two forges. It
 # publishes the same two products, from the same version files and the same
 # release requests, to this forge's own pair of projects. Neither half is the
 # mirror of the other: each runs when its own remote is pushed, and each decides
 # what to publish by asking its own release list what is already out there.
+#
+# As on GitHub, main never publishes: release/X.Y does, for its own X.Y, and
+# resolve-release-version.sh refuses a version on any other branch.
 #
 # The order is not a preference. The template points at the CLI — its README
 # badge reads the CLI's release list, and `.context-circuit/CLI_VERSION` is what
@@ -60,7 +63,7 @@ workflow:
     on_new_commit: none
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH =~ /^release\/[0-9]+\.[0-9]+$/
       changes:
         - release/requests/**/*
         - VERSION
@@ -79,6 +82,7 @@ cli:
   resource_group: publish
   script:
     - RESOLVE_OUTPUT=resolve.env CLI_REPOSITORY="$CI_PROJECT_PATH"
+      RELEASE_BRANCH="$CI_COMMIT_BRANCH"
       sh scripts/resolve-release-version.sh cli
     - . ./resolve.env
     - |
@@ -113,7 +117,8 @@ template:
   interruptible: false
   resource_group: publish
   script:
-    - RESOLVE_OUTPUT=resolve.env sh scripts/resolve-release-version.sh template
+    - RESOLVE_OUTPUT=resolve.env RELEASE_BRANCH="$CI_COMMIT_BRANCH"
+      sh scripts/resolve-release-version.sh template
     - . ./resolve.env
     - |
       if [ "$publish" != true ]; then

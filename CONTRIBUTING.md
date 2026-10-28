@@ -132,12 +132,11 @@ installation, initialization and the publication safeguards. Its output
 directory must not exist yet; the script never overwrites one.
 
 Cross-compilation proves a binary builds for another platform, not that it
-behaves there. For a pull request into `development/v2`, CI runs `go test` and
-`go vet` natively on Linux, macOS and Windows, `gofmt -l .` on Linux, and the
-filesystem clone tests on Linux and Windows. These must pass before it merges.
-`check-release.sh` runs on Linux for a pull request into `main`, which is the
-release pull request from `development/v2`. [release/README.md](release/README.md)
-lists which checks run where.
+behaves there. For every pull request, CI runs `go test` and `go vet` natively
+on Linux, macOS and Windows, `gofmt -l .` on Linux, the filesystem clone tests on
+Linux and Windows, and the Change files check. These must pass before it merges.
+`check-release.sh` runs on Linux for a pull request into a release branch.
+[release/README.md](release/README.md) lists which checks run where.
 
 Tests use temporary directories and disposable Git repositories. The release
 check builds and exercises a native binary, verifies the embedded seed
@@ -164,7 +163,7 @@ Where this block has been checked:
 | Platform | Result |
 | --- | --- |
 | macOS | both commands run and pass |
-| Linux | `gofmt -l .` and `go test ./...` run in CI; `check-release.sh` runs in CI on pull requests into `main` |
+| Linux | `gofmt -l .` and `go test ./...` run in CI; `check-release.sh` runs in CI on pull requests into release branches and on pushes to `main` |
 | Windows | `go test ./...` and `go vet ./...` run in CI; every script under Git Bash or WSL, and the symlink setting above, untested |
 
 Which scripts are yours to run:
@@ -172,7 +171,9 @@ Which scripts are yours to run:
 | Script | Who runs it |
 | --- | --- |
 | `check-release.sh`, `build-dist.sh`, `build-cli.sh` | contributors |
-| `release-artifact.sh`, `check-publication.sh`, `check-release-version.sh`, `release-version.sh` | called by the scripts above |
+| `check-change-files.sh` | contributors, to see what the Change files check will say: `PR_BODY="$(cat body.md)" sh scripts/check-change-files.sh main HEAD` |
+| `release-artifact.sh`, `check-publication.sh`, `check-release-version.sh`, `check-release-notes.sh`, `release-version.sh` | called by the scripts above |
+| `release-notes.sh` | the maintainer, in a release-prep pull request |
 | `resolve-release-version.sh`, `publish-template.sh`, `publish-gitlab-release.sh` | CI and release only (the checks run them against fixtures) |
 
 A change to shipped instructions or documentation needs the same care as code.
@@ -214,11 +215,14 @@ defines the change. Product instructions apply only to generated workspaces.
 - scripts/: build, checks, and publication.
 - release/README.md: how releases are cut, checked, and published.
 - release/cli/README.md: the README shipped inside every CLI archive.
+- .changelog/: one change file per user-visible change, waiting for the next
+  release; .changelog/README.md is the format.
 - release/requests/cli/, release/requests/template/: one request per product
-  per version; the request body is that release's notes. A template request may
-  carry `changelog: reset` in its frontmatter to start the published changelog
-  over at that release instead of prepending to it; absent or `keep`, entries
-  before it are retained.
+  per version, drafted from the change files by scripts/release-notes.sh and
+  edited by the maintainer; the request body is that release's notes. A
+  template request's `changelog:` says whether the published changelog keeps
+  its earlier entries (`keep`, the default), starts over (`reset`), or is left
+  alone for a candidate (`skip`).
 - LICENSE: Apache-2.0, covering this checkout and the CLI.
 - product/LICENSE: 0BSD, covering everything a workspace receives, shown only at
   the published template repository's root.
@@ -276,9 +280,9 @@ manifest, and CI does not run it.
 
 ## Branches and pull requests
 
-- Branch from `development/v2` and open your pull request against it.
-- `main` stays the default branch. If you open a pull request against `main`,
-  the maintainer retargets it to `development/v2`.
+- Branch from `main` and open your pull request against it. Release branches,
+  `release/X.Y`, take only the maintainer's release-prep and cherry-pick pull
+  requests.
 - Use a plain branch name that says what the change is, for example
   `fix/short-topic` or `docs/install-steps`.
 - A pull request description stands on its own: what changed, why, and which
@@ -312,18 +316,22 @@ manifest, and CI does not run it.
 - The repository allows merge commits only, so your commits land as you wrote
   them.
 - CI must pass, and no approval count is required. GitHub enforces the test
-  checks on `development/v2`.
+  checks and the Change files check on `main`.
 
 Publication, tagging, and deployment are separate maintainer acts and never part
 of a pull request.
 
 ## Release notes
 
-- Give your pull request description a paragraph headed "Release note" that says
-  what changes for someone using Context Circuit. If nothing does, say so in one
-  line.
+- If your change is one someone using Context Circuit would notice, add a
+  change file, `.changelog/<slug>.md`, in the same pull request.
+  [.changelog/README.md](.changelog/README.md) is the format: which product,
+  what kind of change, an optional upgrade note, and the entry itself.
+- If users see no change, add no file, and write `None` under "Release note"
+  in the pull request description. The Change files check fails a pull request
+  that changes CLI or template files with neither.
 - Do not edit `release/requests/`, `VERSION` or `CLI_VERSION`. The maintainer
-  prepares those when a release is cut.
+  drafts the requests from the change files when a release is cut.
 - The release-note format and the compatibility policy are in
   [release/README.md](release/README.md).
 

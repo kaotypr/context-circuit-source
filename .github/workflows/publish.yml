@@ -1,6 +1,13 @@
 name: Publish
 
-# Publishes both products from one merge to main, CLI first.
+# Publishes both products from one merge into a release branch, CLI first.
+#
+# Work lands on main, which never publishes. A minor release cuts release/X.Y
+# from main at its freeze, and that branch publishes the minor and its patches:
+# merging a release-prep pull request that sets VERSION, CLI_VERSION, or both
+# runs this workflow, and resolve-release-version.sh refuses a version that is
+# not on its own line's release branch. Cutting the branch publishes nothing,
+# because its version files still name releases that are already out.
 #
 # The order is not a preference. The template points at the CLI — its README
 # badge reads the CLI's release list, and `.context-circuit/CLI_VERSION` is what
@@ -30,7 +37,7 @@ on:
         description: "Template version to publish (blank = VERSION)"
         required: false
   push:
-    branches: [main]
+    branches: ["release/[0-9]*.[0-9]*"]
     paths:
       - "release/requests/**"
       - "VERSION"
@@ -94,6 +101,7 @@ jobs:
           # The CLI publishes from whichever source repository is running this,
           # so this side needs no variable to name itself.
           CLI_REPOSITORY: ${{ github.repository }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
         run: sh scripts/resolve-release-version.sh cli
 
       - name: Build
@@ -165,6 +173,7 @@ jobs:
           INPUT_VERSION: ${{ github.event.inputs.template_version }}
           GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
           TEMPLATE_REPOSITORY: ${{ vars.TEMPLATE_REPO }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
         run: sh scripts/resolve-release-version.sh template
 
       - name: Check workspace and CLI compatibility

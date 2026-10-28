@@ -86,10 +86,13 @@ context-circuit-source/
 │   └── skills/                Agent procedures for each workflow stage
 ├── template/                  Blank workspace records and configuration
 ├── context/                   Product knowledge; never shipped
+├── .changelog/                One change file per user-visible change, until it ships
 ├── release/
+│   ├── README.md              How releases are cut, checked, and published
 │   ├── binding.yaml           Where the workspace template publishes
+│   ├── cli/README.md          The README inside every CLI archive
 │   ├── template-repo/         Landing page and export rules that repo owns
-│   └── requests/              cli/ and template/, one request per version
+│   └── requests/              cli/ and template/, one request per version, drafted from .changelog/
 ├── scripts/
 │   ├── release-manifest.txt   Exact source-to-workspace mapping
 │   └── …                      Build, validation, and publication tooling
@@ -109,7 +112,8 @@ and how agents behave in the generated template, so a pull request that changes
 either one updates `context/` in the same pull request.
 
 `release/` is not history — `binding.yaml` names the published destination, and
-each product's requests live beside it.
+each product's requests live beside it. A request is drafted from the change
+files under `.changelog/` when a release is cut, and edited before it ships.
 
 This checkout is not a Context Circuit workspace and carries no workspace
 records. The product's intent and plan flow is not used here; maintainer changes
@@ -118,7 +122,7 @@ are made directly on the current branch, as `AGENTS.md` sets out.
 `context/` is still validated by the product's own diagnostic. `go test` builds a
 throwaway workspace around the real tree, binds it to this checkout so each
 note's code anchors resolve, and fails on any finding a command or an edit can
-discharge. CI runs it on pull requests that do not target `main`.
+discharge. CI runs it on every pull request.
 
 ## Development
 

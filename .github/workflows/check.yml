@@ -2,7 +2,7 @@ name: Check
 on:
   pull_request:
   push:
-    branches: [main, development/v2, 'development/[0-9]*.[0-9]*.[0-9]*']
+    branches: [main, 'release/**']
 permissions:
   contents: read
 # A newer run for the same pull request or branch cancels the older one.
@@ -11,16 +11,14 @@ concurrency:
   cancel-in-progress: true
 # Where each job runs (a skipped job reports as skipped, which satisfies a
 # required check):
-#   Go tests, Filesystem clone tests: pull requests not into main, and pushes
-#     to development/v2 and release branches. development/v2 requires them.
-#   Release build: pull requests into main, and pushes to main. main requires
-#     it. The tests already ran on development/v2 for the same commits.
+#   Go tests, Filesystem clone tests: every pull request, and pushes to main and
+#     release branches. main and release/* require them.
+#   Release build: pull requests into release branches, and pushes to main and
+#     release branches. It builds and checks what a release-prep merge would
+#     publish. The Change files check is its own workflow.
 jobs:
   native:
     name: Go tests
-    if: >-
-      (github.event_name == 'pull_request' && github.base_ref != 'main')
-      || (github.event_name == 'push' && github.ref != 'refs/heads/main')
     strategy:
       fail-fast: false
       matrix:
@@ -53,9 +51,6 @@ jobs:
       - run: go vet ./...
   native-clone:
     name: Filesystem clone tests
-    if: >-
-      (github.event_name == 'pull_request' && github.base_ref != 'main')
-      || (github.event_name == 'push' && github.ref != 'refs/heads/main')
     # The runners' default ext4 and NTFS volumes cannot clone, so the native
     # clone code only runs on a volume mounted for it here.
     strategy:
@@ -103,8 +98,8 @@ jobs:
   release:
     name: Release build
     if: >-
-      (github.event_name == 'pull_request' && github.base_ref == 'main')
-      || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release/'))
+      || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

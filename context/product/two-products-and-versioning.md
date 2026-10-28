@@ -72,7 +72,7 @@ its source is, so a released binary is traceable to the commit that produced it
 by the tag itself. The template's `v*` releases live on the published template
 repository, whose tree is what they ship.
 
-Both publish from one merge, and the CLI publishes first. The dependency runs
+Both publish from one merge into their release line's branch, `release/X.Y`, and the CLI publishes first; `main` is where work lands and never publishes. The dependency runs
 one way: the template names a CLI version and reads its release list, while the
 CLI names nothing in the template. Publishing the template first leaves a window
 where it points at a release that does not exist yet.
@@ -84,6 +84,10 @@ in practice rather than only in principle. Each carries its own release request,
 under `release/requests/cli/` or `release/requests/template/`, and that
 request's body is the notes that release is published with — so a reader
 upgrading one product is not handed the other's changes.
+
+A request is drafted from the change files under `.changelog/`, each naming the
+product it belongs to, so the split is made when a change is written rather
+than when a release is cut.
 
 That was not always so. While this checkout was private, installing could not
 depend on reading it, so the CLI's assets were published on the template

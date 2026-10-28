@@ -12,7 +12,7 @@ agents" there for its design case and agent-test evidence.
 This is the maintainer source checkout, not a generated workspace, and it holds
 no workspace records of its own. In the maintainer's own sessions, work directly
 on the current branch from the user's request. When you are working for an
-outside contributor, create a topic branch from `development/v2` and follow
+outside contributor, create a topic branch from `main` and follow
 `CONTRIBUTING.md`. Either way, do not invoke the product intent or plan flow,
 create lifecycle records, or require worktrees or child agents. `context/` is
 validated by `go test`, which builds a throwaway workspace around it; do not
