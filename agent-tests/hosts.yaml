@@ -46,11 +46,12 @@ hosts:
       - OPENAI_API_KEY
   cursor:
     command: cursor-agent
-    model: composer-2.5
+    # auto, not composer-2.5: Cursor chooses the model per request. See
+    # "Hosts" in README.md for why this pin is not the smallest model.
+    model: auto
     effort: ""
     host_version: "2026.10.22-27dcf5f"
     provisional: true
     timeout_seconds: 1800
-    price_row: composer-2.5
     auth_env:
       - CURSOR_API_KEY

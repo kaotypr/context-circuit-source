@@ -27,7 +27,7 @@ func TestLoadHosts(t *testing.T) {
 		t.Fatalf("%+v", codex)
 	}
 	cursor := hosts["cursor"]
-	if cursor.Model != "composer-2.5" || cursor.PriceRow != "composer-2.5" || cursor.HostVersion != "2026.10.22-27dcf5f" {
+	if cursor.Model != "auto" || cursor.PriceRow != "" || cursor.HostVersion != "2026.10.22-27dcf5f" {
 		t.Fatalf("%+v", cursor)
 	}
 	if claude.Auth != "env" || codex.Auth != "env" || cursor.Auth != "env" {
