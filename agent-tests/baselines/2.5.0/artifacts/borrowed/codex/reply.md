@@ -1,0 +1,3 @@
+The invoice numbering rule is in the mounted, borrowed handbook: [handbook/numbering.md](handbook/numbering.md). It says numbers are global and never restart.
+
+I left this workspace’s `context/` unchanged because borrowed knowledge is read-only here, and copying the correction locally would create a stale duplicate. The yearly restart rule needs to be corrected in the handbook repository through its review process.

@@ -1,0 +1,12 @@
+Tool: Skill
+Tool: Bash ls plans/ 2>/dev/null; ls plans/p1000* 2>/dev/null; cat member.local.yaml 2>/dev/null; cat .context-circuit/CLI_VERSION 2>/dev/null
+Tool: Read $RUN/ws/.agents/skills/cc-complete/SKILL.md
+Tool: Read $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: Bash sh .context-circuit/cli --json record complete --id p1000 --text 'p1000 has been merged into main in the api repo. Please mark it complete.'
+Tool: Bash ls context/ && sed -n '1,60p' context/domains/invoices.md 2>/dev/null; echo ---; sed -n '1,60p' context/domains/billing/invoice-lifecycle.md 2>/dev/null
+Tool: Bash cat context/INDEX.md; echo ---; find context/domains -type f; echo ---; cat repositories.local.yaml 2>/dev/null
+Tool: Bash cd $RUN/ws/repositories/api && git log --oneline -5 main 2>&1; ls internal/invoice/ 2>&1; grep -rn "func.*CSV\|csv" internal/invoice/ 2>/dev/null | head
+Tool: Edit $RUN/ws/context/domains/invoices.md
+Tool: Bash cd $RUN/ws && grep -n "invoices" context/INDEX.md
+Tool: Edit $RUN/ws/context/INDEX.md
+Tool: Bash sh .context-circuit/cli check; echo "exit=$?"

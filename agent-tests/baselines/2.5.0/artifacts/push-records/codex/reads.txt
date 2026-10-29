@@ -1,0 +1,9 @@
+Tool: command_execution /bin/zsh -lc "cat members.yaml && printf '\\n--- member.local.yaml ---\\n' && cat member.local.yaml && printf '\\n--- pinned ---\\n' && cat .context-circuit/CLI_VERSION && printf '\\n--- launcher status ---\\n' && sh .cont
+Tool: command_execution /bin/zsh -lc "cat .agents/skills/cc-intent/SKILL.md && printf '\\n--- record commands ---\\n' && rg -n \"record approve|commit_recommended|push\" .context-circuit/docs/commands.md"
+Tool: command_execution /bin/zsh -lc "sh .context-circuit/cli record approve --id i100 --text 'I approve it as written.'"
+Tool: command_execution /bin/zsh -lc 'git status --short && git branch --show-current && git status -sb && git log -5 --format=%s && git remote -v'
+Tool: command_execution /bin/zsh -lc 'git add .context-circuit/ids/maya.yaml intent/i100-invoice-csv-export.md && git commit -m "docs(intent): approve invoice CSV export" && git push origin main'
+Tool: command_execution /bin/zsh -lc 'git pull --rebase origin main'
+Tool: command_execution /bin/zsh -lc "git show :2:.context-circuit/ids/maya.yaml && printf '\\n--- committed side ---\\n' && git show :3:.context-circuit/ids/maya.yaml && printf '\\n--- intent staged? ---\\n' && git status --short"
+Tool: command_execution /bin/zsh -lc "cat > .context-circuit/ids/maya.yaml <<'EOF' # Intent and plan numbers reserved by member maya. Only maya's new # records add to this file, and only "'`record delete` takes a number out of it. intents: - i100
+Tool: command_execution /bin/zsh -lc "git push origin main && git status -sb && git log -1 --format='%h %s'"

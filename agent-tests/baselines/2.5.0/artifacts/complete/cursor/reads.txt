@@ -1,0 +1,22 @@
+Tool: read $RUN/ws/.agents/skills/cc-complete/SKILL.md
+Tool: read $RUN/ws/.agents/skills/cc-knowledge/SKILL.md
+Tool: glob plans/p1000*/**
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: read $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: shell sh .context-circuit/cli --json record complete --id p1000 --text 'p1000 has been merged into main in the api repo. Please mark it complete.'
+Tool: read $RUN/ws/context/domains/invoices.md
+Tool: read $RUN/ws/context/domains/billing/invoice-lifecycle.md
+Tool: grep summary|CSV|export|invoice $RUN/ws/context
+Tool: read $RUN/ws/.agents/skills/cc-knowledge/SKILL.md
+Tool: read $RUN/ws/context/INDEX.md
+Tool: read $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: read $RUN/ws/workspace.yaml
+Tool: read $RUN/ws/repositories.local.yaml
+Tool: grep CSV|csv|Summary|func $RUN/ws/repositories/api
+Tool: read $RUN/ws/repositories/api/internal/invoice/export.go
+Tool: shell git -C repositories/api rev-parse --abbrev-ref HEAD && git -C repositories/api log -1 --oneline
+Tool: edit $RUN/ws/context/domains/invoices.md
+Tool: edit $RUN/ws/context/INDEX.md
+Tool: edit $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: shell sh .context-circuit/cli check

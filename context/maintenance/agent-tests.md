@@ -27,11 +27,11 @@ reported as inconclusive and never counted as a pass.
 
 Three hosts are supported: Claude Code, Codex, and Cursor. A result is only
 meaningful as a statement about one host, one model, and one date: host H, model
-M, k of N runs passed, on date D. The pinned models and host versions are
-provisional until a baseline run confirms them, and no 2.5.0 baseline is
-recorded yet, so this note states no pass rates or token figures. When a
-baseline is committed, the validation note cites it by host, model, run count,
-and date.
+M, k of N runs passed, on date D. The 2.5.0 baseline, under
+`agent-tests/baselines/2.5.0/`, confirmed the pinned models and host versions:
+Claude Code with claude-haiku-5-5, Codex with gpt-6-luna, and Cursor with
+grok-4.7-low, one run per scenario per host on 2026-10-29. The validation note
+cites its result.
 
 ## Why it is not CI
 
@@ -77,9 +77,10 @@ They live in their own module under `agent-tests/` and ship nowhere.
 ## Refresh policy
 
 A baseline is a committed set of runs for one host version and model, recorded
-in the same format the report reads. The pins stay provisional until one exists.
-Until a baseline exists, a contributor runs the base and their branch
-alternately on the same machine. A claim about host behavior stays no stronger
+in the same format the report reads. A contributor whose host version and
+model match it compares against it; otherwise they run the base and their
+branch alternately on the same machine. It is refreshed after each template
+release and whenever a pinned model or host version changes. A claim about host behavior stays no stronger
 than the runs behind it, so anything not exercised is reported as not exercised.
 
 ## What it does not prove
@@ -92,10 +93,9 @@ Owner:
 
 - `context-circuit-source@agent-tests/README.md` — the contributor guide: how to
   run, what a run touches, what it costs.
-- `context-circuit-source@agent-tests/scenarios/` — the nine scenarios and the
-  checks each names.
-- `context-circuit-source@agent-tests/hosts.yaml` — the hosts, the provisional
-  model pins, and the credential variable names.
+- `context-circuit-source@agent-tests/scenarios/` — the twelve scenarios and
+  the checks each names.
+- `context-circuit-source@agent-tests/hosts.yaml` — the hosts, the model pins, and the credential variable names.
 - `context-circuit-source@agent-tests/triggers.yaml` — which changed paths need
   which scenarios, hosts, and artifacts.
 - `context-circuit-source@CONTRIBUTING.md` — the rule a pull request follows for

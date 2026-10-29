@@ -1,0 +1,6 @@
+Tool: command_execution /bin/zsh -lc "cat members.yaml && cat member.local.yaml && rg -n -i 'recieve' --glob '*README*' --glob '"'!sources/**'"' ."
+Tool: command_execution /bin/zsh -lc "cat .agents/skills/cc-direct/SKILL.md && cat workspace.yaml && cat repositories.local.yaml && rg --files -g 'README*' -g '"'!sources/**'"'"
+Tool: command_execution /bin/zsh -lc "rg --files --hidden repositories/api -g 'README*' -g 'AGENTS.md' -g 'CLAUDE.md' && rg -n -i 'recieve' repositories/api --glob '"'!sources/**'"' && sh .context-circuit/cli context find --repo api"
+Tool: command_execution /bin/zsh -lc 'cat repositories/api/AGENTS.md && cat repositories/api/README.md'
+Tool: file_change
+Tool: command_execution /bin/zsh -lc 'git -C repositories/api diff -- README.md && git -C repositories/api status --short'

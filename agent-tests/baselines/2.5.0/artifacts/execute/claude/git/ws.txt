@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws ae431cb [main]
+
+git branch -a -vv
+* main                ae431cb chore: plan
+  remotes/origin/main c91395c chore: fixture
+
+git log --all --not ae431cb40be8a0c85f78d09eb79448e09f90a988 --format=%h %s
+
+git diff --stat

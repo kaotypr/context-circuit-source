@@ -1,0 +1,26 @@
+Tool: read $RUN/ws/.agents/skills/cc-plan/SKILL.md
+Tool: glob **/i100* $RUN/ws
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: read $RUN/ws/intent/i100-invoice-csv-export.md
+Tool: read $RUN/ws/.agents/skills/cc-dispatch/SKILL.md
+Tool: read $RUN/ws/workspace.yaml
+Tool: glob context/INDEX.md $RUN/ws
+Tool: read $RUN/ws/context/INDEX.md
+Tool: read $RUN/ws/repositories.local.yaml
+Tool: read $RUN/ws/.agents/skills/cc-dispatch/SKILL.md
+Tool: grep record create $RUN/ws/.context-circuit/docs
+Tool: glob **/* $RUN/ws/repositories/api
+Tool: read $RUN/ws/context/domains/invoices.md
+Tool: grep plan.md|## Approach|## Tasks $RUN/ws/.context-circuit/docs/working.md
+Tool: read $RUN/ws/repositories/api/internal/invoice/export.go
+Tool: read $RUN/ws/repositories/api/internal/invoice/invoice.go
+Tool: read $RUN/ws/repositories/api/internal/invoice/export_test.go
+Tool: read $RUN/ws/.context-circuit/docs/working.md
+Tool: read $RUN/ws/repositories/api/AGENTS.md
+Tool: read $RUN/ws/repositories/api/internal/invoice/invoice_test.go
+Tool: grep ## Outcome|body fields|plan create $RUN/ws/.context-circuit/docs
+Tool: read $RUN/ws/.context-circuit/docs/commands.md
+Tool: grep ## Approach $RUN/ws/.context-circuit
+Tool: shell sh .context-circuit/cli record create --kind plan --slug invoice-csv-export --title "Invoice CSV export" --intent i100 --repo api
+Tool: edit $RUN/ws/plans/p1000-invoice-csv-export/plan.md

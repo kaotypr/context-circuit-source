@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws 0c501fa [main]
+
+git branch -a -vv
+* main                0c501fa chore: mount handbook
+  remotes/origin/main e808ee8 chore: fixture
+
+git log --all --not 0c501fa5eda0a420399feb185abbb6ef159820a1 --format=%h %s
+
+git diff --stat

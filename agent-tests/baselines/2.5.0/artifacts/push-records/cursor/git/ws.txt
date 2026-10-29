@@ -1,0 +1,14 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws 6d709e4 [main]
+
+git branch -a -vv
+* main                6d709e4 [origin/main] chore: record approval of the invoice CSV export intent
+  remotes/origin/main 6d709e4 chore: record approval of the invoice CSV export intent
+
+git log --all --not 0bd23afcc8fdd93e68b58336ac7ec0dfc87ff125 --format=%h %s
+6d709e4 chore: record approval of the invoice CSV export intent
+9fb65b4 chore: plan invoice numbering
+
+git diff --stat

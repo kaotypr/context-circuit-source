@@ -1,0 +1,16 @@
+git status --porcelain
+ M members.yaml
+
+git worktree list
+$RUN/ws2 2bed6b1 [main]
+
+git branch -a -vv
+* main                2bed6b1 [origin/main] chore: fixture
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main 2bed6b1 chore: fixture
+
+git log --all --not 2bed6b127ec16e8f3bba21349ce3a014b9b41122 --format=%h %s
+
+git diff --stat
+ members.yaml | 5 +++++
+ 1 file changed, 5 insertions(+)

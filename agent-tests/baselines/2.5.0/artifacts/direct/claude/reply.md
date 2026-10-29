@@ -1,0 +1,1 @@
+Fixed the typo in the API README: "Customers recieve a text summary" is now "Customers receive a text summary" (`repositories/api/README.md`, line 3). The change is uncommitted in the `api` repository, and the working tree shows only that one-line diff.

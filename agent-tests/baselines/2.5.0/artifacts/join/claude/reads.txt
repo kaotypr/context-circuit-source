@@ -1,0 +1,5 @@
+Tool: Bash ls -la && echo "--- members.yaml" && cat members.yaml 2>/dev/null; echo "--- member.local.yaml" && cat member.local.yaml 2>/dev/null; echo "--- repositories.local.yaml" && cat repositories.local.yaml 2>/dev/null; echo "--- workspace.ya
+Tool: Bash sh .context-circuit/cli status 2>&1; echo "exit=$?"
+Tool: Bash cat .agents/skills/cc-workspace/SKILL.md; echo ----; cat .context-circuit/docs/commands.md | head -200; echo ----; ls repositories/; cd repositories/api 2>/dev/null && git status -sb && git remote -v && git branch --show-current
+Tool: Bash cd $RUN/ws2 && sh .context-circuit/cli member add --id dana --name "Dana Reyes" --band 2 --role "backend developer" 2>&1; echo "exit=$?"; sh .context-circuit/cli member use --id dana 2>&1; echo "exit=$?"
+Tool: Bash sh .context-circuit/cli workspace connect --base main 2>&1; echo "exit=$?"; echo ---; sh .context-circuit/cli repo connect --id api --path repositories/api --base main 2>&1; echo "exit=$?"; echo ---; sh .context-circuit/cli agent setup
