@@ -48,19 +48,31 @@ default:
     # tag through the API, and the template is pushed from its own clone.
     - git remote set-url origin "$CI_SERVER_URL/$CI_PROJECT_PATH.git"
     # A newer runner carries the token in a url.<...>.insteadOf rule instead,
-    # which `git remote get-url` applies on top of the plain URL. Drop every
-    # such rule, in whichever scope or environment it was given, and refuse to
-    # go on while origin still resolves to a URL with credentials in it.
+    # which `git remote get-url` applies on top of the plain URL, and it may
+    # keep that rule in a file it includes rather than in a scope `git config`
+    # writes by name. Remove each rule from the file Git says it came from, and
+    # refuse to go on while origin still resolves to a URL with credentials,
+    # printing where Git's url and remote settings come from with credentials
+    # masked.
     - |
-      for key in $(git config --name-only --get-regexp '^url\..*\.insteadof$' || true); do
-        for scope in --local --global --system; do
-          git config "$scope" --unset-all "$key" 2>/dev/null || true
-        done
-      done
       unset GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
-      case "$(git remote get-url origin)" in
-        *@*) echo "origin still resolves to a URL with credentials" >&2; exit 1 ;;
-      esac
+      tab=$(printf '\t')
+      # Exit status 1 means no rule matched; GitLab runs this under
+      # `set -eo pipefail`, so that case must not end the job.
+      rules=$(git config --show-origin --name-only --get-regexp '^url\..*\.insteadof$') || [ "$?" -eq 1 ]
+      printf '%s\n' "$rules" |
+        while IFS="$tab" read -r source key; do
+          case "$source" in
+            file:*) git config --file "${source#file:}" --unset-all "$key" 2>/dev/null || true ;;
+          esac
+        done
+      if git remote get-url origin | grep -q '@'; then
+        echo "origin still resolves to a URL with credentials. Git's url, remote and include settings:" >&2
+        git config --show-origin --show-scope --get-regexp '^(url\.|remote\.origin\.|include)' 2>&1 |
+          sed -E 's#//[^/@[:space:]]*@#//[masked]@#g; s#(^|[[:space:]])(url\.)?[^/@[:space:]]+@#\1\2[masked]@#g' >&2 || true
+        env | sed -n 's/^\(GIT_[A-Z_0-9]*\)=.*/\1 is set/p' >&2
+        exit 1
+      fi
 
 variables:
   # The knowledge checks count commits under each note's code anchors, so a
