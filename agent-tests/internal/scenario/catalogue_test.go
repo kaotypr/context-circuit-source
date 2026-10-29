@@ -46,7 +46,7 @@ func TestCatalogue(t *testing.T) {
 		}
 		// A scenario's version is bumped when its prompt, setup or check
 		// semantics change, so earlier runs are not compared with later ones.
-		wantVersion := map[string]int{"plan": 2, "intent": 2, "intent-lang": 2, "borrowed": 2}
+		wantVersion := map[string]int{"plan": 2, "intent": 2, "intent-lang": 2, "borrowed": 2, "archive": 2, "complete": 2}
 		want := wantVersion[sc.ID]
 		if want == 0 {
 			want = 1

@@ -1,5 +1,5 @@
 id: archive
-version: 1
+version: 2
 title: Complete a plan in a workspace with a legacy archive, and offer to archive
 covers:
   - the rename of a legacy archive/ folder to _archive/ on the first changing command
