@@ -1,0 +1,19 @@
+Tool: read $RUN/ws/.agents/skills/cc-intent/SKILL.md
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: glob intent/i100*
+Tool: grep record approve $RUN/ws/.context-circuit/docs
+Tool: read $RUN/ws/.context-circuit/docs/commands.md
+Tool: shell sh .context-circuit/cli record approve --id i100 --text "I've read i100, the invoice CSV export intent, and I approve it as written."
+Tool: shell git status
+Tool: shell git diff && git diff --cached
+Tool: shell git log -8 --oneline
+Tool: shell git rev-parse --abbrev-ref HEAD && git status -sb && git rev-parse --abbrev-ref @{upstream} 2>/dev/null || true
+Tool: shell git add .context-circuit/ids/maya.yaml intent/i100-invoice-csv-export.md && git commit -m "$(cat <<'EOF' chore: record approval of the invoice CSV export intent  EOF )" && git status
+Tool: shell git push origin HEAD
+Tool: shell git pull --rebase origin main
+Tool: read $RUN/ws/.context-circuit/ids/maya.yaml
+Tool: shell git status && git diff --name-only --diff-filter=U && git log --oneline HEAD..origin/main && git log --oneline origin/main -5
+Tool: edit $RUN/ws/.context-circuit/ids/maya.yaml
+Tool: shell git add .context-circuit/ids/maya.yaml && GIT_EDITOR=true git rebase --continue && git status -sb && git log --oneline -5
+Tool: shell sh .context-circuit/cli check && git push origin HEAD && git status -sb

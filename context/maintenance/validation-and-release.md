@@ -85,7 +85,13 @@ pipeline does not either.
 That is measured separately, by the agent tests (see
 [Agent tests](agent-tests.md)). A result there is a statement about one host,
 one model, and one date: host H, model M, k of N runs passed, on date D. It is
-produced outside CI, by whoever changes what agents see. No 2.5.0 baseline is
-recorded yet, so no figures are cited here. Host behavior that was not exercised
-is reported as not exercised, and a claim about a host is never stronger than
-the runs behind it.
+produced outside CI, by whoever changes what agents see. Host behavior that
+was not exercised is reported as not exercised, and a claim about a host is
+never stronger than the runs behind it.
+
+The 2.5.0 baseline ran one run per scenario per host on 2026-10-29:
+
+- Claude Code, claude-haiku-5-5: 12 of 12 passed.
+- Cursor, grok-4.7-low: 12 of 12 passed.
+- Codex, gpt-6-luna: 11 of 12 passed. It answered an English request in the
+  record author's language.

@@ -1,0 +1,3 @@
+p1000 is marked complete. The merged API code includes the CSV export and its test. I updated the invoice knowledge note and catalog entry, and `sh .context-circuit/cli check` returned `ok: true` with no issues.
+
+The completion record and knowledge edits are uncommitted. Should I **commit and push** them, or **commit only**? There are also two of your finished records available to archive; I’ll archive them only if you ask.

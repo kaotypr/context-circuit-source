@@ -1,0 +1,16 @@
+Tool: glob .agents/skills/cc-intent/**/*.md
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: grep approve|record approve $RUN/ws/.agents/skills/cc-intent/SKILL.md
+Tool: read $RUN/ws/.agents/skills/cc-intent/SKILL.md
+Tool: grep record approve $RUN/ws/.context-circuit/docs/commands.md
+Tool: read $RUN/ws/.context-circuit/docs/commands.md
+Tool: shell sh .context-circuit/cli record approve --id i100 --text "I've read i100, the invoice CSV export intent, and I approve it as written."
+Tool: shell git status
+Tool: shell git diff && git diff --cached
+Tool: shell git log -8 --oneline && git rev-parse --abbrev-ref HEAD && git status -sb
+Tool: shell git add intent/i100-invoice-csv-export.md && git commit -m "$(cat <<'EOF' chore: approve invoice CSV export intent  EOF )" && git status
+Tool: shell git push origin HEAD
+Tool: shell git pull --rebase origin main && git status && git log --oneline -6
+Tool: read $RUN/ws/intent/i100-invoice-csv-export.md
+Tool: shell git status && echo '--- OURS (upstream) ---' && git show :2:intent/i100-invoice-csv-export.md && echo '--- THEIRS (local approval) ---' && git show :3:intent/i100-invoice-csv-export.md

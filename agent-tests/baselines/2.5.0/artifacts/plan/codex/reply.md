@@ -1,0 +1,3 @@
+Created plan [p1000 — Invoice CSV export](<$RUN/ws/plans/p1000-invoice-csv-export/plan.md>), linked to `i100` and scoped to `api`.
+
+It proposes a standard-library CSV writer for invoice collections, with a header, stable column order, escaping, and error handling. The plan includes focused tests and `go test ./...` as implementation checks; I did not run tests during planning. I also left the intent and ID ledger updates from plan creation in the workspace.

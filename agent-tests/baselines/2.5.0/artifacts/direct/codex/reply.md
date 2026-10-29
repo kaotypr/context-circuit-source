@@ -1,0 +1,1 @@
+Fixed “recieve” to “receive” in the API [README.md]($RUN/ws/repositories/api/README.md). The change is uncommitted. I didn’t run tests; the typo correction doesn’t change durable project knowledge.

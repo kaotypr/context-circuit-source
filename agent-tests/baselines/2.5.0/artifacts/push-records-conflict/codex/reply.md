@@ -1,0 +1,3 @@
+Your approval of i100 was recorded and committed as `fe9ab98`. The push was rejected because `origin/main` had newer work.
+
+During the required rebase, the same intent was edited on both sides: the remote added the open question “Do voided invoices belong in the export?”, while the approval commit has “None known” and your approval note. The rebase is left in progress, as required. Please decide which version of the intent should stand, or whether both should be kept; I have not resolved the conflict or pushed.

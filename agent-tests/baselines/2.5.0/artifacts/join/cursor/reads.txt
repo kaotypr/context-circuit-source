@@ -1,0 +1,8 @@
+Tool: read $RUN/ws2/.agents/skills/cc-workspace/SKILL.md
+Tool: read $RUN/ws2/members.yaml
+Tool: read $RUN/ws2/workspace.yaml
+Tool: glob member.local.yaml $RUN/ws2
+Tool: glob repositories.local.yaml $RUN/ws2
+Tool: shell sh .context-circuit/cli status
+Tool: shell git -C repositories/api rev-parse --abbrev-ref HEAD && git -C . rev-parse --abbrev-ref HEAD
+Tool: shell sh .context-circuit/cli member add --id dana --name "Dana Reyes" --band 2 --role "backend developer" && sh .context-circuit/cli member use --id dana && sh .context-circuit/cli workspace connect --base main && sh .context-circuit/cli r

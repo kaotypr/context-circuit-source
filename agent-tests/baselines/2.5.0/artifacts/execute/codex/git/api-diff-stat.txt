@@ -1,0 +1,4 @@
+git diff --stat main...cc/p1000/api
+ internal/invoice/export.go      | 27 ++++++++++++++++++++++++++-
+ internal/invoice/export_test.go | 18 ++++++++++++++++++
+ 2 files changed, 44 insertions(+), 1 deletion(-)

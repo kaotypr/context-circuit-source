@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws bea6856 [main]
+
+git branch -a -vv
+* main                bea6856 chore: fixture
+  remotes/origin/main bea6856 chore: fixture
+
+git log --all --not bea68560517e932cccea91c54eea91a23333c91d --format=%h %s
+
+git diff --stat

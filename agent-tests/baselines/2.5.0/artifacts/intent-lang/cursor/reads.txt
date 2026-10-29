@@ -1,0 +1,14 @@
+Tool: read $RUN/ws/.agents/skills/cc-intent/SKILL.md
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: glob context/INDEX.md
+Tool: read $RUN/ws/context/INDEX.md
+Tool: grep invoice|csv|customer|billing $RUN/ws/context
+Tool: read $RUN/ws/context/domains/invoices.md
+Tool: glob context/**/*.md
+Tool: read $RUN/ws/workspace.yaml
+Tool: grep intent $RUN/ws/.context-circuit/docs
+Tool: read $RUN/ws/.context-circuit/docs/working.md
+Tool: read $RUN/ws/context/glossary.md
+Tool: shell sh .context-circuit/cli record create --kind intent --slug customer-invoice-csv --title "Pelanggan mengunduh invoice sebagai CSV"
+Tool: edit $RUN/ws/intent/i100-customer-invoice-csv.md

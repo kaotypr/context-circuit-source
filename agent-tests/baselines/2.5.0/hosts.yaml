@@ -1,0 +1,86 @@
+# Hosts as recorded by the exported runs.
+# host_version_source is "command" when the host printed it for --version,
+# and "config" when the configured value was recorded instead.
+# model is the pinned id; host_models lists the names the host reported
+# for it when they differ.
+hosts:
+  claude:
+    host_version: "2.1.304 (Claude Code)"
+    host_version_source: "command"
+    model: "claude-haiku-5-5"
+    effort: "medium"
+    src_commit: "650c7e0909d4d08a7fb56ca924b1678a41f29706"
+    cli_version: "2.5.0-rc.1"
+    fixture_digest: "sha256:d8e741c6a9b171471f451a246e4b01c8232c1341a921a5ffd2fb446e6aaf8f20"
+    isolation: "empty CLAUDE_CONFIG_DIR and HOME under the run root; --strict-mcp-config with no MCP config; --dangerously-skip-permissions"
+    dates:
+      - "2026-10-29"
+    scenario_versions:
+      "archive": "2"
+      "borrowed": "2"
+      "complete": "2"
+      "direct": "1"
+      "execute": "1"
+      "intent": "2"
+      "intent-lang": "2"
+      "join": "1"
+      "orient": "1"
+      "overhead-empty": "0"
+      "overhead-world": "0"
+      "plan": "2"
+      "push-records": "1"
+      "push-records-conflict": "1"
+  codex:
+    host_version: "codex-cli 0.164.0"
+    host_version_source: "command"
+    model: "gpt-6-luna"
+    effort: "medium"
+    src_commit: "650c7e0909d4d08a7fb56ca924b1678a41f29706"
+    cli_version: "2.5.0-rc.1"
+    fixture_digest: "sha256:d8e741c6a9b171471f451a246e4b01c8232c1341a921a5ffd2fb446e6aaf8f20"
+    isolation: "empty CODEX_HOME and HOME under the run root; --ignore-user-config; --sandbox workspace-write"
+    dates:
+      - "2026-10-29"
+    scenario_versions:
+      "archive": "2"
+      "borrowed": "2"
+      "complete": "2"
+      "direct": "1"
+      "execute": "1"
+      "intent": "2"
+      "intent-lang": "2"
+      "join": "1"
+      "orient": "1"
+      "overhead-empty": "0"
+      "overhead-world": "0"
+      "plan": "2"
+      "push-records": "1"
+      "push-records-conflict": "1"
+  cursor:
+    host_version: "2026.10.22-27dcf5f"
+    host_version_source: "command"
+    model: "grok-4.7-low"
+    effort: ""
+    src_commit: "650c7e0909d4d08a7fb56ca924b1678a41f29706"
+    cli_version: "2.5.0-rc.1"
+    fixture_digest: "sha256:d8e741c6a9b171471f451a246e4b01c8232c1341a921a5ffd2fb446e6aaf8f20"
+    host_models:
+      - "Grok 4.7 256K Low"
+    isolation: "empty HOME and XDG_CONFIG_HOME under the run root; --force --trust"
+    dates:
+      - "2026-10-29"
+    scenario_versions:
+      "archive": "2"
+      "borrowed": "2"
+      "complete": "2"
+      "direct": "1"
+      "execute": "1"
+      "intent": "2"
+      "intent-lang": "2"
+      "join": "1"
+      "orient": "1"
+      "overhead-empty": "0"
+      "overhead-world": "0"
+      "plan": "2"
+      "push-records": "1"
+      "push-records-conflict": "1"

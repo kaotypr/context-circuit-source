@@ -62,8 +62,8 @@ model. Narrow it the same way a live run is narrowed:
 go run ./cmd/agent-tests run --scenarios orient --hosts claude --runs 1 --base main --dry-run
 ```
 
-With `--base`, run 1 is the base ref and then your branch. The model note says
-the pin is provisional until a baseline run confirms it.
+With `--base`, run 1 is the base ref and then your branch. A pin marked
+`provisional: true` gets a note saying no baseline run has confirmed it yet.
 
 `probe` runs `<command> --version` for each host. It does not call a model.
 It prints the configured version, the command's version, and whether the
@@ -296,11 +296,12 @@ who reviews, asks because a result is borderline. `--runs` defaults to 1.
 ## What "before" is
 
 The before side is a committed baseline when your host version and model match
-`hosts.yaml`. No baseline is committed yet. `agent-tests/baselines/` holds no
-baseline directory.
+`hosts.yaml`. The current one is `baselines/2.5.0/`, recorded on the frozen
+2.5 release branch with every pin in `hosts.yaml`. Pass it as
+`report --baseline baselines/2.5.0`.
 
-Until one is committed, run the base ref and your branch alternately on the
-same machine. Pass `--base` with the pull request's target branch. With
+When your host version or model differs from the baseline's, run the base ref
+and your branch alternately on the same machine. Pass `--base` with the pull request's target branch. With
 `--runs 1` the order is base, then branch. On a later repetition, an even run
 number starts with the branch and an odd run number starts with the base, so
 the same side is not always second.
@@ -468,8 +469,9 @@ warning shows the change to one decimal place, so a rise of 15.1% does not
 display as 15%. Pass ranks above inconclusive, and inconclusive ranks above
 fail, which is how "lower" is decided.
 
-The model pins in `hosts.yaml` are provisional. `probe` and a dry run say so:
-`provisional: not yet confirmed by a baseline run`. Claude Code and Codex are
+The model pins in `hosts.yaml` were confirmed by the 2.5.0 baseline. A pin
+marked `provisional: true` is one no baseline has run yet, and `probe` and a
+dry run say so: `provisional: not yet confirmed by a baseline run`. Claude Code and Codex are
 pinned at effort `medium`. Cursor omits the effort flag, and the report shows
 that as `default`.
 

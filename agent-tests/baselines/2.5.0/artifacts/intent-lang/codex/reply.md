@@ -1,0 +1,3 @@
+Saya menulis intent [i100 — Customers can download invoices as CSV]($RUN/ws/intent/i100-invoice-csv-download.md) untuk Anda tinjau.
+
+Intent ini mengusulkan unduhan CSV invoice melalui API, dengan akses yang mengikuti otorisasi pelanggan. Satu pertanyaan masih terbuka: apakah CSV menggantikan plain-text summary yang ada, atau menjadi format tambahan? Silakan jawab pertanyaan **1** dan beri tahu jika Anda menyetujui intent ini. Saya belum membuat rencana atau memulai pekerjaan implementasi.

@@ -1,0 +1,14 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws baf521a [main]
+
+git branch -a -vv
+* main                baf521a [origin/main] docs(intent): approve invoice CSV export
+  remotes/origin/main baf521a docs(intent): approve invoice CSV export
+
+git log --all --not e49e7fdbec05ce641040663e7a4b40c6255122be --format=%h %s
+baf521a docs(intent): approve invoice CSV export
+ea2b1b5 chore: plan invoice numbering
+
+git diff --stat

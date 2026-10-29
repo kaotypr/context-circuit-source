@@ -1,0 +1,7 @@
+Tool: glob workspace.yaml
+Tool: glob context/**/*.md
+Tool: glob member*.yaml
+Tool: read $RUN/ws/workspace.yaml
+Tool: read $RUN/ws/context/INDEX.md
+Tool: read $RUN/ws/context/domains/invoices.md
+Tool: read $RUN/ws/.context-circuit/docs/commands.md

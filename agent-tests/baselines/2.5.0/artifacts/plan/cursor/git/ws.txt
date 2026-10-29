@@ -1,0 +1,18 @@
+git status --porcelain
+ M .context-circuit/ids/maya.yaml
+ M intent/i100-invoice-csv-export.md
+?? plans/p1000-invoice-csv-export/
+
+git worktree list
+$RUN/ws c668e33 [main]
+
+git branch -a -vv
+* main                c668e33 chore: approved intent
+  remotes/origin/main 0908c2d chore: fixture
+
+git log --all --not c668e336f624c5f67227f93ae5b21cd010e9d285 --format=%h %s
+
+git diff --stat
+ .context-circuit/ids/maya.yaml    | 3 ++-
+ intent/i100-invoice-csv-export.md | 2 ++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
