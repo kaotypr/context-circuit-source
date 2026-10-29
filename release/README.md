@@ -54,7 +54,7 @@ The repository deletes a pull request's branch when it merges. Topic branches go
 
 ## Agent-test baseline
 
-Once the agent-test baseline exists under `agent-tests/baselines/`, refresh it after each template release and whenever a pinned model or host version changes; run the previous template on the new host or model first, to separate model drift from template change.
+The agent-test baseline is committed under `agent-tests/baselines/`, one directory per template version. Refresh it after each template release and whenever a pinned model or host version changes; run the previous template on the new host or model first, to separate model drift from template change.
 
 ## Release notes
 

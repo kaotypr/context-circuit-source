@@ -2,8 +2,8 @@
 #
 # command: executable invoked for this host.
 # model: pinned model id sent on the command line. Each pin is the host's
-# smallest current model, so a baseline is a lower-bound reference. The pins
-# are provisional until a baseline run confirms them.
+# smallest current model, so a baseline is a lower-bound reference. The 2.5.0
+# baseline confirmed every pin below.
 # effort: optional effort setting. Empty means the flag is omitted.
 # host_version: recorded with each run when the host command does not
 # report --version. Written exactly as that command prints it.
@@ -26,7 +26,7 @@ hosts:
     model: claude-haiku-5-5
     effort: medium
     host_version: "2.1.304 (Claude Code)"
-    provisional: true
+    provisional: false
     timeout_seconds: 1800
     max_budget_usd: 3
     auth_env:
@@ -37,7 +37,7 @@ hosts:
     model: gpt-6-luna
     effort: medium
     host_version: "codex-cli 0.164.0"
-    provisional: true
+    provisional: false
     timeout_seconds: 1800
     price_row: gpt-6-luna
     # auth: subscription is valid for this host. Leave it unset so a run
@@ -51,7 +51,7 @@ hosts:
     model: grok-4.7-low
     effort: ""
     host_version: "2026.10.22-27dcf5f"
-    provisional: true
+    provisional: false
     timeout_seconds: 1800
     auth_env:
       - CURSOR_API_KEY

@@ -13,7 +13,7 @@ func TestLoadHosts(t *testing.T) {
 		t.Fatal(err)
 	}
 	claude := hosts["claude"]
-	if claude.Name != "claude" || claude.Model != "claude-haiku-5-5" || claude.Effort != "medium" || !claude.Provisional {
+	if claude.Name != "claude" || claude.Model != "claude-haiku-5-5" || claude.Effort != "medium" || claude.Provisional {
 		t.Fatalf("%+v", claude)
 	}
 	if claude.Command != "claude" || claude.HostVersion != "2.1.304 (Claude Code)" || claude.MaxBudgetUSD != 3 {
@@ -29,6 +29,9 @@ func TestLoadHosts(t *testing.T) {
 	cursor := hosts["cursor"]
 	if cursor.Model != "grok-4.7-low" || cursor.PriceRow != "" || cursor.HostVersion != "2026.10.22-27dcf5f" {
 		t.Fatalf("%+v", cursor)
+	}
+	if codex.Provisional || cursor.Provisional {
+		t.Fatalf("provisional codex %v cursor %v", codex.Provisional, cursor.Provisional)
 	}
 	if claude.Auth != "env" || codex.Auth != "env" || cursor.Auth != "env" {
 		t.Fatalf("auth mode claude %q codex %q cursor %q", claude.Auth, codex.Auth, cursor.Auth)
