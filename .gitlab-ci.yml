@@ -69,7 +69,7 @@ default:
       if git remote get-url origin | grep -q '@'; then
         echo "origin still resolves to a URL with credentials. Git's url, remote and include settings:" >&2
         git config --show-origin --show-scope --get-regexp '^(url\.|remote\.origin\.|include)' 2>&1 |
-          sed -E 's#//[^/@[:space:]]*@#//[masked]@#g' >&2 || true
+          sed -E 's#//[^/@[:space:]]*@#//[masked]@#g; s#(^|[[:space:]])(url\.)?[^/@[:space:]]+@#\1\2[masked]@#g' >&2 || true
         env | sed -n 's/^\(GIT_[A-Z_0-9]*\)=.*/\1 is set/p' >&2
         exit 1
       fi
