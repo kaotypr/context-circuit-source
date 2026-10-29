@@ -1,0 +1,17 @@
+Tool: read $RUN/ws/.agents/skills/cc-intent/SKILL.md
+Tool: glob members.yaml $RUN/ws
+Tool: glob member.local.yaml $RUN/ws
+Tool: glob context/INDEX.md $RUN/ws
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: read $RUN/ws/context/INDEX.md
+Tool: read $RUN/ws/workspace.yaml
+Tool: read $RUN/ws/context/domains/invoices.md
+Tool: glob context/actors/**/* $RUN/ws
+Tool: grep ^##  $RUN/ws/.context-circuit/docs/working.md
+Tool: glob intents/**/*.md $RUN/ws
+Tool: grep Goal $RUN/ws/.context-circuit/docs
+Tool: grep record create $RUN/ws/.context-circuit/docs
+Tool: shell sh .context-circuit/cli record create --kind intent --slug invoice-csv-download --title 'Download invoices as CSV'
+Tool: read $RUN/ws/intent/i100-invoice-csv-download.md
+Tool: edit $RUN/ws/intent/i100-invoice-csv-download.md

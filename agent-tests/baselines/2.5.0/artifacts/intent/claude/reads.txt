@@ -1,0 +1,5 @@
+Tool: Bash ls -la && echo --- && cat members.yaml 2>/dev/null; echo ---; cat member.local.yaml 2>/dev/null; echo ---; cat workspace.yaml 2>/dev/null; echo ---; ls context 2>/dev/null; cat context/INDEX.md 2>/dev/null; echo ---; ls .context-circui
+Tool: Bash cat .agents/skills/cc-intent/SKILL.md; echo ---DOMAIN; cat context/domains/invoices.md; echo ---GLOSS; cat context/glossary.md; echo ---INTENTDIR; ls -R intent plans sources | head -50; echo ---; cat .context-circuit/docs/working.md | 
+Tool: Bash sh .context-circuit/cli record create --kind intent --slug customer-invoice-csv-download --title "Customers can download their invoices as CSV from the API" 2>&1; echo "exit=$?"; ls intent
+Tool: Read $RUN/ws/intent/i100-customer-invoice-csv-download.md
+Tool: Write $RUN/ws/intent/i100-customer-invoice-csv-download.md

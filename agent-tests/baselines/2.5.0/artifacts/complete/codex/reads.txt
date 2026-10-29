@@ -1,0 +1,8 @@
+Tool: command_execution /bin/zsh -lc "cat members.yaml && printf '\\n--- member.local.yaml ---\\n' && cat member.local.yaml && printf '\\n--- completion skill ---\\n' && cat .agents/skills/cc-complete/SKILL.md && printf '\\n--- plan record ---\\n
+Tool: command_execution /bin/zsh -lc "cat .agents/skills/cc-knowledge/SKILL.md && printf '\\n--- context index ---\\n' && cat context/INDEX.md && printf '\\n--- CLI completion ---\\n' && sh .context-circuit/cli --json record complete --id p1000 -
+Tool: command_execution /bin/zsh -lc "cat repositories.local.yaml && printf '\\n--- invoice notes ---\\n' && cat context/domains/invoices.md && printf '\\n--- billing invoice lifecycle ---\\n' && cat context/domains/billing/invoice-lifecycle.md"
+Tool: command_execution /bin/zsh -lc "git status --short && git log -1 --oneline && rg -n \"CSV|plain-text summary|WriteCSV|Export\" internal/invoice && sed -n '1,240p' internal/invoice/*.go"
+Tool: command_execution /bin/zsh -lc "sed -n '1,80p' plans/p1000-invoice-csv-export/plan.md && cat .context-circuit/docs/commands.md | rg -n \"record complete|completion\" -C 3"
+Tool: file_change
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli check'
+Tool: file_change

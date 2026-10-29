@@ -1,0 +1,5 @@
+# Intent and plan numbers reserved by member maya. Only maya's new
+# records add to this file, and only `record delete` takes a number out of it.
+intents:
+- i100
+plans: []

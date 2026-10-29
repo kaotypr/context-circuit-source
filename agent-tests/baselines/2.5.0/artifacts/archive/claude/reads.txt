@@ -1,0 +1,13 @@
+Tool: Skill
+Tool: Bash ls plans/ 2>/dev/null; ls _archive 2>/dev/null; cat .context-circuit/CLI_VERSION 2>/dev/null; sh .context-circuit/cli status 2>&1 | head -50
+Tool: Read $RUN/ws/.agents/skills/cc-complete/SKILL.md
+Tool: Bash sh .context-circuit/cli --json record complete --id p1000 --text 'p1000 has been merged into main in the api repo. Please mark it complete.'
+Tool: Bash cat plans/p1000-invoice-csv-export/plan.md; echo ----; cat context/domains/billing/invoice-lifecycle.md 2>/dev/null; echo ----; cat context/domains/invoices.md 2>/dev/null; echo ----; ls context 2>/dev/null
+Tool: Bash cat context/INDEX.md; echo ----; find context -type f | sort; echo ----; cat context/domains/billing/* 2>/dev/null | head -60; echo ----; cat context/glossary.md; echo ----; cat .agents/skills/cc-knowledge/SKILL.md | head -120
+Tool: Bash cd $RUN/ws/repositories/api && git log --oneline -5 main 2>&1; grep -ril "csv" internal/invoice 2>&1 | head; grep -rn "func.*CSV\|Export" internal/invoice 2>&1 | head
+Tool: Edit $RUN/ws/context/domains/invoices.md
+Tool: Edit $RUN/ws/context/INDEX.md
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli check 2>&1; echo "exit=$?"
+Tool: Bash grep -n -A4 "knowledge_repositories" workspace.yaml; sh .context-circuit/cli --json context find invoice 2>&1 | head -40
+Tool: Bash sh .context-circuit/cli context find --query invoice 2>&1 | head -40; sh .context-circuit/cli context find --help 2>&1 | head -20
+Tool: Bash grep -n "invoice-lifecycle" context/INDEX.md .agents/skills/cc-knowledge/SKILL.md; ls context/domains

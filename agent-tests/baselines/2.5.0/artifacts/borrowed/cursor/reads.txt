@@ -1,0 +1,18 @@
+Tool: read $RUN/ws/.agents/skills/cc-knowledge/SKILL.md
+Tool: glob context/**/* $RUN/ws
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: read $RUN/ws/context/domains/invoices.md
+Tool: read $RUN/ws/context/INDEX.md
+Tool: read $RUN/ws/context/glossary.md
+Tool: read $RUN/ws/workspace.yaml
+Tool: grep invoice $RUN/ws
+Tool: grep knowledge $RUN/ws/.context-circuit/docs
+Tool: glob **/* $RUN/ws/.context-circuit
+Tool: read $RUN/ws/repositories.local.yaml
+Tool: read $RUN/ws/.context-circuit/docs/workspace.md
+Tool: shell sh .context-circuit/cli context find invoice number
+Tool: grep context find $RUN/ws/.context-circuit/docs/commands.md
+Tool: shell sh .context-circuit/cli context find --query "invoice number"
+Tool: read $RUN/ws/repositories/handbook/numbering.md
+Tool: read $RUN/ws/repositories/handbook/INDEX.md

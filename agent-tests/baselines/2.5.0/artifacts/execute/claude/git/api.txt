@@ -1,0 +1,15 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws/repositories/api     d82563a [main]
+$RUN/ws/.worktrees/p1000/api 859b442 [cc/p1000/api]
+
+git branch -a -vv
++ cc/p1000/api        859b442 ($RUN/ws/.worktrees/p1000/api) feat(invoice): csv export of invoices
+* main                d82563a feat(invoice): text summary export
+  remotes/origin/main d82563a feat(invoice): text summary export
+
+git log --all --not d82563a2d2393e6ddc3fcb6c0f27b7a13b736160 --format=%h %s
+859b442 feat(invoice): csv export of invoices
+
+git diff --stat

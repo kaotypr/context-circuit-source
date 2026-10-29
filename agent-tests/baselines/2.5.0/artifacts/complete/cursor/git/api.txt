@@ -1,0 +1,13 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws/repositories/api 7e967a3 [main]
+
+git branch -a -vv
+  cc/p1000/api        209c502 feat(invoice): export invoices as CSV
+* main                7e967a3 Merge p1000
+  remotes/origin/main 7e967a3 Merge p1000
+
+git log --all --not 209c502dfb5a206d51f934582de400be393ad35e 7e967a38b38aa0383aba185657d3f613a7b6a910 --format=%h %s
+
+git diff --stat

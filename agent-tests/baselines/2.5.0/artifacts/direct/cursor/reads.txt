@@ -1,0 +1,13 @@
+Tool: read $RUN/ws/.agents/skills/cc-direct/SKILL.md
+Tool: glob **/README* $RUN/ws
+Tool: grep recieve $RUN/ws
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: read $RUN/ws/repositories.local.yaml
+Tool: read $RUN/ws/workspace.yaml
+Tool: grep recieve $RUN/ws/repositories/api
+Tool: glob **/{AGENTS.md,CLAUDE.md,README*} $RUN/ws/repositories/api
+Tool: read $RUN/ws/repositories/api/AGENTS.md
+Tool: read $RUN/ws/repositories/api/README.md
+Tool: edit $RUN/ws/repositories/api/README.md
+Tool: shell sh .context-circuit/cli context find --repo api

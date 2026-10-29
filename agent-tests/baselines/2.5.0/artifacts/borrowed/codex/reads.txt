@@ -1,0 +1,5 @@
+Tool: command_execution /bin/zsh -lc "cat members.yaml && cat member.local.yaml && cat context/INDEX.md && rg -n -i \"invoice|numbering\" context --glob '"'!INDEX.md'"'"
+Tool: command_execution /bin/zsh -lc 'cat .agents/skills/cc-knowledge/SKILL.md && cat workspace.yaml'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli context find invoice'
+Tool: command_execution /bin/zsh -lc 'rg -n "context find|context" .context-circuit/docs/commands.md'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli context find --query invoice'

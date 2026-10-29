@@ -1,0 +1,2 @@
+Tool: command_execution /bin/zsh -lc "pwd && cat workspace.yaml && printf '\\n--- members ---\\n' && cat members.yaml && printf '\\n--- local member ---\\n' && cat member.local.yaml && printf '\\n--- local repositories ---\\n' && cat repositories
+Tool: command_execution /bin/zsh -lc "cat context/domains/invoices.md && printf '\\n--- pinned version ---\\n' && cat .context-circuit/CLI_VERSION && printf '\\n--- launcher check ---\\n' && sh .context-circuit/cli status"

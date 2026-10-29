@@ -1,0 +1,4 @@
+Tool: Bash ls -la && cat workspace.yaml 2>/dev/null; echo ---; ls context 2>/dev/null; echo ---; cat context/INDEX.md 2>/dev/null; echo ---; rg -il "invoice" --glob '!sources/**' . 2>/dev/null; echo ---; git show --stat HEAD~0 | head -30
+Tool: Bash cat context/domains/invoices.md; echo ---GLOSSARY; cat context/glossary.md; echo ---HANDBOOK-REMOTE; H=$RUN/remotes/handbook.git; git --git-dir=$H log --oneline -5 main; git --git-dir=$H ls-tree -r --name-only main; echo ---; rg -n -i 
+Tool: Bash H=$RUN/remotes/handbook.git; git --git-dir=$H show main:numbering.md; echo ---INDEX; git --git-dir=$H show main:INDEX.md; echo ---; cd $RUN/ws && git log --oneline -3 -- context; ls context/domains; cat .context-circuit/docs/workspace.
+Tool: Bash ls repositories; cat repositories.local.yaml | sed -e 's/^\(.*path.*\): .*/\1: <redacted>/' ; for d in repositories/*/; do rg -n -i "invoice.*(number|seq)|number.*(reset|year)|sequence" "$d" -g '!.git' 2>/dev/null | head -20; done

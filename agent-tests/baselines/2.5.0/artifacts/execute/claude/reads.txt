@@ -1,0 +1,10 @@
+Tool: Bash ls -la && ls plans 2>/dev/null && find plans -path '*p1000*' -type f && cat members.yaml 2>/dev/null; cat member.local.yaml 2>/dev/null; cat repositories.local.yaml 2>/dev/null; cat workspace.yaml
+Tool: Bash cat plans/p1000-invoice-csv-export/plan.md; echo ---; ls -la plans/p1000-invoice-csv-export; echo ---; ls repositories; ls repositories/api 2>/dev/null | head; cd repositories/api 2>/dev/null && git status --short && git branch --show-
+Tool: Bash cd $RUN/ws && cat .agents/skills/cc-worktree/SKILL.md; echo ---; cat repositories/api/AGENTS.md; echo ---; cd repositories/api && git branch --show-current; git status --short; git log --oneline -3
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli worktree prepare --repo api --plan p1000; echo "exit=$?"
+Tool: Bash cd $RUN/ws/.worktrees/p1000/api && find . -path ./.git -prune -o -type f -print && echo --- && for f in internal/invoice/*.go; do echo "== $f"; cat "$f"; done; echo ---; cat go.mod
+Tool: Edit $RUN/ws/.worktrees/p1000/api/internal/invoice/export.go
+Tool: Edit $RUN/ws/.worktrees/p1000/api/internal/invoice/export_test.go
+Tool: Bash cat >> internal/invoice/export_test.go <<'EOF'  func TestWriteCSV(t *testing.T) { 	var buf bytes.Buffer 	err := WriteCSV(&buf, []Invoice{{ 		Number:   7, 		Customer: "Ada", 		Status:   "issued", 		Lines:    []Line{{Description: "Work",
+Tool: Bash go test -v -run 'TestWriteCSV|TestTextSummary' ./internal/invoice/ 2>&1; go test ./... 2>&1; git status --short; git diff --stat; git log --format='%an <%ae>%n%s' -3 | head -12
+Tool: Bash git add internal/invoice/export.go internal/invoice/export_test.go && git commit -q -m "feat(invoice): csv export of invoices" && git log --oneline -2 && git status --short && echo clean

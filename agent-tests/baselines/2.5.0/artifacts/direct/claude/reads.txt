@@ -1,0 +1,6 @@
+Tool: Bash grep -rn -i "recieve" --exclude-dir=.git . | grep -v "^./sources/" | head -50
+Tool: Bash find . -path ./.git -prune -o -iname "*readme*" -print; git ls-files | head -100
+Tool: Bash cat -A repositories/api/README.md | head -80; echo "---"; git -C repositories/api status 2>&1 | head -5; echo "---"; grep -n -i "recei" repositories/api/README.md
+Tool: Read $RUN/ws/repositories/api/README.md
+Tool: Edit $RUN/ws/repositories/api/README.md
+Tool: Bash cd $RUN/ws/repositories/api && git status --short && git diff --stat

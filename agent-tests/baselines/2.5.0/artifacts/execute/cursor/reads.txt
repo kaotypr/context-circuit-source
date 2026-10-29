@@ -1,0 +1,20 @@
+Tool: read $RUN/ws/.agents/skills/cc-worktree/SKILL.md
+Tool: read $RUN/ws/.agents/skills/cc-dispatch/SKILL.md
+Tool: glob **/p1000*/** $RUN/ws
+Tool: read $RUN/ws/members.yaml
+Tool: read $RUN/ws/member.local.yaml
+Tool: read $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: read $RUN/ws/workspace.yaml
+Tool: shell sh .context-circuit/cli worktree prepare --repo api --plan p1000
+Tool: glob **/.cursor/agents/cc-* $RUN/ws
+Tool: glob **/* $RUN/ws/.worktrees/p1000/api
+Tool: glob AGENTS.md $RUN/ws/.worktrees/p1000/api
+Tool: read $RUN/ws/.worktrees/p1000/api/AGENTS.md
+Tool: read $RUN/ws/.worktrees/p1000/api/internal/invoice/invoice.go
+Tool: read $RUN/ws/.worktrees/p1000/api/internal/invoice/export.go
+Tool: read $RUN/ws/.worktrees/p1000/api/internal/invoice/export_test.go
+Tool: read $RUN/ws/.worktrees/p1000/api/internal/invoice/invoice_test.go
+Tool: edit $RUN/ws/.worktrees/p1000/api/internal/invoice/csv.go
+Tool: edit $RUN/ws/.worktrees/p1000/api/internal/invoice/csv_test.go
+Tool: shell go test ./... && git log -5 --oneline && git status
+Tool: shell git add internal/invoice/csv.go internal/invoice/csv_test.go && git commit -m "$(cat <<'EOF' feat(invoice): add CSV export  EOF )" && git status

@@ -1,0 +1,25 @@
+git status --porcelain
+ M context/INDEX.md
+ M context/domains/invoices.md
+ D intent/archive/i101-invoice-numbering.md
+ D plans/archive/p1001-invoice-numbering/plan.md
+ M plans/p1000-invoice-csv-export/plan.md
+?? intent/_archive/
+?? plans/_archive/
+
+git worktree list
+$RUN/ws c9414d6 [main]
+
+git branch -a -vv
+* main                c9414d6 chore: archive finished work the old way
+  remotes/origin/main f203ac3 chore: fixture
+
+git log --all --not c9414d617b1d6545c19d63e3a67470c9fb7465b2 --format=%h %s
+
+git diff --stat
+ context/INDEX.md                              |  2 +-
+ context/domains/invoices.md                   |  4 +--
+ intent/archive/i101-invoice-numbering.md      | 38 ---------------------------
+ plans/archive/p1001-invoice-numbering/plan.md | 35 ------------------------
+ plans/p1000-invoice-csv-export/plan.md        |  5 ++++
+ 5 files changed, 8 insertions(+), 76 deletions(-)

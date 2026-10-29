@@ -1,0 +1,6 @@
+Tool: Bash sh .context-circuit/cli status 2>&1; echo "---"; sh .context-circuit/cli record list 2>&1; echo "---"; cat member.local.yaml 2>&1; echo "---"; cat members.yaml 2>&1
+Tool: Bash grep -n -A12 "record approve" .context-circuit/docs/commands.md | head -60; echo ---; sh .context-circuit/cli record approve --help 2>&1 | head -40
+Tool: Bash sh .context-circuit/cli record approve --id i100 --text 'I approve it as written.' 2>&1; echo "--- status"; sh .context-circuit/cli status 2>&1 | head -12; echo "--- git"; git status --short; git log --oneline -1; git remote -v; git re
+Tool: Bash git add intent/i100-invoice-csv-export.md && git commit -q -m "chore: approve intent for invoice CSV export" && git push origin main 2>&1; echo "exit $?"; git status --short; git log --oneline -2
+Tool: Bash git pull --rebase origin main 2>&1; echo "exit $?"; git status --short; git log --oneline -5
+Tool: Bash git show 9e27cf9 --stat --format='%h %an %s%n%b' && echo "=== upstream (origin/main) version" && git show origin/main:intent/i100-invoice-csv-export.md && echo "=== my version (approval commit)" && git show 2ada6f9:intent/i100-invoice-

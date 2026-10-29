@@ -1,0 +1,4 @@
+Tool: Bash ls -la && echo "--- workspace.yaml" && cat workspace.yaml && echo "--- members.yaml" && cat members.yaml 2>/dev/null; echo "--- member.local.yaml" && cat member.local.yaml 2>/dev/null; echo "--- repositories.local.yaml" && cat reposito
+Tool: Bash cat .context-circuit/docs/commands.md 2>/dev/null | head -150; echo "--- INDEX"; cat context/INDEX.md 2>/dev/null; echo "--- grep"; rg -n -i "void|credit" context/ 2>/dev/null | head -60
+Tool: Bash echo "--- invoices.md" && cat context/domains/invoices.md && echo "--- README.md" && cat README.md && echo "--- glossary" && cat context/glossary.md | head -60 && echo "--- repos" && ls repositories/ && ls repositories/api 2>/dev/null 
+Tool: Bash ls -d "$HOME/.local/bin/.context-circuit-versions/2.5.0-rc.1-darwin-arm64/" 2>&1; ls "$HOME/.local/bin/.context-circuit-versions/" 2>&1 | head; uname -m
