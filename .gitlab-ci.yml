@@ -57,7 +57,10 @@ default:
     - |
       unset GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
       tab=$(printf '\t')
-      git config --show-origin --name-only --get-regexp '^url\..*\.insteadof$' 2>/dev/null |
+      # Exit status 1 means no rule matched; GitLab runs this under
+      # `set -eo pipefail`, so that case must not end the job.
+      rules=$(git config --show-origin --name-only --get-regexp '^url\..*\.insteadof$') || [ "$?" -eq 1 ]
+      printf '%s\n' "$rules" |
         while IFS="$tab" read -r source key; do
           case "$source" in
             file:*) git config --file "${source#file:}" --unset-all "$key" 2>/dev/null || true ;;
