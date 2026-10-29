@@ -47,6 +47,20 @@ default:
     # it came from. Nothing here pushes to origin: the CLI release creates its
     # tag through the API, and the template is pushed from its own clone.
     - git remote set-url origin "$CI_SERVER_URL/$CI_PROJECT_PATH.git"
+    # A newer runner carries the token in a url.<...>.insteadOf rule instead,
+    # which `git remote get-url` applies on top of the plain URL. Drop every
+    # such rule, in whichever scope or environment it was given, and refuse to
+    # go on while origin still resolves to a URL with credentials in it.
+    - |
+      for key in $(git config --name-only --get-regexp '^url\..*\.insteadof$' || true); do
+        for scope in --local --global --system; do
+          git config "$scope" --unset-all "$key" 2>/dev/null || true
+        done
+      done
+      unset GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+      case "$(git remote get-url origin)" in
+        *@*) echo "origin still resolves to a URL with credentials" >&2; exit 1 ;;
+      esac
 
 variables:
   # The knowledge checks count commits under each note's code anchors, so a
