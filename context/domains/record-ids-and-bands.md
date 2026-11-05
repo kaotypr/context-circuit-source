@@ -14,9 +14,9 @@ language their intents and plans are written in, because an outcome someone
 skims in a second language is an approval gate in name only. Knowledge does not
 follow: a note outlives the member who wrote it, anchors to code, and is found
 by substring search that a mixed-language catalog breaks, so `context/` is
-English whatever a member records. An approval or completion note keeps the
-words the person used, because it is evidence of what someone said rather than
-prose about it.
+English whatever a member records. An approval or completion note is written in
+the record's language and states the decision, so a record reads in one language
+whether or not the conversation did.
 
 The boundary that makes this safe lives in the dispatch brief, not here. A
 record is quoted into the brief as authoritative, and a worker works inside a

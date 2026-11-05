@@ -16,7 +16,7 @@ consent. The approval operation records an actual decision and its date; it does
 not constitute one.
 
 The intent's `approved_at` field is stamped with the instant there, and the
-person's words are kept under a heading carrying the same instant; an unapproved
+decision, in the record's language, is kept under a heading carrying the same instant; an unapproved
 intent carries no such field, so absence is the only empty state. The field is a
 readable record of the gate, never the gate itself — anything that can write the
 record can write the timestamp, so an intent is not approved because a field

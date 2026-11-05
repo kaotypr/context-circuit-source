@@ -19,7 +19,7 @@ to need an outcome nobody approved returns to the path below.
 An intent has a global `id`, `created_by`, a `created_at` instant, linked
 `plans`, and an `approved_at` instant once a person approves it. Its Markdown body contains goal, non-goals,
 constraints, success criteria, rough repository scope, and open questions.
-Approval records the instant and appends the person's own words under a heading
+Approval records the instant and appends the decision, in the record's language, under a heading
 carrying it; the field records that decision and never establishes one, so
 nothing reads it as consent. Renewed approval moves the field and appends another
 section, keeping every instant and wording. Intent creation happens before detailed code

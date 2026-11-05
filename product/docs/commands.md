@@ -275,7 +275,7 @@ are repeatable. Creation reserves IDs and links a new plan from its intent when
 `--intent` is supplied. Otherwise it creates a standalone plan folder.
 Approval and completion notes require the actual corresponding user decision.
 Approval records the instant in the intent's frontmatter `approved_at` and appends
-the person's words under a heading carrying the same instant; an unapproved
+the decision, in the record's language, under a heading carrying the same instant; an unapproved
 intent has no such field. It records a decision and never establishes one, and
 commands do not independently authorize anything. Approval returns
 `planning_recommended`, a recommendation to put to the person rather than a duty

@@ -14,10 +14,9 @@ request is finished only when both are done.
 sh <root>/.context-circuit/cli --json record complete --id p0001 --text 'User requested completion.'
 ```
 
-Write the note in the words the person used, including their language. It
-records that someone asked for this, so a translation of it is a paraphrase of
-evidence rather than a tidier form of it. The knowledge reconciled afterwards is
-English regardless.
+Write the note in the plan's language, stating what the person asked for rather
+than pasting their reply, which may be in the language of the conversation. The
+knowledge reconciled afterwards is English regardless.
 
 The command stamps `completed_at` in the plan's frontmatter. Its result carries
 `completed`, the ID of the plan it marked, the catalog entries scoped to that plan's

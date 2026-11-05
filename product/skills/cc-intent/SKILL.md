@@ -11,8 +11,10 @@ It is written for a person to read and approve.
 Write it in the language recorded for the active member in `members.yaml`, and
 in English where none is. Approval is the product's central gate, and a person
 can only approve an outcome they actually understand; an intent they skim in a
-second language is a gate in name only. Record their approval in the words they
-used rather than a translation of them. Identifiers and the project's own domain
+second language is a gate in name only. Record their approval in the same language
+as the record, stating the decision faithfully (what was approved, answers to open
+questions, conditions, extra asks) rather than pasting their reply, which may be in
+the language of the conversation. Identifiers and the project's own domain
 vocabulary keep their form whatever language the prose is in, and the slug stays
 a lowercase ASCII slug.
 
@@ -100,7 +102,8 @@ the person is writing to you in, even when the record itself is in another.
 
 ## After approval
 
-Record the person's approval in their own words. `record approve` returns
+Record the person's approval as a decision in the record's language, not a paste
+of their reply. `record approve` returns
 `planning_recommended`: confirm the approval, recommend creating plans as the
 next step, and stop. Planning starts when the person asks for it, which may be
 in the same request that approved the intent; then go straight on through

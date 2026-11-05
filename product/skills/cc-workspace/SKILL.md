@@ -234,8 +234,8 @@ sh <root>/.context-circuit/cli member language --id ID --language 'Bahasa Indone
 ```
 
 Unset means English. Knowledge is English whatever this says — a note outlives
-the member who wrote it — and an approval or completion note keeps the words the
-person actually used. The brief a worker receives names this language and tells
+the member who wrote it — and an approval or completion note is written in the record's
+language, stating the decision rather than quoting the person's reply. The brief a worker receives names this language and tells
 it that what goes into the repository is English, because a worker works under a
 repository's instructions and never reads these.
 

@@ -124,7 +124,7 @@ means English.
 | What is written | In what language |
 | --- | --- |
 | An intent or a plan | its author's recorded language, English where none is |
-| An approval or completion note | exactly what the person said |
+| An approval or completion note | the record's language: the decision stated faithfully, not the person's reply pasted in |
 | `context/` notes, the catalog, the glossary | English, always |
 | Anything written inside a repository | that repository's convention, English where it states none |
 | A record's headings and field names | English, always |

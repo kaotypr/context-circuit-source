@@ -147,11 +147,13 @@ what they contribute and authorizes nothing.
 
 Talk to a person in whatever language they use. What gets written down follows
 the artifact, not the conversation.
+A record's language never changes the conversation: replies, approval
+confirmations, and summaries stay in the language the person is using.
 
 | What is written | In what language |
 | --- | --- |
 | An intent or a plan | the language recorded for its author in `members.yaml`, English where none is |
-| An approval or completion note | exactly what the person said, never translated into another language |
+| An approval or completion note | the record's language: the decision stated faithfully, not the person's reply pasted in |
 | `context/` notes, the catalog, the glossary | English, always |
 | Anything written inside a repository | that repository's convention, English where it states none |
 | A record's headings and field names | English, always |
@@ -243,8 +245,8 @@ Present the concrete intent in the person's own language, invite answers by
 number, and stop there. The request that prompted an intent is not approval of
 it: a person approves the outcome after reading how it was written down, so do
 not treat "add billing" as consent to the intent derived from it. Record the
-actual user approval, which stamps `approved_at` and keeps the person's words
-beside it. A record carries that decision and never establishes one: neither a command, nor an
+actual user approval, which stamps `approved_at` and keeps the decision, in the
+record's language, beside it. A record carries that decision and never establishes one: neither a command, nor an
 editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
