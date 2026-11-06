@@ -61,8 +61,9 @@ Runs the product against a real project, on a roster of one or of many.
    read it here without copying it in,** so that I am not maintaining a second
    copy that reads as current while drifting.
 3. **As a member who writes records in my own language, I want to say what
-   register I write in,** so that what comes back reads like my team wrote it
-   rather than like it was translated.
+   register I write in, by picking a preset or describing my own,** so that
+   what comes back reads like my team wrote it rather than like it was
+   translated.
 4. **As a member, I want to retrieve the few notes that bear on my task,** so
    that starting work does not mean reading everything the project knows.
 5. **As a member, I want most completions to record that nothing durable

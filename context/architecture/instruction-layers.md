@@ -83,6 +83,14 @@ instruction names its path. So every skill costs a resident line, and the number
 of skills is bounded by what that line budget can carry — the split is by
 lifecycle stage rather than by topic for exactly this reason.
 
+One skill crosses stages on purpose. `cc-writing` carries how to write what a
+person reads and decides on, for intents, plans, and the notes and chat around
+them, because the same writing rules copied into each stage's skill drift apart.
+It pays one resident line like any skill, and keeps what it costs to load small
+by holding per-language and per-tone reference files that the agent opens only
+for the member it is writing for, so the words of a tone it is not writing in
+never reach it.
+
 Owner:
 
 - `context-circuit-source@product/AGENTS.md.in` — the always-loaded entry

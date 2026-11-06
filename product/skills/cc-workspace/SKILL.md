@@ -49,7 +49,11 @@ selected with `member use`. Someone new is added with a readable ID, their name,
 and a band: offer the `next_band` that `status` reports and let them confirm it
 or pick another nobody holds, and ask what roles they contribute in, which they
 may skip. Then select them. Take their answer as given;
-nothing verifies it. Once selected, return to the request they made.
+nothing verifies it. Once selected, return to the request they made. In the
+report that closes that request, mention the tone presets `member presets` lists
+as something they can pick later; it is an offer, never a question that holds up
+the request, and skipping it leaves the tone unset, which is written for as
+`colleague`.
 
 Unless the request says otherwise, put checkouts under `repositories/<id>`,
 which is gitignored and is where the workspace expects its working copies.
@@ -242,6 +246,8 @@ repository's instructions and never reads these.
 Beside it, a member may record the register that language is written in:
 
 ```sh
+sh <root>/.context-circuit/cli member presets
+sh <root>/.context-circuit/cli member tone --id ID --preset casual
 sh <root>/.context-circuit/cli member tone --id ID --tone 'semi-formal; keep technical terms in English'
 sh <root>/.context-circuit/cli member tone --id ID --clear
 ```
@@ -249,10 +255,14 @@ sh <root>/.context-circuit/cli member tone --id ID --clear
 One line of prose, quoted into the instruction that writes a record rather than
 parsed. Naming a language settles which words a record uses and nothing about
 how they are put together, and an agent that composes in English and translates
-produces prose that is grammatical and formal in a way nobody chose. Record it
-when a team knows the register it wants; unset leaves the general composition
-guidance in `.agents/skills/cc-intent/SKILL.md` to decide. Ask the member for
-the wording rather than inventing a register on their behalf.
+produces prose that is grammatical and formal in a way nobody chose. The product
+names four presets, colleague, casual, formal, and non-technical, and
+`member presets` lists each with the line it records; `--preset` records that line,
+which starts with the preset's name. A team may write its own line instead.
+Unset is written for as `colleague`, and `.agents/skills/cc-writing/SKILL.md`
+carries what each register means. Let the member choose, and ask them for the
+wording of a line of their own rather than inventing a register on their
+behalf.
 
 ## The roles a member contributes in
 

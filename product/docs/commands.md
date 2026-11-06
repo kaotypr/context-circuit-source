@@ -33,6 +33,8 @@ sh .context-circuit/cli status
 sh .context-circuit/cli member add --id alex --name Alex --band 2
 sh .context-circuit/cli member band --id alex --band 3
 sh .context-circuit/cli member language --id alex --language 'Bahasa Indonesia'
+sh .context-circuit/cli member presets
+sh .context-circuit/cli member tone --id alex --preset colleague
 sh .context-circuit/cli member tone --id alex --tone 'semi-formal; keep technical terms in English'
 sh .context-circuit/cli member roles --id alex --role maintainer --role docs
 sh .context-circuit/cli member use --id alex
@@ -107,6 +109,17 @@ names an obligation nobody here can discharge, so it is never offered as
 knowledge to reconcile. An unknown repository is refused rather than answered
 with an empty list, because nothing to reconcile and nothing found read the
 same.
+
+`member presets` lists the tone presets, and `member tone --preset NAME` records
+the chosen preset's line in `members.yaml`, the same field `--tone` fills with a
+line of the team's own. `--preset`, `--tone`, and `--clear` are exclusive, and an
+unknown preset name is refused with the valid ones. A member with no tone is
+written for as `colleague`. The lines each preset records:
+
+- `colleague: semi-formal, the way you'd explain it to a teammate; technical terms as the team says them`
+- `casual: chat register, short and relaxed; still complete sentences`
+- `formal: for managers or people outside the team; no slang or contractions, still plain`
+- `non-technical: for readers who don't read code; goal, non-goals and questions say what people will see or can do, and the rest stays technical for the team`
 
 Every member holds a band, and `member add` requires `--band`; without it, it
 refuses and names the next free band. A member holding band N allocates intents

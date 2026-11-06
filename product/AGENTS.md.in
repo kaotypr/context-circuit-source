@@ -166,9 +166,12 @@ they are its shape rather than its content, and two members must not produce
 differently-shaped records.
 
 A language settles which words are used and nothing about how they are put
-together. Compose in that language rather than translating into it, and follow
-the `tone` a member records in `members.yaml` where there is one;
-`.agents/skills/cc-intent/SKILL.md` carries what that means.
+together. Compose in that language rather than translating into it, in the
+register the member's `tone` names; a member with no tone is written for as
+`colleague`. The tone covers the conversation around a record as well as the
+record. `.agents/skills/cc-writing/SKILL.md` carries how to write what a person
+reads and decides on, and it stops at knowledge: a `context/` note, the catalog,
+and the glossary take no tone.
 
 Names are quoted, never translated, in either direction. Domain vocabulary keeps
 the project's own form inside an English note, and code identifiers keep the

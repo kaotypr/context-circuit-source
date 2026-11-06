@@ -18,13 +18,12 @@ the language of the conversation. Identifiers and the project's own domain
 vocabulary keep their form whatever language the prose is in, and the slug stays
 a lowercase ASCII slug.
 
-## Writing in a language that is not English
+## How it reads
 
-A recorded language settles which words a record uses and nothing about how they
-are put together. Composing in English and translating produces prose that is
-grammatical and wrong in register — stiff, formal, and formal in a way nobody
-chose, because words that are neutral in English land as bureaucratic once
-carried across literally.
+Write the intent, and the chat that presents it, following
+`.agents/skills/cc-writing/SKILL.md`. It carries how to compose in the member's
+language rather than translating into it, the register their `tone` names, and
+how to put a decision to a person.
 
 **The record's structure stays English whatever the prose is.** The headings —
 `Goal`, `Non-goals`, `Constraints`, `Success criteria`, `Repository scope`,
@@ -32,25 +31,6 @@ carried across literally.
 they are named in the language table for that reason. Translating one makes two
 members produce differently-shaped records, and a translation that varies per
 session is not a field name.
-
-Then compose in that language rather than into it:
-
-- **Let the sentence structure follow the target language.** Do not carry
-  English clause order or sentence length across. A sentence that hinges on
-  `, so` in English is often two sentences elsewhere.
-- **Prefer the verb where English would nominalize.** "No change to how the
-  current quarter is determined" is ordinary English and heavy almost everywhere
-  else.
-- **Technical vocabulary keeps the form engineers in that language actually
-  say**, which is usually the English word. Translating `refresh`, `cache`, or
-  `deploy` into a native equivalent produces manual-register prose, not clearer
-  prose. Be consistent: half-translated technical vocabulary reads worse than
-  either choice made whole.
-- **Names are quoted, never translated**, in either direction, as always.
-
-Where the member records a `tone` in `members.yaml`, follow it; it is that
-team's own answer and it overrides the guidance above. A workspace writing
-Bahasa Indonesia might record `semi-formal; keep technical terms in English`.
 
 ## Ground it first
 
@@ -98,7 +78,9 @@ implementation question belongs in the plan, not here.
 
 The record is in its author's language; the conversation is not. Present the
 intent, its open questions, and everything you say around them in the language
-the person is writing to you in, even when the record itself is in another.
+the person is writing to you in, even when the record itself is in another. The
+member's tone covers that conversation too, as
+`.agents/skills/cc-writing/SKILL.md` describes.
 
 ## After approval
 
