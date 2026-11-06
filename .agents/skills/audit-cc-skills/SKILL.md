@@ -19,7 +19,7 @@ workspace skill, appears in no manifest, and ships nowhere.
 - Start no coding host and call no model API. The audit costs one coding
   session, and a clean audit does not replace agent tests: only runs show whether
   a host follows a skill.
-- Audit the 13 shipped `cc-*` skills only, not the maintainer skills in
+- Audit the 14 shipped `cc-*` skills only, not the maintainer skills in
   `.agents/skills/`.
 - Judge each skill against the code and files in this checkout, never against an
   earlier version of the skills.

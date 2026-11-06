@@ -171,6 +171,7 @@ not read route files.
 | `cc-complete` | `complete`, `archive` |
 | `cc-direct` | `direct` |
 | `cc-cli` | `orient` |
+| `cc-writing` | `intent`, `intent-lang`, `intent-tone`, `plan`, `complete`, `complete-tone` |
 
 Shipped docs: `commands.md` runs `intent`; `working.md` runs `intent`, `plan`,
 and `complete`; `workspace.md` runs `join` and `borrowed`; `worktrees.md` runs
@@ -515,9 +516,11 @@ until a baseline run exists.
 | `join` | a new member on a fresh clone: member, band, role, local setup | `join-members`, `join-local-files` | 150k-600k |
 | `intent` | an intent from a request, then stop for approval | `intent-record`, `intent-no-plan` | 120k-500k |
 | `intent-lang` | the same in the member's language | `intent-record`, `intent-no-plan`, `intent-lang-body` | 120k-500k |
+| `intent-tone` | the same with a preset tone: only that language's and that tone's reference files are read | `intent-record`, `intent-no-plan`, `intent-lang-body` | 120k-500k |
 | `plan` | planning an approved intent from real code, then stop | `plan-record`, `plan-linked` | 300k-1.5M |
 | `execute` | a plan run in a worktree on its own branch | `execute-worktree`, `execute-records-untouched`, `execute-tests-pass` | 0.5M-3M |
 | `complete` | completion plus knowledge reconciliation, ending check-clean | `complete-plan-done`, `complete-note` | 200k-900k |
+| `complete-tone` | completion for a member with a language and a preset tone: the note takes the tone, the reconciled knowledge stays English with none | `complete-plan-done`, `complete-note` | 200k-900k |
 | `archive` | completion in a workspace with a legacy `archive/` folder: the rename to `_archive/` and the archive offer, made and not acted on unasked | `complete-plan-done`, `complete-note` | 200k-900k |
 | `direct` | a direct change in a bound checkout without records | `direct-readme`, `direct-no-records` | 60k-250k |
 | `borrowed` | borrowed knowledge stays read-only and is not copied | `borrowed-untouched`, `borrowed-reply` | 80k-400k |

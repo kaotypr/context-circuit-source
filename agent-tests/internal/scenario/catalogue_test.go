@@ -61,6 +61,7 @@ func TestCatalogue(t *testing.T) {
 			"join": true, "intent-lang": true, "plan": true,
 			"execute": true, "complete": true, "borrowed": true, "archive": true,
 			"push-records": true, "push-records-conflict": true,
+			"intent-tone": true, "complete-tone": true,
 		}
 		if wantSetup[sc.ID] {
 			if len(sc.Setup) == 0 || strings.TrimSpace(strings.Join(sc.Setup, "")) == "" {
