@@ -61,7 +61,13 @@ docs, shown wherever the roster is. They are informational and decide nothing:
 approval, allocation, deletion, and dispatch never read them, and they are not
 the subagent --role that agent configure and agent dispatch take. They are
 written only at workspace schema 3, so a member added while an upgrade is still
-mid-setup is added without roles, which member roles sets afterwards.`,
+mid-setup is added without roles, which member roles sets afterwards.
+
+Tone is the register a member's intents, plans and chat are written in. Presets
+lists the named registers: colleague, casual, formal and non-technical. Tone
+--preset NAME records that preset's line, which starts with its name, in the
+same field a hand-written --tone fills, so older CLIs and agents read it as a
+plain line. A member with no tone is written for as colleague.`,
 
 	"knowledge": `Mounts a repository of knowledge this workspace reads and never owns: an
 organization's knowledge center, shared by many workspaces and changed through

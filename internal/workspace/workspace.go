@@ -100,7 +100,9 @@ type CLIRegistry struct {
 // English and translating produces prose that is grammatical, stiff, and
 // formal in a way nobody chose. A team says what it wants once —
 // "semi-formal; keep technical terms in English" — instead of reading it back
-// in every record. Unset leaves the general composition guidance to decide.
+// in every record, or picks one of the named presets in tone.go, which records
+// that preset's line in this same field. Unset means the default preset,
+// colleague, which the cc-writing skill applies.
 //
 // Roles says what a member contributes, such as maintainer or docs, so people
 // reading the roster can see who works on what. It is informational and decides
@@ -347,7 +349,7 @@ func Tone(tone string) error {
 		return err
 	}
 	if len(tone) > 200 {
-		return errors.New("describe the register in one line, such as 'semi-formal; keep technical terms in English'")
+		return errors.New("describe the register in one line of at most 200 characters, or pick a preset with --preset")
 	}
 	return nil
 }
@@ -763,14 +765,15 @@ func (s *Store) SetMemberLanguage(id, language string) error {
 }
 
 // SetMemberTone records the register a member's intents and plans are written
-// in. It is set and cleared rather than only set, because a team that recorded
-// a register and changed its mind wants the general guidance back.
+// in, whether a line the team wrote or a preset's line. It is set and cleared
+// rather than only set, because a team that recorded a register and changed its
+// mind wants the default back.
 func (s *Store) SetMemberTone(id, tone string, clear bool) error {
 	if err := Tone(tone); err != nil {
 		return err
 	}
 	if tone == "" && !clear {
-		return errors.New("describe the register, such as 'semi-formal; keep technical terms in English', or pass --clear")
+		return errors.New("pick a preset with --preset, describe the register with --tone, or pass --clear")
 	}
 	if tone != "" && clear {
 		return errors.New("pass --tone or --clear, not both")

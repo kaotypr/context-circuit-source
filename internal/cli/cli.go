@@ -33,9 +33,11 @@ member add            --id ID --name NAME --band N [--language NAME] [--tone TEX
 member band           --id ID --band N (allocation block, 0-9999; 0 is a band)
 member language       --id ID --language NAME (the language this member's
                       intents and plans are written in; knowledge stays English)
-member tone           --id ID --tone TEXT | --clear (the register that language
-                      is written in, such as 'semi-formal; keep technical terms
-                      in English')
+member tone           --id ID --preset NAME | --tone TEXT | --clear (the
+                      register that language is written in: a preset, or
+                      your own line)
+member presets        the tone presets and the line each records (colleague
+                      is the default when a member records no tone)
 member roles          --id ID --role ROLE ... | --clear (what this member
                       contributes, such as maintainer; informational, decides nothing)
 member use            --id ID
