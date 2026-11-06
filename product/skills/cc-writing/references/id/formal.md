@@ -25,6 +25,6 @@ A chat message presenting an intent, in this tone:
 > 3. Semua orang yang dapat melihat invoice suatu akun dapat meng-export-nya,
 >    tidak hanya owner.
 >
-> Jika rekomendasi ini sudah sesuai, mohon dikonfirmasi agar approval-nya saya
+> Apakah ketiga rekomendasi ini sudah sesuai? Jika sudah, approval-nya akan saya
 > catat. Plan belum dibuat. Setelah intent ini disetujui, plan-nya dapat saya
 > buat jika diminta.

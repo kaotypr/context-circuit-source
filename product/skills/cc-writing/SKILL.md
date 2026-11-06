@@ -99,7 +99,10 @@ Leave out the habits that read as machine-made: bold on phrase after phrase,
 labelled blocks such as "Summary:" or "Assessment:", lists of three by reflex,
 "not X but Y", filler adjectives like key, crucial, and robust, and a closing
 menu of things you could do next. A record's own format is not one of them: an
-open question stays a bold question, as the skill that writes the record says.
+open question stays a bold question, as the skill that writes the record says,
+and a short bold label opening each point of a list, such as the name of a page
+section, helps the reader scan it. What reads as machine-made is bold scattered
+through running prose.
 
 ## Asking for a decision
 

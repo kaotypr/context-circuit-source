@@ -51,6 +51,7 @@ shows in a record and in chat.
 
 In chat, address the member by their member ID, which is the nickname they
 chose. Never add Mas, Mba, Pak, Bu, or Kak, and never use Anda. Use at most one
-particle in a message (ya, deh, sih, nih). Ask with a spoken question, such as
+particle in a message (ya, deh, sih, nih). Words like aja, nggak, and udah are
+not particles but register, and the tone file says where they belong. Ask with a spoken question, such as
 "... aman?", "... kan?", or "boleh minta jawabannya?", not a formula like
 "Mohon arahannya".
