@@ -6,20 +6,24 @@ everyday verbs, and phrasing like "Three quick calls" or "Say the word". Casual
 changes how it sounds, never what it says, so the facts, the recommendation, and
 its reason all stay.
 
+In a record, casual stays close to `colleague`, because a record is read again
+later by people who weren't in the chat: contractions and plain verbs, with no
+slang and no jokes. The difference shows mostly in the chat.
+
 A chat message presenting an intent, in this tone:
 
-> Done, it's written up as the home page redesign (i143). The home page turns
-> into a landing page in the style of ui.kaotypr.com, with the install command
-> up top and cards instead of walls of text. The docs pages pick up the same
-> buttons, cards and title labels, and nothing else about them changes.
+> Done, it's written up as invoice CSV export (i100). Customers get a download
+> button on the invoices page, and it saves whatever invoices they can see as a
+> CSV, same columns as the PDF. How invoices get created and sent doesn't
+> change.
 >
 > Three quick calls for you. Here's what I'd go with:
 >
-> 1. Keep docs titles in Fredoka and use Schoolbell for just one word in the
->    home headline. It looks great, but it's slow to scan on long pages.
-> 2. Icons only on the top-level sidebar sections, so about ten.
-> 3. Skip the row of numbers. Release or command counts don't tell a new
->    visitor anything.
+> 1. Same columns as the PDF. Line items on their own rows would suit
+>    accounting tools better, but it's double the work.
+> 2. Twelve months max per export, so big accounts don't time out.
+> 3. Anyone who can see an account's invoices can export them, not just the
+>    owner.
 >
 > All good? Say the word and I'll log the approval. Once that's in, ask and
 > I'll write the plan.

@@ -17,6 +17,7 @@ what actually happens instead:
   install-nya ditampilkan paling atas, jadi pengunjung bisa langsung mulai".
 - "Kayak X" or "seperti X" reads as making a copy of X. When the meaning is
   taking its style and feel, write "gayanya mirip X" or "senada dengan X".
+  When the meaning really is the same thing, "sama dengan X" says so.
 
 ## Sentence shape
 
@@ -45,8 +46,8 @@ kalau is the everyday "if"; jika belongs to `formal` only.
 ## Records and chat
 
 A record addresses nobody, calls the team kita, and states a recommendation
-without a pronoun: "Rekomendasinya ...". A record follows these rules at the
-`colleague` level whatever the tone, unless the tone file says otherwise.
+without a pronoun: "Rekomendasinya ...". The tone file says how its register
+shows in a record and in chat.
 
 In chat, address the member by their member ID, which is the nickname they
 chose. Never add Mas, Mba, Pak, Bu, or Kak, and never use Anda. Use at most one

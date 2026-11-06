@@ -34,7 +34,8 @@ section on languages without a folder below. When the chat and the record are in
 different languages, open the folder for the language you are writing at that
 moment.
 
-The tone picks one file in that folder. A recorded tone that starts with a
+The tone picks one file in that folder, and applies to the record and the chat
+alike; the tone file says how it shows in each. A recorded tone that starts with a
 preset's name and a colon, such as `casual: ...`, is that preset, even if its
 wording is older than the table below. With no tone, write as `colleague`. Open
 the matching file, for example
@@ -80,7 +81,8 @@ reader understands it in the end.
 Call things what the reader calls them. A record ID, a file path, or a field name
 may follow a plain description, as in "the UI fixes (p1055)", but it never
 stands in for one and never opens a sentence. With every ID and path deleted, the
-text should still make sense.
+text should still make sense. For another record, take the description from its
+title rather than inventing one.
 
 Explain only what this reader is missing. Don't define a word the reader used
 themselves, and don't explain the project back to the person who owns it.
@@ -96,7 +98,8 @@ the plan or in sources, reduced to a sentence where the reason needs them.
 Leave out the habits that read as machine-made: bold on phrase after phrase,
 labelled blocks such as "Summary:" or "Assessment:", lists of three by reflex,
 "not X but Y", filler adjectives like key, crucial, and robust, and a closing
-menu of things you could do next.
+menu of things you could do next. A record's own format is not one of them: an
+open question stays a bold question, as the skill that writes the record says.
 
 ## Asking for a decision
 

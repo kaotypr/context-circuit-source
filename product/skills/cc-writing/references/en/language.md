@@ -18,4 +18,5 @@ Hedge once, where the uncertainty actually is, and name what is uncertain:
 probably mostly work". A hedge on every line tells the reader nothing.
 
 Address the member by their member ID when the chat names them at all, and write
-"you" freely; English needs no honorific.
+"you" freely; English needs no honorific. The tone file says how its register
+shows in a record and in chat.
