@@ -99,8 +99,6 @@ func TestRecordStructureStaysEnglishInTheEntryInstruction(t *testing.T) {
 		}
 	}
 }
-	}
-}
 
 // A preset is a name for a line, not a second kind of tone: what members.yaml
 // records is the same one line a hand-written tone fills, so a CLI or agent
@@ -195,10 +193,10 @@ func TestPresetLinesAreQuotedVerbatim(t *testing.T) {
 // knowledge it reconciles are written in one turn.
 func TestToneStopsAtKnowledge(t *testing.T) {
 	for rel, phrases := range map[string][]string{
-		"AGENTS.md.in":                {"| `context/` notes, the catalog, the glossary | English, always |", "the glossary take no tone"},
-		"skills/cc-writing/SKILL.md":  {"neither this skill nor the member's tone applies", "`.agents/skills/cc-knowledge/SKILL.md`"},
+		"AGENTS.md.in":                 {"| `context/` notes, the catalog, the glossary | English, always |", "the glossary take no tone"},
+		"skills/cc-writing/SKILL.md":   {"neither this skill nor the member's tone applies", "`.agents/skills/cc-knowledge/SKILL.md`"},
 		"skills/cc-knowledge/SKILL.md": {"tone and `.agents/skills/cc-writing/SKILL.md` never apply here"},
-		"skills/cc-complete/SKILL.md": {"English regardless", "`.agents/skills/cc-knowledge/SKILL.md`, with no tone"},
+		"skills/cc-complete/SKILL.md":  {"English regardless", "`.agents/skills/cc-knowledge/SKILL.md`, with no tone"},
 	} {
 		body := productFile(t, rel)
 		for _, phrase := range phrases {

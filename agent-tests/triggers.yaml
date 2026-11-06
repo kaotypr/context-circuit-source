@@ -245,6 +245,11 @@ rows:
     kind: cli-action
     note: Help text. Used when CLI output changed.
 
+  - match: internal/workspace/tone.go
+    scenarios: [intent-tone, complete-tone]
+    kind: cli-action
+    note: The preset lines a member's tone records.
+
   - match: internal/cli/commands.go
     scenarios: [borrowed, complete, execute, intent, join, plan]
     kind: cli-action

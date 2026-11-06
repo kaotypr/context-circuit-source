@@ -35,16 +35,16 @@ different languages, open the folder for the language you are writing at that
 moment.
 
 The tone picks one file in that folder, and applies to the record and the chat
-alike; the tone file says how it shows in each. A recorded tone that starts with a
-preset's name and a colon, such as `casual: ...`, is that preset, even if its
-wording is older than the table below. With no tone, write as `colleague`. Open
-the matching file, for example
+alike; the tone file says how it shows in each. A recorded tone that starts
+with a preset's name and a colon, such as `casual: ...`, is that preset, even if
+its wording is older than the table below. With no tone, write as `colleague`.
+Open the matching file, for example
 `.agents/skills/cc-writing/references/id/casual.md`; the others are
 `.agents/skills/cc-writing/references/en/colleague.md`, `en/casual.md`,
-`en/formal.md`, and the same three under `id/`. `non-technical` changes what the
-reader is shown rather than how it sounds, so it opens `colleague.md` for the
-wording and `.agents/skills/cc-writing/references/non-technical.md` for what to
-show. A tone line that names no preset is the team's own: follow it as written,
+`en/formal.md`, `id/colleague.md`, and `id/formal.md`. `non-technical` changes
+what the reader is shown rather than how it sounds, so it opens `colleague.md`
+for the wording and `.agents/skills/cc-writing/references/non-technical.md` for
+what to show. A tone line that names no preset is the team's own: follow it as written,
 on top of `colleague`.
 
 | Preset | Line recorded in `members.yaml` |

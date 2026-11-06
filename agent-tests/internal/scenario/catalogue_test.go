@@ -17,7 +17,7 @@ func TestCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != 12 {
+	if len(loaded) != 14 {
 		t.Fatalf("scenarios %d", len(loaded))
 	}
 	entries, err := os.ReadDir(dir)
