@@ -270,6 +270,21 @@ var commands = map[string]command{
 		splits: noSplit,
 		run:    runRepoFetch,
 	},
+	"repo sync": {
+		extra: func(in *input) {
+			in.f.Var(&in.repos, "id", "repository to sync (repeatable; default every bound one)")
+		},
+		// Like a fetch, a sync changes only Git state in bound checkouts, never
+		// the workspace's own files, so it leaves the ID split alone.
+		splits: noSplit,
+		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+			states, err := s.RepoSync(ctx, in.repos)
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"repositories": states}, nil
+		},
+	},
 	"repo inspect": {
 		flags:    []string{"id"},
 		readOnly: true,
@@ -295,6 +310,14 @@ var commands = map[string]command{
 		run: act(func(ctx context.Context, s *workspace.Store, in *input) error {
 			return s.SetWorkspaceBase(ctx, in.get("branch"))
 		}),
+	},
+	"workspace sync": {
+		// The split writes ID files, which would leave the workspace dirty and
+		// make this command refuse its own change; a sync is never a split.
+		splits: noSplit,
+		run: func(ctx context.Context, s *workspace.Store, _ *input) (any, error) {
+			return s.WorkspaceSync(ctx)
+		},
 	},
 	"workspace remote": {
 		flags: []string{"url", "default-branch"},
