@@ -108,3 +108,9 @@ This applies only inside one such run. A plan from a separate intent, or one
 whose predecessor has already merged, has no predecessor branch to target: it is
 delivered against the base branch like any other. Most delivery is this case —
 one plan, finished and merged, then the next.
+
+## After it merges
+
+When the person says a request merged, follow `.agents/skills/ff/SKILL.md`: it
+offers, in one reply, to fast-forward the base branches that request targeted
+and to mark the plans it carried completed.

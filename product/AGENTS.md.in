@@ -422,6 +422,15 @@ appended *and* the durable product knowledge those plans changed is reconciled.
 written, not the request finished. Other work need not wait for unrelated
 knowledge updates.
 
+Fast-forwarding a bound checkout's base branch, or the workspace's own, changes
+the person's working copy: do it only when they invoke `/ff`, ask for it in
+words, or say yes to the offer below, and only through `repo sync` and
+`workspace sync`, never by pull, rebase, reset, or force. When a person says
+their delivered work merged, follow `.agents/skills/ff/SKILL.md`: offer in one
+reply to sync those repositories and to mark the delivered plans completed, and
+do neither until they answer. One yes covers both; saying "merged" completes
+nothing on its own.
+
 Worktrees and branches remain after completion. Remove a worktree only when
 requested; preserve dirty, untracked, and ignored files unless their disposal is
 explicitly authorized. Branch deletion is separate. On request, the CLI can move
