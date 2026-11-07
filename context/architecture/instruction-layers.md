@@ -91,6 +91,13 @@ by holding per-language and per-tone reference files that the agent opens only
 for the member it is writing for, so the words of a tone it is not writing in
 never reach it.
 
+One skill breaks the naming rather than the staging. Every shipped skill is
+`cc-*`, so it cannot collide with a team's own, except `ff`: a person types it
+right after a merge, and its value is how short it is. Its moment has a user
+word on both sides — `/ff` itself, and a person saying their request merged —
+so it is safe to keep in a skill, while the gate on moving a base branch stays
+resident.
+
 Owner:
 
 - `context-circuit-source@product/AGENTS.md.in` — the always-loaded entry

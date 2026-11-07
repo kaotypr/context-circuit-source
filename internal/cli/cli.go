@@ -55,6 +55,8 @@ workspace connect     [--path PATH] --base BRANCH [--url URL]
                       --path defaults to the workspace root, --base is this machine's)
 workspace base        --branch BRANCH (this machine's workspace base branch)
 workspace remote      [--url URL] [--default-branch BRANCH] (shared)
+workspace sync        fetch, then fast-forward the workspace base branch; only
+                      when the workspace repository has no uncommitted path
 knowledge connect     --id ID --path PATH [--url URL] [--default-branch BRANCH]
                       [--index PATH] (a repository this workspace reads and never writes)
 knowledge clone       --id ID [--path NEW_PATH] [--url URL] [--default-branch BRANCH]
@@ -64,6 +66,8 @@ knowledge sync        --id ID (fetch, then fast-forward only when clean and
 knowledge remote      --id ID [--url URL] [--default-branch BRANCH] [--index PATH] (shared)
 knowledge list        every borrowed repository and this machine's state of it
 repo fetch            --id ID [--remote origin]
+repo sync             [--id ID ...] (fetch, then fast-forward each base branch,
+                      default every bound repository; never merges, resets, or discards)
 repo inspect          --id ID
 record create         --kind intent|plan --slug SLUG --title TITLE
                       [--intent ID --repo ID ... --depends-on ID ...]

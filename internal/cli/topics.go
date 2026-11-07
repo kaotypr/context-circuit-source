@@ -98,7 +98,15 @@ branch from that local base, so one machine can work off a release branch while
 another stays on the default. Connect an existing checkout, clone, or initialize
 a new repository. The workspace's own checkout is refused here and described by
 the workspace commands instead, because an entry in this map is somewhere work
-happens. Fetch updates refs only and implies no rebase or reset.`,
+happens. Fetch updates refs only and implies no rebase or reset. Sync fetches
+and fast-forwards each named repository's base branch, or every bound one's,
+and never switches a checked-out branch, merges, rebases, resets, stashes, or
+discards: a checked-out base moves only when no uncommitted change is in the
+way, one checked out nowhere has its ref moved in place, and one checked out in
+another worktree is left for that worktree. Each repository reports a status —
+updated, current, ahead, diverged, blocked, checked-out-elsewhere,
+no-local-branch, no-upstream, unreachable, or unbound — and one repository's
+state never stops the rest.`,
 
 	"record": `Creates and updates intents and plans, allocating IDs from a permanent ledger.
 Approve and complete record a decision a person already made; neither command
@@ -170,8 +178,12 @@ splits like a repository and for the same reason: the URL and default branch are
 shared in workspace.yaml under workspace_repository, while the checkout root and
 the branch this machine works from stay in repositories.local.yaml. It is kept
 out of the repositories map because a plan, a relationship, and a worktree all
-read an entry there as somewhere work happens. No command commits, pushes, or
-merges the workspace.`,
+read an entry there as somewhere work happens. No command commits or pushes the
+workspace. Sync fetches and fast-forwards this machine's workspace base branch,
+and only when the workspace repository has no uncommitted path at all, tracked
+or untracked; otherwise it reports the paths as dirty and fetches nothing. Once
+it moved, it returns check_recommended, and cli_version_changed when the pinned
+CLI version changed with it.`,
 
 	"version": `Prints the running CLI version. A workspace pins its own in
 .context-circuit/CLI_VERSION and runs it through .context-circuit/cli.
