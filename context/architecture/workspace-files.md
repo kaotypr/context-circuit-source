@@ -8,7 +8,8 @@ they travel with the project or belong to one machine.
 **Shared** (committed): the workspace record carrying schema version, name,
 purpose, the workspace's own repository, logical repository IDs with their URL
 and default branch, and recorded relationships; the member roster with each
-member's allocation band and any informational roles; one permanent ID file per
+member's allocation band, any record language and tone, and any informational
+roles; one permanent ID file per
 member; the per-host role settings; intent and plan records; and the knowledge
 tree. A record sits in its kind's folder or one level of group folder below
 it, and the `_archive/` folder above or below that group holds archived ones.

@@ -30,12 +30,10 @@ their form whatever language the prose is in, and the slug stays a lowercase
 ASCII slug. So do the headings: a plan's structure is English whatever its prose
 is, for the reason the slug is.
 
-Compose in that language rather than translating into it — let the sentences
-follow that language rather than keeping English clause order, prefer the verb
-where English would nominalize, and keep technical vocabulary in the form
-engineers there actually say. Where the member records a `tone` in
-`members.yaml`, follow it; it overrides that guidance.
-`.agents/skills/cc-intent/SKILL.md` carries the same rules with worked examples.
+Write it, and the chat that presents it, following
+`.agents/skills/cc-writing/SKILL.md`, which carries how to compose in the
+member's language rather than translating into it, and the register their
+`tone` names.
 
 Once planning is requested for an approved intent, inspect real code and create
 linked plan folders:

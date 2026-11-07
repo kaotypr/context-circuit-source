@@ -100,6 +100,26 @@ func act(f func(ctx context.Context, s *workspace.Store, in *input) error) func(
 
 func noSplit(*input) bool { return false }
 
+// toneToRecord resolves member tone's three ways of saying what to record into
+// the one line SetMemberTone writes: a preset's line, a hand-written line, or
+// nothing for --clear. Exactly one of them may be passed.
+func toneToRecord(in *input) (string, error) {
+	preset, tone := in.get("preset"), in.get("tone")
+	chosen := 0
+	for _, set := range []bool{preset != "", tone != "", in.clearTone} {
+		if set {
+			chosen++
+		}
+	}
+	if chosen > 1 {
+		return "", errors.New("pass --preset, --tone or --clear, only one")
+	}
+	if preset == "" {
+		return tone, nil
+	}
+	return workspace.TonePresetLine(preset)
+}
+
 var commands = map[string]command{
 	"init": {
 		flags: []string{"name", "purpose", "member", "member-name"},
@@ -119,8 +139,9 @@ var commands = map[string]command{
 			in.f.Var(&in.roles, "role", "informational role of this member (repeatable)")
 		},
 		// A member writing in the workspace's usual language records nothing, and
-		// a team happy with the general composition guidance records no register;
-		// both fields exist for the member who is neither.
+		// a team happy with the default register records no tone; both fields
+		// exist for the member who is neither. A preset is set afterwards with
+		// member tone --preset.
 		optional: []string{"language", "tone"},
 		setup:    true,
 		precheck: func(_ context.Context, s *workspace.Store, in *input) error {
@@ -159,14 +180,30 @@ var commands = map[string]command{
 		}),
 	},
 	"member tone": {
-		flags: []string{"id", "tone"},
+		flags: []string{"id", "tone", "preset"},
 		extra: func(in *input) {
 			in.f.BoolVar(&in.clearTone, "clear", false, "remove this member's recorded register")
 		},
-		optional: []string{"tone"},
+		optional: []string{"tone", "preset"},
+		// A wrong preset name or a doubled choice is refused before the ID split
+		// runs, so a mistyped command changes nothing.
+		precheck: func(_ context.Context, _ *workspace.Store, in *input) error {
+			_, err := toneToRecord(in)
+			return err
+		},
 		run: act(func(_ context.Context, s *workspace.Store, in *input) error {
-			return s.SetMemberTone(in.get("id"), in.get("tone"), in.clearTone)
+			tone, err := toneToRecord(in)
+			if err != nil {
+				return err
+			}
+			return s.SetMemberTone(in.get("id"), tone, in.clearTone)
 		}),
+	},
+	"member presets": {
+		readOnly: true,
+		run: func(_ context.Context, _ *workspace.Store, _ *input) (any, error) {
+			return map[string]any{"presets": workspace.TonePresets()}, nil
+		},
 	},
 	"member band": {
 		flags: []string{"id"},

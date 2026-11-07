@@ -18,6 +18,15 @@ English whatever a member records. An approval or completion note is written in
 the record's language and states the decision, so a record reads in one language
 whether or not the conversation did.
 
+Beside the language a member may record a tone: the register their records and
+the chat around them are written in. It is either the line of one of four named
+presets, colleague, casual, formal, and non-technical, which starts with the
+preset's name so it is still recognized after its wording changes, or a line of
+the team's own. A member with none is written for as colleague. A tone never
+reaches knowledge. The writing skill stops where a `context/` note begins, and
+completion, which writes a note in the member's tone and reconciles knowledge in
+the same turn, says so at the hand-over.
+
 The boundary that makes this safe lives in the dispatch brief, not here. A
 record is quoted into the brief as authoritative, and a worker works inside a
 repository worktree under that repository's instructions and never reads the

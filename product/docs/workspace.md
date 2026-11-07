@@ -140,8 +140,21 @@ language is written in, as one line of prose — `semi-formal; keep technical
 terms in English` — quoted into the instruction that writes a record rather than
 parsed. It exists because naming a language decides the words and not how they
 are put together, and an agent composing in English and translating produces
-prose that is grammatical and formal in a way nobody chose. Unset leaves the
-general composition guidance in `cc-intent` to decide.
+prose that is grammatical and formal in a way nobody chose. The tone covers the
+conversation around a record as well as the record, and never knowledge.
+
+The product names four presets. `member tone --preset NAME` records the
+preset's line, which starts with its name so an agent recognizes it even after
+its wording changes, in the same field a line of the team's own fills. A member
+with no tone is written for as `colleague`. The `cc-writing` skill carries what
+each register means in English and in Bahasa Indonesia.
+
+| Preset | Line recorded in `members.yaml` |
+| --- | --- |
+| `colleague` | `colleague: semi-formal, the way you'd explain it to a teammate; technical terms as the team says them` |
+| `casual` | `casual: chat register, short and relaxed; still complete sentences` |
+| `formal` | `formal: for managers or people outside the team; no slang or contractions, still plain` |
+| `non-technical` | `non-technical: for readers who don't read code; goal, non-goals and questions say what people will see or can do, and the rest stays technical for the team` |
 
 `agent dispatch` names the record author's language in the brief and states that
 what goes into the repository is English. That boundary lives in the brief

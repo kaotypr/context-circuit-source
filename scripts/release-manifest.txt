@@ -65,4 +65,16 @@ product/skills/cc-complete/route.md .cursor/skills/cc-complete/SKILL.md
 product/skills/cc-deliver/SKILL.md .agents/skills/cc-deliver/SKILL.md
 product/skills/cc-deliver/route.md .claude/skills/cc-deliver/SKILL.md
 product/skills/cc-deliver/route.md .cursor/skills/cc-deliver/SKILL.md
+product/skills/cc-writing/SKILL.md .agents/skills/cc-writing/SKILL.md
+product/skills/cc-writing/references/non-technical.md .agents/skills/cc-writing/references/non-technical.md
+product/skills/cc-writing/references/en/language.md .agents/skills/cc-writing/references/en/language.md
+product/skills/cc-writing/references/en/colleague.md .agents/skills/cc-writing/references/en/colleague.md
+product/skills/cc-writing/references/en/casual.md .agents/skills/cc-writing/references/en/casual.md
+product/skills/cc-writing/references/en/formal.md .agents/skills/cc-writing/references/en/formal.md
+product/skills/cc-writing/references/id/language.md .agents/skills/cc-writing/references/id/language.md
+product/skills/cc-writing/references/id/colleague.md .agents/skills/cc-writing/references/id/colleague.md
+product/skills/cc-writing/references/id/casual.md .agents/skills/cc-writing/references/id/casual.md
+product/skills/cc-writing/references/id/formal.md .agents/skills/cc-writing/references/id/formal.md
+product/skills/cc-writing/route.md .claude/skills/cc-writing/SKILL.md
+product/skills/cc-writing/route.md .cursor/skills/cc-writing/SKILL.md
 product/host/claude-settings.json .claude/settings.json

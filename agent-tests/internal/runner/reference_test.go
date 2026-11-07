@@ -447,7 +447,7 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if doc.NextBand != 2 {
 			t.Fatalf("next_band %d\n%s", doc.NextBand, raw)
 		}
-	case "intent-lang":
+	case "intent-lang", "intent-tone":
 		if !strings.Contains(readFile(t, filepath.Join(st.w.WS, "members.yaml")), "Indonesian") {
 			t.Fatal("language was not recorded")
 		}
@@ -469,7 +469,7 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if strings.Contains(st.before.Refs["api"], "cc/p1000/") {
 			t.Fatalf("branch already exists\n%s", st.before.Refs["api"])
 		}
-	case "complete":
+	case "complete", "complete-tone":
 		if len(issues) != 1 || !strings.Contains(string(checkBefore), "needs a person") || !strings.Contains(string(checkBefore), "invoices") {
 			t.Fatalf("start check %s", checkBefore)
 		}
@@ -552,7 +552,7 @@ func assertSoft(t *testing.T, st *liveWorld, graded scenario.CheckContext, verdi
 	}
 	line := st.rt.recordLine(planned{Scenario: st.sc, Host: "claude", Config: hosts.HostConfig{Name: "claude"}}, st.parsed, verdict, results, 0, "", nil, &graded)
 	switch st.sc.ID {
-	case "intent", "intent-lang":
+	case "intent", "intent-lang", "intent-tone":
 		if line.Soft["code-canary-seen"] != true {
 			t.Fatalf("soft %#v", line.Soft)
 		}
@@ -746,9 +746,11 @@ func streamFor(id string) string {
 		"join":                  "Dana is on band 2 and nothing was committed.",
 		"intent":                "I wrote the intent for invoice CSV export. Please approve it before anyone builds it.",
 		"intent-lang":           "Intent sudah ditulis. Please approve it before anyone builds it.",
+		"intent-tone":           "Intent-nya udah aku tulis. Please approve it before anyone builds it.",
 		"plan":                  "The plan is in the plan folder and it stops before implementation.",
 		"execute":               "The CSV export is on the worktree branch. Tests passed. Nothing was pushed.",
 		"complete":              "The plan is marked complete and the invoices note mentions CSV. Those edits are uncommitted, and committing them is recommended.",
+		"complete-tone":         "The plan is marked complete and the invoices note mentions CSV. Those edits are uncommitted, and committing them is recommended.",
 		"direct":                "The README typo is fixed and the change is not committed.",
 		"borrowed":              "The handbook is read-only here. The correction belongs upstream, in the handbook repository's own review.",
 		"push-records":          "I recorded your approval of i100 and committed it. The first push was refused because the other clone had pushed plan p1000; I pulled with rebase, kept both sides' entries in the ID file, ran check, and pushed.",
@@ -758,7 +760,7 @@ func streamFor(id string) string {
 	tool := "context/INDEX.md"
 	extra := ""
 	switch id {
-	case "intent", "intent-lang":
+	case "intent", "intent-lang", "intent-tone":
 		extra = "CODE-CANARY-41b2"
 	case "plan":
 		tool = "repositories/api/internal/invoice/export.go"

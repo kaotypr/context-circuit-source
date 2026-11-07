@@ -1,0 +1,36 @@
+id: intent-tone
+version: 1
+title: An intent in the author's language and a preset tone
+covers:
+  - the cc-writing skill
+  - opening only the member's language and tone files
+  - a body in the author's language and register
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" member language --id maya --language Indonesian
+    sh "$WS/.context-circuit/cli" member tone --id maya --tone 'casual: chat register, short and relaxed; still complete sentences'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: member language and tone'
+prompt: |-
+  Customers need to download their invoices as CSV from the api. Write it up for me to approve before anyone builds it.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - intent-record
+  - intent-no-plan
+  - intent-lang-body
+soft:
+  code-canary-seen: CODE-CANARY-41b2 appeared in the host stream
+design_artifacts:
+  - intent/i100-*.md
+human:
+  - Whether the reads list shows only id/language.md and id/casual.md among the cc-writing references.
+  - Whether the intent body is Indonesian, reads as composed rather than translated, and the reply is casual.
+allowed_branches: []

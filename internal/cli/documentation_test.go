@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -551,5 +552,38 @@ func TestTheTwoLicensesStaySeparate(t *testing.T) {
 		if fields := strings.Fields(line); len(fields) == 2 && fields[0] == "product/LICENSE" {
 			t.Errorf("a license installs into a workspace: %s", line)
 		}
+	}
+}
+
+// A skill's files ship only when the release manifest names them, so a file
+// added under a skill and forgotten there is written, reviewed, and never
+// installed. Every file under product/skills is some manifest line's source.
+func TestEverySkillFileShips(t *testing.T) {
+	manifest, err := os.ReadFile(filepath.Join("..", "..", "scripts", "release-manifest.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sources := map[string]bool{}
+	for line := range strings.SplitSeq(string(manifest), "\n") {
+		if fields := strings.Fields(line); len(fields) == 2 {
+			sources[fields[0]] = true
+		}
+	}
+	root := filepath.Join("..", "..")
+	err = filepath.WalkDir(filepath.Join(root, "product", "skills"), func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		if !sources[filepath.ToSlash(rel)] {
+			t.Errorf("%s is never installed: no release manifest line names it", filepath.ToSlash(rel))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

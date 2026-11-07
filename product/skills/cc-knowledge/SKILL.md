@@ -101,7 +101,10 @@ inside it.
 Notes, the catalog, and the glossary are written in English, whatever language
 the project is discussed in and whatever a member records for their own records.
 A note outlives the member who wrote it and anchors to code, and the catalog is
-searched by substring, which a mixed-language index quietly breaks.
+searched by substring, which a mixed-language index quietly breaks. A member's
+tone and `.agents/skills/cc-writing/SKILL.md` never apply here, even in the same
+turn as a completion note written in that tone: knowledge is written for the
+next agent and maintainer, in the shape this skill gives it.
 
 Domain vocabulary is never translated. A word the project uses for its own
 subject matter keeps that word in an English note, because the glossary exists

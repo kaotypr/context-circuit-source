@@ -15,8 +15,11 @@ sh <root>/.context-circuit/cli --json record complete --id p0001 --text 'User re
 ```
 
 Write the note in the plan's language, stating what the person asked for rather
-than pasting their reply, which may be in the language of the conversation. The
-knowledge reconciled afterwards is English regardless.
+than pasting their reply, which may be in the language of the conversation. How
+the note reads follows `.agents/skills/cc-writing/SKILL.md`, in the member's
+tone, and the tone never changes what the person asked for. The knowledge
+reconciled afterwards is English regardless, and the hand-over is a clean one:
+that writing follows `.agents/skills/cc-knowledge/SKILL.md`, with no tone.
 
 The command stamps `completed_at` in the plan's frontmatter. Its result carries
 `completed`, the ID of the plan it marked, the catalog entries scoped to that plan's

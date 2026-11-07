@@ -169,6 +169,10 @@ English.
 Headings and field names stay English either way, so the records stay diffable
 and every agent reads them the same. Only the prose follows you.
 
+You can also pick how records and the chat around them sound. The agent offers
+four presets: colleague, the default, casual, formal, and non-technical, for a
+reader who doesn't read code. Name one, or describe a register of your own.
+
 ### 3. Connect the repositories
 
 Tell the agent which repositories belong to the project, where each one can be

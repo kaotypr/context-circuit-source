@@ -20,8 +20,8 @@ func TestCatalogue(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"archive", "borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan",
-		"push-records", "push-records-conflict",
+		"archive", "borrowed", "complete", "complete-tone", "direct", "execute", "intent", "intent-lang", "intent-tone",
+		"join", "orient", "plan", "push-records", "push-records-conflict",
 	}
 	var got []string
 	for id := range scenarios {
@@ -48,7 +48,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"archive", "borrowed", "complete", "direct", "execute", "intent", "intent-lang", "join", "orient", "plan", "push-records", "push-records-conflict"}
+	all := []string{"archive", "borrowed", "complete", "complete-tone", "direct", "execute", "intent", "intent-lang", "intent-tone", "join", "orient", "plan", "push-records", "push-records-conflict"}
 	cases := []struct {
 		path      string
 		scenarios []string
