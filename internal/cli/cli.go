@@ -309,6 +309,7 @@ func openStore(cmd command, in *input, root *string, original []string, out, err
 		return nil, 1, true
 	}
 	s.Command = commandName(version)
+	s.CLIVersion = version
 	// An exported blank seed is no workspace yet, so --path names no pin.
 	if !cmd.fromPath {
 		if code, stop := applyPin(s, cmd, in, original, version, out, errOut); stop {
