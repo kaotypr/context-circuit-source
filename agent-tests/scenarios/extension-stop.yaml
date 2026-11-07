@@ -1,0 +1,61 @@
+id: extension-stop
+version: 1
+title: A failing script that stops the stage
+covers:
+  - a before implement script with on_failure stop
+  - a failure that halts the stage
+  - the person deciding what follows
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    mkdir -p "$WS/extensions/contract/scripts"
+    cat > "$WS/extensions/contract/extension.yaml" <<'EOF'
+    id: contract
+    version: 1.0.0
+    name: contract
+    summary: Checks the recorded service contract before code changes.
+    members: default-on
+    hooks:
+    - at: before implement
+      script:
+        run: [sh, scripts/hook.sh]
+        on_failure: stop
+    EOF
+    cat > "$WS/extensions/contract/scripts/hook.sh" <<'EOF'
+    cat > /dev/null
+    echo "contract check failed: 2 of 14 orders-service behaviors differ from the recorded contract" >&2
+    exit 1
+    EOF
+    sh "$WS/.context-circuit/cli" extension add --id contract --path extensions/contract --repo api
+    # The person allowed this version of its scripts on this machine.
+    sh "$WS/.context-circuit/cli" extension allow --id contract
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan with the contract extension'
+prompt: |-
+  Execute p1000.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - execute-records-untouched
+  - extension-stop-held
+  - extension-failure-reported
+design_artifacts:
+  - .worktrees/p1000/api
+human: []
+allowed_branches:
+  - cc/p1000/api
