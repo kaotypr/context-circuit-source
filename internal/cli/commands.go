@@ -21,6 +21,7 @@ type input struct {
 	band                                                    int
 	archived, reuse, discard, reviewRequested, shared       bool
 	localTiering, clearTone, clearRoles, all, confirm       bool
+	prune                                                   bool
 
 	// checkFailed is set by check, whose findings make the exit code 1.
 	checkFailed bool
@@ -71,8 +72,13 @@ type command struct {
 	// requiredNumber names a number flag that must be passed even when zero is
 	// a real value. The string-flag check cannot see an omitted number.
 	requiredNumber string
-	makeRoot       bool // create the workspace root before opening it
-	fromPath       bool // the root is --path, and no workspace pins a version there
+	// stage names the extension stage this command fires, whose before and
+	// after hook blocks are added to its result once it has succeeded. It is
+	// declared here, not in each run function, so where hooks run relative to
+	// the write lock is decided in one place.
+	stage    string
+	makeRoot bool // create the workspace root before opening it
+	fromPath bool // the root is --path, and no workspace pins a version there
 	// precheck refuses a call its own command would refuse before the ID split
 	// runs, so a mistyped command never moves a schema 2 workspace on its way to
 	// failing.
@@ -365,6 +371,69 @@ var commands = map[string]command{
 			return s.KnowledgeStates(ctx)
 		},
 	},
+	"extension add": {
+		flags: []string{"id", "path", "url", "ref", "subpath"},
+		extra: func(in *input) {
+			in.f.Var(&in.repos, "repo", "repository the extension is limited to (repeatable; default every one)")
+		},
+		// A folder source takes --path and a remote one --url with --ref; the
+		// store refuses a mixed or empty call where it can say which.
+		optional: []string{"path", "ref", "subpath"},
+		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+			return s.AddExtension(ctx, in.get("id"), in.get("path"), in.get("url"), in.get("ref"), in.get("subpath"), in.repos)
+		},
+	},
+	"extension update": {
+		flags: []string{"id", "ref"},
+		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+			return s.UpdateExtension(ctx, in.get("id"), in.get("ref"))
+		},
+	},
+	"extension remove": {
+		flags: []string{"id"},
+		run: act(func(_ context.Context, s *workspace.Store, in *input) error {
+			return s.RemoveExtension(in.get("id"))
+		}),
+	},
+	"extension enable": {
+		flags:    []string{"id", "member"},
+		optional: []string{"member"},
+		run: act(func(_ context.Context, s *workspace.Store, in *input) error {
+			return s.SetExtensionSwitch(in.get("id"), in.get("member"), true)
+		}),
+	},
+	"extension disable": {
+		flags:    []string{"id", "member"},
+		optional: []string{"member"},
+		run: act(func(_ context.Context, s *workspace.Store, in *input) error {
+			return s.SetExtensionSwitch(in.get("id"), in.get("member"), false)
+		}),
+	},
+	"extension sync": {
+		extra: func(in *input) {
+			in.f.BoolVar(&in.prune, "prune", false, "remove cached commits no entry records")
+		},
+		// Sync writes only this machine's ignored cache, never a shared file,
+		// so like a fetch it leaves the ID split alone.
+		splits: noSplit,
+		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+			return s.SyncExtensions(ctx, in.prune)
+		},
+	},
+	"extension list": {
+		readOnly: true,
+		run: func(_ context.Context, s *workspace.Store, _ *input) (any, error) {
+			return s.ExtensionStates()
+		},
+	},
+	"extension hooks": {
+		flags: []string{"stage", "when", "intent", "plan", "repo"},
+		// Hooks change nothing shared: they resolve instructions, fetching a
+		// commit this machine lacks into its ignored cache.
+		optional: []string{"intent", "plan", "repo"},
+		readOnly: true,
+		run:      runExtensionHooks,
+	},
 	"record create": {
 		flags: []string{"kind", "slug", "title", "intent"},
 		extra: func(in *input) {
@@ -403,10 +472,12 @@ var commands = map[string]command{
 	},
 	"record approve": {
 		flags: []string{"id", "text"},
+		stage: "approve",
 		run:   runApprove,
 	},
 	"record complete": {
 		flags: []string{"id", "text"},
+		stage: "complete",
 		run:   runComplete,
 	},
 	"record delete": {
@@ -439,7 +510,8 @@ var commands = map[string]command{
 		extra: func(in *input) {
 			in.f.Var(&in.recordIDs, "id", "intent or plan ID to archive (repeatable)")
 		},
-		run: runArchive,
+		stage: "archive",
+		run:   runArchive,
 	},
 	"record dependencies": {
 		flags: []string{"id"},
@@ -479,6 +551,7 @@ var commands = map[string]command{
 			in.f.BoolVar(&in.reuse, "reuse", false, "explicitly reuse existing work")
 		},
 		optional: []string{"plan", "branch", "start", "path"},
+		stage:    "prepare",
 		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
 			return s.Prepare(ctx, in.get("repo"), in.get("plan"), in.get("branch"), in.get("start"), in.get("path"), in.reuse, workspace.ReuseOptions{Mode: in.get("copy-mode"), Paths: in.copyPaths})
 		},
@@ -580,7 +653,13 @@ var commands = map[string]command{
 		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
 			issues, e := s.Check(ctx)
 			in.checkFailed = len(issues) > 0
-			return map[string]any{"issues": issues, "ok": !in.checkFailed}, e
+			result := map[string]any{"issues": issues, "ok": !in.checkFailed}
+			// What check could not read without the network is said apart
+			// from what is wrong, and changes neither ok nor the exit code.
+			if unchecked := s.UncheckedExtensions(); len(unchecked) > 0 {
+				result["unchecked"] = unchecked
+			}
+			return result, e
 		},
 	},
 }

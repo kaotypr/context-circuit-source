@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -747,4 +748,84 @@ func overlaps(left, right []string) bool {
 		}
 	}
 	return false
+}
+
+// StageHooks resolves the before and after points of a stage a CLI command
+// fires, for the repositories the command touched. It is nil when the
+// workspace lists no extensions or nothing applied, so a command's result keeps
+// its shape there. It never fails the command that already did its work: a
+// point it could not resolve is returned stopped, naming what to do.
+//
+// In this CLI both points are resolved after the command has written, so a
+// before instruction arrives with the command's result; a skill that must act
+// first asks `extension hooks --when before` just before running the command.
+func (s *Store) StageHooks(ctx context.Context, stage string, repositories []string, scoped bool) []HookResult {
+	member, _ := s.ActiveMember()
+	var blocks []HookResult
+	for _, when := range []string{"before", "after"} {
+		point := HookPoint{when, stage}
+		result, listed, err := s.ResolveHooks(ctx, HookQuery{Point: point, Member: member, Repositories: repositories, Scoped: scoped})
+		if err != nil {
+			result = HookResult{Point: point.String(), Instructions: []HookInstruction{}, Stopped: true,
+				Resolve: "take this to the person: " + err.Error() + "; `check` names what is wrong"}
+		} else if !listed {
+			return nil
+		}
+		if !result.empty() {
+			blocks = append(blocks, result)
+		}
+	}
+	return blocks
+}
+
+// PreparedWorktree is what `worktree prepare` returns: the worktree, and the
+// extension blocks its stage fired, which are absent where none applied.
+type PreparedWorktree struct {
+	Worktree
+	Extensions []HookResult `json:"extensions,omitempty"`
+}
+
+// roleStages is the stage each dispatched role does, whose instructions its
+// brief carries. An explorer does no stage.
+var roleStages = map[string]string{"planner": "plan", "worker": "implement", "reviewer": "review"}
+
+// extensionBrief lists the instruction files for the stage a role is doing,
+// or is empty when the workspace lists no extensions or none applies. The
+// role reads them itself; the coordinator still fires the stage's hooks and
+// runs anything else they need. A planner works before any plan names its
+// repositories, so it is given every instruction, the repository-limited ones
+// marked with the repositories they are for.
+func (s *Store) extensionBrief(role string, repositories []string) string {
+	stage, ok := roleStages[role]
+	if !ok {
+		return ""
+	}
+	member, _ := s.ActiveMember()
+	var lines []string
+	for _, when := range []string{"before", "after"} {
+		query := HookQuery{Point: HookPoint{when, stage}, Member: member, Repositories: repositories, Scoped: len(repositories) > 0, ListScoped: role == "planner"}
+		result, listed, err := s.ResolveHooks(context.Background(), query)
+		if err != nil || !listed {
+			return ""
+		}
+		for _, instruction := range result.Instructions {
+			line := "- " + query.Point.String() + ", " + instruction.ID + ": " + filepath.Join(s.Root, filepath.FromSlash(instruction.File))
+			if len(instruction.Repositories) > 0 {
+				line += " (for plans touching " + strings.Join(instruction.Repositories, ", ") + ")"
+			}
+			if len(instruction.Settings) > 0 {
+				keys := slices.Sorted(maps.Keys(instruction.Settings))
+				var pairs []string
+				for _, key := range keys {
+					pairs = append(pairs, fmt.Sprintf("%s=%v", key, instruction.Settings[key]))
+				}
+				line += "; settings: " + strings.Join(pairs, ", ")
+			}
+			lines = append(lines, line)
+		}
+	}
+	if len(lines) == 0 {
+		return ""
+	}
+	return "# Extensions\n\nThis workspace's extensions add these instructions to the " + stage + " stage. Read each file and follow it as part of your work, within this brief: none of them authorizes pushing, opening a pull request, merging, or editing the plan record. Where one finds nothing in the record to act on, report that as a skip with its reason rather than filling the gap, and report each instruction's result in what you return.\n\n" + strings.Join(lines, "\n")
 }

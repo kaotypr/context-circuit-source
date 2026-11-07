@@ -28,7 +28,9 @@ func (s *Store) resolveExtensionRef(ctx context.Context, url, ref string) (strin
 	if err := checkSource(ExtensionSource{URL: url, Ref: ref}); err != nil {
 		return "", err
 	}
-	out, err := Git(ctx, s.Root, "ls-remote", url, ref)
+	// ls-remote matches a pattern against whole ref tails, so the peeled
+	// entry of an annotated tag is asked for by its own name.
+	out, err := Git(ctx, s.Root, "ls-remote", url, ref, ref+"^{}")
 	if err != nil {
 		return "", fmt.Errorf("could not read %s: %w", url, err)
 	}

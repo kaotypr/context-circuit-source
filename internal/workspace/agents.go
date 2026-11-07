@@ -473,6 +473,7 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	// Whoever wrote the record wrote it in their own language, so the brief
 	// reports that one rather than the language of whoever is dispatching.
 	author := ""
+	var planRepositories []string
 	if plan != "" {
 		record, err := s.FindRecord(plan)
 		if err != nil {
@@ -482,6 +483,7 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 			return Dispatch{}, errors.New("--plan needs a plan ID")
 		}
 		author = record.CreatedBy
+		planRepositories = record.Repositories
 		prompt += "\n\n" + planBrief(record, s.Root)
 		if role == "worker" {
 			assignment, err := s.workerAssignment(record, repo)
@@ -504,6 +506,12 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	}
 	if task != "" {
 		prompt += "\n\n# Task\n\n" + task
+	}
+	if repo != "" {
+		planRepositories = []string{repo}
+	}
+	if section := s.extensionBrief(role, planRepositories); section != "" {
+		prompt += "\n\n" + section
 	}
 	prompt += "\n\n" + languageBrief(s.authorLanguage(author))
 	prompt += "\n\n# What to return\n\n" + r.Instructions
