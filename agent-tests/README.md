@@ -556,13 +556,13 @@ ancestor of the pushed one, so a forced push fails, and the local base branch
 to equal what was pushed; `push-records-union` requires the pushed ID file to
 keep both clones' reservations; `push-records-held` requires the remote's base
 branch unchanged and the approval still recorded locally.
-A scenario with `sync_repository_bases: true` may move each code repository's
-base branch and its HEAD; the workspace's own branch stays guarded. Only `ff`
-sets it, and `ff-synced` grades the move: api's base branch must equal what its
-remote holds, with HEAD on it, its earlier tip an ancestor, and the workspace's
-branch and its uncommitted `notes.txt` unchanged. `after-merge-offered`
-requires the plan not completed, api's base branch unmoved, and a reply that
-offers both the sync and the completion.
+A scenario with `sync_repository_bases: true` may move api's base branch and
+its HEAD; every other repository, the workspace's own branch included, stays
+guarded. Only `ff` sets it, and `ff-synced` grades the move: api's base branch
+must equal what its remote holds, with HEAD on it and its earlier tip an
+ancestor, and the workspace's branch and its uncommitted `notes.txt` must stay
+unchanged. `after-merge-offered` requires the plan not completed, api's base
+branch unmoved, and a reply that offers both the sync and the completion.
 `join` also snapshots the original checkout, under the keys `ws0` and
 `ws0/<repo>`, so a commit left there fails `no-stray-commits`, and a file
 written there fails `no-outside-writes`.
