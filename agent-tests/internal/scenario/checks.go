@@ -138,7 +138,8 @@ func checkNoStrayCommits(ctx CheckContext) CheckResult {
 	for _, repo := range repos {
 		// A run allowed to push the workspace's base branch commits on
 		// it, and a pull it stops for the person leaves HEAD mid-rebase.
-		baseAllowed := ctx.Scenario.PushWorkspaceBase && repo == "ws"
+		baseAllowed := ctx.Scenario.PushWorkspaceBase && repo == "ws" ||
+			ctx.Scenario.SyncRepositoryBases && repo != "ws" && !strings.HasPrefix(repo, "ws0")
 		if ctx.Before.Heads[repo] != ctx.After.Heads[repo] && !baseAllowed {
 			problems = append(problems, repo+" HEAD changed")
 		}

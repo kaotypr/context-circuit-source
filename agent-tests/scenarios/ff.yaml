@@ -1,0 +1,39 @@
+id: ff
+version: 1
+title: Bring local base branches up to date with /ff, skipping a dirty workspace
+covers:
+  - /ff fast-forwarding a code repository's base branch to its remote
+  - the workspace skipped while it holds an uncommitted file, the code repository still synced
+  - no pull, rebase, reset, stash or discard to get past a status
+setup:
+  - |
+    set -eu
+    export GIT_AUTHOR_DATE=2026-02-01T09:00:00Z GIT_COMMITTER_DATE=2026-02-01T09:00:00Z
+    git clone -q "$RUN/remotes/api.git" "$RUN/api-teammate"
+    printf '\nInvoices can be resent by email.\n' >> "$RUN/api-teammate/README.md"
+    git -C "$RUN/api-teammate" commit -qam 'docs: mention resending invoices'
+    git -C "$RUN/api-teammate" push -q origin main
+    git clone -q "$RUN/remotes/ws.git" "$RUN/ws-teammate"
+    printf '\nThe team meets on Mondays.\n' >> "$RUN/ws-teammate/README.md"
+    git -C "$RUN/ws-teammate" commit -qam 'docs: note the team meeting'
+    git -C "$RUN/ws-teammate" push -q origin main
+    unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+    printf 'draft of tomorrow agenda\n' > "$WS/notes.txt"
+prompt: |-
+  /ff
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - ff-synced
+soft: {}
+design_artifacts: []
+human:
+  - Whether the reply reports api as updated with the commits taken, and names notes.txt as what kept the workspace back.
+allowed_branches: []
+sync_repository_bases: true

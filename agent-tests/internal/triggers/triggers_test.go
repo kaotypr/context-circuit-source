@@ -20,7 +20,7 @@ func TestCatalogue(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"archive", "borrowed", "complete", "complete-tone", "direct", "execute", "intent", "intent-lang", "intent-tone",
+		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "ff", "intent", "intent-lang", "intent-tone",
 		"join", "orient", "plan", "push-records", "push-records-conflict",
 	}
 	var got []string
@@ -48,7 +48,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"archive", "borrowed", "complete", "complete-tone", "direct", "execute", "intent", "intent-lang", "intent-tone", "join", "orient", "plan", "push-records", "push-records-conflict"}
+	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "plan", "push-records", "push-records-conflict"}
 	cases := []struct {
 		path      string
 		scenarios []string
@@ -65,7 +65,10 @@ func TestSamplePaths(t *testing.T) {
 		{"product/skills/cc-dispatch/SKILL.md", []string{"execute", "plan"}, nil},
 		{"product/skills/cc-worktree/SKILL.md", []string{"execute"}, nil},
 		{"product/skills/cc-knowledge/SKILL.md", []string{"borrowed", "complete"}, nil},
-		{"product/skills/cc-complete/SKILL.md", []string{"archive", "complete"}, nil},
+		{"product/skills/cc-complete/SKILL.md", []string{"after-merge", "archive", "complete"}, nil},
+		{"product/skills/ff/SKILL.md", []string{"after-merge", "ff"}, nil},
+		{"product/skills/ff/route.md", []string{"after-merge", "ff"}, []string{"claude", "cursor"}},
+		{"internal/workspace/sync.go", []string{"ff"}, nil},
 		{"product/skills/cc-direct/SKILL.md", []string{"direct"}, nil},
 		{"product/skills/cc-cli/SKILL.md", []string{"orient"}, nil},
 		{"product/skills/cc-cli/scripts/install.sh", []string{"orient"}, nil},
@@ -175,7 +178,6 @@ func TestNoneList(t *testing.T) {
 	}
 	for _, path := range []string{
 		"product/skills/cc-review/SKILL.md",
-		"product/skills/cc-deliver/route.md",
 		"product/skills/cc-stacked/SKILL.md",
 		"product/skills/cc-system-design/SKILL.md",
 	} {

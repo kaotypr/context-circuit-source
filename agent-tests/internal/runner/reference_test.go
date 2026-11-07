@@ -49,6 +49,8 @@ var mutationHost = map[string]string{
 	"push-records-pushed":       "push-records",
 	"push-records-union":        "push-records",
 	"push-records-held":         "push-records-conflict",
+	"after-merge-offered":       "after-merge",
+	"ff-synced":                 "ff",
 }
 
 func TestMutationCoverage(t *testing.T) {
@@ -513,6 +515,31 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if upstream := st.git(t, st.w.WS, "rev-parse", "--abbrev-ref", "main@{upstream}"); upstream != "origin/main" {
 			t.Fatalf("upstream %q", upstream)
 		}
+	case "after-merge":
+		if len(issues) != 0 {
+			t.Fatalf("start check %s", checkBefore)
+		}
+		if strings.Contains(readFile(t, oneGlob(t, st.w.WS, "plans", "p1000-*", "plan.md")), "completed_at:") {
+			t.Fatal("plan is already complete")
+		}
+		bare := filepath.Join(st.w.RunRoot, "remotes", "api.git")
+		if st.git(t, st.w.API, "rev-parse", "refs/heads/main") == st.git(t, bare, "rev-parse", "refs/heads/main") {
+			t.Fatal("the api remote did not merge the request")
+		}
+		st.git(t, bare, "merge-base", "--is-ancestor", st.git(t, bare, "rev-parse", "refs/heads/cc/p1000/api"), "refs/heads/main")
+	case "ff":
+		if len(issues) != 0 {
+			t.Fatalf("start check %s", checkBefore)
+		}
+		for _, repo := range []struct{ dir, bare string }{{st.w.API, "api.git"}, {st.w.WS, "ws.git"}} {
+			bare := filepath.Join(st.w.RunRoot, "remotes", repo.bare)
+			if st.git(t, repo.dir, "rev-parse", "refs/heads/main") == st.git(t, bare, "rev-parse", "refs/heads/main") {
+				t.Fatalf("%s is not behind its remote", repo.bare)
+			}
+		}
+		if !strings.Contains(readFile(t, filepath.Join(st.w.WS, "notes.txt")), "draft") {
+			t.Fatal("the workspace holds no uncommitted file")
+		}
 	case "borrowed":
 		note := filepath.Join(st.w.WS, "repositories", "handbook", "numbering.md")
 		if !strings.Contains(readFile(t, note), "Invoice numbers are global and never restart.") {
@@ -723,6 +750,14 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		held := st.git(t, bare, "rev-parse", "refs/heads/main")
 		st.git(t, bare, "update-ref", "refs/heads/main", held+"~1")
 		return func() { st.git(t, bare, "update-ref", "refs/heads/main", held) }
+	case "after-merge-offered":
+		return editFile(t, oneGlob(t, st.w.WS, "plans", "p1000-*", "plan.md"), func(s string) string {
+			return insertAfter(s, "created_at:", "completed_at: 2026-10-26T00:00:00Z")
+		})
+	case "ff-synced":
+		synced := st.git(t, st.w.API, "rev-parse", "HEAD")
+		st.git(t, st.w.API, "reset", "-q", "--hard", "HEAD~1")
+		return func() { st.git(t, st.w.API, "reset", "-q", "--hard", synced) }
 	case "borrowed-untouched":
 		return editFile(t, filepath.Join(st.w.WS, "repositories", "handbook", "numbering.md"), func(s string) string {
 			return s + "\nEdited.\n"
@@ -755,6 +790,8 @@ func streamFor(id string) string {
 		"borrowed":              "The handbook is read-only here. The correction belongs upstream, in the handbook repository's own review.",
 		"push-records":          "I recorded your approval of i100 and committed it. The first push was refused because the other clone had pushed plan p1000; I pulled with rebase, kept both sides' entries in the ID file, ran check, and pushed.",
 		"push-records-conflict": "I recorded your approval of i100 and committed it, but the push was refused: the other clone changed i100's open questions, and that conflicts with the approval. The rebase is in progress and nothing was pushed. Which version should i100 keep?",
+		"after-merge":           "p1000 is merged into main on the api remote. Shall I fast-forward api's local main to origin/main and mark p1000 completed? One yes does both; nothing has been changed yet.",
+		"ff":                    "api: main fast-forwarded by 1 commit to origin/main. The workspace was skipped: notes.txt is uncommitted.",
 		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
