@@ -126,7 +126,7 @@ discharge. CI runs it on every pull request.
 
 ## Development
 
-Contributors need Go 1.25 or newer and Git.
+Contributors need Go 1.26 or newer and Git.
 
 Build the native CLI:
 
