@@ -11,7 +11,8 @@ and default branch, and recorded relationships; the member roster with each
 member's allocation band, any record language and tone, and any informational
 roles; one permanent ID file per
 member; the per-host role settings; intent and plan records; and the knowledge
-tree. A record sits in its kind's folder or one level of group folder below
+tree. A workspace that uses extensions also shares `extensions.yaml`, listing
+them in hook order. A record sits in its kind's folder or one level of group folder below
 it, and the `_archive/` folder above or below that group holds archived ones.
 
 Member roles are written only at schema 3. An older CLI reads the roster
@@ -26,8 +27,15 @@ each clone appends only to its own member's file.
 
 **Local** (ignored): the active member on this machine; this machine's workspace
 checkout and the map from logical repository ID to its checkout path and base
-branch; optional plan-to-worktree associations; the lock file; and the working
+branch; optional plan-to-worktree associations; the lock file; the remote
+extension sources this machine fetched, one folder per commit; and the working
 copies themselves.
+
+`extensions.yaml` is a file of its own, not a key of the workspace record,
+because that record is decoded strictly and a key an older CLI does not know
+would break every one of them. It is workspace data that no template update
+writes, and its list items are edited in place by index so comments survive.
+[Workspace extensions](../domains/extensions.md) covers what it holds.
 
 The split is what lets one workspace travel. Cloning it onto a second machine is
 selecting an existing member and connecting the existing repository IDs to local
@@ -133,6 +141,8 @@ Owner:
   and the split of the shared one.
 - `context-circuit-source@internal/workspace/archive_migration.go` — the
   rename of a legacy archive folder.
+- `context-circuit-source@internal/workspace/extensions.go` — the extensions
+  file, manifests, and hook resolution.
 - `context-circuit-source@internal/workspace/self.go` — describing and binding
   the workspace's own repository.
 - `context-circuit-source@product/docs/workspace.md` — the description shipped

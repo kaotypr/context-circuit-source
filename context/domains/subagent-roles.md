@@ -71,7 +71,15 @@ in that order:
    receives a record in another language has to be told which of it is prose that
    stays in that language and which is structure that stays English, or it
    answers in whichever the record led with.
-6. **What the role must return.**
+6. **Extensions**, where the workspace lists any: the instruction files for
+   the stage the role does — plan, implement, or review; an explorer does none.
+   It sits after the task because it adds to the assignment rather than
+   stating it, and is left out where nothing applies. A planner works before
+   plans name repositories, so it is given every plan instruction, the
+   repository-limited ones marked with what they are for. Role definitions
+   never carry these, so an extension added or removed never makes an installed
+   definition stale.
+7. **What the role must return.**
 
 The returned prompt is launched unmodified for the same reason: a coordinator
 that retypes it in its own words drops the quoted record, and the agent then
@@ -237,6 +245,8 @@ Owner:
 
 - `context-circuit-source@internal/workspace/agents.go` — the roles, the
   settings that reach a host, and the composed brief.
+- `context-circuit-source@internal/workspace/extensions.go` `extensionBrief` —
+  the extensions section of a brief.
 - `context-circuit-source@template/role-tiering.yaml` — the shipped reasoning
   about which role earns which settings.
 - `context-circuit-source@product/skills/cc-dispatch/SKILL.md` — the dispatch

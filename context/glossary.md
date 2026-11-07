@@ -24,8 +24,10 @@ the repositories for the business word finds nothing without it.
 | Direct execution | Implementing a plan inside a bound checkout instead of a prepared worktree, only when a person asks for it | `context-circuit-source@product/AGENTS.md.in` |
 | Dispatch specification | The resolved subagent invocation the CLI returns without launching anything | `context-circuit-source@internal/workspace/agents.go` `DispatchAgent` |
 | Execution request | A person's separate decision to run presented plans, authorizing worktree preparation and implementation | `context-circuit-source@product/AGENTS.md.in` |
+| Extension | A folder with an `extension.yaml` manifest that adds instructions before and after stages, listed in a workspace's `extensions.yaml` | `context-circuit-source@internal/workspace/extensions.go` `ExtensionsFile`, `Manifest` |
 | Finished record | A completed plan, or an approved intent whose plans are all completed; what archiving takes by default | `context-circuit-source@internal/workspace/mine.go` `finished` |
 | Group folder | One level of folder under the intent or plan folder that organizes records and means nothing to the CLI, least of all who owns them | `context-circuit-source@internal/workspace/placement.go` `isGroup`, `folderChain` |
+| Hook point | A stage's before or after moment where extensions add work, written "after implement" | `context-circuit-source@internal/workspace/extensions.go` `HookPoint`, `Store.ResolveHooks` |
 | ID file | One member's permanent reservations, in a file named after the member; a member's record creation writes only theirs, and a schema 2 workspace's shared ID file is split into them | `context-circuit-source@internal/workspace/ids.go` `IDFilePath`, `Store.SplitIDLedger` |
 | Integration merge | The local merge assembling a dependent plan's base at a fan-in; implementation, not delivery | `context-circuit-source@internal/workspace/order.go` `OrderIntegration` |
 | Intent | One approved statement of the outcome a change should produce, written before the code is read | `context-circuit-source@internal/workspace/records.go` `CreateRecord` |
