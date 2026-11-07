@@ -13,7 +13,7 @@ repo connect|clone|init|base|remote|relate|fetch|inspect
 workspace connect|base|remote
 record create|show|list|approve|complete|archive|dependencies|order|delete
 context find
-extension add|update|remove|enable|disable|sync|list|hooks
+extension add|update|remove|enable|disable|sync|list|hooks|allow
 worktree prepare|list|inspect|move|repair|remove
 template export
 agent settings|configure|setup|dispatch
@@ -58,10 +58,14 @@ specification, export, and the diagnostic run without serializing the workspace;
 everything that writes runs under the workspace lock.
 
 Four commands fire an extension stage themselves — approve, prepare, complete,
-and archive — and add an `extensions` list of hook blocks to their result once
-they have succeeded, outside the write lock. The list is absent where the
-workspace lists no extensions or nothing applied, so a result keeps the shape
-it always had. `worktree prepare` returns its worktree embedded beside that
+and archive. Each runs its `before` point after its setup gate and precheck and
+before taking the write lock, and its `after` point once it has succeeded and
+released the lock. A `before` point that stops leaves the command unrun: it
+exits 1, having written nothing, and still prints the block.
+
+The command adds the `extensions` list of hook blocks to its result. The list
+is absent where the workspace lists no extensions or nothing applied, so a
+result keeps the shape it always had. `worktree prepare` returns its worktree embedded beside that
 list for the same reason. `check` names a remote extension this machine has
 not fetched under `unchecked`, apart from `issues`, without changing the exit
 code.

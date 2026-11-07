@@ -74,6 +74,18 @@ list nobody had seen, for the same reason an early instruction to implement
 does not cover unread plans. Committing and pushing that deletion stay separate
 authorizations.
 
+One configuration stands in for a person's answer, and only one: an extension
+script whose hook declares `standing` consent. Enabling the extension in
+`extensions.yaml`, and this machine's member allowing its exact version after
+reading the action its manifest names, is consent given ahead of time to that
+single action for that hook. It carries over to nothing else — not another
+action of the script, not anything the agent does — and a new version is a new
+allow, so a changed action is read again. Every other hook's instructions and
+scripts authorize nothing, and an `each-time` script asks the person before
+every run. The entry instruction names the exception and its limit, because an
+exception stated only in a reference is one an agent applies everywhere or
+nowhere. [Workspace extensions](extensions.md) has the mechanism.
+
 Identity is not an authorization. Every workspace asks an unidentified person
 which member they are before changing anything, and takes the answer as given;
 that attributes the work and chooses its numbers, and grants nothing the person
@@ -268,3 +280,6 @@ Owner:
   result names, beside the record it just wrote, and the commit it recommends.
 - `context-circuit-source@internal/workspace/commits.go` — which of a gate's
   records and ID files Git reports uncommitted, and why Git could not say.
+- `context-circuit-source@internal/workspace/extensions.go` — the one standing
+  consent an extension script may carry, and every other hook running only
+  with the person's yes.

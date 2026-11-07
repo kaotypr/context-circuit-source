@@ -13,7 +13,8 @@ the user requests it. Main-session implementation checks remain ordinary tests.
 Where the workspace lists extensions, a planner, worker, or reviewer brief
 carries its stage's instruction files in an `# Extensions` section. The
 coordinator still runs the stage's `extension hooks` itself and reports their
-results with the role's.
+results with the role's. Scripts are always run by the coordinator through
+`extension hooks`, never by a role.
 
 Read `.context-circuit/docs/agents.md` for the current host's settings mechanism.
 Use `agent settings` to resolve the tiering in force: the shared

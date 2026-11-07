@@ -313,6 +313,10 @@ func TestGeneralRulesStayOutOfTheStackedSkill(t *testing.T) {
 		// An extension adds work to a stage; it can never be the thing that
 		// authorizes what this file reserves for a person.
 		"No extension crosses a rule in this file",
+		// Standing consent is the one place configuration stands in for a
+		// person's answer, so the entry instruction names it and its limit.
+		"The one exception is a script whose hook declares `standing` consent",
+		"Run `extension allow` only",
 	} {
 		if !strings.Contains(agents, gate) {
 			t.Errorf("gate or prohibition missing from the entry instruction: %q", gate)
