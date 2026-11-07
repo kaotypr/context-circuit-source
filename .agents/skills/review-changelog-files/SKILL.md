@@ -24,8 +24,9 @@ the source checkout; it appears in no manifest and ships nowhere.
   request.
 - Start no coding host and call no model API.
 - Read only this checkout, `git`, and the public pull requests through
-  `gh pr view` and `gh pr diff`. `gh` runs as the maintainer's own login; never
-  read or handle a token.
+  `gh pr view`, `gh pr diff`, and `gh pr list`. `gh` runs as the maintainer's
+  own login; never read or handle a token. `git fetch --tags origin` is
+  allowed: it updates tags and remote-tracking refs, never a tracked file.
 - Judge an entry against the previous stable release, never against the merge
   history. The question is always: will someone using that release notice this,
   as written?
@@ -41,17 +42,21 @@ the source checkout; it appears in no manifest and ships nowhere.
 ## Set up
 
 Both kinds of review start here. Run from the repository root, after
-`git fetch --tags origin`.
+`git fetch --tags origin`, so the tags and `origin/main` are current. Run the
+commands below under `sh`: zsh does not split an unquoted `$(...)` or variable,
+and the loop and pathspecs then come back empty without an error.
 
 1. **The previous stable tag.** The highest `cli-v<X.Y.Z>` with no pre-release
    label that is an ancestor of the branch under review:
 
    ```sh
-   for t in $(git tag -l 'cli-v*' --sort=-v:refname); do
-     case "$t" in *-*) continue ;; esac
-     git merge-base --is-ancestor "$t" HEAD && { echo "$t"; break; }
+   git tag -l 'cli-v*' --sort=-v:refname | while read -r t; do
+     case "${t#cli-v}" in *-*) continue ;; esac
+     if git merge-base --is-ancestor "$t" HEAD; then echo "$t"; break; fi
    done
    ```
+
+   An empty result is a failure, not "no previous release": stop and say so.
 
    For the template, the previous version is `git show <tag>:VERSION`. Call the
    tag `PREV` below.
@@ -66,7 +71,9 @@ Both kinds of review start here. Run from the repository root, after
    ```
 
    The merge subject reads `Merge pull request #N …`; for a commit that is not a
-   merge, `gh pr list --state merged --search <sha>` finds it. Also read
+   merge, `gh pr list --state merged --search <sha>` finds it. A file this finds
+   nothing for is not on `origin/main` yet: it belongs to the branch under
+   review. Also read
    `git log --format='%h %s' -- .changelog/<file>`: a file already edited by a
    later pull request has been reconciled once, and that pull request belongs to
    it too.
@@ -76,13 +83,17 @@ Both kinds of review start here. Run from the repository root, after
 
 The product paths the Change files check uses decide which paths are visible to
 users. Read them from the header of `scripts/check-change-files.sh` rather than
-restating them here.
+restating them here. That classification is the check's, not the user's view:
+`assets.go` embeds `product/` into the CLI, so `init` from a new CLI delivers
+template changes too. When an entry's `product` leaves out a release whose users
+will see the change, report it as an observation for the maintainer.
 
 ## Reviewing a pull request
 
-The input is a pull request number, or a branch to compare with `main`. List
-its files with `gh pr diff <N> --name-only`, or
-`git diff --name-only main...<branch>`, and its change files among them.
+The input is a pull request number, or a branch to compare with its base:
+`main` unless the branch was cut from another one, which the maintainer names.
+List its files with `gh pr diff <N> --name-only`, or
+`git diff --name-only <base>...<branch>`, and its change files among them.
 
 - **Overlap.** For every unreleased change file whose pull requests changed any
   file this one changes, read both diffs. Say whether the entry still describes
@@ -142,8 +153,10 @@ request as is.
    - the suggested action: keep, edit, merge into another file, or delete,
      with suggested wording where it helps;
    - whether it rests on file overlap alone.
-3. List the files reviewed with nothing to report, so a clean result is
+3. At release prep, list the missing entries separately, since they belong to
+   no change file: the commits, and why someone using `PREV` would notice.
+4. List the files reviewed with nothing to report, so a clean result is
    visible.
-4. End with a count: files reviewed, findings by action.
+5. End with a count: files reviewed, findings by action.
 
 Findings change nothing by themselves: hand the report to the maintainer.
