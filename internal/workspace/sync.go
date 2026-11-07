@@ -3,7 +3,6 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -56,7 +55,14 @@ func (s *Store) RepoSync(ctx context.Context, ids []string) ([]SyncState, error)
 		return nil, err
 	}
 	if len(ids) == 0 {
-		ids = slices.Sorted(maps.Keys(bindings.Bindings))
+		// A binding whose repository a teammate removed from workspace.yaml is
+		// left out rather than refusing the whole call; naming it still refuses.
+		for id := range bindings.Bindings {
+			if _, ok := cfg.Repositories[id]; ok {
+				ids = append(ids, id)
+			}
+		}
+		slices.Sort(ids)
 	}
 	seen := map[string]bool{}
 	var selected []string

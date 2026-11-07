@@ -160,6 +160,28 @@ func TestRepoSyncCoversEveryBoundRepository(t *testing.T) {
 	}
 }
 
+// A binding left behind after its repository was removed from workspace.yaml
+// does not stop a plain repo sync, but naming it is still refused.
+func TestRepoSyncSkipsABindingNoLongerDescribed(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	behind(t, f.home, api, "main")
+	path := filepath.Join(f.root, "repositories.local.yaml")
+	bindings := read(t, path)
+	if !strings.Contains(bindings, "bindings:\n") {
+		t.Fatalf("unexpected bindings file: %s", bindings)
+	}
+	write(t, path, strings.Replace(bindings, "bindings:\n", "bindings:\n  gone:\n    path: "+filepath.Join(f.home, "gone")+"\n", 1))
+
+	states := synced(t, f.ok("repo", "sync"))
+	if len(states) != 1 || states[0].ID != "api" || states[0].Status != "updated" {
+		t.Fatalf("the stale binding was not left out: %+v", states)
+	}
+	if out := f.fail("repo", "sync", "--id", "gone"); !strings.Contains(out, "unknown repository: gone") {
+		t.Errorf("a named stale binding was not refused: %s", out)
+	}
+}
+
 // Sync changes the person's checkouts, so it waits for setup like any change.
 func TestRepoSyncWaitsForSetup(t *testing.T) {
 	f := setup(t)

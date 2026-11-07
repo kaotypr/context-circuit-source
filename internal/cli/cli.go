@@ -112,9 +112,10 @@ Every command that changes something is refused until the roster lists this
 machine's selected member and every member holds a band; init, member add,
 member use, and member band are the steps that settle it.
 
-Approval, completion, fetch, and removal are explicit operations. The caller must
-hold the user's authorization. No command executes plans, starts review, commits,
-pushes, merges, deploys, or automatically removes completed worktrees.
+Approval, completion, fetch, sync, and removal are explicit operations. The caller
+must hold the user's authorization. No command executes plans, starts review,
+commits, pushes, merges (sync only fast-forwards), deploys, or automatically
+removes completed worktrees.
 `
 
 type listFlag []string
