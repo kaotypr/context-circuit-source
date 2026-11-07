@@ -13,6 +13,12 @@ repository, neither this skill nor the member's tone applies any more: knowledge
 follows `.agents/skills/cc-knowledge/SKILL.md` and is English, always, and a
 repository follows its own conventions.
 
+Reading this skill and its reference files is part of writing, and it starts no
+investigation. An intent is still written from the request and the knowledge in
+`context/`, before any detailed code investigation, as
+`.agents/skills/cc-intent/SKILL.md` says. The code is read once the intent is
+approved and planning is asked for.
+
 People find agent-written records hard to read even when every fact in them is
 right, and length is rarely why. They have to read word by word because the
 ideas arrive as a list with nothing joining them, actions hide inside nouns,

@@ -207,6 +207,18 @@ func TestToneStopsAtKnowledge(t *testing.T) {
 	}
 }
 
+// cc-intent hands over to cc-writing in the middle of writing an intent, and an
+// agent that has just opened more files tends to keep opening them, the code
+// included. The writing skill restates that the intent comes before the code.
+func TestWritingStartsNoInvestigation(t *testing.T) {
+	writing := strings.Join(strings.Fields(productFile(t, "skills/cc-writing/SKILL.md")), " ")
+	for _, phrase := range []string{"it starts no investigation", "before any detailed code investigation"} {
+		if !strings.Contains(writing, phrase) {
+			t.Errorf("cc-writing does not carry %q", phrase)
+		}
+	}
+}
+
 // An agent opens only the reference files it is sent to, so a reference file
 // the skill never names is shipped and never read.
 func TestEveryWritingReferenceIsNamed(t *testing.T) {
