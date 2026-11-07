@@ -426,11 +426,21 @@ var commands = map[string]command{
 			return s.ExtensionStates()
 		},
 	},
+	"extension allow": {
+		flags: []string{"id"},
+		// An allow writes only this machine's ignored trust file, never a
+		// shared one, so it leaves the ID split alone.
+		splits: noSplit,
+		run: func(_ context.Context, s *workspace.Store, in *input) (any, error) {
+			return s.AllowExtension(in.get("id"))
+		},
+	},
 	"extension hooks": {
-		flags: []string{"stage", "when", "intent", "plan", "repo"},
+		flags: []string{"stage", "when", "intent", "plan", "repo", "confirm"},
 		// Hooks change nothing shared: they resolve instructions, fetching a
-		// commit this machine lacks into its ignored cache.
-		optional: []string{"intent", "plan", "repo"},
+		// commit this machine lacks into its ignored cache, and run scripts,
+		// which act through their own permissions rather than the CLI's.
+		optional: []string{"intent", "plan", "repo", "confirm"},
 		readOnly: true,
 		run:      runExtensionHooks,
 	},
@@ -473,12 +483,24 @@ var commands = map[string]command{
 	"record approve": {
 		flags: []string{"id", "text"},
 		stage: "approve",
-		run:   runApprove,
+		// Refused before the before point fires, so no hook runs for a
+		// record that is not there.
+		precheck: func(_ context.Context, s *workspace.Store, in *input) error {
+			_, err := s.FindRecord(in.get("id"))
+			return err
+		},
+		run: runApprove,
 	},
 	"record complete": {
 		flags: []string{"id", "text"},
 		stage: "complete",
-		run:   runComplete,
+		// Refused before the before point fires, so no hook runs for a
+		// record that is not there.
+		precheck: func(_ context.Context, s *workspace.Store, in *input) error {
+			_, err := s.FindRecord(in.get("id"))
+			return err
+		},
+		run: runComplete,
 	},
 	"record delete": {
 		flags: []string{"member"},
@@ -552,6 +574,12 @@ var commands = map[string]command{
 		},
 		optional: []string{"plan", "branch", "start", "path"},
 		stage:    "prepare",
+		// Refused before the before point fires, so no hook runs for a
+		// repository this machine cannot prepare a worktree in.
+		precheck: func(ctx context.Context, s *workspace.Store, in *input) error {
+			_, err := s.Repository(ctx, in.get("repo"))
+			return err
+		},
 		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
 			return s.Prepare(ctx, in.get("repo"), in.get("plan"), in.get("branch"), in.get("start"), in.get("path"), in.reuse, workspace.ReuseOptions{Mode: in.get("copy-mode"), Paths: in.copyPaths})
 		},
