@@ -34,6 +34,28 @@ is a local branch, and one behind or diverged is used as asked but named with
 the counts and how to start from the remote instead. That keeps the no-fetch
 rule: the comparison is only as fresh as the last fetch, and says so.
 
+## How a stale base gets closed
+
+Preparation names a stale base and never closes it, because a fetch inside it
+would make every preparation wait on the network. A person closes it, usually
+right after a merge, with the base sync: it fetches and moves the local base
+branch to its remote counterpart as a fast-forward and nothing more. The same
+move serves the workspace's own repository, so teammates' records arrive the
+same way.
+
+| Where the base is checked out | What the sync does |
+| --- | --- |
+| In the bound checkout | Fast-forward merge; uncommitted changes in the way leave it `blocked` |
+| Nowhere | Moves the ref in place, guarded by its old value |
+| In another worktree | `checked-out-elsewhere`; that worktree's files would go stale under a moved ref |
+
+It never switches a checked-out branch, and local commits are never rewritten:
+`ahead` takes nothing and `diverged` changes nothing. The workspace's own
+repository is stricter — any uncommitted path, untracked included, leaves it
+unfetched — because those paths are records nobody has committed yet, and a moved
+branch would land other people's records among them. One repository's status
+never stops the rest.
+
 A dependent plan therefore needs its start named, and preparation refuses rather
 than guessing: a plan recording a dependency in the same repository cannot be
 prepared without a start, and the refusal names the predecessor branch to pass,
@@ -162,3 +184,5 @@ Owner:
 - `context-circuit-source@internal/workspace/reuse.go` — what is carried into a
   prepared worktree.
 - `context-circuit-source@internal/cow/` — the platform cloning underneath.
+- `context-circuit-source@internal/workspace/sync.go` — the base sync and its
+  statuses.
