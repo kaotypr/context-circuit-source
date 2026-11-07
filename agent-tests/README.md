@@ -17,7 +17,7 @@ are described in `CONTRIBUTING.md` under "Changes that affect agents".
 
 ## Quickstart
 
-From a clean checkout of this repository, with Go 1.25 or newer:
+From a clean checkout of this repository, with Go 1.26 or newer:
 
 ```sh
 cd agent-tests

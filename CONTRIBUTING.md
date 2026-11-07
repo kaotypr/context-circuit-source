@@ -37,7 +37,7 @@ README inside every CLI archive, so edit it as user documentation.
 
 You need:
 
-- Go 1.25 or newer, and Git.
+- Go 1.26 or newer, and Git.
 - A POSIX `sh` with `tar`, `gzip`, `zip`, `unzip`, and `sha256sum` or `shasum`,
   plus the usual `awk`, `sed`, `cmp`, `find`, `diff` and `mktemp`. The scripts
   under `scripts/` use them.
