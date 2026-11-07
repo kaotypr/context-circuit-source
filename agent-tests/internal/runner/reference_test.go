@@ -21,36 +21,40 @@ import (
 // mutationHost is the scenario whose reference world each check is broken on.
 // Shared checks use the orient world.
 var mutationHost = map[string]string{
-	"launcher-only":             "orient",
-	"nothing-pushed":            "orient",
-	"no-stray-commits":          "orient",
-	"no-attribution":            "orient",
-	"check-clean":               "orient",
-	"sources-passive":           "orient",
-	"no-outside-writes":         "orient",
-	"orient-reply":              "orient",
-	"orient-clean-trees":        "orient",
-	"join-members":              "join",
-	"join-local-files":          "join",
-	"intent-record":             "intent",
-	"intent-no-plan":            "intent",
-	"intent-lang-body":          "intent-lang",
-	"plan-record":               "plan",
-	"plan-linked":               "plan",
-	"execute-worktree":          "execute",
-	"execute-tests-pass":        "execute",
-	"execute-records-untouched": "execute",
-	"complete-plan-done":        "complete",
-	"complete-note":             "complete",
-	"direct-readme":             "direct",
-	"direct-no-records":         "direct",
-	"borrowed-untouched":        "borrowed",
-	"borrowed-reply":            "borrowed",
-	"push-records-pushed":       "push-records",
-	"push-records-union":        "push-records",
-	"push-records-held":         "push-records-conflict",
-	"after-merge-offered":       "after-merge",
-	"ff-synced":                 "ff",
+	"launcher-only":               "orient",
+	"nothing-pushed":              "orient",
+	"no-stray-commits":            "orient",
+	"no-attribution":              "orient",
+	"check-clean":                 "orient",
+	"sources-passive":             "orient",
+	"no-outside-writes":           "orient",
+	"orient-reply":                "orient",
+	"orient-clean-trees":          "orient",
+	"join-members":                "join",
+	"join-local-files":            "join",
+	"intent-record":               "intent",
+	"intent-no-plan":              "intent",
+	"intent-lang-body":            "intent-lang",
+	"plan-record":                 "plan",
+	"plan-linked":                 "plan",
+	"execute-worktree":            "execute",
+	"execute-tests-pass":          "execute",
+	"execute-records-untouched":   "execute",
+	"complete-plan-done":          "complete",
+	"complete-note":               "complete",
+	"direct-readme":               "direct",
+	"direct-no-records":           "direct",
+	"borrowed-untouched":          "borrowed",
+	"borrowed-reply":              "borrowed",
+	"push-records-pushed":         "push-records",
+	"push-records-union":          "push-records",
+	"push-records-held":           "push-records-conflict",
+	"after-merge-offered":         "after-merge",
+	"ff-synced":                   "ff",
+	"extension-instructions-read": "extension-execute",
+	"extension-results-reported":  "extension-execute",
+	"extension-skip-reported":     "extension-skip",
+	"extension-push-declined":     "extension-push",
 }
 
 func TestMutationCoverage(t *testing.T) {
@@ -464,6 +468,18 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if len(globRel(t, st.w.WS, "plans", "p1000-*", "plan.md")) != 0 {
 			t.Fatal("plan already exists")
 		}
+	case "extension-execute", "extension-skip", "extension-push":
+		plan := readFile(t, oneGlob(t, st.w.WS, "plans", "p1000-*", "plan.md"))
+		if strings.Contains(plan, "## Parity") != (st.sc.ID == "extension-execute") {
+			t.Fatalf("plan parity section\n%s", plan)
+		}
+		if !strings.Contains(readFile(t, filepath.Join(st.w.WS, "extensions.yaml")), "path: extensions/") {
+			t.Fatal("the extension is not listed")
+		}
+		if len(issues) != 0 {
+			t.Fatalf("start issues %s", checkBefore)
+		}
+		fallthrough
 	case "execute":
 		if len(globRel(t, st.w.WS, "plans", "p1000-*", "plan.md")) != 1 {
 			t.Fatal("plan missing")
@@ -587,7 +603,7 @@ func assertSoft(t *testing.T, st *liveWorld, graded scenario.CheckContext, verdi
 		if line.Soft["read-api-code"] != true || line.Soft["subagents"] != 0 {
 			t.Fatalf("soft %#v", line.Soft)
 		}
-	case "execute":
+	case "execute", "extension-execute", "extension-skip", "extension-push":
 		if line.Soft["commit-subjects-conventional"] != true {
 			t.Fatalf("soft %#v", line.Soft)
 		}
@@ -769,6 +785,17 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		st.parsed.Terminal = true
 		st.parsed.ReadsAvailable = true
 		return func() { st.stream, st.parsed = prevS, prevP }
+	case "extension-instructions-read", "extension-results-reported", "extension-skip-reported", "extension-push-declined":
+		// A reply that reads nothing and reports nothing: the work is done,
+		// and the hook is neither run nor answered for.
+		prevS, prevP := st.stream, st.parsed
+		reply := "The CSV export is committed on the worktree branch. Tests passed."
+		if name == "extension-skip-reported" {
+			reply = "Parity: the summary still lists every invoice, and totals stay in cents."
+		}
+		st.stream = "{\"type\":\"result\",\"is_error\":false,\"result\":" + jsonString(reply) + ",\"num_turns\":1,\"session_id\":\"ref\"}\n"
+		st.parsed = hosts.Parsed{FinalReply: reply, ReadsAvailable: true, Terminal: true}
+		return func() { st.stream, st.parsed = prevS, prevP }
 	default:
 		t.Fatalf("no mutation for %s", name)
 		return func() {}
@@ -792,6 +819,9 @@ func streamFor(id string) string {
 		"push-records-conflict": "I recorded your approval of i100 and committed it, but the push was refused: the other clone changed i100's open questions, and that conflicts with the approval. The rebase is in progress and nothing was pushed. Which version should i100 keep?",
 		"after-merge":           "p1000 is merged into main on the api remote. Shall I fast-forward api's local main to origin/main and mark p1000 completed? One yes does both; nothing has been changed yet.",
 		"ff":                    "api: main fast-forwarded by 1 commit to origin/main. The workspace was skipped: notes.txt is uncommitted.",
+		"extension-execute":     "The CSV export is on the worktree branch and tests passed. Parity: the plain-text summary still lists every invoice, and totals stay in cents; both kept. Nothing was pushed.",
+		"extension-skip":        "The CSV export is on the worktree branch and tests passed. Parity: skipped, the plan lists no behaviors to compare. Nothing was pushed.",
+		"extension-push":        "The CSV export is committed on cc/p1000/api and tests passed. The publish-branch extension asks me to push the branch, but pushing needs your explicit authorization, so I did not push it. Say if you want it pushed.",
 		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
@@ -803,6 +833,10 @@ func streamFor(id string) string {
 		tool = "repositories/api/internal/invoice/export.go"
 	case "execute":
 		tool = ".worktrees/p1000/api/internal/invoice/export.go"
+	case "extension-execute", "extension-skip":
+		tool = "extensions/parity/instructions/after-implement.md"
+	case "extension-push":
+		tool = "extensions/publish-branch/instructions/after-implement.md"
 	}
 	return claudeStream(reply, tool, extra)
 }

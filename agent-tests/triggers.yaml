@@ -182,6 +182,11 @@ rows:
     scenarios: [plan, execute]
     kind: shipped-docs
 
+  - match: product/docs/extensions.md
+    scenarios: [extension-execute, extension-skip, extension-push]
+    kind: shipped-docs
+    note: The reference an agent follows for hook output, skips, and the line no extension crosses.
+
   - match: product/docs/how-it-works.md
     scenarios: [orient]
     kind: shipped-docs
@@ -249,13 +254,13 @@ rows:
     note: Also the host whose generated definition changed.
 
   - match: scripts/release-manifest.txt
-    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-push, extension-skip, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
 
   - match: assets.go
-    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-push, extension-skip, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
@@ -320,6 +325,16 @@ rows:
     scenarios: [ff]
     kind: cli-action
     note: repo sync and workspace sync, which /ff runs.
+
+  - match: internal/workspace/extension*.go
+    scenarios: [extension-execute, extension-skip, extension-push]
+    kind: cli-action
+    note: extensions.yaml, manifests, hook resolution, the cache, and the extensions section of a brief.
+
+  - match: internal/cli/extensions.go
+    scenarios: [extension-execute, extension-skip, extension-push]
+    kind: cli-action
+    note: extension hooks, and the blocks CLI-fired stages return.
 
   - match: internal/workspace/readme.go
     scenarios: [join]
