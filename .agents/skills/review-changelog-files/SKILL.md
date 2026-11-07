@@ -46,13 +46,23 @@ Both kinds of review start here. Run from the repository root, after
 commands below under `sh`: zsh does not split an unquoted `$(...)` or variable,
 and the loop and pathspecs then come back empty without an error.
 
+Name two revisions explicitly and read from them, never from whatever the
+checkout holds:
+
+- `HEAD_REV`, what is under review. For a pull request number,
+  `git fetch origin pull/<N>/head` and use `FETCH_HEAD`'s commit; for a branch,
+  that branch.
+- `BASE_REV`, what it merges into, as fetched:
+  `origin/<base>`, where `<base>` is the pull request's `baseRefName`
+  (`gh pr view <N> --json baseRefName`), or the base the maintainer names.
+
 1. **The previous stable tag.** The highest `cli-v<X.Y.Z>` with no pre-release
-   label that is an ancestor of the branch under review:
+   label that is an ancestor of `HEAD_REV`:
 
    ```sh
    git tag -l 'cli-v*' --sort=-v:refname | while read -r t; do
      case "${t#cli-v}" in *-*) continue ;; esac
-     if git merge-base --is-ancestor "$t" HEAD; then echo "$t"; break; fi
+     if git merge-base --is-ancestor "$t" "$HEAD_REV"; then echo "$t"; break; fi
    done
    ```
 
@@ -61,20 +71,25 @@ and the loop and pathspecs then come back empty without an error.
    For the template, the previous version is `git show <tag>:VERSION`. Call the
    tag `PREV` below.
 2. **The unreleased change files.** Every `.changelog/*.md` except
-   `README.md`. Read each one's frontmatter (`product`, `kind`, `upgrade`,
-   `authors`, `pr`) and body.
+   `README.md`, at both revisions:
+   `git ls-tree --name-only <rev> .changelog/`, then
+   `git show <rev>:.changelog/<file>`. Take the union: a file only at
+   `BASE_REV` merged after the branch was cut and still counts; a file only at
+   `HEAD_REV` is the branch's own, or one the branch deleted from the base.
+   Read each one's frontmatter (`product`, `kind`, `upgrade`, `authors`, `pr`)
+   and body, at the revision that holds it, and note where the two differ.
 3. **The pull requests behind each file.** The numbers in its `pr:` field, or
    else the pull request whose merge added it:
 
    ```sh
-   git log --first-parent --diff-filter=A --format='%H %s' origin/main -- .changelog/<file>
+   git log --first-parent --diff-filter=A --format='%H %s' "$BASE_REV" -- .changelog/<file>
    ```
 
    The merge subject reads `Merge pull request #N …`; for a commit that is not a
    merge, `gh pr list --state merged --search <sha>` finds it. A file this finds
-   nothing for is not on `origin/main` yet: it belongs to the branch under
+   nothing for is not on `BASE_REV` yet: it belongs to the branch under
    review. Also read
-   `git log --format='%h %s' -- .changelog/<file>`: a file already edited by a
+   `git log --format='%h %s' "$BASE_REV" -- .changelog/<file>`: a file already edited by a
    later pull request has been reconciled once, and that pull request belongs to
    it too.
 4. **What each of those pull requests changed.**
@@ -84,16 +99,19 @@ and the loop and pathspecs then come back empty without an error.
 The product paths the Change files check uses decide which paths are visible to
 users. Read them from the header of `scripts/check-change-files.sh` rather than
 restating them here. That classification is the check's, not the user's view:
-`assets.go` embeds `product/` into the CLI, so `init` from a new CLI delivers
-template changes too. When an entry's `product` leaves out a release whose users
-will see the change, report it as an observation for the maintainer.
+`assets.go` embeds `product/` and `template/` into the CLI, so `init` from a new
+CLI delivers template changes too. For a CLI release, the user-visible paths are
+the CLI paths plus `product/` and `template/`. When an entry's `product` leaves
+out a release whose users will see the change, report it as an observation for
+the maintainer.
 
 ## Reviewing a pull request
 
 The input is a pull request number, or a branch to compare with its base:
 `main` unless the branch was cut from another one, which the maintainer names.
 List its files with `gh pr diff <N> --name-only`, or
-`git diff --name-only <base>...<branch>`, and its change files among them.
+`git diff --name-only "$BASE_REV...$HEAD_REV"`, and its change files among
+them.
 
 - **Overlap.** For every unreleased change file whose pull requests changed any
   file this one changes, read both diffs. Say whether the entry still describes
@@ -120,21 +138,41 @@ List its files with `gh pr diff <N> --name-only`, or
 
 ## Release prep
 
-The input is a release-prep branch, usually `release/X.Y`, and the product and
-version being drafted. Read the drafted request,
+The input is the release-prep branch or its pull request, whose base is the
+release branch `release/X.Y`, and the product and version being drafted. Review
+the release-prep head, not the release branch: the request that will publish is
+on that head, and reaches `release/X.Y` only when the pull request merges. Read
+the drafted request at `HEAD_REV`,
 `release/requests/<cli|template>/<version>.md`, or, before one is written, the
 draft from `sh scripts/release-notes.sh <cli|template> <version> --stdout`,
-which changes nothing.
+which changes nothing and reads the checkout, so run it with `HEAD_REV` checked
+out.
 
-- Read `git diff PREV..HEAD` under the product's paths, and for each entry ask
-  whether someone using `PREV` will notice it as written.
+A stable draft consumes its change files: it removes them with `git rm` and
+rewrites a `both` file to name the other product. Recover them from `BASE_REV`
+with `git diff --name-status "$BASE_REV...$HEAD_REV" -- .changelog/`, then
+`git show "$BASE_REV":.changelog/<file>`, and read the originals as step 2
+does. Then compare them with the request:
+
+- an entry the request changed, merged, or dropped, against its change file:
+  report the edit, and whether it still reads true against `PREV`;
+- a change file removed although its product is not this release's, or a
+  `both` file removed instead of rewritten, or rewritten to the wrong product;
+- a change file for this product with no entry in the request.
+
+Then read the request itself:
+
+- Read `git diff PREV.."$HEAD_REV"` under the release's user-visible paths (for
+  a CLI release, including `product/` and `template/`, as above), and for each
+  entry ask whether someone using `PREV` will notice it as written.
 - **Gone from the branch.** Flag an entry whose change is no longer on the
-  branch, with the commit that removed it (`git log -S'<name>' PREV..HEAD`).
+  branch, with the commit that removed it
+  (`git log -S'<name>' PREV.."$HEAD_REV"`).
 - **Contradictions.** Flag entries that contradict each other, or that describe
   one feature at two stages of its rework.
 - **Fixes that never shipped.** Flag a `fixed` entry whose defect is not in
   `PREV`, as above.
-- **Missing entries.** Flag changes in the diff under the product paths that
+- **Missing entries.** Flag changes in the diff under those paths that
   someone using `PREV` would notice and that no entry describes. Name the
   commits; whether they need an entry is the maintainer's call.
 - For a candidate, the change files stay in place and the stable release's
@@ -146,7 +184,8 @@ Produce one report the maintainer can read in the session or paste into a pull
 request as is.
 
 1. Name the branch or pull request reviewed, `PREV`, and the change files read.
-2. Group findings by change file. Each finding gives:
+2. Group findings by change file, and list edits to the request with the
+   change file each came from. Each finding gives:
    - the file;
    - the evidence: the pull requests or commits, and the sentence of the entry
      that no longer holds;
