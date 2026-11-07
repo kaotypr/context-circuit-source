@@ -32,7 +32,8 @@ The commands fetch, then move each base branch to its remote counterpart as a
 fast-forward. They never switch a checked-out branch, merge, rebase, reset,
 stash, or discard, and neither do you: do not pull, rebase, or run raw Git to get
 past a status. Every status other than `updated` and `current` left that
-repository exactly as it was, and its `detail` names what the person can do.
+repository's local branches and working files as they were (the fetch may have
+refreshed remote-tracking refs), and its `detail` names what the person can do.
 
 The workspace repository is held stricter than a code checkout. Any uncommitted
 path in it, untracked included, reports `dirty` with the paths and fetches
