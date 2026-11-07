@@ -40,6 +40,9 @@ reported integration merge with ordinary Git, dispatch a worker per plan through
 `.agents/skills/cc-dispatch/SKILL.md`, wait, and carry what each worker reports
 into completion.
 
+Each plan's implement hooks run per worktree, as for one plan; a `stopped`
+block goes to the person before that plan's dependents start.
+
 Completion is a later human request. Follow the selected order's waves and use
 reported worker results and actual Git ancestry to decide what can proceed;
 `record order` reads recorded `completed_at` when present but never marks a plan

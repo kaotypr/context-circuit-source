@@ -18,6 +18,11 @@ the language of the conversation. Identifiers and the project's own domain
 vocabulary keep their form whatever language the prose is in, and the slug stays
 a lowercase ASCII slug.
 
+Where `status` reports `extensions` on for you, run
+`extension hooks --stage intent --when before` before writing the body, and
+`extension hooks --stage intent --when after --intent ID` once it is written;
+`.context-circuit/docs/extensions.md` says how to follow what they return.
+
 ## How it reads
 
 Write the intent, and the chat that presents it, following
@@ -95,6 +100,9 @@ In a Git workspace approval also returns `commit_recommended`, naming the
 intent and ID files it left uncommitted. Ask the person once whether to commit
 and push them, or commit only; their answer is the authorization, and a refused
 push is handled as `AGENTS.md` says under delivery.
+
+With extensions on, run `extension hooks --stage approve --when before --intent ID`
+just before `record approve`, and follow the `extensions` list approval returns.
 
 ## What belongs here and what does not
 

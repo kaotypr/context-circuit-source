@@ -20,6 +20,11 @@ this plan record, so pass it only after inspecting what a refusal names: a
 deleted plan's number can come back for a new plan, and its old branch carries
 the old plan's commits.
 
+Where any apply, `worktree prepare` returns an `extensions` list for its stage;
+follow it as `.context-circuit/docs/extensions.md` says. With extensions on, run
+`extension hooks --stage implement --when before --plan ID --repo ID` before the
+first change in each worktree, and `--when after` after its last commit there.
+
 ## Choosing the starting point
 
 The CLI resolves repository bindings, reports Git state, resolves the selected

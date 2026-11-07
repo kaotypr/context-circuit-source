@@ -30,6 +30,11 @@ files left uncommitted: ask the person once whether to commit and push them, or
 commit only. Their answer authorizes that and nothing more; a refused push is
 handled as `AGENTS.md` says under delivery. Completion reporting success is the record written, not the request finished.
 
+Where any apply, `record complete` and `record archive` also return an
+`extensions` list for their stage; follow it as
+`.context-circuit/docs/extensions.md` says, and carry the results into the
+completion note.
+
 ## Judge, do not rewrite
 
 The returned entries are a candidate set to judge, never a list to rewrite.

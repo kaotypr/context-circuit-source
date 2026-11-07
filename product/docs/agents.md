@@ -60,6 +60,14 @@ must preserve each other's edits. `--shared` selects the second. `--plan` adds t
 plan record, its dependencies, and the fact that their work is already in the
 branch's ancestry.
 
+Where the workspace lists extensions, a planner, worker, or reviewer brief adds
+an `# Extensions` section after the task, naming the instruction files for its
+stage: plan, implement, or review. An explorer's brief never has one, and the
+section is left out where nothing applies. The coordinator still fires the
+stage's hooks itself. Role definition files never carry extension
+instructions, so adding or removing an extension never makes an installed
+definition stale. `.context-circuit/docs/extensions.md` describes the section.
+
 The `cc-dispatch` skill resolves each task, invokes the host's actual agent tool,
 waits, and integrates the result. `agent dispatch` alone produces a specification;
 `launch_required: true` means it has not launched anything. Available host APIs may

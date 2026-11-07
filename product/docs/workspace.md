@@ -10,6 +10,7 @@ the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
+| extensions.yaml | Optional: the extensions this workspace uses, in hook order, each with its source, repositories, settings, and member switches; absent in a workspace that uses none | Yes |
 | members.yaml | Member ID to display name, allocation band, optional record language and tone, and optional informational roles; lists at least one member | Yes |
 | .context-circuit/ids/MEMBER.yaml | One member's permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
@@ -21,6 +22,7 @@ the shared instruction and folders alongside these small records:
 | member.local.yaml | Active member ID on this machine; written by init, and by member use on every other machine | No |
 | repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
+| .context-circuit/local/extensions/ | Remote extension sources this machine fetched, one folder per extension and commit | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
 | repositories/, .worktrees/ | Local Git working copies | No |
 
@@ -73,6 +75,15 @@ branch, so `status`, `repo inspect`, `worktree prepare`, and `worktree inspect`
 all report `base_branch` beside the branch currently checked out. Read the base
 from one of those rather than from `workspace.yaml`, whose `default_branch` is
 the repository's default and not what this machine delivers to.
+
+## Extensions
+
+`extensions.yaml` sits at the root beside `workspace.yaml` and is workspace
+data: `extension` commands write it, a person edits its settings, and no
+template update creates or changes it. It is a separate file because
+`workspace.yaml` is decoded strictly, and a key an older CLI does not know would
+break it. `.context-circuit/docs/extensions.md` describes the entries, the
+manifest an extension folder holds, and what each hook point returns.
 
 ## The workspace's own repository
 

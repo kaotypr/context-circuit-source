@@ -39,6 +39,10 @@ prepared and no branch is created, because isolation is what the person declined
 - Run the checks the change deserves, and report what was actually run and what
   it actually returned.
 
+With extensions on, run `extension hooks --stage implement --when before --repo ID`
+for the bound checkout before the first change, and `--when after` once it is
+made. There is no plan, so a hook that needs one reports a skip.
+
 ## When to stop and offer the intent path
 
 The lane fits a change whose outcome is already settled. Stop as soon as it is

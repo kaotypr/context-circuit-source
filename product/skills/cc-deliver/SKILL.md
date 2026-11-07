@@ -86,6 +86,10 @@ git -C <worktree> push --set-upstream origin cc/p0001/api
 gh pr create --base <base_branch> --head cc/p0001/api --title "..." --body "..."
 ```
 
+With extensions on, run `extension hooks --stage deliver --when before --plan ID --repo ID`
+only after the person has authorized this delivery, and `--when after` once the
+request is open. A hook never stands in for that authorization.
+
 Confirm the work is committed and pushed first. Uncommitted work is not delivered
 by a request, and a worker that reported without committing left nothing to open.
 

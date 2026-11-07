@@ -10,6 +10,11 @@ work that benefits from delegation, including parallel tasks with distinct file
 ownership. A small task may stay in the main session. Do not launch review unless
 the user requests it. Main-session implementation checks remain ordinary tests.
 
+Where the workspace lists extensions, a planner, worker, or reviewer brief
+carries its stage's instruction files in an `# Extensions` section. The
+coordinator still runs the stage's `extension hooks` itself and reports their
+results with the role's.
+
 Read `.context-circuit/docs/agents.md` for the current host's settings mechanism.
 Use `agent settings` to resolve the tiering in force: the shared
 `.context-circuit/role-tiering.yaml`, with any host/role this machine overrode in

@@ -377,6 +377,26 @@ predecessor's branch — adjust them yourself once that work is merged and its
 branch is gone. The report is advice: it runs, merges, and reserves nothing, and
 `shares_repository_with` reflects repositories, not paths.
 
+Extensions, in a workspace that lists them in `extensions.yaml`:
+
+```sh
+sh .context-circuit/cli extension list
+sh .context-circuit/cli extension hooks --stage implement --when before --plan p0001 --repo api
+sh .context-circuit/cli extension add --id parity --path extensions/parity --repo api
+sh .context-circuit/cli extension sync
+```
+
+`extension hooks` resolves one hook point for a stage the CLI does not fire and
+returns an `extensions` list of blocks: the instruction files to follow, every
+extension skipped and why, and `stopped`, which goes to the person.
+`record approve`, `worktree prepare`, `record complete`, and `record archive` return the
+same list for their own stage when something applied, and `hooks` refuses their
+`after` point. `extension` commands that change `extensions.yaml` happen only on
+request and return no `commit_recommended`. `status` reports `extensions` with
+how many are listed and on for you, and `check` lists a remote this machine has
+not fetched under `unchecked`, apart from `issues`, without failing.
+`.context-circuit/docs/extensions.md` is the full reference.
+
 Worktrees:
 
 ```sh
