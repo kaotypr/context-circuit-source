@@ -50,6 +50,11 @@ type Scenario struct {
 	// hold. It is omitted from the canonical YAML when false, so the
 	// hash of a scenario that does not set it is unchanged.
 	PushWorkspaceBase bool `yaml:"push_workspace_base,omitempty"`
+	// SyncRepositoryBases lets the run move api's checked-out base branch, and
+	// HEAD with it, the way repo sync fast-forwards it. Every other repository,
+	// the workspace's own branch included, stays guarded, and scenario checks
+	// decide where api's base must end. It is omitted from the canonical YAML when false.
+	SyncRepositoryBases bool `yaml:"sync_repository_bases,omitempty"`
 }
 
 // The workspace remote and the base branch the world binds the workspace

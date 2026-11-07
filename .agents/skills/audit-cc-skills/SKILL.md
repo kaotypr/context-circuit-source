@@ -19,8 +19,9 @@ workspace skill, appears in no manifest, and ships nowhere.
 - Start no coding host and call no model API. The audit costs one coding
   session, and a clean audit does not replace agent tests: only runs show whether
   a host follows a skill.
-- Audit the 14 shipped `cc-*` skills only, not the maintainer skills in
-  `.agents/skills/`.
+- Audit the 14 shipped `cc-*` skills and the shipped `ff` skill, which is
+  unprefixed so people can type it, and only those: not the maintainer skills
+  in `.agents/skills/`.
 - Judge each skill against the code and files in this checkout, never against an
   earlier version of the skills.
 - Claude Code and Cursor trigger on a skill's `route.md` description and Codex
@@ -100,7 +101,8 @@ Context Circuit checks:
   folders) matches what `agent setup` and `agent dispatch` produce.
 - **C7 Neighbouring triggers.** The descriptions tell `cc-direct` from
   `cc-intent`, `cc-plan` from `cc-stacked`, `cc-complete` from `cc-knowledge`, and
-  `cc-review` from ordinary review, on every host.
+  `cc-review` from ordinary review, and `ff` from `cc-deliver` and
+  `cc-complete` after a merge, on every host.
 - **C8 Nothing is stale.** No retired terms, outdated commands or paths, or
   hard-coded version that should read "or later"; no default `--reuse`;
   `planning_required` only as the sign of an old CLI.

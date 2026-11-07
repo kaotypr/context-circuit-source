@@ -587,3 +587,31 @@ func TestEverySkillFileShips(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Moving a base branch changes the person's working copy, and nothing makes an
+// agent load the ff skill before it pulls. So the gate and the after-merge
+// trigger stay in the always-loaded instruction, and the skill holds procedure.
+func TestTheFastForwardGateStaysResident(t *testing.T) {
+	agents := strings.Join(strings.Fields(productFile(t, "AGENTS.md.in")), " ")
+	for _, want := range []string{
+		"only when they invoke `/ff`, ask for it in words, or say yes to the offer below",
+		"only through `repo sync` and `workspace sync`, never by pull, rebase, reset, or force",
+		"`.agents/skills/ff/SKILL.md`",
+		"One yes covers both; saying \"merged\" completes nothing on its own.",
+	} {
+		if !strings.Contains(agents, want) {
+			t.Errorf("entry instruction lost %q", want)
+		}
+	}
+	skill := strings.Join(strings.Fields(productFile(t, filepath.Join("skills", "ff", "SKILL.md"))), " ")
+	for _, want := range []string{"repo sync", "workspace sync", "`.agents/skills/cc-complete/SKILL.md`", "do neither until they answer"} {
+		if !strings.Contains(skill, want) {
+			t.Errorf("ff skill lost %q", want)
+		}
+	}
+	for _, command := range []string{"repo sync", "workspace sync"} {
+		if !strings.Contains(productFile(t, filepath.Join("docs", "commands.md")), "sh .context-circuit/cli "+command) {
+			t.Errorf("commands.md does not document %s", command)
+		}
+	}
+}

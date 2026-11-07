@@ -16,6 +16,7 @@ import (
 
 func TestNames(t *testing.T) {
 	want := []string{
+		"after-merge-offered",
 		"borrowed-reply",
 		"borrowed-untouched",
 		"check-clean",
@@ -26,6 +27,7 @@ func TestNames(t *testing.T) {
 		"execute-records-untouched",
 		"execute-tests-pass",
 		"execute-worktree",
+		"ff-synced",
 		"intent-lang-body",
 		"intent-no-plan",
 		"intent-record",

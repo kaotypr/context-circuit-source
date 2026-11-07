@@ -38,8 +38,9 @@ existing branch it checked out or resumed. `base_branch` is this machine's base,
 work is delivered, and does not change with `--start`. A local start branch that
 is behind its fetched remote-tracking branch, or has diverged from it, is used as
 asked and named in `sync_required` with the counts and the remedies: prepare
-again with `--start origin/<branch>`, or bring the local branch up to date first.
-The remote ref is only as recent as the last `repo fetch`.
+again with `--start origin/<branch>`, or bring the local branch up to date first
+with `repo sync`, which fetches and fast-forwards it and nothing more. The
+remote ref is only as recent as the last `repo fetch` or `repo sync`.
 
 A plan branch already checked out in another working copy is refused, because Git
 checks a branch out in one place at a time. The refusal names the branch, where it

@@ -17,7 +17,7 @@ func TestCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != 14 {
+	if len(loaded) != 16 {
 		t.Fatalf("scenarios %d", len(loaded))
 	}
 	entries, err := os.ReadDir(dir)
@@ -62,6 +62,7 @@ func TestCatalogue(t *testing.T) {
 			"execute": true, "complete": true, "borrowed": true, "archive": true,
 			"push-records": true, "push-records-conflict": true,
 			"intent-tone": true, "complete-tone": true,
+			"after-merge": true, "ff": true,
 		}
 		if wantSetup[sc.ID] {
 			if len(sc.Setup) == 0 || strings.TrimSpace(strings.Join(sc.Setup, "")) == "" {
@@ -112,6 +113,9 @@ func TestCatalogue(t *testing.T) {
 		push := id == "push-records" || id == "push-records-conflict"
 		if sc.PushWorkspaceBase != push {
 			t.Fatalf("%s push_workspace_base %v", id, sc.PushWorkspaceBase)
+		}
+		if sc.SyncRepositoryBases != (id == "ff") {
+			t.Fatalf("%s sync_repository_bases %v", id, sc.SyncRepositoryBases)
 		}
 	}
 	if Registry["not-a-check"] != nil {

@@ -1,0 +1,51 @@
+id: after-merge
+version: 1
+title: Hear that a delivered request merged, and offer the sync and the completion
+covers:
+  - a person saying their request merged, which asks for nothing yet
+  - one reply offering to fast-forward the base branch and to complete the plan
+  - nothing synced or completed before the person answers
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan'
+  - |
+    set -eu
+    export GIT_AUTHOR_DATE=2026-02-01T09:00:00Z GIT_COMMITTER_DATE=2026-02-01T09:00:00Z
+    git -C "$WS/repositories/api" switch -qc cc/p1000/api
+    git -C "$WS/repositories/api" apply "$FIXTURES/patches/csv-export.patch"
+    git -C "$WS/repositories/api" commit -qam 'feat(invoice): export invoices as CSV'
+    git -C "$WS/repositories/api" switch -q main
+    git -C "$WS/repositories/api" push -q origin cc/p1000/api
+    git clone -q "$RUN/remotes/api.git" "$RUN/reviewer"
+    git -C "$RUN/reviewer" merge -q --no-ff origin/cc/p1000/api -m 'Merge the CSV export'
+    git -C "$RUN/reviewer" push -q origin main
+    unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+prompt: |-
+  My pull request for p1000 in the api repo was just merged.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - after-merge-offered
+soft: {}
+design_artifacts:
+  - plans/p1000-*/plan.md
+human:
+  - Whether the reply names api with its base branch and p1000, asks one question that one yes answers for both, and says nothing was changed yet.
+allowed_branches: []

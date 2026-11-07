@@ -148,6 +148,22 @@ mark work complete; an explicit completion request appends the note *and*
 reconciles the durable knowledge that work changed, and the request is finished
 only when both are done.
 
+## After a merge
+
+A person saying their request merged has not asked for anything, and two things
+usually follow it: bringing the local base branches up to date, and completing
+the plans that merged. Forgetting the first leaves the next worktree starting
+stale. So the agent offers both in one reply and does neither until the person
+answers, and one yes covers both. The acts above stay apart — the yes is two
+explicit requests given at once, not a merge that completes work by itself.
+
+Moving a base branch is a change to the person's working copy, like a commit in a
+bound checkout, so it needs their word: `/ff`, the same request in words, or the
+yes to that offer. It goes only through the sync commands, which fast-forward and
+refuse everything else, never through a pull, rebase, reset, or force. The gate
+lives in the entry instruction because nothing makes an agent load a skill
+before it reaches for `git pull`.
+
 ## A gate says what it opened
 
 Approval and completion both hand work back rather than finish it, and both have

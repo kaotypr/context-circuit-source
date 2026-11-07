@@ -154,7 +154,7 @@ is written to `README.md` at init and is not a release-manifest line.
 | Intent and planning | `intent`, `plan`, `direct` |
 | Worktrees and implementation | `execute` |
 | Independent review on request | none |
-| Delivery, completion, and organization | `complete`, `execute`, `push-records`, `push-records-conflict` |
+| Delivery, completion, and organization | `complete`, `execute`, `push-records`, `push-records-conflict`, `after-merge`, `ff` |
 
 Skill files map like this. A `route.md` uses the same scenarios as that
 skill's `SKILL.md`. Its hosts list is `claude` and `cursor` only. Codex does
@@ -168,7 +168,9 @@ not read route files.
 | `cc-dispatch` | `plan`, `execute` |
 | `cc-worktree` | `execute` |
 | `cc-knowledge` | `complete`, `borrowed` |
-| `cc-complete` | `complete`, `archive` |
+| `cc-complete` | `complete`, `archive`, `after-merge` |
+| `cc-deliver` | `after-merge` |
+| `ff` | `ff`, `after-merge` |
 | `cc-direct` | `direct` |
 | `cc-cli` | `orient` |
 | `cc-writing` | `intent`, `intent-lang`, `intent-tone`, `plan`, `complete`, `complete-tone` |
@@ -191,7 +193,7 @@ bound (`borrowed`, `complete`, `execute`, `intent`, `join`, `plan`); narrow
 it to the command that changed. `cli.go` runs `complete`, `intent`, `plan`,
 and `push-records`. `records.go` runs `intent` and `plan`. `inspect.go`,
 `readability.go`, and `review.go` run `complete`. `worktrees.go` runs
-`execute`. `readme.go` runs `join`. `archive.go` and `archive_migration.go`
+`execute`. `sync.go` runs `ff`. `readme.go` runs `join`. `archive.go` and `archive_migration.go`
 run `archive`, `mine.go` runs `orient` and `archive`, and `placement.go` runs
 `archive`.
 
@@ -526,6 +528,8 @@ until a baseline run exists.
 | `borrowed` | borrowed knowledge stays read-only and is not copied | `borrowed-untouched`, `borrowed-reply` | 80k-400k |
 | `push-records` | approval answered with commit and push; the push is refused because another clone pushed, the pull by rebase hits an ID file conflict, and both sides' entries are kept | `push-records-pushed`, `push-records-union` | 100k-500k |
 | `push-records-conflict` | the same, with the other clone having changed the approved record: stop before pushing and ask with both versions | `push-records-held` | 100k-500k |
+| `after-merge` | a person saying their delivered request merged: one reply offering to fast-forward the base branch and to complete the plan, and nothing done before they answer | `after-merge-offered` | 80k-400k |
+| `ff` | `/ff` with the api remote and the workspace remote both ahead and an uncommitted file in the workspace: api fast-forwarded, the workspace skipped | `ff-synced` | 60k-300k |
 
 The overhead measurement (a fixed reply in an empty directory and in the
 fixture workspace) is `probe`, not a scenario file. The older figures are in
@@ -552,6 +556,13 @@ ancestor of the pushed one, so a forced push fails, and the local base branch
 to equal what was pushed; `push-records-union` requires the pushed ID file to
 keep both clones' reservations; `push-records-held` requires the remote's base
 branch unchanged and the approval still recorded locally.
+A scenario with `sync_repository_bases: true` may move api's base branch and
+its HEAD; every other repository, the workspace's own branch included, stays
+guarded. Only `ff` sets it, and `ff-synced` grades the move: api's base branch
+must equal what its remote holds, with HEAD on it and its earlier tip an
+ancestor, and the workspace's branch and its uncommitted `notes.txt` must stay
+unchanged. `after-merge-offered` requires the plan not completed, api's base
+branch unmoved, and a reply that offers both the sync and the completion.
 `join` also snapshots the original checkout, under the keys `ws0` and
 `ws0/<repo>`, so a commit left there fails `no-stray-commits`, and a file
 written there fails `no-outside-writes`.

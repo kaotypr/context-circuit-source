@@ -94,14 +94,34 @@ rows:
     note: Codex does not read route files.
 
   - match: product/skills/cc-complete/SKILL.md
-    scenarios: [complete, archive]
+    scenarios: [complete, archive, after-merge]
     kind: skill-text
 
   - match: product/skills/cc-complete/route.md
-    scenarios: [complete]
+    scenarios: [complete, after-merge]
     hosts: [claude, cursor]
     kind: skill-route
     note: Codex does not read route files.
+
+  - match: product/skills/cc-deliver/SKILL.md
+    scenarios: [after-merge]
+    kind: skill-text
+
+  - match: product/skills/cc-deliver/route.md
+    scenarios: [after-merge]
+    hosts: [claude, cursor]
+    kind: skill-route
+    note: Codex does not read route files.
+
+  - match: product/skills/ff/SKILL.md
+    scenarios: [ff, after-merge]
+    kind: skill-text
+
+  - match: product/skills/ff/route.md
+    scenarios: [ff, after-merge]
+    hosts: [claude, cursor]
+    kind: skill-route
+    note: Codex does not read route files. /ff is a slash command on these two hosts.
 
   - match: product/skills/cc-writing/SKILL.md
     scenarios: [intent, intent-lang, intent-tone, plan, complete, complete-tone]
@@ -229,13 +249,13 @@ rows:
     note: Also the host whose generated definition changed.
 
   - match: scripts/release-manifest.txt
-    scenarios: [archive, borrowed, complete, complete-tone, direct, execute, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
 
   - match: assets.go
-    scenarios: [archive, borrowed, complete, complete-tone, direct, execute, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
@@ -296,6 +316,11 @@ rows:
     scenarios: [execute]
     kind: cli-action
 
+  - match: internal/workspace/sync.go
+    scenarios: [ff]
+    kind: cli-action
+    note: repo sync and workspace sync, which /ff runs.
+
   - match: internal/workspace/readme.go
     scenarios: [join]
     kind: cli-action
@@ -319,7 +344,7 @@ sections:
   - heading: Independent review on request
     scenarios: []
   - heading: Delivery, completion, and organization
-    scenarios: [complete, execute, push-records, push-records-conflict]
+    scenarios: [complete, execute, push-records, push-records-conflict, after-merge, ff]
 
 none:
   - "**/*_test.go"

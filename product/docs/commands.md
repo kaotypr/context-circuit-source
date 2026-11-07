@@ -48,9 +48,12 @@ sh .context-circuit/cli repo remote --id api --url GIT_URL --default-branch main
 sh .context-circuit/cli repo relate --from web --to api --description 'Consumes the API'
 sh .context-circuit/cli repo inspect --id api
 sh .context-circuit/cli repo fetch --id api --remote origin
+sh .context-circuit/cli repo sync
+sh .context-circuit/cli repo sync --id api --id web
 sh .context-circuit/cli workspace connect --base main
 sh .context-circuit/cli workspace base --branch development
 sh .context-circuit/cli workspace remote --url GIT_URL --default-branch main
+sh .context-circuit/cli workspace sync
 sh .context-circuit/cli knowledge clone --id core-service-knowledge --url GIT_URL
 sh .context-circuit/cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge --index index.md
 sh .context-circuit/cli knowledge sync --id core-service-knowledge
@@ -70,6 +73,35 @@ or diverged checkout is reported and left exactly as it is, and nothing is ever
 merged, reset, or discarded. Obtaining one disables its push URL and every sync
 reasserts that, so an edit made here fails rather than half-succeeding —
 improvements go upstream from a separate checkout.
+
+`repo sync` does the same for this machine's base branches: it fetches, then
+fast-forwards each named repository's `base_branch`, or every bound one's with
+no `--id`, to its upstream or `origin/<base>`. It never switches a checked-out
+branch, merges, rebases, resets, stashes, or discards. A base checked out in the
+bound checkout moves only when no uncommitted change is in the way; one checked
+out nowhere has its ref moved in place; one checked out in another worktree is
+left for that worktree. It runs only on the person's word — `/ff`, or a yes to
+the after-merge offer — and reports one entry per repository:
+
+| Status | What it means; nothing moved unless `updated` |
+| --- | --- |
+| `updated` | fast-forwarded; `from`, `to`, and `commits` say how far |
+| `current` | already at its counterpart |
+| `ahead` | local commits not yet delivered, nothing to take |
+| `diverged` | both sides have commits; left for a person |
+| `blocked` | uncommitted changes in the way, listed in `changes` |
+| `checked-out-elsewhere` | another worktree has the base checked out; `detail` names it |
+| `no-local-branch` | the checkout has no branch by the base's name |
+| `no-upstream` | no upstream and no `origin/<base>` after fetching |
+| `unreachable` | the fetch failed; Git's message is the `detail` |
+| `unbound` | not connected on this machine |
+
+One repository's status never stops the rest, and the command exits 0 whenever
+it ran; an unknown `--id` refuses the whole call before anything is fetched.
+`workspace sync` does the same for the workspace's own repository, more
+strictly: any uncommitted path, tracked or untracked, reports `dirty` with the
+paths and fetches nothing. Once it moved it returns `check_recommended`, and
+`cli_version_changed` (`from`, `to`) when the pinned CLI version moved with it.
 
 Records:
 
@@ -231,7 +263,8 @@ command's result changes shape. The notice names every shared file the command
 changed, from what actually changed: `workspace.yaml`, the ID files written or
 removed, and `members.yaml` when the command changed it, as `member band` does.
 Records the command writes are in its own result. `status`, `check`, the other reading commands,
-`repo fetch`, which changes only Git refs in a bound checkout, and `record delete`
+`repo fetch` and `repo sync`, which change only Git state in a bound checkout,
+`workspace sync`, and `record delete`
 without `--confirm` never split. Nor do a few refusals
 checked before the split: `member add` without `--band`, a malformed `member
 roles` call, and a confirmed `record delete` its preview would refuse. A refusal
@@ -378,7 +411,7 @@ reported in `sync_required`, and so is an explicit `--start` naming a local bran
 that is behind its remote-tracking branch or has diverged from it: the worktree
 still starts from the local branch, and `sync_required` gives the counts, how to
 start from the remote instead (`--start origin/<branch>`), and that `repo fetch`
-updates the remote ref. A start ahead of its remote, a remote-tracking ref, or a
+updates the remote ref; `repo sync` brings the local base up to date instead. A start ahead of its remote, a remote-tracking ref, or a
 commit is not questioned.
 
 `check` reports findings as an `issue` and the `resolve` that discharges it:
