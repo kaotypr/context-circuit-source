@@ -37,3 +37,51 @@ func TestASchema2RosterWithRolesIsReported(t *testing.T) {
 		t.Fatalf("a schema 3 roster with roles was reported: %q", got)
 	}
 }
+
+// The shipped roles keep their briefs and access whatever extensions declare:
+// a shipped role's return section is its instructions alone until an addition
+// appends headings after them, and only the worker edits.
+func TestShippedRolesStayAsTheyShip(t *testing.T) {
+	for _, name := range ShippedRoles {
+		r := Roles[name]
+		if got := returnSection(r, nil); got != r.Instructions {
+			t.Errorf("%s: the return section differs from the shipped instructions", name)
+		}
+		if r.edits(name) != (name == "worker") {
+			t.Errorf("%s: edits is %v", name, r.edits(name))
+		}
+		withAddition := returnSection(r, []roleAddition{{Extension: "parity", Returns: []string{"Parity"}}})
+		if !strings.HasPrefix(withAddition, r.Instructions) || !strings.HasSuffix(withAddition, "- Parity") {
+			t.Errorf("%s: an addition's heading is not after the core text:\n%s", name, withAddition)
+		}
+	}
+	if agentType("codex", "x-parity-parity-verifier") != "cc_x_parity_parity_verifier" || agentType("cursor", "worker") != "cc-worker" {
+		t.Fatal("agent type names")
+	}
+}
+
+func TestExtensionRolesAreValidated(t *testing.T) {
+	valid := ManifestRole{ID: "verifier", Description: "Checks.", Access: AccessReadOnly, Like: "reviewer", Instructions: "v.md", Returns: []string{"Verdict"}}
+	if err := validateManifestRoles(Manifest{Roles: []ManifestRole{valid}}); err != nil {
+		t.Fatalf("a valid role was refused: %v", err)
+	}
+	// An extension role's own Verdict is no planner heading, so it stands;
+	// an addition to the planner may not repeat one, in any case.
+	if err := validateManifestRoles(Manifest{RoleAdditions: []RoleAddition{{Role: "planner", Returns: []string{"verdict"}}}}); err == nil || !strings.Contains(err.Error(), "core heading") {
+		t.Fatalf("a planner core heading was accepted: %v", err)
+	}
+	if err := validateManifestRoles(Manifest{RoleAdditions: []RoleAddition{{Role: "worker", Returns: []string{"Parity", "parity"}}}}); err == nil || !strings.Contains(err.Error(), "twice") {
+		t.Fatalf("a repeated heading was accepted: %v", err)
+	}
+	edit := valid
+	edit.Access = "write"
+	if err := validateManifestRoles(Manifest{Roles: []ManifestRole{edit}}); err == nil {
+		t.Fatal("an unknown access was accepted")
+	}
+	limits := extensionRoleLimits(Role{Extension: "parity"})
+	for _, want := range []string{"no push", "no approval", "starts neither planning nor execution", "launches no other agent", "Commit only on the branch"} {
+		if !strings.Contains(limits, want) && !strings.Contains(limits, strings.Replace(want, "no approval", "gives no approval", 1)) {
+			t.Errorf("an edit role's limits miss %q", want)
+		}
+	}
+}

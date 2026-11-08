@@ -432,3 +432,259 @@ func TestAnUnreadableRequiredExtensionStops(t *testing.T) {
 		t.Fatalf("an unreadable extension did not stop: %+v", h)
 	}
 }
+
+const roleManifest = `id: parity
+version: 1.0.0
+members: default-on
+hooks:
+  - at: after implement
+    instructions: instructions/after-implement.md
+roles:
+  - id: parity-verifier
+    description: Checks a rebuilt service behaves like the one it replaces.
+    access: read-only
+    stages: [implement]
+    like: reviewer
+    instructions: roles/parity-verifier.md
+    returns: [Verdict, Findings, Not checked]
+  - id: parity-fixer
+    description: Brings a rebuilt service back in line with the one it replaces.
+    access: edit
+    like: worker
+    instructions: roles/parity-fixer.md
+    returns: [Fixed]
+role_additions:
+  - role: worker
+    instructions: roles/worker-parity.md
+    returns: [Parity]
+`
+
+func dispatchSpec(t *testing.T, out string) workspace.Dispatch {
+	t.Helper()
+	var spec workspace.Dispatch
+	if err := json.Unmarshal([]byte(out), &spec); err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	return spec
+}
+
+// inOrder fails unless each section appears in the prompt after the one before.
+func inOrder(t *testing.T, prompt string, sections ...string) {
+	t.Helper()
+	last := -1
+	for _, section := range sections {
+		at := strings.Index(prompt, section)
+		if at < 0 || at < last {
+			t.Fatalf("%q is missing or out of order:\n%s", section, prompt)
+		}
+		last = at
+	}
+}
+
+// An extension role is installed beside the shipped four, briefed like the
+// shipped role its access makes it, and removed again with its extension,
+// except where a person edited its definition.
+func TestExtensionRolesAreInstalledDispatchedAndRemoved(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	extensionFolder(t, filepath.Join(f.root, "extensions", "parity"), roleManifest,
+		"instructions/after-implement.md", "roles/parity-verifier.md", "roles/parity-fixer.md", "roles/worker-parity.md")
+	worker := read(t, filepath.Join(f.root, ".claude/agents/cc-worker.md"))
+
+	added := decodeMap(t, f.ok("extension", "add", "--id", "parity", "--path", "extensions/parity"))
+	if note, _ := added["setup_required"].(string); !strings.Contains(note, "agent setup") {
+		t.Fatalf("add did not name agent setup: %v", added)
+	}
+	if note, _ := decodeMap(t, f.ok("status"))["setup_required"].(string); !strings.Contains(note, "agent setup") {
+		t.Fatal("status did not report the stale definitions")
+	}
+
+	f.ok("agent", "configure", "--host", "claude-code", "--role", "reviewer", "--model", "review-model", "--effort", "high")
+	setupOut := decodeMap(t, f.ok("agent", "setup"))
+	if written, _ := setupOut["written"].([]any); len(written) < 18 {
+		t.Fatalf("setup did not write every definition: %v", setupOut)
+	}
+	if _, ok := decodeMap(t, f.ok("status"))["setup_required"]; ok {
+		t.Fatal("status still reports setup after it ran")
+	}
+	verifier := filepath.Join(f.root, ".claude/agents/cc-x-parity-parity-verifier.md")
+	text := read(t, verifier)
+	for _, want := range []string{"name: cc-x-parity-parity-verifier", "tools: Read, Glob, Grep", "review-model", "Check parity", "- Verdict\n- Findings\n- Not checked", "added by the workspace extension parity"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("verifier definition misses %q:\n%s", want, text)
+		}
+	}
+	codex := read(t, filepath.Join(f.root, ".codex/agents/cc-x-parity-parity-verifier.toml"))
+	if !strings.Contains(codex, `name = "cc_x_parity_parity_verifier"`) || !strings.Contains(codex, `sandbox_mode = "read-only"`) {
+		t.Fatalf("codex definition:\n%s", codex)
+	}
+	if cursor := read(t, filepath.Join(f.root, ".cursor/agents/cc-x-parity-parity-fixer.md")); !strings.Contains(cursor, "readonly: false") {
+		t.Fatalf("an edit role is read-only on cursor:\n%s", cursor)
+	}
+	if fixer := read(t, filepath.Join(f.root, ".claude/agents/cc-x-parity-parity-fixer.md")); strings.Contains(fixer, "tools:") {
+		t.Fatalf("an edit role was given the read-only tools:\n%s", fixer)
+	}
+	// Additions travel in the brief only: the worker's definition is untouched.
+	if read(t, filepath.Join(f.root, ".claude/agents/cc-worker.md")) != worker {
+		t.Fatal("an addition changed the worker's definition")
+	}
+
+	// Its own tiering replaces what it takes from like.
+	f.ok("agent", "configure", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--model", "verifier-model", "--effort", "low")
+	if note, _ := decodeMap(t, f.ok("status"))["setup_required"].(string); note == "" {
+		t.Fatal("a changed setting left the definition current")
+	}
+	f.ok("agent", "setup", "--host", "claude-code")
+	if text := read(t, verifier); !strings.Contains(text, "verifier-model") || strings.Contains(text, "review-model") {
+		t.Fatalf("the role's own setting was not applied:\n%s", text)
+	}
+	if out := f.fail("agent", "configure", "--host", "claude-code", "--role", "x-parity-nobody", "--model", "m", "--effort", "low"); !strings.Contains(out, "declares agent role x-parity-nobody") {
+		t.Fatalf("an unknown extension role was configured: %s", out)
+	}
+
+	i := f.intent("orders")
+	p := f.plan(i.ID, "orders", "api")
+
+	// A read-only role is briefed like the explorer.
+	spec := dispatchSpec(t, f.ok("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--plan", p.ID, "--path", f.root))
+	if !spec.ReadOnly || spec.AgentType != "cc-x-parity-parity-verifier" || !spec.DefinitionInstalled || spec.Setting.Model != "verifier-model" {
+		t.Fatalf("verifier spec: %+v", spec)
+	}
+	inOrder(t, spec.Prompt, "# Working directory", "# Ownership\n\nYou are reading, not changing.", "# Plan "+p.ID,
+		"# Extensions", "after implement, parity:", "# Language", "# What to return\n\n# roles/parity-verifier.md",
+		"- Verdict\n- Findings\n- Not checked", "no push, pull or merge request", "launches no other agent", "Change nothing in the working directory.")
+	if strings.Contains(spec.Prompt, "Repository assignment") {
+		t.Fatalf("a read-only role was given a worker's assignment:\n%s", spec.Prompt)
+	}
+	f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--plan", p.ID, "--repo", "api", "--path", f.root)
+	f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--path", f.root)
+	f.ok("agent", "dispatch", "--host", "codex", "--role", "x-parity-parity-verifier", "--task", "Compare the orders endpoints.", "--path", f.root)
+
+	// An edit role is briefed like the worker, against a plan.
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-fixer", "--task", "Fix it.", "--path", f.root); !strings.Contains(out, "pass --plan") {
+		t.Fatalf("an edit role ran without a plan: %s", out)
+	}
+	spec = dispatchSpec(t, f.ok("agent", "dispatch", "--host", "codex", "--role", "x-parity-parity-fixer", "--plan", p.ID, "--repo", "api", "--path", f.root))
+	if spec.ReadOnly || spec.AgentType != "cc_x_parity_parity_fixer" {
+		t.Fatalf("fixer spec: %+v", spec)
+	}
+	inOrder(t, spec.Prompt, "# Ownership\n\nYou are the sole owner", "Repository assignment: api", "# What to return", "- Fixed", "Commit only on the branch")
+
+	// A worker's brief carries the addition, its heading after the core ones,
+	// and its access is unchanged.
+	spec = dispatchSpec(t, f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", f.root))
+	if spec.ReadOnly {
+		t.Fatal("an addition changed the worker's access")
+	}
+	inOrder(t, spec.Prompt, "# Ownership\n\nYou are the sole owner", "# Extensions\n\nThis workspace's extensions add these instructions to the implement stage and the worker role.",
+		"after implement, parity:", "worker role, parity: ", filepath.Join("extensions", "parity", "roles", "worker-parity.md"),
+		"# What to return\n\n"+workspace.Roles["worker"].Instructions, "- Parity")
+	// The other shipped roles get nothing.
+	spec = dispatchSpec(t, f.ok("agent", "dispatch", "--host", "claude-code", "--role", "explorer", "--task", "Where are orders?", "--path", f.root))
+	if strings.Contains(spec.Prompt, "Parity") || strings.Contains(spec.Prompt, "# Extensions") {
+		t.Fatalf("an explorer got the worker's addition:\n%s", spec.Prompt)
+	}
+
+	// Off for this member, the roles leave: unedited definitions are removed,
+	// an edited one is kept and named.
+	fixer := filepath.Join(f.root, ".claude/agents/cc-x-parity-parity-fixer.md")
+	write(t, fixer, "my own fixer\n")
+	disabled := decodeMap(t, f.ok("extension", "disable", "--id", "parity"))
+	if _, ok := disabled["setup_required"]; !ok {
+		t.Fatalf("disable did not name setup: %v", disabled)
+	}
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--plan", p.ID, "--path", f.root); !strings.Contains(out, "no extension on for this member") {
+		t.Fatalf("a role of a disabled extension was dispatched: %s", out)
+	}
+	var result workspace.AgentSetup
+	if err := json.Unmarshal([]byte(f.ok("agent", "setup")), &result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Kept) != 1 || result.Kept[0].Path != ".claude/agents/cc-x-parity-parity-fixer.md" || len(result.Removed) != 5 {
+		t.Fatalf("setup after disable: %+v", result)
+	}
+	if read(t, fixer) != "my own fixer\n" {
+		t.Fatal("an edited definition was overwritten")
+	}
+	for _, gone := range []string{verifier, filepath.Join(f.root, ".codex/agents/cc-x-parity-parity-fixer.toml")} {
+		if _, err := os.Stat(gone); !os.IsNotExist(err) {
+			t.Fatalf("%s was not removed", gone)
+		}
+	}
+	if _, ok := decodeMap(t, f.ok("status"))["setup_required"]; ok {
+		t.Fatal("status reports setup after the definitions were removed")
+	}
+	// Back on, setup will not overwrite the person's file.
+	if enabled := decodeMap(t, f.ok("extension", "enable", "--id", "parity")); enabled["setup_required"] == nil {
+		t.Fatalf("enable did not name setup: %v", enabled)
+	}
+	if out := f.fail("agent", "setup", "--host", "claude-code"); !strings.Contains(out, "preserve customized agent definition") {
+		t.Fatalf("setup overwrote an edited definition: %s", out)
+	}
+	if err := os.Remove(fixer); err != nil {
+		t.Fatal(err)
+	}
+	f.ok("agent", "setup")
+	removed := decodeMap(t, f.ok("extension", "remove", "--id", "parity"))
+	if removed["setup_required"] == nil {
+		t.Fatalf("remove did not name setup: %v", removed)
+	}
+	result = workspace.AgentSetup{}
+	if err := json.Unmarshal([]byte(f.ok("agent", "setup")), &result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Removed) != 6 || len(result.Kept) != 0 {
+		t.Fatalf("setup after remove: %+v", result)
+	}
+}
+
+// A workspace without extension roles has nothing to set up, and its
+// extension commands say nothing about setup.
+func TestHookOnlyExtensionsNeedNoSetup(t *testing.T) {
+	f := setup(t)
+	extensionFolder(t, filepath.Join(f.root, "extensions", "style"), "id: style\nmembers: default-on\nhooks:\n  - at: after implement\n    instructions: a.md\n", "a.md")
+	if added := decodeMap(t, f.ok("extension", "add", "--id", "style", "--path", "extensions/style")); added["setup_required"] != nil {
+		t.Fatalf("a hook-only extension asked for setup: %v", added)
+	}
+	if _, ok := decodeMap(t, f.ok("status"))["setup_required"]; ok {
+		t.Fatal("status asked for setup without extension roles")
+	}
+}
+
+// check names each manifest problem with a role, and the clash between two
+// extensions that no single manifest shows.
+func TestExtensionRoleCheckFindings(t *testing.T) {
+	base := "id: parity\nmembers: default-on\nhooks: []\n"
+	role := func(fields string) string {
+		return base + "roles:\n  - id: verifier\n    description: Checks parity.\n    access: read-only\n    instructions: roles/verifier.md\n" + fields
+	}
+	for _, tc := range []struct{ name, manifest, want string }{
+		{"id not a slug", base + "roles:\n  - id: Parity Verifier\n    description: x\n    access: read-only\n    instructions: roles/verifier.md\n", "role id"},
+		{"id twice", role("  - id: verifier\n    description: Again.\n    access: edit\n    instructions: roles/verifier.md\n"), "role verifier appears twice"},
+		{"like not shipped", role("    like: boss\n"), "like names a shipped role"},
+		{"bad access", base + "roles:\n  - id: verifier\n    description: x\n    access: write\n    instructions: roles/verifier.md\n", "access is read-only or edit"},
+		{"unknown stage", role("    stages: [ship]\n"), "unknown stage"},
+		{"core heading", base + "role_additions:\n  - role: planner\n    returns: [Approach]\n", "core heading of that role"},
+		{"not a shipped role", base + "role_additions:\n  - role: manager\n    returns: [Notes]\n", "not a shipped role"},
+		{"escaping file", base + "roles:\n  - id: verifier\n    description: x\n    access: read-only\n    instructions: ../outside.md\n", "leaves its folder"},
+		{"missing file", base + "roles:\n  - id: verifier\n    description: x\n    access: read-only\n    instructions: roles/absent.md\n", "cannot be read"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := setup(t)
+			extensionFolder(t, filepath.Join(f.root, "extensions", "parity"), tc.manifest, "roles/verifier.md")
+			write(t, filepath.Join(f.root, "extensions.yaml"), "extensions:\n  - id: parity\n    source: {path: extensions/parity}\n")
+			if out := f.fail("check"); !strings.Contains(out, tc.want) {
+				t.Fatalf("check did not report %q: %s", tc.want, out)
+			}
+		})
+	}
+
+	f := setup(t)
+	for _, id := range []string{"one", "two"} {
+		extensionFolder(t, filepath.Join(f.root, "extensions", id), "id: "+id+"\nmembers: default-on\nhooks: []\nrole_additions:\n  - role: worker\n    returns: [Parity]\n")
+	}
+	write(t, filepath.Join(f.root, "extensions.yaml"), "extensions:\n  - id: one\n    source: {path: extensions/one}\n  - id: two\n    source: {path: extensions/two}\n")
+	if out := f.fail("check"); !strings.Contains(out, `extensions one and two both add the heading \"Parity\" to the worker role`) {
+		t.Fatalf("check did not report the shared heading: %s", out)
+	}
+}
