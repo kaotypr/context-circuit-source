@@ -64,7 +64,7 @@ rows:
     note: Codex does not read route files.
 
   - match: product/skills/cc-dispatch/SKILL.md
-    scenarios: [plan, execute, extension-role]
+    scenarios: [plan, execute, extension-role, override-loop, override-limit]
     kind: skill-text
 
   - match: product/skills/cc-dispatch/route.md
@@ -74,7 +74,7 @@ rows:
     note: Codex does not read route files.
 
   - match: product/skills/cc-worktree/SKILL.md
-    scenarios: [execute]
+    scenarios: [execute, override-loop]
     kind: skill-text
 
   - match: product/skills/cc-worktree/route.md
@@ -183,9 +183,14 @@ rows:
     kind: shipped-docs
 
   - match: product/docs/extensions.md
-    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role]
+    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role, override-not-allowed]
     kind: shipped-docs
     note: The reference an agent follows for hook output, skips, scripts, trust, consent, failure, and the line no extension crosses.
+
+  - match: product/docs/customization.md
+    scenarios: [override-loop, override-not-allowed, override-limit]
+    kind: shipped-docs
+    note: The reference for fixed rules, the overridable defaults, and the repair loop.
 
   - match: product/docs/how-it-works.md
     scenarios: [orient]
@@ -249,18 +254,18 @@ rows:
     note: Also the host whose generated definition changed.
 
   - match: internal/workspace/agents.go
-    scenarios: [plan, execute, extension-role]
+    scenarios: [plan, execute, extension-role, override-loop, override-limit]
     kind: role-definitions
     note: Also the host whose generated definition changed.
 
   - match: scripts/release-manifest.txt
-    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, override-limit, override-loop, override-not-allowed, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
 
   - match: assets.go
-    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, override-limit, override-loop, override-not-allowed, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
@@ -327,12 +332,12 @@ rows:
     note: repo sync and workspace sync, which /ff runs.
 
   - match: internal/workspace/extension*.go
-    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role]
+    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role, override-loop, override-not-allowed, override-limit]
     kind: cli-action
     note: extensions.yaml, manifests, hook resolution, the cache, script launch, trust, and the extensions section of a brief.
 
   - match: internal/cli/extensions.go
-    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role]
+    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role, override-loop, override-not-allowed]
     kind: cli-action
     note: extension hooks, and the blocks CLI-fired stages return around their write.
 
@@ -343,7 +348,7 @@ rows:
 
 sections:
   - heading: Orient and initialize
-    scenarios: [orient, join]
+    scenarios: [orient, join, override-not-allowed]
   - heading: Updating the workspace template
     scenarios: [orient, join]
   - heading: Who is working
@@ -355,7 +360,7 @@ sections:
   - heading: Intent and planning
     scenarios: [intent, plan, direct]
   - heading: Worktrees and implementation
-    scenarios: [execute]
+    scenarios: [execute, override-loop, override-limit]
   - heading: Independent review on request
     scenarios: []
   - heading: Delivery, completion, and organization

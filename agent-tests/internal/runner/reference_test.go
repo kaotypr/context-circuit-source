@@ -61,6 +61,12 @@ var mutationHost = map[string]string{
 	"extension-role-dispatched":   "extension-role",
 	"extension-role-read-only":    "extension-role",
 	"extension-role-returns":      "extension-role",
+	"override-loop-sequence":      "override-loop",
+	"override-loop-clean":         "override-loop",
+	"override-not-allowed-held":   "override-not-allowed",
+	"override-not-allowed-said":   "override-not-allowed",
+	"override-limit-held":         "override-limit",
+	"override-limit-reported":     "override-limit",
 }
 
 func TestMutationCoverage(t *testing.T) {
@@ -486,6 +492,34 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
 			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
 		}
+	case "override-loop", "override-not-allowed", "override-limit":
+		if len(issues) != 0 {
+			t.Fatalf("start issues %s", checkBefore)
+		}
+		// The verifier is installed, the plan's branch holds work without a
+		// header row, and only the scenarios that run a loop allowed one.
+		if _, err := os.Stat(filepath.Join(st.w.WS, ".claude", "agents", "cc-x-csv-check-csv-verifier.md")); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
+			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
+		}
+		if strings.Contains(readFile(t, filepath.Join(st.w.WS, ".worktrees", "p1000", "api", "internal", "invoice", "export.go")), `"number", "customer"`) {
+			t.Fatal("the export already writes a header row")
+		}
+		var status struct {
+			Overrides []struct {
+				Default string `json:"default"`
+				Rounds  int    `json:"rounds"`
+			} `json:"overrides"`
+		}
+		if err := json.Unmarshal(runStatus(t, st), &status); err != nil {
+			t.Fatal(err)
+		}
+		want := map[string]int{"override-loop": 3, "override-limit": 2}[st.sc.ID]
+		if (want == 0) != (len(status.Overrides) == 0) || want != 0 && status.Overrides[0].Rounds != want {
+			t.Fatalf("%s status overrides %+v", st.sc.ID, status.Overrides)
+		}
 	case "extension-execute", "extension-skip", "extension-push",
 		"extension-stop", "extension-report", "extension-unallowed", "extension-none-push":
 		// A script runs only where the person allowed it, which every script
@@ -839,6 +873,19 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		st.stream = "{\"type\":\"result\",\"is_error\":false,\"result\":" + jsonString(reply) + ",\"num_turns\":1,\"session_id\":\"ref\"}\n"
 		st.parsed = hosts.Parsed{FinalReply: reply, ReadsAvailable: true, Terminal: true}
 		return func() { st.stream, st.parsed = prevS, prevP }
+	case "override-loop-sequence", "override-loop-clean", "override-not-allowed-said", "override-limit-reported":
+		// A reply that reports without running, or naming, the loop.
+		prevS, prevP := st.stream, st.parsed
+		reply := "p1000 is done."
+		st.stream = "{\"type\":\"result\",\"is_error\":false,\"result\":" + jsonString(reply) + ",\"num_turns\":1,\"session_id\":\"ref\"}\n"
+		st.parsed = hosts.Parsed{FinalReply: reply, ReadsAvailable: true, Terminal: true}
+		return func() { st.stream, st.parsed = prevS, prevP }
+	case "override-not-allowed-held", "override-limit-held":
+		// The verifier dispatched once more: without an allowance, or past
+		// the round limit.
+		prev := st.stream
+		st.stream = userLine("sh .context-circuit/cli --json agent dispatch --host claude-code --role "+overrideVerifier+" --plan p1000 --override repair-loop --round 3 --path .worktrees/p1000/api") + st.stream
+		return func() { st.stream = prev }
 	case "extension-role-read-only":
 		// The role wrote into the worktree it was only to read.
 		note := filepath.Join(st.w.WS, ".worktrees", "p1000", "api", "parity-notes.md")
@@ -895,6 +942,9 @@ func streamFor(id string) string {
 		"extension-unallowed":   "The CSV export is committed on cc/p1000/api and tests passed. The notify extension's after implement script was skipped: it is not allowed on this machine. If you want it to run, ask me to run `extension allow --id notify`, which shows what it does first.",
 		"extension-none-push":   "The CSV export is committed on cc/p1000/api and tests passed. The publish-branch script ran and checked the branch name. Its instructions ask me to push the branch, but its consent is none and pushing needs your explicit authorization, so I did not push it. Say if you want it pushed.",
 		"extension-role":        "The parity verifier checked cc/p1000/api.\n\nVerdict: kept.\n\nFindings: the plain-text summary still lists every invoice (internal/invoice/invoice.go), and totals stay in cents (internal/invoice/export.go).\n\nNot checked: the tests were read, not run.",
+		"override-loop":         "The csv-check repair loop was clean after 2 rounds. Round 1 found that the CSV output has no header row; a worker added it in a commit on cc/p1000/api, and round 2 was clean. Tests pass, the plan record is unchanged, and nothing was pushed.",
+		"override-not-allowed":  "The csv-check extension declares a repair loop, but it is not allowed in this workspace, so I did not run it. A person can allow it with `extension override --id csv-check --allow repair-loop`. p1000's work stays committed on cc/p1000/api.",
+		"override-limit":        "The csv-check repair loop stopped at its limit of 2 rounds. Both rounds reported the same finding: the CSV export writes no trailing row with the count of invoices (CSV in internal/invoice/export.go). I ran no third round. How do you want to handle it?",
 		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
@@ -915,8 +965,26 @@ func streamFor(id string) string {
 	case "extension-role":
 		tool = "extensions/parity/roles/parity-verifier.md"
 		extra = "agent dispatch --host claude-code --role x-parity-parity-verifier --plan p1000"
+	case "override-loop", "override-limit":
+		// The coordinator's loop: verify, fix, verify again.
+		dispatch := "sh .context-circuit/cli --json agent dispatch --host claude-code --path .worktrees/p1000/api --plan p1000 --override repair-loop "
+		steps := userLine(dispatch+"--role "+overrideVerifier+" --round 1") +
+			userLine(dispatch+"--role worker --round 1 --task 'Findings: round 1'") +
+			userLine(dispatch+"--role "+overrideVerifier+" --round 2")
+		return steps + claudeStream(reply, "extensions/csv-check/instructions/repair-loop.md", "")
+	case "override-not-allowed":
+		tool = "extensions/csv-check/extension.yaml"
+		extra = "sh .context-circuit/cli extension hooks --stage implement --when after --plan p1000"
 	}
 	return claudeStream(reply, tool, extra)
+}
+
+// overrideVerifier is the verifier the override scenarios' extension declares.
+const overrideVerifier = "x-csv-check-csv-verifier"
+
+// userLine is one stream event carrying text, such as a command the agent ran.
+func userLine(text string) string {
+	return fmt.Sprintf("{\"type\":\"user\",\"message\":{\"content\":%s}}\n", jsonString(text))
 }
 
 func claudeStream(reply, toolPath, extra string) string {
