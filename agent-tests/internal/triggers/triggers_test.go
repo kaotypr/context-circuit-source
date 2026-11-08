@@ -20,7 +20,7 @@ func TestCatalogue(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone",
+		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone",
 		"join", "orient", "plan", "push-records", "push-records-conflict",
 	}
 	var got []string
@@ -48,7 +48,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "plan", "push-records", "push-records-conflict"}
+	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "plan", "push-records", "push-records-conflict"}
 	cases := []struct {
 		path      string
 		scenarios []string
@@ -62,7 +62,7 @@ func TestSamplePaths(t *testing.T) {
 		{"product/skills/cc-intent/SKILL.md", []string{"intent"}, nil},
 		{"product/skills/cc-plan/SKILL.md", []string{"plan"}, nil},
 		{"product/skills/cc-plan/route.md", []string{"plan"}, []string{"claude", "cursor"}},
-		{"product/skills/cc-dispatch/SKILL.md", []string{"execute", "plan"}, nil},
+		{"product/skills/cc-dispatch/SKILL.md", []string{"execute", "extension-role", "plan"}, nil},
 		{"product/skills/cc-worktree/SKILL.md", []string{"execute"}, nil},
 		{"product/skills/cc-knowledge/SKILL.md", []string{"borrowed", "complete"}, nil},
 		{"product/skills/cc-complete/SKILL.md", []string{"after-merge", "archive", "complete"}, nil},
@@ -86,10 +86,10 @@ func TestSamplePaths(t *testing.T) {
 		{"internal/cli/commands.go", []string{"borrowed", "complete", "execute", "intent", "join", "plan"}, nil},
 		{"internal/cli/cli.go", []string{"complete", "intent", "plan", "push-records"}, nil},
 		{"internal/workspace/readme.go", []string{"join"}, nil},
-		{"internal/workspace/extension_fetch.go", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-skip", "extension-stop", "extension-unallowed"}, nil},
-		{"product/docs/extensions.md", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-skip", "extension-stop", "extension-unallowed"}, nil},
+		{"internal/workspace/extension_fetch.go", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed"}, nil},
+		{"product/docs/extensions.md", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed"}, nil},
 		{"internal/workspace/records.go", []string{"intent", "plan"}, nil},
-		{"internal/workspace/agents.go", []string{"execute", "plan"}, nil},
+		{"internal/workspace/agents.go", []string{"execute", "extension-role", "plan"}, nil},
 		{"scripts/release-manifest.txt", all, nil},
 		{"assets.go", all, nil},
 	}

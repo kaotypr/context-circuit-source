@@ -1,0 +1,84 @@
+id: extension-role
+version: 1
+title: Dispatch a read-only role an extension declares
+covers:
+  - an extension role installed by agent setup beside the shipped ones
+  - a person asking for that role by its description
+  - a read-only role that changes nothing and returns its declared headings
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    mkdir -p "$WS/extensions/parity/roles"
+    cat > "$WS/extensions/parity/extension.yaml" <<'EOF'
+    id: parity
+    version: 1.0.0
+    name: Behavior parity
+    summary: Checks that changed invoice code keeps the behaviors a plan lists.
+    members: default-on
+    hooks: []
+    roles:
+      - id: parity-verifier
+        description: Checks a plan's branch keeps the behaviors its Parity section lists.
+        access: read-only
+        stages: [implement]
+        like: reviewer
+        instructions: roles/parity-verifier.md
+        returns: [Verdict, Findings, Not checked]
+    EOF
+    cat > "$WS/extensions/parity/roles/parity-verifier.md" <<'EOF'
+    # Parity verifier
+
+    Compare the plan's branch with main. For each behavior the plan's `## Parity`
+    section lists, read the changed code and its tests, and say whether the branch
+    keeps it. Verdict is kept, changed, or unclear. Findings name each behavior
+    with the file that shows it. Not checked names what you could not confirm by
+    reading. Read only: change nothing in the worktree.
+    EOF
+    sh "$WS/.context-circuit/cli" extension add --id parity --path extensions/parity
+    sh "$WS/.context-circuit/cli" agent setup
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    cat >> "$WS/plans/p1000-invoice-csv-export/plan.md" <<'EOF'
+
+    ## Parity
+
+    - The plain-text summary still lists every invoice.
+    - Totals stay in cents.
+    EOF
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan with the parity extension'
+  - |
+    set -eu
+    export GIT_AUTHOR_DATE=2026-02-01T09:00:00Z GIT_COMMITTER_DATE=2026-02-01T09:00:00Z
+    sh "$WS/.context-circuit/cli" worktree prepare --repo api --plan p1000
+    git -C "$WS/.worktrees/p1000/api" apply "$FIXTURES/patches/csv-export.patch"
+    git -C "$WS/.worktrees/p1000/api" add -A
+    git -C "$WS/.worktrees/p1000/api" commit -qm 'feat(invoice): export invoices as CSV'
+    unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+prompt: |-
+  Have the parity verifier check p1000's branch.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - extension-role-dispatched
+  - extension-role-read-only
+  - extension-role-returns
+soft: {}
+design_artifacts:
+  - extensions/parity/roles/parity-verifier.md
+human:
+  - Whether the reply judges each behavior the plan's Parity section lists, and says what it could not confirm.
+allowed_branches: []
