@@ -20,7 +20,7 @@ func TestCatalogue(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone",
+		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone",
 		"join", "orient", "override-limit", "override-loop", "override-not-allowed", "plan", "push-records", "push-records-conflict",
 	}
 	var got []string
@@ -48,7 +48,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "override-limit", "override-loop", "override-not-allowed", "plan", "push-records", "push-records-conflict"}
+	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "override-limit", "override-loop", "override-not-allowed", "plan", "push-records", "push-records-conflict"}
 	cases := []struct {
 		path      string
 		scenarios []string
@@ -58,7 +58,7 @@ func TestSamplePaths(t *testing.T) {
 		{"product/CLAUDE.md.in", []string{"orient"}, []string{"claude"}},
 		{"product/CURSOR.md.in", []string{"orient"}, []string{"cursor"}},
 		{"product/cursor.mdc.in", []string{"orient"}, []string{"cursor"}},
-		{"product/skills/cc-workspace/SKILL.md", []string{"join"}, nil},
+		{"product/skills/cc-workspace/SKILL.md", []string{"extension-skill", "join"}, nil},
 		{"product/skills/cc-intent/SKILL.md", []string{"intent"}, nil},
 		{"product/skills/cc-plan/SKILL.md", []string{"plan"}, nil},
 		{"product/skills/cc-plan/route.md", []string{"plan"}, []string{"claude", "cursor"}},
@@ -87,10 +87,10 @@ func TestSamplePaths(t *testing.T) {
 		{"internal/cli/commands.go", []string{"borrowed", "complete", "execute", "intent", "join", "plan"}, nil},
 		{"internal/cli/cli.go", []string{"complete", "intent", "plan", "push-records"}, nil},
 		{"internal/workspace/readme.go", []string{"join"}, nil},
-		{"internal/workspace/extension_fetch.go", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed", "override-limit", "override-loop", "override-not-allowed"}, nil},
-		{"product/docs/extensions.md", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skip", "extension-stop", "extension-unallowed", "override-not-allowed"}, nil},
+		{"internal/workspace/extension_fetch.go", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "override-limit", "override-loop", "override-not-allowed"}, nil},
+		{"product/docs/extensions.md", []string{"extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "override-not-allowed"}, nil},
 		{"internal/workspace/records.go", []string{"intent", "plan"}, nil},
-		{"internal/workspace/agents.go", []string{"execute", "extension-role", "override-limit", "override-loop", "plan"}, nil},
+		{"internal/workspace/agents.go", []string{"execute", "extension-role", "extension-skill", "override-limit", "override-loop", "plan"}, nil},
 		{"scripts/release-manifest.txt", all, nil},
 		{"assets.go", all, nil},
 	}

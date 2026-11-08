@@ -21,52 +21,56 @@ import (
 // mutationHost is the scenario whose reference world each check is broken on.
 // Shared checks use the orient world.
 var mutationHost = map[string]string{
-	"launcher-only":               "orient",
-	"nothing-pushed":              "orient",
-	"no-stray-commits":            "orient",
-	"no-attribution":              "orient",
-	"check-clean":                 "orient",
-	"sources-passive":             "orient",
-	"no-outside-writes":           "orient",
-	"orient-reply":                "orient",
-	"orient-clean-trees":          "orient",
-	"join-members":                "join",
-	"join-local-files":            "join",
-	"intent-record":               "intent",
-	"intent-no-plan":              "intent",
-	"intent-lang-body":            "intent-lang",
-	"plan-record":                 "plan",
-	"plan-linked":                 "plan",
-	"execute-worktree":            "execute",
-	"execute-tests-pass":          "execute",
-	"execute-records-untouched":   "execute",
-	"complete-plan-done":          "complete",
-	"complete-note":               "complete",
-	"direct-readme":               "direct",
-	"direct-no-records":           "direct",
-	"borrowed-untouched":          "borrowed",
-	"borrowed-reply":              "borrowed",
-	"push-records-pushed":         "push-records",
-	"push-records-union":          "push-records",
-	"push-records-held":           "push-records-conflict",
-	"after-merge-offered":         "after-merge",
-	"ff-synced":                   "ff",
-	"extension-instructions-read": "extension-execute",
-	"extension-results-reported":  "extension-execute",
-	"extension-skip-reported":     "extension-skip",
-	"extension-push-declined":     "extension-push",
-	"extension-stop-held":         "extension-stop",
-	"extension-failure-reported":  "extension-report",
-	"extension-allow-held":        "extension-unallowed",
-	"extension-role-dispatched":   "extension-role",
-	"extension-role-read-only":    "extension-role",
-	"extension-role-returns":      "extension-role",
-	"override-loop-sequence":      "override-loop",
-	"override-loop-clean":         "override-loop",
-	"override-not-allowed-held":   "override-not-allowed",
-	"override-not-allowed-said":   "override-not-allowed",
-	"override-limit-held":         "override-limit",
-	"override-limit-reported":     "override-limit",
+	"launcher-only":                 "orient",
+	"nothing-pushed":                "orient",
+	"no-stray-commits":              "orient",
+	"no-attribution":                "orient",
+	"check-clean":                   "orient",
+	"sources-passive":               "orient",
+	"no-outside-writes":             "orient",
+	"orient-reply":                  "orient",
+	"orient-clean-trees":            "orient",
+	"join-members":                  "join",
+	"join-local-files":              "join",
+	"intent-record":                 "intent",
+	"intent-no-plan":                "intent",
+	"intent-lang-body":              "intent-lang",
+	"plan-record":                   "plan",
+	"plan-linked":                   "plan",
+	"execute-worktree":              "execute",
+	"execute-tests-pass":            "execute",
+	"execute-records-untouched":     "execute",
+	"complete-plan-done":            "complete",
+	"complete-note":                 "complete",
+	"direct-readme":                 "direct",
+	"direct-no-records":             "direct",
+	"borrowed-untouched":            "borrowed",
+	"borrowed-reply":                "borrowed",
+	"push-records-pushed":           "push-records",
+	"push-records-union":            "push-records",
+	"push-records-held":             "push-records-conflict",
+	"after-merge-offered":           "after-merge",
+	"ff-synced":                     "ff",
+	"extension-instructions-read":   "extension-execute",
+	"extension-results-reported":    "extension-execute",
+	"extension-skip-reported":       "extension-skip",
+	"extension-push-declined":       "extension-push",
+	"extension-stop-held":           "extension-stop",
+	"extension-failure-reported":    "extension-report",
+	"extension-allow-held":          "extension-unallowed",
+	"extension-role-dispatched":     "extension-role",
+	"extension-role-read-only":      "extension-role",
+	"extension-role-returns":        "extension-role",
+	"override-loop-sequence":        "override-loop",
+	"override-loop-clean":           "override-loop",
+	"override-not-allowed-held":     "override-not-allowed",
+	"override-not-allowed-said":     "override-not-allowed",
+	"override-limit-held":           "override-limit",
+	"override-limit-reported":       "override-limit",
+	"extension-skill-used":          "extension-skill",
+	"extension-skill-hooks-run":     "extension-skill",
+	"extension-skill-hook-followed": "extension-skill",
+	"extension-skill-scoped":        "extension-skill",
 }
 
 func TestMutationCoverage(t *testing.T) {
@@ -492,6 +496,22 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
 			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
 		}
+	case "extension-skill":
+		if len(issues) != 0 {
+			t.Fatalf("start issues %s", checkBefore)
+		}
+		// The skill is installed, renamed, with its wrapper, and the plan's
+		// branch holds the work the QA pass checks.
+		skill := readFile(t, filepath.Join(st.w.WS, ".agents", "skills", "x-qa-pass-qa", "SKILL.md"))
+		if !strings.Contains(skill, "name: x-qa-pass-qa") {
+			t.Fatalf("the installed skill was not renamed\n%s", skill)
+		}
+		if _, err := os.Stat(filepath.Join(st.w.WS, ".claude", "skills", "x-qa-pass-qa", "SKILL.md")); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
+			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
+		}
 	case "override-loop", "override-not-allowed", "override-limit":
 		if len(issues) != 0 {
 			t.Fatalf("start issues %s", checkBefore)
@@ -886,6 +906,21 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		prev := st.stream
 		st.stream = userLine("sh .context-circuit/cli --json agent dispatch --host claude-code --role "+overrideVerifier+" --plan p1000 --override repair-loop --round 3 --path .worktrees/p1000/api") + st.stream
 		return func() { st.stream = prev }
+	case "extension-skill-used", "extension-skill-hooks-run", "extension-skill-hook-followed":
+		// A reply that answers from the session's own run: no skill, no
+		// named-stage points, and no list of the commands run.
+		prevS, prevP := st.stream, st.parsed
+		reply := "The QA pass on p1000 passed: vet is clean and the tests pass."
+		st.stream = "{\"type\":\"result\",\"is_error\":false,\"result\":" + jsonString(reply) + ",\"num_turns\":1,\"session_id\":\"ref\"}\n"
+		st.parsed = hosts.Parsed{FinalReply: reply, ReadsAvailable: true, Terminal: true}
+		return func() { st.stream, st.parsed = prevS, prevP }
+	case "extension-skill-scoped":
+		// The QA pass left a report in the workspace instead of its reply.
+		note := filepath.Join(st.w.WS, "qa-report.md")
+		if err := os.WriteFile(note, []byte("passed\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return func() { _ = os.Remove(note) }
 	case "extension-role-read-only":
 		// The role wrote into the worktree it was only to read.
 		note := filepath.Join(st.w.WS, ".worktrees", "p1000", "api", "parity-notes.md")
@@ -945,6 +980,7 @@ func streamFor(id string) string {
 		"override-loop":         "The csv-check repair loop was clean after 2 rounds. Round 1 found that the CSV output has no header row; a worker added it in a commit on cc/p1000/api, and round 2 was clean. Tests pass, the plan record is unchanged, and nothing was pushed.",
 		"override-not-allowed":  "The csv-check extension declares a repair loop, but it is not allowed in this workspace, so I did not run it. A person can allow it with `extension override --id csv-check --allow repair-loop`. p1000's work stays committed on cc/p1000/api.",
 		"override-limit":        "The csv-check repair loop stopped at its limit of 2 rounds. Both rounds reported the same finding: the CSV export writes no trailing row with the count of invoices (CSV in internal/invoice/export.go). I ran no third round. How do you want to handle it?",
+		"extension-skill":       "The QA pass on p1000's worktree passed.\n\nCommands run:\n- go vet ./... (passed)\n- go test ./... (passed)\n\nNothing in the worktree changed.",
 		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
@@ -972,6 +1008,10 @@ func streamFor(id string) string {
 			userLine(dispatch+"--role worker --round 1 --task 'Findings: round 1'") +
 			userLine(dispatch+"--role "+overrideVerifier+" --round 2")
 		return steps + claudeStream(reply, "extensions/csv-check/instructions/repair-loop.md", "")
+	case "extension-skill":
+		hooks := "sh .context-circuit/cli --json extension hooks --stage qa-pass/qa --plan p1000 --when "
+		return userLine(hooks+"before") + userLine("go vet ./... && go test ./...") + userLine(hooks+"after") +
+			claudeStream(reply, ".agents/skills/x-qa-pass-qa/SKILL.md", "")
 	case "override-not-allowed":
 		tool = "extensions/csv-check/extension.yaml"
 		extra = "sh .context-circuit/cli extension hooks --stage implement --when after --plan p1000"
