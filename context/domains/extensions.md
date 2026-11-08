@@ -74,6 +74,32 @@ may be switched off. `status` counts the extensions on for the active member,
 which is how an agent in a workspace without any knows the rule does not
 apply without reading the file.
 
+## Roles an extension adds
+
+An extension may declare agent roles and add to the four shipped ones. A
+declared role is named `x-<extension>-<role>`: no shipped role starts with
+`x-`, so an extension role sits beside the shipped ones and never replaces or
+shadows one. Its access is `read-only`, briefed like the explorer, or `edit`,
+briefed like the worker and dispatched against a plan. Its brief ends with
+limits no instruction lifts — no outward action, approval, start of planning or
+execution, or other agent — because the role reads its instructions without
+the entry instruction. Its model and effort come from the tiering under its full
+name, or from the shipped role its manifest calls it `like`; the tiering accepts
+any `x-` name, since one member's extension may be off for another.
+
+An addition to a shipped role reaches it through the brief only. Its definition
+and access stay as they ship, and an added heading follows the core ones and may
+not repeat one: a planner's fixed headings are transcribed into the plan record.
+
+A declared role is a file on each machine, written by `agent setup` from the
+version that machine has, for the extensions on for its member, and recorded in
+the same inventory as the shipped definitions. That is the trade: roles make
+definitions depend on extensions, so an extension change leaves them behind
+until setup runs again. The extension commands and `status` say so as
+`setup_required` rather than writing definitions themselves, and the inventory
+lets setup remove a definition whose extension is gone or off only when nobody
+edited it.
+
 ## Said, not guessed
 
 Every hook that does not apply is reported with its reason. A record made
@@ -151,5 +177,10 @@ Owner:
   hash, the local trust file, and `extension allow`.
 - `context-circuit-source@internal/cli/extensions.go` — the stage hooks a
   command fires around its write, and `extension hooks`.
+- `context-circuit-source@internal/workspace/extension_roles.go` — roles and
+  role additions: validation, resolution, the brief, and `check` findings
+  across extensions.
+- `context-circuit-source@internal/workspace/agents.go` — writing, refreshing,
+  and removing extension role definitions, and `setup_required`.
 - `context-circuit-source@product/docs/extensions.md` — the reference an agent
   follows.

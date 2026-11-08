@@ -76,9 +76,10 @@ in that order:
    It sits after the task because it adds to the assignment rather than
    stating it, and is left out where nothing applies. A planner works before
    plans name repositories, so it is given every plan instruction, the
-   repository-limited ones marked with what they are for. Role definitions
-   never carry these, so an extension added or removed never makes an installed
-   definition stale.
+   repository-limited ones marked with what they are for. Instructions an
+   extension adds to a shipped role are listed here too, and the headings it
+   adds follow the role's own at the end of what it returns. A shipped role's
+   definition never carries either, so an addition never makes it stale.
 7. **What the role must return.**
 
 The returned prompt is launched unmodified for the same reason: a coordinator
@@ -128,8 +129,9 @@ than it established.
 ## Native host mapping
 
 Setup materializes four native role definitions under each host's agents
-directory; those generated files are local and ignored while the settings that
-produce them are shared. One workspace is opened in several hosts — an intent
+directory, plus one per extension role on for the machine's member; those
+generated files are local and ignored while the settings that produce them are
+shared. One workspace is opened in several hosts — an intent
 written in one, a plan grounded in another, execution in a third — so setup
 covers every host unless `--host` narrows it, and initialization runs it rather
 than leaving a step between a new workspace and its first delegation.
@@ -245,8 +247,8 @@ Owner:
 
 - `context-circuit-source@internal/workspace/agents.go` — the roles, the
   settings that reach a host, and the composed brief.
-- `context-circuit-source@internal/workspace/extensions.go` `extensionBrief` —
-  the extensions section of a brief.
+- `context-circuit-source@internal/workspace/extension_roles.go` —
+  the extensions section of a brief, and extension roles.
 - `context-circuit-source@template/role-tiering.yaml` — the shipped reasoning
   about which role earns which settings.
 - `context-circuit-source@product/skills/cc-dispatch/SKILL.md` — the dispatch
