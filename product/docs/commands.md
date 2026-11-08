@@ -516,7 +516,10 @@ Settings default to host inheritance. `agent setup` applies settings to native
 agent files for every host unless `--host` narrows it, because one workspace is
 opened in several; the host may need to reload them. Initialization runs it, so a
 new workspace needs it again only after `agent configure` or in a fresh clone,
-where the ignored definitions never arrive. Setup also adds Claude Code's
+where the ignored definitions never arrive, or when an extension command or
+`status` returns `setup_required` because the extension roles on for this member
+changed. Its result lists the files `written`, and the extension definitions
+`removed` or `kept` because a person edited them. Setup also adds Claude Code's
 `attribution` setting, turning its commit and pull request trailers off, to the
 gitignored `.claude/settings.local.json` when that key is absent, and keeps
 everything else in the file. `agent dispatch` returns the

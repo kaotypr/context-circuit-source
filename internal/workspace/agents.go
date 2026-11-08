@@ -28,6 +28,7 @@ type AgentSetting struct {
 type RoleTiering struct {
 	Hosts map[string]map[string]AgentSetting `yaml:"hosts" json:"hosts"`
 }
+
 // Role is one agent role a brief and a native definition are made from. The
 // four shipped roles are fixed; an extension role is read from the extension's
 // manifest and instructions file on this machine, and its name is

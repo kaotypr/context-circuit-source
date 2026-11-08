@@ -16,6 +16,14 @@ coordinator still runs the stage's `extension hooks` itself and reports their
 results with the role's. Scripts are always run by the coordinator through
 `extension hooks`, never by a role.
 
+An extension may add roles named `x-<extension>-<role>`; `extension list` shows
+them. Dispatch one on a person's request, or for a stage it declares, under the
+same rules as a shipped role: `--role x-<extension>-<role>`, with `--plan` for
+one with edit access. Its brief carries its own limits; pass it unmodified like
+any other. A read-only extension role is still not a verifier during execution:
+running one there needs an override the workspace allowed, and without one it
+runs only when a person asks.
+
 Read `.context-circuit/docs/agents.md` for the current host's settings mechanism.
 Use `agent settings` to resolve the tiering in force: the shared
 `.context-circuit/role-tiering.yaml`, with any host/role this machine overrode in
@@ -25,7 +33,8 @@ the maintainer. Honor explicit user settings; never infer model quality order or
 silently escalate.
 
 Initialization installs role definitions for every host. Run setup again after
-settings change, or in a clone, where the ignored definitions never arrived:
+settings change, in a clone, where the ignored definitions never arrived, or when
+an extension command or `status` returns `setup_required`:
 
 ```sh
 sh <root>/.context-circuit/cli agent setup
@@ -42,7 +51,7 @@ For each bounded task, obtain its dispatch specification:
 
 ```sh
 sh <root>/.context-circuit/cli --json agent dispatch \
-  --host <host> --role <explorer|planner|worker|reviewer> \
+  --host <host> --role <explorer|planner|worker|reviewer|x-extension-role> \
   --plan <plan-id> --repo <repo-id> --path <actual-working-directory>
 ```
 

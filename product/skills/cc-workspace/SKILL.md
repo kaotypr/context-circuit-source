@@ -150,7 +150,10 @@ Add, update, switch, and remove extensions only on a person's request, through
 the `extension` commands `.context-circuit/docs/extensions.md` lists. They change
 `extensions.yaml`, which the person commits as any shared file; settings are
 edited there by hand and never hold a credential. On a new machine,
-`extension sync` fetches the remote ones.
+`extension sync` fetches the remote ones. When an extension command returns
+`setup_required`, the extensions on for this member declare roles this machine
+has not installed, or no longer declare ones it has: run the `agent setup` call
+it names, and say the host may need to reload its agent definitions.
 
 ## Describe the workspace's own repository
 

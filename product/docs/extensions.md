@@ -274,6 +274,77 @@ instructions are marked with the repositories they are for. The coordinator
 still runs the stage's hooks itself and reads their results. Scripts are always
 run by the coordinator through `extension hooks`, never by a role.
 
+## Roles
+
+A manifest may add agent roles, and add to the four shipped ones:
+
+```yaml
+roles:
+  - id: parity-verifier
+    description: Checks a rebuilt service behaves like the one it replaces.
+    access: read-only          # read-only | edit
+    stages: [implement]        # whose hook instructions its brief carries
+    like: reviewer             # the shipped role whose model and effort it takes
+    instructions: roles/parity-verifier.md
+    returns: [Verdict, Findings, Not checked]
+role_additions:
+  - role: worker
+    instructions: roles/worker-parity.md
+    returns: [Parity]
+```
+
+- **Names.** A role's full name is `x-<extension>-<role>`, here
+  `x-parity-parity-verifier`. No shipped role starts with `x-`, so an extension
+  role never replaces or shadows one.
+- **Definitions.** `agent setup` writes each role of each extension on for this
+  machine's member beside the shipped four, as `cc-x-<extension>-<role>` for
+  every host (Codex invokes it as `cc_x_<extension>_<role>`). They are
+  gitignored like the shipped ones and recorded in the same inventory, so a
+  definition a person edited is kept, and one whose extension was removed or
+  switched off is deleted only when nobody edited it. Setup names each one it
+  removed or kept.
+- **Access.** A `read-only` role gets the host's read-only tools or sandbox and
+  is dispatched like the explorer, with `--task` or a `--plan` to read. An `edit`
+  role is dispatched like the worker: it needs `--plan`, takes `--repo`, owns the
+  worktree it is given, and commits only on that branch.
+- **Model and effort.** `role-tiering.yaml`, or its local override, may name the
+  role by its full name. Where neither does, the role takes the setting of the
+  shipped role `like` names, and inherits without one. An older CLI refuses a
+  tiering file that names an `x-` role, so an extension declaring roles sets
+  `requires_cli`.
+- **The brief.** `agent dispatch --role x-parity-parity-verifier` builds the same
+  sections as for a shipped role, and an `# Extensions` section for the stages
+  it declares. "What to return" carries the role's instructions, its `returns`
+  headings in order, and limits no instruction lifts: the role authorizes no
+  outward action, gives no approval, starts neither planning nor execution, and
+  launches no other agent.
+- **Additions.** A `role_additions` entry reaches a shipped role through its
+  brief only: its instruction file is listed in the `# Extensions` section, and
+  its `returns` headings follow the role's own at the end of "What to return".
+  The role's definition and access do not change. A `returns` heading may not
+  repeat one of the role's core headings, such as a planner's `Verdict` or
+  `Approach`, and two extensions adding the same heading to one role is a
+  `check` finding.
+
+An extension role is dispatched on a person's request, or for a stage it
+declares, under the same rules as a shipped role. It runs nothing on its own.
+
+### After an extension change
+
+Extension roles are files on each machine, so changing which extensions are on
+leaves them behind until setup runs again. `extension add`, `update`, `remove`,
+`enable`, `disable`, and `sync` return `setup_required` with the `agent setup`
+call when this machine's definitions no longer match, and `status` reports the
+same. Run it, and reload the host's agent definitions if it does not pick up
+new ones in the current session; a dispatch reports `definition_installed`
+either way. Additions to the shipped roles travel in the brief and never need
+setup.
+
+`check` reports a role or addition that is not valid as written: an id that is
+not a lowercase slug or appears twice, an unknown `access` or stage, a `like` or
+`role` that is not a shipped role, a `returns` heading equal to a core heading,
+and an instruction file that is missing or leaves the folder.
+
 ## Managing extensions
 
 ```sh

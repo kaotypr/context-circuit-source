@@ -703,3 +703,36 @@ func TestTheRootFilesAgree(t *testing.T) {
 		}
 	}
 }
+
+// An extension role is dispatched and installed through sentences an agent
+// acts on: its name, when to dispatch it, and the setup an extension change
+// leaves due.
+func TestExtensionRolesAreDocumented(t *testing.T) {
+	for rel, sentences := range map[string][]string{
+		filepath.Join("docs", "extensions.md"): {
+			"A role's full name is `x-<extension>-<role>`",
+			"return `setup_required` with the `agent setup`",
+			"so an extension declaring roles sets\n  `requires_cli`",
+			"launches no other agent",
+		},
+		filepath.Join("docs", "agents.md"): {
+			"`cc-x-<extension>-<role>`",
+			"`agent dispatch --role x-<extension>-<role>`",
+		},
+		filepath.Join("skills", "cc-dispatch", "SKILL.md"): {
+			"Dispatch one on a person's request, or for a stage it declares, under the\nsame rules as a shipped role",
+			"needs an override the workspace allowed",
+			"or when\nan extension command or `status` returns `setup_required`",
+		},
+		filepath.Join("skills", "cc-workspace", "SKILL.md"): {
+			"When an extension command returns\n`setup_required`",
+		},
+	} {
+		text := productFile(t, rel)
+		for _, sentence := range sentences {
+			if !strings.Contains(text, sentence) {
+				t.Errorf("%s no longer says %q", rel, sentence)
+			}
+		}
+	}
+}

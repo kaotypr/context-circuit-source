@@ -34,8 +34,10 @@ sh .context-circuit/cli agent setup
 
 Configure the actual host (`codex`, `claude-code`, or `cursor`) and verify that its
 account supports the requested pair. Changes are shared workspace preferences.
-`agent setup` materializes four native files under each host's agents directory;
-these files and their update inventory are local and ignored. A customized native
+`agent setup` materializes four native files under each host's agents directory,
+plus one for each extension role on for this machine's member; these files and
+their update inventory are local and ignored. Its result lists the files
+`written`, and any extension definitions `removed` or `kept`. A customized native
 file is preserved and reported instead of overwritten. Restart/reload the coding
 host when it does not discover newly written definitions in the current session.
 
@@ -62,11 +64,24 @@ branch's ancestry.
 
 Where the workspace lists extensions, a planner, worker, or reviewer brief adds
 an `# Extensions` section after the task, naming the instruction files for its
-stage: plan, implement, or review. An explorer's brief never has one, and the
+stage: plan, implement, or review, and any instructions an extension adds to that
+role. Headings an extension adds to a role follow the role's own at the end of
+"What to return". An explorer's brief has a section only for an addition, and the
 section is left out where nothing applies. The coordinator still fires the
-stage's hooks itself. Role definition files never carry extension
-instructions, so adding or removing an extension never makes an installed
-definition stale. `.context-circuit/docs/extensions.md` describes the section.
+stage's hooks itself. A shipped role's definition file never carries extension
+instructions, so additions never make it stale.
+
+An extension may also declare roles of its own. Each is named
+`x-<extension>-<role>`, installed by `agent setup` beside the shipped four as
+`cc-x-<extension>-<role>` (Codex: `cc_x_<extension>_<role>`), and dispatched with
+`agent dispatch --role x-<extension>-<role>`. A `read-only` one is briefed like
+the explorer and an `edit` one like the worker, and its brief ends with limits no
+instruction lifts. Its model and effort come from the tiering under its full
+name, or else from the shipped role its manifest calls it `like`. These
+definitions follow the extensions on for this machine's member, so an extension
+change returns `setup_required` until setup runs again; an unedited definition
+whose extension is gone or off is removed, and an edited one is kept and named.
+`.context-circuit/docs/extensions.md` describes the section and the roles.
 
 The `cc-dispatch` skill resolves each task, invokes the host's actual agent tool,
 waits, and integrates the result. `agent dispatch` alone produces a specification;

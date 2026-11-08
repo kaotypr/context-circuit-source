@@ -1052,4 +1052,3 @@ func (s *Store) ImplementHooks(ctx context.Context, plan, repo string) []string 
 		"sh .context-circuit/cli extension hooks --stage implement --when after " + target + "   # after the last commit in this worktree",
 	}
 }
-
