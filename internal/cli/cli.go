@@ -81,6 +81,9 @@ extension list        each extension's state for this member and machine
 extension allow       --id ID (show its scripts and allow this version to run for the
                       active member on this machine; runs nothing; only at the
                       person's request)
+extension override    --id ID (--allow NAME [--rounds N] | --revoke NAME) (let the extension
+                      override repair-loop, verify-during-execution, risk-review, or
+                      delegation in this workspace; only at the person's request)
 extension hooks       --stage STAGE --when before|after [--intent ID | --plan ID]
                       [--repo ID] [--confirm ID] (one hook point's instructions,
                       and its allowed scripts run; --confirm runs an each-time
@@ -119,6 +122,7 @@ agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEV
 agent setup           [--host codex|claude-code|cursor] (default: every host)
 agent dispatch        --host HOST --role ROLE --path DIRECTORY [--task TEXT]
                       [--intent ID] [--plan ID] [--repo ID] [--shared] [--review-requested]
+                      [--override NAME [--round N]] (a dispatch an allowed override needs)
                       (--intent plans an approved intent; planner --task plans a specified standalone outcome; --plan implements one.
                       --task is the assignment where no record carries it.
                       Host must launch the returned prompt unmodified.)

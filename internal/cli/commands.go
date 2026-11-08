@@ -19,7 +19,7 @@ type input struct {
 	values map[string]*string
 
 	repos, dependencies, copyPaths, plans, roles, recordIDs listFlag
-	band                                                    int
+	band, rounds, round                                     int
 	archived, reuse, discard, reviewRequested, shared       bool
 	localTiering, clearTone, clearRoles, all, confirm       bool
 	prune                                                   bool
@@ -463,6 +463,25 @@ var commands = map[string]command{
 			return s.AllowExtension(in.get("id"))
 		},
 	},
+	"extension override": {
+		flags: []string{"id", "allow", "revoke"},
+		extra: func(in *input) {
+			in.f.IntVar(&in.rounds, "rounds", 0, "lower a repair loop's round limit")
+		},
+		// Exactly one of --allow and --revoke; the run says which is missing.
+		optional: []string{"allow", "revoke"},
+		run: func(_ context.Context, s *workspace.Store, in *input) (any, error) {
+			allow, revoke := in.get("allow"), in.get("revoke")
+			if (allow == "") == (revoke == "") {
+				return nil, errors.New("pass --allow NAME to allow an override, or --revoke NAME to revoke one")
+			}
+			allowed, err := s.OverrideExtension(in.get("id"), allow+revoke, in.rounds, revoke != "")
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"operation": in.name, "workspace": s.Root, "id": in.get("id"), "overrides": allowed}, nil
+		},
+	},
 	"extension hooks": {
 		flags: []string{"stage", "when", "intent", "plan", "repo", "confirm"},
 		// Hooks change nothing shared: they resolve instructions, fetching a
@@ -681,10 +700,11 @@ var commands = map[string]command{
 		},
 	},
 	"agent dispatch": {
-		flags: []string{"host", "role", "task", "path", "plan", "intent", "repo"},
+		flags: []string{"host", "role", "task", "path", "plan", "intent", "repo", "override"},
 		extra: func(in *input) {
 			in.f.BoolVar(&in.shared, "shared", false, "several workers share this worktree")
 			in.f.BoolVar(&in.reviewRequested, "review-requested", false, "user explicitly requested independent review")
+			in.f.IntVar(&in.round, "round", 0, "the round of the override this dispatch runs")
 		},
 		// A planner takes --intent and a worker takes --plan; neither is
 		// universal, so the command accepts both as optional and refuses the
@@ -692,10 +712,11 @@ var commands = map[string]command{
 		// whole-plan worker are assigned by the record quoted in the brief; only
 		// a role without one, or a worker taking a slice of a shared plan, has
 		// something left to say, so --task is optional too.
-		optional: []string{"intent", "plan", "repo", "task"},
+		optional: []string{"intent", "plan", "repo", "task", "override"},
 		readOnly: true,
 		run: func(_ context.Context, s *workspace.Store, in *input) (any, error) {
-			return s.DispatchAgent(in.get("host"), in.get("role"), in.get("task"), in.get("path"), in.get("plan"), in.get("intent"), in.shared, in.reviewRequested, in.get("repo"))
+			override := workspace.DispatchOverride{Name: in.get("override"), Round: in.round}
+			return s.DispatchAgent(in.get("host"), in.get("role"), in.get("task"), in.get("path"), in.get("plan"), in.get("intent"), in.shared, in.reviewRequested, override, in.get("repo"))
 		},
 	},
 	"status": {

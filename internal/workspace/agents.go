@@ -632,7 +632,14 @@ type Dispatch struct {
 	SetupRequired       string `json:"setup_required,omitempty"`
 }
 
-func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, shared, reviewRequested bool, repository ...string) (Dispatch, error) {
+// DispatchOverride names the override a dispatch runs under, and the round of
+// it, 0 when none is named.
+type DispatchOverride struct {
+	Name  string
+	Round int
+}
+
+func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, shared, reviewRequested bool, override DispatchOverride, repository ...string) (Dispatch, error) {
 	repo := ""
 	if len(repository) > 0 {
 		repo = repository[0]
@@ -651,7 +658,29 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	if err != nil {
 		return Dispatch{}, err
 	}
-	if err := checkDispatchArgs(role, r, task, plan, intent, repo, shared, reviewRequested); err != nil {
+	var unlocked *HookOverride
+	if override.Name == "" && override.Round != 0 {
+		return Dispatch{}, errors.New("--round goes with --override")
+	}
+	if override.Name != "" {
+		if plan == "" {
+			return Dispatch{}, fmt.Errorf("--override %s runs a step of a plan's execution: pass --plan", override.Name)
+		}
+		record, err := s.FindRecord(plan)
+		if err != nil {
+			return Dispatch{}, err
+		}
+		repositories := record.Repositories
+		if repo != "" {
+			repositories = []string{repo}
+		}
+		resolved, err := s.dispatchOverride(override.Name, role, repositories)
+		if err != nil {
+			return Dispatch{}, err
+		}
+		unlocked = &resolved
+	}
+	if err := checkDispatchArgs(role, r, task, plan, intent, repo, shared, reviewRequested, unlocked, override.Round); err != nil {
 		return Dispatch{}, err
 	}
 	work, err := Open(directory)
@@ -702,6 +731,9 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	}
 	if task != "" {
 		prompt += "\n\n# Task\n\n" + task
+	}
+	if unlocked != nil {
+		prompt += "\n\n" + s.overrideBrief(*unlocked, override.Round)
 	}
 	if repo != "" {
 		planRepositories = []string{repo}
@@ -853,7 +885,19 @@ func longestRun(text string, char byte) int {
 
 // checkDispatchArgs rejects flag combinations that do not describe one agent's
 // assignment.
-func checkDispatchArgs(role string, r Role, task, plan, intent, repo string, shared, reviewRequested bool) error {
+//
+// An allowed override unlocks exactly the dispatches its default needs: the
+// verifier during execution, a worker carrying the verifier's findings, or a
+// reviewer nobody asked for. Each is otherwise refused, so the check grows one
+// condition rather than a second path.
+func checkDispatchArgs(role string, r Role, task, plan, intent, repo string, shared, reviewRequested bool, override *HookOverride, round int) error {
+	if override != nil {
+		if err := checkOverrideUse(role, r, *override, task, plan, round); err != nil {
+			return err
+		}
+		// The override stands in for the request a reviewer otherwise needs.
+		reviewRequested = true
+	}
 	// An extension role is held to the shipped role its access makes it: one
 	// that edits is assigned like the worker, through a plan, and a read-only
 	// one like the explorer, through a task or a plan to read.
@@ -894,7 +938,7 @@ func checkDispatchArgs(role string, r Role, task, plan, intent, repo string, sha
 		}
 	}
 	if role == "reviewer" && !reviewRequested {
-		return errors.New("independent review requires an explicit user request; use --review-requested only to represent that request")
+		return errors.New("independent review requires an explicit user request; use --review-requested only to represent that request, or --override with an override this workspace allowed")
 	}
 	if shared && role != "worker" {
 		return errors.New("--shared describes workers sharing one worktree")

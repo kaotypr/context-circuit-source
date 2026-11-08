@@ -509,6 +509,50 @@ func RemoveListItem(data []byte, keys []string, index int) ([]byte, error) {
 	return serializeYAML(doc)
 }
 
+// RemoveMapKey drops the last of keys from the mapping the rest of keys name,
+// and leaves every other node and comment alone. The mapping must keep at
+// least one other key: a caller removing the last one removes its parent's key
+// instead.
+func RemoveMapKey(data []byte, keys []string) ([]byte, error) {
+	if len(keys) < 2 {
+		return nil, errors.New("missing YAML field")
+	}
+	doc, err := parser.ParseBytes(data, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+	if len(doc.Docs) != 1 {
+		return nil, errors.New("expected exactly one YAML document")
+	}
+	node, err := yamlPath(keys[:len(keys)-1]).Build().FilterFile(doc)
+	if err != nil {
+		return nil, err
+	}
+	last := keys[len(keys)-1]
+	mapping, ok := node.(*ast.MappingNode)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a mapping with %s and another key", strings.Join(keys[:len(keys)-1], "."), last)
+	}
+	index := slices.IndexFunc(mapping.Values, func(value *ast.MappingValueNode) bool {
+		token := value.Key.GetToken()
+		return token != nil && token.Value == last
+	})
+	if index < 0 {
+		return nil, fmt.Errorf("no key %s under %s", last, strings.Join(keys[:len(keys)-1], "."))
+	}
+	if len(mapping.Values) == 1 {
+		return nil, fmt.Errorf("%s is the only key under %s", last, strings.Join(keys[:len(keys)-1], "."))
+	}
+	mapping.Values = slices.Delete(mapping.Values, index, index+1)
+	return serializeYAML(doc)
+}
+
+// RemoveKey applies RemoveMapKey to a workspace file, refusing when the file
+// moved under the edit.
+func (s *Store) RemoveKey(rel string, keys []string, mode fs.FileMode) error {
+	return s.change(rel, mode, func(before []byte) ([]byte, error) { return RemoveMapKey(before, keys) })
+}
+
 // replaceEditedNode overwrites a node that already exists.
 func replaceEditedNode(doc *ast.File, path *yaml.Path, node ast.Node, value any) error {
 	encoded, err := yaml.Marshal(value)
