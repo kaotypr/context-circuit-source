@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -27,14 +28,39 @@ type AgentSetting struct {
 type RoleTiering struct {
 	Hosts map[string]map[string]AgentSetting `yaml:"hosts" json:"hosts"`
 }
+// Role is one agent role a brief and a native definition are made from. The
+// four shipped roles are fixed; an extension role is read from the extension's
+// manifest and instructions file on this machine, and its name is
+// x-<extension>-<id>, which no shipped role's can equal.
 type Role struct {
 	Description, Instructions string
 	ReadOnly                  bool
+	// Headings are the fixed headings the role's result uses. A planner's are
+	// transcribed into the plan record, so no extension may add one of them
+	// again; an extension role's are the ones its manifest returns.
+	Headings []string
+	// Extension and ID name an extension role's source; both are empty for a
+	// shipped role. Stages are the stages it serves, whose hook instructions
+	// its brief carries, and Like the shipped role whose model and effort it
+	// takes where the tiering does not name it.
+	Extension, ID string
+	Stages        []string
+	Like          string
 }
 
+// edits reports whether a role changes its working directory: the worker, and
+// an extension role with edit access. Such a role is dispatched against a plan
+// and briefed as the worktree's owner.
+func (r Role) edits(name string) bool {
+	return !r.ReadOnly && (name == "worker" || r.Extension != "")
+}
+
+// ShippedRoles is the order setup writes the shipped definitions in.
+var ShippedRoles = []string{"explorer", "planner", "worker", "reviewer"}
+
 var Roles = map[string]Role{
-	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. Run no tests, linters, or builds: report behavior you read, never behavior you confirmed. Do not edit files or launch other agents.", true},
-	"planner": {"Plan an approved intent or specified standalone outcome using repository evidence.", `Read the approved intent above, or the specified standalone outcome in the task, and the relevant code. Then answer under these headings:
+	"explorer": {Description: "Investigate a bounded codebase question and return evidence.", Instructions: "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. Run no tests, linters, or builds: report behavior you read, never behavior you confirmed. Do not edit files or launch other agents.", ReadOnly: true},
+	"planner": {Description: "Plan an approved intent or specified standalone outcome using repository evidence.", Instructions: `Read the approved intent above, or the specified standalone outcome in the task, and the relevant code. Then answer under these headings:
 
 - Verdict: feasible, feasible-with-changes, or not-feasible.
 - Approach: how the outcome is reached.
@@ -45,8 +71,9 @@ var Roles = map[string]Role{
 Run no tests, linters, or builds: a check you name is one you read, never one you saw pass.
 Not-feasible is a complete answer: return it with its reasons instead of a plan.
 The coordinator writes the plan record and decides any split, so no plan exists yet and none is yours to number.
-Do not implement, do not request a separate plan approval, do not edit files, and do not launch other agents.`, true},
-	"worker": {"Implement a bounded part of a requested plan and run normal checks.", `Implement the plan above in the working directory above. Own only your assignment and the paths it names.
+Do not implement, do not request a separate plan approval, do not edit files, and do not launch other agents.`, ReadOnly: true,
+		Headings: []string{"Verdict", "Approach", "Tasks and order", "Risks and checks", "Plan shape"}},
+	"worker": {Description: "Implement a bounded part of a requested plan and run normal checks.", Instructions: `Implement the plan above in the working directory above. Own only your assignment and the paths it names.
 
 The working directory is a repository checkout. Read the AGENTS.md or CLAUDE.md
 at its root if there is one, and follow it where it is more specific than this
@@ -68,8 +95,8 @@ Report, as your result:
 
 The coordinator integrates your work from that report and does not re-run your checks, so a check you did not run is one nobody ran. Report a failure plainly rather than working around it.
 
-Do not write or reconcile durable project knowledge; report what the coordinator should record. Do not launch other agents. Committing on your own branch is part of the work; pushing, opening a pull request, merging into the base branch, or delivering changes any other way needs explicit authorization.`, false},
-	"reviewer": {"Independently review a diff only when the user requests review.", "Perform the explicitly requested independent read-only review. Inspect the supplied diff and current revision against the intent's success criteria and relevant surrounding code. Report actionable findings with file locations and limitations. Never edit files, run commands that change files, dispatch repairs, or post external comments. Do not launch other agents.", true},
+Do not write or reconcile durable project knowledge; report what the coordinator should record. Do not launch other agents. Committing on your own branch is part of the work; pushing, opening a pull request, merging into the base branch, or delivering changes any other way needs explicit authorization.`},
+	"reviewer": {Description: "Independently review a diff only when the user requests review.", Instructions: "Perform the explicitly requested independent read-only review. Inspect the supplied diff and current revision against the intent's success criteria and relevant surrounding code. Report actionable findings with file locations and limitations. Never edit files, run commands that change files, dispatch repairs, or post external comments. Do not launch other agents.", ReadOnly: true},
 }
 
 func validHost(host string) error {
@@ -160,7 +187,7 @@ func (s *Store) agentTiering() (RoleTiering, []string, error) {
 			return cfg, nil, err
 		}
 		for name, setting := range settings {
-			if _, ok := Roles[name]; !ok {
+			if !tieringRole(name) {
 				return cfg, nil, fmt.Errorf("unknown agent role: %s", name)
 			}
 			if err := validateSetting(host, setting); err != nil {
@@ -171,6 +198,17 @@ func (s *Store) agentTiering() (RoleTiering, []string, error) {
 	return cfg, overrides, nil
 }
 
+// tieringRole reports whether the tiering may name a role: a shipped one, or
+// an extension role's x- name. The tiering is shared and an extension may be
+// off for one member and on for another, so an x- name is accepted whether or
+// not its extension is on here.
+func tieringRole(name string) bool {
+	if _, ok := Roles[name]; ok {
+		return true
+	}
+	return strings.HasPrefix(name, "x-") && Name(name) == nil
+}
+
 // ConfigureAgent writes one host/role setting. Local keeps the change on this
 // machine; without it the change is to the shared file every member reads, so
 // which of the two is being edited is stated rather than inferred.
@@ -178,8 +216,8 @@ func (s *Store) ConfigureAgent(host, role, model, effort string, local bool) err
 	if err := validHost(host); err != nil {
 		return err
 	}
-	if _, ok := Roles[role]; !ok {
-		return fmt.Errorf("unknown agent role: %s", role)
+	if _, err := s.resolveRole(role); err != nil {
+		return err
 	}
 	setting := AgentSetting{model, effort}
 	if err := validateSetting(host, setting); err != nil {
@@ -219,26 +257,46 @@ func (s *Store) ConfigureAgent(host, role, model, effort string, local bool) err
 	return s.Update(LocalTiering, []string{"hosts", host, role}, setting, 0600)
 }
 
-func (s *Store) agentSetting(host, role string) (AgentSetting, error) {
+// agentSetting is the model and effort in force for a role on host. An
+// extension role the tiering does not name takes the setting of the shipped
+// role its manifest says it is like, and inherits without one.
+func (s *Store) agentSetting(host, name string, r Role) (AgentSetting, error) {
 	if err := validHost(host); err != nil {
 		return AgentSetting{}, err
-	}
-	if _, ok := Roles[role]; !ok {
-		return AgentSetting{}, fmt.Errorf("unknown agent role: %s", role)
 	}
 	cfg, err := s.AgentSettings()
 	if err != nil {
 		return AgentSetting{}, err
 	}
-	if setting, ok := cfg.Hosts[host][role]; ok {
+	if setting, ok := cfg.Hosts[host][name]; ok {
 		return setting, nil
+	}
+	if r.Like != "" {
+		if setting, ok := cfg.Hosts[host][r.Like]; ok {
+			return setting, nil
+		}
 	}
 	return AgentSetting{"inherit", "inherit"}, nil
 }
 
-func roleFile(host, role string, setting AgentSetting) (string, []byte, error) {
-	r := Roles[role]
-	name := "cc_" + role
+// agentType is the name a host invokes a role by: cc-<role>, and on Codex
+// cc_<role> with every hyphen an underscore, so cc_x_parity_parity_verifier.
+func agentType(host, role string) string {
+	if host == "codex" {
+		return strings.ReplaceAll("cc_"+role, "-", "_")
+	}
+	return "cc-" + role
+}
+
+// roleFile is a role's native definition for host. An extension role's body is
+// what its brief returns under "What to return", limits included, because a
+// host may run the definition with a prompt that carries none of the brief.
+func roleFile(host, role string, r Role, setting AgentSetting) (string, []byte, error) {
+	body := r.Instructions
+	if r.Extension != "" {
+		body = returnSection(r, nil)
+	}
+	name := agentType(host, role)
 	if host == "codex" {
 		text := "name = " + strconv.Quote(name) + "\ndescription = " + strconv.Quote(r.Description) + "\n"
 		if setting.Model != "inherit" {
@@ -250,10 +308,10 @@ func roleFile(host, role string, setting AgentSetting) (string, []byte, error) {
 		if r.ReadOnly {
 			text += "sandbox_mode = \"read-only\"\n"
 		}
-		text += "developer_instructions = " + strconv.Quote(r.Instructions) + "\n"
+		text += "developer_instructions = " + strconv.Quote(body) + "\n"
 		return ".codex/agents/cc-" + role + ".toml", []byte(text), nil
 	}
-	fields := map[string]any{"name": "cc-" + role, "description": r.Description, "model": setting.Model}
+	fields := map[string]any{"name": name, "description": r.Description, "model": setting.Model}
 	directory := ".claude"
 	if host == "claude-code" {
 		if setting.Effort != "inherit" {
@@ -270,7 +328,7 @@ func roleFile(host, role string, setting AgentSetting) (string, []byte, error) {
 		}
 	}
 	front, err := yaml.Marshal(fields)
-	return directory + "/agents/cc-" + role + ".md", []byte("---\n" + string(front) + "---\n\n" + r.Instructions + "\n"), err
+	return directory + "/agents/cc-" + role + ".md", []byte("---\n" + string(front) + "---\n\n" + body + "\n"), err
 }
 
 type agentInventory struct {
@@ -285,75 +343,209 @@ func digest(data []byte) string { sum := sha256.Sum256(data); return hex.EncodeT
 // used from more than one, so setup writes them all unless one is named.
 var Hosts = []string{"codex", "claude-code", "cursor"}
 
+// AgentSetup is what setup did: the files it wrote, the extension role
+// definitions it removed because their extension is gone or off for this
+// member, and each such definition it kept because a person edited it.
+type AgentSetup struct {
+	Written []string    `json:"written"`
+	Removed []string    `json:"removed,omitempty"`
+	Kept    []KeptAgent `json:"kept,omitempty"`
+}
+
+// KeptAgent is a definition setup no longer produces and left in place.
+type KeptAgent struct {
+	Path   string `json:"path"`
+	Reason string `json:"reason"`
+}
+
 // SetupAgents writes native role definitions. An empty host covers every host,
 // because the same workspace is opened in different ones and a definition
 // installed for only the host that happened to run setup leaves the next one
 // with nothing to invoke.
-func (s *Store) SetupAgents(host string) ([]string, error) {
+func (s *Store) SetupAgents(host string) (AgentSetup, error) {
+	result := AgentSetup{Written: []string{}}
+	hosts := Hosts
 	if host != "" {
-		return s.setupHost(host)
+		hosts = []string{host}
 	}
-	var paths []string
-	for _, each := range Hosts {
-		written, err := s.setupHost(each)
-		paths = append(paths, written...)
+	for _, each := range hosts {
+		done, err := s.setupHost(each)
+		result.Written = append(result.Written, done.Written...)
+		result.Removed = append(result.Removed, done.Removed...)
+		result.Kept = append(result.Kept, done.Kept...)
 		if err != nil {
-			return paths, err
+			return result, err
 		}
 	}
-	return paths, nil
+	return result, nil
 }
 
-func (s *Store) setupHost(host string) ([]string, error) {
-	if err := validHost(host); err != nil {
+// definitionRole is one role setup writes a definition for.
+type definitionRole struct {
+	Name string
+	Role Role
+}
+
+// definitionRoles are the roles setup writes: the shipped four, then each
+// extension role on for this machine's member, in extensions.yaml order.
+func (s *Store) definitionRoles() ([]definitionRole, error) {
+	var roles []definitionRole
+	for _, name := range ShippedRoles {
+		roles = append(roles, definitionRole{name, Roles[name]})
+	}
+	member, _ := s.ActiveMember()
+	extension, err := s.extensionRoles(member)
+	if err != nil {
 		return nil, err
 	}
-	inventoryPath := ".context-circuit/local/agents-" + host + ".yaml"
-	old := agentInventory{Files: map[string]string{}}
-	if err := s.YAML(inventoryPath, &old); err != nil && !os.IsNotExist(err) {
-		return nil, err
+	for _, r := range extension {
+		roles = append(roles, definitionRole{extensionRoleName(r.Extension, r.ID), r})
+	}
+	return roles, nil
+}
+
+func agentInventoryPath(host string) string { return ".context-circuit/local/agents-" + host + ".yaml" }
+
+// definitions is every definition setup would write for host, by path.
+func (s *Store) definitions(host string) (map[string][]byte, []string, error) {
+	roles, err := s.definitionRoles()
+	if err != nil {
+		return nil, nil, err
 	}
 	files := map[string][]byte{}
 	var paths []string
-	for _, role := range []string{"explorer", "planner", "worker", "reviewer"} {
-		setting, err := s.agentSetting(host, role)
+	for _, each := range roles {
+		setting, err := s.agentSetting(host, each.Name, each.Role)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		path, content, err := roleFile(host, role, setting)
+		path, content, err := roleFile(host, each.Name, each.Role, setting)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		current, err := s.Read(path)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
-		if err == nil && digest(current) != digest(content) && digest(current) != old.Files[path] {
-			return nil, fmt.Errorf("preserve customized agent definition: %s", path)
+		if _, seen := files[path]; seen {
+			continue
 		}
 		files[path], paths = content, append(paths, path)
+	}
+	return files, paths, nil
+}
+
+func (s *Store) setupHost(host string) (AgentSetup, error) {
+	var result AgentSetup
+	if err := validHost(host); err != nil {
+		return result, err
+	}
+	inventoryPath := agentInventoryPath(host)
+	old := agentInventory{Files: map[string]string{}}
+	if err := s.YAML(inventoryPath, &old); err != nil && !os.IsNotExist(err) {
+		return result, err
+	}
+	files, paths, err := s.definitions(host)
+	if err != nil {
+		return result, err
+	}
+	for _, path := range paths {
+		current, err := s.Read(path)
+		if err != nil && !os.IsNotExist(err) {
+			return result, err
+		}
+		if err == nil && digest(current) != digest(files[path]) && digest(current) != old.Files[path] {
+			return result, fmt.Errorf("preserve customized agent definition: %s", path)
+		}
+	}
+	// A definition the inventory records and setup no longer produces belongs
+	// to an extension that is gone or off for this member. Setup removes only a
+	// file it wrote and nobody changed since; an edited one is the person's.
+	var remove []string
+	for _, path := range slices.Sorted(maps.Keys(old.Files)) {
+		if _, produced := files[path]; produced {
+			continue
+		}
+		current, err := s.Read(path)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return result, err
+		}
+		if digest(current) == old.Files[path] {
+			remove = append(remove, path)
+			continue
+		}
+		result.Kept = append(result.Kept, KeptAgent{path, "edited since setup wrote it, so it is kept although no extension on for this member produces it; delete it by hand if it is no longer wanted"})
 	}
 	// The host setting is checked before anything is written, so a settings
 	// file setup refuses to touch leaves the role definitions as they were too.
 	setting, settingChanged, settingMode, err := s.hostSetting(host)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	next := agentInventory{Files: map[string]string{}}
 	for _, path := range paths {
 		if err := s.Write(path, files[path], 0644); err != nil {
-			return paths, err
+			return result, err
 		}
+		result.Written = append(result.Written, path)
 		next.Files[path] = digest(files[path])
 	}
+	for _, path := range remove {
+		resolved, err := s.Path(path)
+		if err != nil {
+			return result, err
+		}
+		if err := os.Remove(resolved); err != nil && !os.IsNotExist(err) {
+			return result, err
+		}
+		result.Removed = append(result.Removed, path)
+	}
 	if err := s.WriteYAML(inventoryPath, next, 0600); err != nil {
-		return paths, err
+		return result, err
 	}
 	if !settingChanged {
-		return paths, nil
+		return result, nil
 	}
 	path := hostSettings[host].Path
-	return append(paths, path), s.Write(path, setting, settingMode)
+	result.Written = append(result.Written, path)
+	return result, s.Write(path, setting, settingMode)
+}
+
+// AgentSetupRequired names the `agent setup` run that brings this machine's
+// extension role definitions in line with the extensions on for its member, or
+// is empty when they already match. Only extension definitions are compared:
+// a shipped definition never changes with an extension, and a host that was
+// never set up and has no extension role to write is not behind.
+func (s *Store) AgentSetupRequired() string {
+	for _, host := range Hosts {
+		old := agentInventory{Files: map[string]string{}}
+		if err := s.YAML(agentInventoryPath(host), &old); err != nil && !os.IsNotExist(err) {
+			continue
+		}
+		files, _, err := s.definitions(host)
+		if err != nil {
+			continue
+		}
+		want, have := map[string]string{}, map[string]string{}
+		for path, content := range files {
+			if extensionDefinition(path) {
+				want[path] = digest(content)
+			}
+		}
+		for path, sum := range old.Files {
+			if extensionDefinition(path) {
+				have[path] = sum
+			}
+		}
+		if !maps.Equal(want, have) {
+			return "this machine's extension role definitions no longer match the extensions on for this member: run `" + s.agentSetupCommand("") + "`, then reload the host's agent definitions if it does not pick them up"
+		}
+	}
+	return ""
+}
+
+// extensionDefinition reports whether a definition path is an extension role's.
+func extensionDefinition(path string) bool {
+	return strings.HasPrefix(filepath.Base(filepath.FromSlash(path)), "cc-x-")
 }
 
 // hostSettingFile is one top-level key setup adds to a host's own local settings
@@ -444,25 +636,28 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	if len(repository) > 0 {
 		repo = repository[0]
 	}
-	if repo != "" && role != "worker" {
-		return Dispatch{}, errors.New("--repo assigns a worker")
+	if err := validHost(host); err != nil {
+		return Dispatch{}, err
 	}
-	setting, err := s.agentSetting(host, role)
+	r, err := s.resolveRole(role)
 	if err != nil {
 		return Dispatch{}, err
 	}
-	if err := checkDispatchArgs(role, task, plan, intent, repo, shared, reviewRequested); err != nil {
+	if repo != "" && !r.edits(role) {
+		return Dispatch{}, errors.New("--repo assigns a worker, or an extension role with edit access")
+	}
+	setting, err := s.agentSetting(host, role, r)
+	if err != nil {
+		return Dispatch{}, err
+	}
+	if err := checkDispatchArgs(role, r, task, plan, intent, repo, shared, reviewRequested); err != nil {
 		return Dispatch{}, err
 	}
 	work, err := Open(directory)
 	if err != nil {
 		return Dispatch{}, err
 	}
-	r := Roles[role]
-	name := "cc-" + role
-	if host == "codex" {
-		name = "cc_" + role
-	}
+	name := agentType(host, role)
 	// The brief is read top to bottom by an agent that has seen nothing else, so
 	// it states where the work happens, then what the work is, and only then
 	// what to return. Every record it names is also quoted in full: an agent
@@ -485,7 +680,7 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		author = record.CreatedBy
 		planRepositories = record.Repositories
 		prompt += "\n\n" + planBrief(record, s.Root)
-		if role == "worker" {
+		if r.edits(role) {
 			assignment, err := s.workerAssignment(record, repo)
 			if err != nil {
 				return Dispatch{}, err
@@ -510,12 +705,14 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	if repo != "" {
 		planRepositories = []string{repo}
 	}
-	if section := s.extensionBrief(role, planRepositories); section != "" {
+	member, _ := s.ActiveMember()
+	additions := s.roleAdditions(member, role, planRepositories, role == "planner")
+	if section := s.extensionBrief(role, r, planRepositories, additions); section != "" {
 		prompt += "\n\n" + section
 	}
 	prompt += "\n\n" + languageBrief(s.authorLanguage(author))
-	prompt += "\n\n# What to return\n\n" + r.Instructions
-	definition, _, err := roleFile(host, role, setting)
+	prompt += "\n\n# What to return\n\n" + returnSection(r, additions)
+	definition, _, err := roleFile(host, role, r, setting)
 	if err != nil {
 		return Dispatch{}, err
 	}
@@ -537,19 +734,24 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 // pins whichever CLI happens to be running; one without names the running CLI's
 // own command.
 func (s *Store) agentSetupCommand(host string) string {
+	// An empty host is every host, which is what an extension change needs.
+	narrow := ""
+	if host != "" {
+		narrow = " --host " + host
+	}
 	if launcher, err := s.Path(".context-circuit/cli"); err == nil {
 		if info, err := os.Stat(launcher); err == nil && info.Mode().IsRegular() {
 			if runtime.GOOS == "windows" {
-				return "powershell -NoProfile -ExecutionPolicy Bypass -File " + launcher + ".ps1 agent setup --host " + host
+				return "powershell -NoProfile -ExecutionPolicy Bypass -File " + launcher + ".ps1 agent setup" + narrow
 			}
-			return "sh " + launcher + " agent setup --host " + host
+			return "sh " + launcher + " agent setup" + narrow
 		}
 	}
 	command := s.Command
 	if command == "" {
 		command = "context-circuit-cli"
 	}
-	return command + " --workspace " + s.Root + " agent setup --host " + host
+	return command + " --workspace " + s.Root + " agent setup" + narrow
 }
 
 // authorLanguage reports the language a record's prose is written in: the
@@ -650,7 +852,31 @@ func longestRun(text string, char byte) int {
 
 // checkDispatchArgs rejects flag combinations that do not describe one agent's
 // assignment.
-func checkDispatchArgs(role, task, plan, intent, repo string, shared, reviewRequested bool) error {
+func checkDispatchArgs(role string, r Role, task, plan, intent, repo string, shared, reviewRequested bool) error {
+	// An extension role is held to the shipped role its access makes it: one
+	// that edits is assigned like the worker, through a plan, and a read-only
+	// one like the explorer, through a task or a plan to read.
+	if r.Extension != "" {
+		edits := r.edits(role)
+		if intent != "" {
+			return errors.New("--intent dispatches a planner; an extension role takes --plan or --task")
+		}
+		if task != "" {
+			if err := Text(task); err != nil {
+				return err
+			}
+		}
+		if shared && !edits {
+			return errors.New("--shared describes roles sharing one worktree, and " + role + " is read-only")
+		}
+		if edits && plan == "" {
+			return errors.New(role + " has edit access, so it is dispatched against the plan whose worktree it works in: pass --plan")
+		}
+		if plan == "" && task == "" {
+			return errors.New(role + " needs --plan, or --task naming its assignment")
+		}
+		return nil
+	}
 	// The record is the assignment. A planner is dispatched against a whole
 	// approved intent and a worker against the plan quoted in its brief, so a
 	// task on either can only restate what the brief already carries, and a

@@ -198,6 +198,10 @@ type ExtensionState struct {
 	Reason string   `json:"reason,omitempty"`
 	Cached *bool    `json:"cached,omitempty"`
 	Hooks  []string `json:"hooks,omitempty"`
+	// Roles names each agent role the extension declares, by the name it is
+	// dispatched as, and Adds each shipped role it adds to.
+	Roles []string `json:"roles,omitempty"`
+	Adds  []string `json:"role_additions,omitempty"`
 	// Scripts names the points that run a script, and Trust whether this
 	// member allowed the extension's current version on this machine: allowed,
 	// not allowed, or changed since allowed.
@@ -236,6 +240,14 @@ func (s *Store) ExtensionStates() ([]ExtensionState, error) {
 				state.Hooks = append(state.Hooks, point.String())
 				if hook.Script != nil {
 					state.Scripts = append(state.Scripts, point.String())
+				}
+			}
+			for _, declared := range loaded.Manifest.Roles {
+				state.Roles = append(state.Roles, extensionRoleName(entry.ID, declared.ID))
+			}
+			for _, addition := range loaded.Manifest.RoleAdditions {
+				if !slices.Contains(state.Adds, addition.Role) {
+					state.Adds = append(state.Adds, addition.Role)
 				}
 			}
 			if len(state.Scripts) > 0 {
@@ -373,6 +385,7 @@ func (s *Store) extensionIssues() (issues, unchecked []Finding) {
 			}
 		}
 	}
+	issues = append(issues, s.extensionRoleIssues(file)...)
 	return issues, unchecked
 }
 
