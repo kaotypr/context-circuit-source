@@ -195,7 +195,26 @@ they share the codebase and must preserve other agents' edits. Wait for results,
 then integrate in dependency order and report what they reported. Nothing appends
 a progress log to the plan; completion is a person's request and carries the
 result. Preserve interrupted work. Do not create automatic repair loops, nested
-agent chains, execution records, or delivery side effects.
+agent chains, execution records, or delivery side effects. The one exception is
+a `repair-loop` override this workspace allowed, which `after implement`
+returns.
+
+## A repair loop under an allowed override
+
+You run every round; the verifier and the worker never dispatch each other.
+
+1. Dispatch the override's `verifier` with `--plan`, `--override repair-loop`,
+   and `--round 1`.
+2. Clean: report "clean after N rounds".
+3. Findings with rounds left: dispatch a worker with the findings as `--task`,
+   `--override repair-loop`, and the same `--round`, then the verifier with
+   the next round.
+4. Findings in the last round: stop, and give them to the person.
+
+A finding outside the plan's outcome is reported, not fixed. Where the host
+cannot spawn an agent, run no loop and say the override needs one that can.
+`.context-circuit/docs/customization.md` covers the other overrides and the
+report.
 
 **Do not re-run a worker's checks or re-read its diff to satisfy yourself.** The
 worker reports the commands it ran and their real outcome; read that report and

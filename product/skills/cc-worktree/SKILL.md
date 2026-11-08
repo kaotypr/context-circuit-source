@@ -24,7 +24,10 @@ Where any apply, `worktree prepare` returns an `extensions` list for its stage;
 follow it as `.context-circuit/docs/extensions.md` says. Where an extension
 applies to implementing in that worktree, it also returns `next`: the two
 `extension hooks --stage implement` commands. Run the first before the first
-change in the worktree and the second after its last commit there.
+change in the worktree and the second after its last commit there. Read the
+`after implement` result's `overrides` before reporting: an allowed override
+is carried out as `.context-circuit/docs/customization.md` says, and its
+result goes in the report.
 
 ## Choosing the starting point
 

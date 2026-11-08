@@ -8,7 +8,12 @@ description: Run an independent read-only code review of Context Circuit work wh
 Independent verification is a manually requested read-only code review, usually
 after pull-request creation and optionally after delivery as an audit. It is
 never triggered by risk classification, and it is not a condition for opening a
-pull request, delivering, or completing.
+pull request, delivering, or completing. The one exception is a `risk-review`
+override this workspace allowed: when `after implement` returns it and its
+instructions say the change warrants review, dispatch the reviewer it names
+with `--override risk-review` instead of `--review-requested`, and report the
+review with the implementation. `.context-circuit/docs/customization.md` has
+the details.
 
 Use `.agents/skills/cc-dispatch/SKILL.md` to invoke an independent
 review-capable agent or session when it is requested and available:

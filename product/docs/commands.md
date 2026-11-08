@@ -402,6 +402,11 @@ same list for their own stage when something applied, and `hooks` refuses their
 request and return no `commit_recommended`. `status` reports `extensions` with
 how many are listed and on for you, and `check` lists a remote this machine has
 not fetched under `unchecked`, apart from `issues`, without failing.
+`extension override --id ID --allow NAME [--rounds N]`, or `--revoke NAME`,
+allows or revokes one of the four overridable defaults for an extension, only
+on the person's request. An allowed override comes back from `extension hooks`
+under `overrides`, `status` lists each one, and
+`.context-circuit/docs/customization.md` describes them.
 `.context-circuit/docs/extensions.md` is the full reference.
 
 Worktrees:
@@ -529,6 +534,8 @@ a reviewer's diff and criteria, or the one slice a worker owns when several shar
 a plan. A planner is dispatched against a whole intent and refuses it. A worker
 owning its whole plan needs none, and a brief carries no task section when none
 was given. For a reviewer, `--review-requested` represents a real user request.
+`--override NAME`, with `--round N` where it has rounds, dispatches a step an
+allowed override needs and is refused for any other.
 No CLI command launches an LLM or treats a dispatch specification as evidence of
 completion.
 

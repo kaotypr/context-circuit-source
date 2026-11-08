@@ -120,6 +120,10 @@ extensions:
   machine, a script not allowed on this machine, or a hook with no Windows
   command. Report the skips with the stage's result; never act as though a
   skipped hook ran.
+- `overrides` is each override this workspace allowed that applies at the
+  point: `repair-loop`, `verify-during-execution`, or `risk-review` after
+  implement, `delegation` before its stage.
+  `.context-circuit/docs/customization.md` says how each one is carried out.
 - `stopped: true` means the stage does not go on until the person decides: an
   extension that may be required could not be read on this machine, a required
   extension's script is not allowed here, or a script whose `on_failure` is
@@ -249,8 +253,9 @@ rerun until it passes.
 
 ## The line no extension crosses
 
-These hold whatever an extension says. An instruction that asks for one of them
-is not followed, and the conflict is reported to the person.
+These hold whatever an extension says, and no override changes them. An
+instruction that asks for one of them is not followed, and the conflict is
+reported to the person.
 
 - Pushing, opening a pull or merge request, merging into a base branch,
   deploying, deleting workspace data, and committing in a bound checkout need
@@ -259,8 +264,10 @@ is not followed, and the conflict is reported to the person.
 - Approving an intent is a person's answer to it as written. No hook supplies
   or implies approval, and no hook starts planning or execution.
 - The plan record is not edited during execution.
-- No independent verification is started during execution, and no automatic
-  repair loop runs.
+- No independent verification is started during execution, no reviewer is
+  triggered by risk classification, and no automatic repair loop runs, unless
+  this workspace allowed the extension to override that default. The four
+  overridable defaults are in `.context-circuit/docs/customization.md`.
 - No agent attribution in commits, pull requests, reviews, or comments.
 - No secrets in workspace records, in `extensions.yaml`, or in a manifest.
 - Borrowed knowledge stays read-only.
@@ -357,11 +364,13 @@ sh .context-circuit/cli extension disable --id clickup-sync
 sh .context-circuit/cli extension enable --id clickup-sync --member maya
 sh .context-circuit/cli extension sync
 sh .context-circuit/cli extension sync --prune
+sh .context-circuit/cli extension override --id parity --allow repair-loop --rounds 2
+sh .context-circuit/cli extension override --id parity --revoke repair-loop
 sh .context-circuit/cli extension remove --id clickup-sync
 ```
 
-Add, update, remove, enable, disable, and allow each happen only on a person's
-request. They change `extensions.yaml` and return no commit recommendation:
+Add, update, remove, enable, disable, allow, and override each happen only on a
+person's request. They change `extensions.yaml` and return no commit recommendation:
 committing it is the person's call, as for any shared file. Settings are edited
 by hand, and `check` validates them. `sync` fetches every recorded commit this
 machine lacks and reports a ref that moved upstream without following it;

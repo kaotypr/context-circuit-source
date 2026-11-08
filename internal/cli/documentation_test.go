@@ -736,3 +736,40 @@ func TestExtensionRolesAreDocumented(t *testing.T) {
 		}
 	}
 }
+
+// An override is an exception to a rule the entry instruction states, so the
+// exception is written beside each rule it lifts, the fixed rules are named as
+// fixed, and allowing one stays a person's request.
+func TestOverridesAreDocumented(t *testing.T) {
+	for rel, sentences := range map[string][]string{
+		"AGENTS.md.in": {
+			"or create automatic repair loops, unless `extension hooks`\nreturns an override this workspace allowed for it.",
+			"never triggered by risk classification unless this workspace allowed a\n`risk-review` override",
+			"defaults an extension may override only where this workspace\nallowed it; every other rule here is fixed whatever an extension says.",
+			"Run `extension override` only when the person asks.",
+			"`.context-circuit/docs/customization.md`",
+		},
+		filepath.Join("docs", "customization.md"): {
+			"A round is one verification.",
+			"Where the host can't spawn an agent, don't run the loop",
+			"The plan\n  record is not edited: the rounds go in the report.",
+		},
+		filepath.Join("skills", "cc-dispatch", "SKILL.md"): {
+			"Do not create automatic repair loops, nested\nagent chains, execution records, or delivery side effects. The one exception is\na `repair-loop` override this workspace allowed",
+			"You run every round; the verifier and the worker never dispatch each other.",
+		},
+		filepath.Join("skills", "cc-worktree", "SKILL.md"): {
+			"Read the\n`after implement` result's `overrides` before reporting",
+		},
+		filepath.Join("skills", "cc-review", "SKILL.md"): {
+			"dispatch the reviewer it names\nwith `--override risk-review` instead of `--review-requested`",
+		},
+	} {
+		text := productFile(t, rel)
+		for _, sentence := range sentences {
+			if !strings.Contains(text, sentence) {
+				t.Errorf("%s no longer says %q", rel, sentence)
+			}
+		}
+	}
+}
