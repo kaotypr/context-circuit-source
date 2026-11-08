@@ -369,9 +369,9 @@ sh .context-circuit/cli extension override --id parity --revoke repair-loop
 sh .context-circuit/cli extension remove --id clickup-sync
 ```
 
-Add, update, remove, enable, disable, allow, and override each happen only on a
-person's request. They change `extensions.yaml` and return no commit recommendation:
-committing it is the person's call, as for any shared file. Settings are edited
+Add, update, remove, enable, disable, allow, and override each happen only on
+a person's request. They change `extensions.yaml` and return no commit
+recommendation: committing it is the person's call, as for any shared file. Settings are edited
 by hand, and `check` validates them. `sync` fetches every recorded commit this
 machine lacks and reports a ref that moved upstream without following it;
 recording the move is `update`, on request.
