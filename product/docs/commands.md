@@ -407,6 +407,9 @@ allows or revokes one of the four overridable defaults for an extension, only
 on the person's request. An allowed override comes back from `extension hooks`
 under `overrides`, `status` lists each one, and
 `.context-circuit/docs/customization.md` describes them.
+`--stage` also takes a named stage, `<extension>/<stage>`, which a skill an
+extension ships declares and runs itself; `status` lists them under
+`named_stages`, and `agent setup` installs those skills.
 `.context-circuit/docs/extensions.md` is the full reference.
 
 Worktrees:

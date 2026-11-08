@@ -773,3 +773,41 @@ func TestOverridesAreDocumented(t *testing.T) {
 		}
 	}
 }
+
+// An extension skill runs on a person's request or a core hook instruction,
+// never on its own, and its skill runs its own named stage: the sentences an
+// agent acts on say so.
+func TestExtensionSkillsAreDocumented(t *testing.T) {
+	flat := func(text string) string { return strings.Join(strings.Fields(text), " ") }
+	for rel, sentences := range map[string][]string{
+		filepath.Join("docs", "extensions.md"): {
+			"A skill is installed as `x-<extension>-<skill>`",
+			"On a person's request, or when a core stage's hook instruction names it. It never starts on its own, and it starts neither planning nor execution",
+			"Running them is the skill's own job",
+			"A named stage has no place in the lifecycle",
+			"is off for the member, or does not declare that stage returns no instructions and one skip with that reason",
+		},
+		filepath.Join("docs", "agents.md"): {
+			"`.agents/skills/x-<extension>-<skill>/`",
+		},
+		filepath.Join("docs", "commands.md"): {
+			"`--stage` also takes a named stage, `<extension>/<stage>`",
+		},
+		filepath.Join("skills", "cc-workspace", "SKILL.md"): {
+			"An extension's skills appear, as `x-<extension>-<skill>`, only after `agent setup` has run.",
+		},
+	} {
+		text := flat(productFile(t, rel))
+		for _, sentence := range sentences {
+			if !strings.Contains(text, flat(sentence)) {
+				t.Errorf("%s no longer says %q", rel, sentence)
+			}
+		}
+	}
+	// The entry instruction and the core skills never learn a named stage.
+	for _, rel := range []string{"AGENTS.md.in", filepath.Join("skills", "cc-worktree", "SKILL.md"), filepath.Join("skills", "cc-plan", "SKILL.md"), filepath.Join("skills", "cc-stacked", "SKILL.md")} {
+		if strings.Contains(productFile(t, rel), "named stage") {
+			t.Errorf("%s names a named stage, which belongs to the extension's own skill", rel)
+		}
+	}
+}
