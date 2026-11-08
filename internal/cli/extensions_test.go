@@ -171,6 +171,23 @@ func TestALocalExtensionReturnsItsInstructions(t *testing.T) {
 	if w := tree(t, prepared); w.Branch == "" {
 		t.Fatalf("the worktree is still the result: %s", prepared)
 	}
+	// Implementation is a stage the CLI never sees, so preparing a worktree
+	// where an implement hook applies names the two commands to run there.
+	next, _ := decodeMap(t, prepared)["next"].([]any)
+	if len(next) != 2 || !strings.Contains(next[0].(string), "--stage implement --when before --plan "+inApi.ID+" --repo api") ||
+		!strings.Contains(next[1].(string), "--stage implement --when after --plan "+inApi.ID+" --repo api") {
+		t.Fatalf("prepare did not name the implement hooks: %s", prepared)
+	}
+	// Outside the extension's repositories, nothing is named.
+	if web := decodeMap(t, f.ok("worktree", "prepare", "--repo", "web", "--plan", inWeb.ID)); web["next"] != nil {
+		t.Fatalf("a web worktree was told to run api hooks: %v", web)
+	}
+	// Off for this member, nothing is named either.
+	f.ok("extension", "disable", "--id", "parity")
+	if again := decodeMap(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", inApi.ID)); again["next"] != nil {
+		t.Fatalf("an extension off for the member still named hooks: %v", again)
+	}
+	f.ok("extension", "enable", "--id", "parity")
 
 	// Approval resolves both its points, after it wrote.
 	approved := decodeMap(t, f.ok("record", "approve", "--id", i.ID, "--text", "Go ahead."))

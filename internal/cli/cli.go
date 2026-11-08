@@ -475,7 +475,7 @@ func execute(ctx context.Context, s *workspace.Store, cmd command, in *input, er
 		if after := stageHook(ctx, s, cmd.stage, "after", in, result); after != nil {
 			blocks = append(blocks, *after)
 		}
-		result = withStageHooks(result, blocks)
+		result = withStageHooks(ctx, s, in, result, blocks)
 	}
 	// The split is reported on the error stream in both output modes, the way
 	// the pinned-version warning is, so no command's result changes shape. It

@@ -51,7 +51,10 @@ sees, so the agent asks for each point with `extension hooks`. That command
 refuses the `after` point of a CLI-fired stage, so an agent cannot fire it
 twice or without the stage; it answers the `before` point with instructions
 only, never running its scripts, for a skill that must act before running the
-command.
+command. Because the CLI never sees implementation, `worktree prepare` returns
+`next`, the two implement-point commands, where an extension applies to
+implementing in that worktree: agents that read the rule in a skill still
+skipped the hook, and a command in the output they act on is harder to miss.
 
 Resolution walks the entries in file order. An extension off for the member, or
 limited to repositories the point does not touch, is skipped with that reason.

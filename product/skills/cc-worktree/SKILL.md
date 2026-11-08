@@ -21,9 +21,10 @@ deleted plan's number can come back for a new plan, and its old branch carries
 the old plan's commits.
 
 Where any apply, `worktree prepare` returns an `extensions` list for its stage;
-follow it as `.context-circuit/docs/extensions.md` says. With extensions on, run
-`extension hooks --stage implement --when before --plan ID --repo ID` before the
-first change in each worktree, and `--when after` after its last commit there.
+follow it as `.context-circuit/docs/extensions.md` says. Where an extension
+applies to implementing in that worktree, it also returns `next`: the two
+`extension hooks --stage implement` commands. Run the first before the first
+change in the worktree and the second after its last commit there.
 
 ## Choosing the starting point
 

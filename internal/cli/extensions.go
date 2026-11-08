@@ -73,8 +73,9 @@ func stageHook(ctx context.Context, s *workspace.Store, stage, when string, in *
 
 // withStageHooks adds the extension blocks a CLI-fired stage returned to the
 // command's result. Nothing is added where none applied, so the result keeps
-// the shape it always had.
-func withStageHooks(result any, blocks []workspace.HookResult) any {
+// the shape it always had. A prepared worktree also names the implement hook
+// commands to run in it, where an extension applies there.
+func withStageHooks(ctx context.Context, s *workspace.Store, in *input, result any, blocks []workspace.HookResult) any {
 	switch typed := result.(type) {
 	case map[string]any:
 		if len(blocks) > 0 {
@@ -82,7 +83,7 @@ func withStageHooks(result any, blocks []workspace.HookResult) any {
 		}
 		return typed
 	case workspace.Worktree:
-		return workspace.PreparedWorktree{Worktree: typed, Extensions: blocks}
+		return workspace.PreparedWorktree{Worktree: typed, Extensions: blocks, Next: s.ImplementHooks(ctx, in.get("plan"), in.get("repo"))}
 	}
 	return result
 }
