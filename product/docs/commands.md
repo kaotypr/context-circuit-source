@@ -391,7 +391,8 @@ returns an `extensions` list of blocks: the instruction files to follow, every
 extension skipped and why, and `stopped`, which goes to the person.
 `record approve`, `worktree prepare`, `record complete`, and `record archive` return the
 same list for their own stage when something applied, and `hooks` refuses their
-`after` point. `extension` commands that change `extensions.yaml` happen only on
+`after` point. `worktree prepare` also returns `next`, the two `extension hooks
+--stage implement` commands for that worktree, when an extension applies there. `extension` commands that change `extensions.yaml` happen only on
 request and return no `commit_recommended`. `status` reports `extensions` with
 how many are listed and on for you, and `check` lists a remote this machine has
 not fetched under `unchecked`, apart from `issues`, without failing.

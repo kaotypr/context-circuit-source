@@ -22,7 +22,7 @@ func withStageHooks(ctx context.Context, s *workspace.Store, stage string, in *i
 		}
 		return typed
 	case workspace.Worktree:
-		return workspace.PreparedWorktree{Worktree: typed, Extensions: blocks}
+		return workspace.PreparedWorktree{Worktree: typed, Extensions: blocks, Next: s.ImplementHooks(ctx, in.get("plan"), in.get("repo"))}
 	}
 	return result
 }

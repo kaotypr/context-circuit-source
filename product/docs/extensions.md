@@ -64,6 +64,9 @@ sh .context-circuit/cli extension hooks --stage implement --when after --plan p0
 sh .context-circuit/cli extension hooks --stage intent --when after --intent i001
 ```
 
+`worktree prepare` returns these two implement commands as `next` when an
+extension applies to implementing in that worktree. Run them where it says.
+
 `--plan` scopes the point to the plan's repositories, and `--repo` narrows it
 to one; `--intent` carries no repository list, so only extensions limited to no
 repositories apply there. A direct change has no plan: pass `--repo` for the

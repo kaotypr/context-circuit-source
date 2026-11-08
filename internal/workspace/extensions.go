@@ -783,6 +783,46 @@ func (s *Store) StageHooks(ctx context.Context, stage string, repositories []str
 type PreparedWorktree struct {
 	Worktree
 	Extensions []HookResult `json:"extensions,omitempty"`
+	// Next names the implement hook commands to run in this worktree, where
+	// an extension applies at either implement point. The CLI never sees
+	// implementation, so this is where it says so.
+	Next []string `json:"next,omitempty"`
+}
+
+// ImplementHooks names the `extension hooks` commands to run before the first
+// change and after the last commit in a worktree for plan and repo, or is
+// empty when no extension on for the active member applies there. A skip
+// because the extension is off for the member, opt-in and not switched on, or
+// outside its repositories, does not count: nothing would follow from running
+// the hook.
+func (s *Store) ImplementHooks(ctx context.Context, plan, repo string) []string {
+	member, _ := s.ActiveMember()
+	applies := false
+	for _, when := range []string{"before", "after"} {
+		result, listed, err := s.ResolveHooks(ctx, HookQuery{Point: HookPoint{when, "implement"}, Member: member, Repositories: []string{repo}, Scoped: true})
+		if err != nil || !listed {
+			return nil
+		}
+		if len(result.Instructions) > 0 || result.Stopped {
+			applies = true
+		}
+		for _, skip := range result.Skipped {
+			if !strings.HasPrefix(skip.Reason, "off for member") && !strings.HasPrefix(skip.Reason, "opt-in, and") && !strings.HasPrefix(skip.Reason, "outside repositories") {
+				applies = true
+			}
+		}
+	}
+	if !applies {
+		return nil
+	}
+	target := "--repo " + repo
+	if plan != "" {
+		target = "--plan " + plan + " " + target
+	}
+	return []string{
+		"sh .context-circuit/cli extension hooks --stage implement --when before " + target + "   # before the first change in this worktree",
+		"sh .context-circuit/cli extension hooks --stage implement --when after " + target + "   # after the last commit in this worktree",
+	}
 }
 
 // roleStages is the stage each dispatched role does, whose instructions its
