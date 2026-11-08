@@ -125,14 +125,17 @@ one and a delta between two template tags never writes or removes one.
 
 A skill runs on a person's request or when a core hook instruction names it,
 and starts neither planning nor execution. It may declare a named stage, which
-other extensions hook as `before|after <extension>/<stage>`. The parser accepts
-that form by shape only; whether the stage exists is settled at resolution,
-where a stage whose extension is not listed, unreadable, off for the member, or
-not declaring it returns one skip with that reason. A manifest is validated
-without the workspace, so a hook at an undeclared stage is a `check` finding
-rather than an invalid manifest. Running a named stage is the declaring skill's
-job: it never enters `record order`, the entry instruction, or a core skill,
-because a stage the core does not know cannot be a gate the core enforces.
+other extensions hook as `before|after <extension>/<stage>`.
+
+- The parser accepts that form by shape only. Whether the stage exists is
+  settled at resolution, where a stage whose extension is not listed,
+  unreadable, off for the member, or not declaring it returns one skip with
+  that reason.
+- A manifest is validated without the workspace, so a hook at an undeclared
+  stage is a `check` finding rather than an invalid manifest.
+- Running a named stage is the declaring skill's job. It never enters `record
+  order`, the entry instruction, or a core skill, because a stage the core does
+  not know cannot be a gate the core enforces.
 
 ## Said, not guessed
 
