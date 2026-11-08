@@ -133,6 +133,10 @@ type Manifest struct {
 	// Overrides are the overridable defaults the extension asks to change.
 	// None applies until a person allows it in extensions.yaml.
 	Overrides []ManifestOverride `yaml:"overrides,omitempty" json:"overrides,omitempty"`
+	// Skills are skills the extension ships, installed by `agent setup` as
+	// x-<extension>-<id>. One may declare a named stage other extensions hook
+	// as <extension>/<stage>.
+	Skills []ManifestSkill `yaml:"skills,omitempty" json:"skills,omitempty"`
 }
 
 // Role access a manifest may declare.
@@ -221,6 +225,8 @@ func (file ExtensionsFile) extensionIndex(id string) int {
 }
 
 // HookPoint is a stage's before or after point, written "after implement".
+// Stage is a core stage, or a named stage a skill declares, written
+// <extension>/<stage>.
 type HookPoint struct {
 	When  string
 	Stage string
@@ -228,7 +234,14 @@ type HookPoint struct {
 
 func (p HookPoint) String() string { return p.When + " " + p.Stage }
 
-// ParseHookPoint reads "<before|after> <stage>".
+// Named splits a named stage into the extension declaring it and the stage's
+// own name. ok is false for a core stage.
+func (p HookPoint) Named() (extension, stage string, ok bool) {
+	return strings.Cut(p.Stage, "/")
+}
+
+// ParseHookPoint reads "<before|after> <stage>", the stage a core one or
+// <extension>/<stage>.
 func ParseHookPoint(text string) (HookPoint, error) {
 	fields := strings.Fields(text)
 	if len(fields) != 2 {
@@ -237,13 +250,21 @@ func ParseHookPoint(text string) (HookPoint, error) {
 	return NewHookPoint(fields[1], fields[0])
 }
 
-// NewHookPoint checks a stage and when.
+// NewHookPoint checks a stage and when. A named stage is checked for its form
+// here; whether a listed extension declares it is settled where it resolves,
+// which skips it with the reason when none does.
 func NewHookPoint(stage, when string) (HookPoint, error) {
 	if when != "before" && when != "after" {
 		return HookPoint{}, fmt.Errorf("a hook fires before or after a stage, not %q", when)
 	}
+	if extension, named, ok := strings.Cut(stage, "/"); ok {
+		if Name(extension) != nil || Name(named) != nil {
+			return HookPoint{}, fmt.Errorf("a named stage is <extension>/<stage>, both lowercase slugs, not %q", stage)
+		}
+		return HookPoint{when, stage}, nil
+	}
 	if !slices.Contains(ExtensionStages, stage) {
-		return HookPoint{}, fmt.Errorf("unknown stage %q; the stages are %s", stage, strings.Join(ExtensionStages, ", "))
+		return HookPoint{}, fmt.Errorf("unknown stage %q; the stages are %s, or a named stage <extension>/<stage> a skill declares", stage, strings.Join(ExtensionStages, ", "))
 	}
 	return HookPoint{when, stage}, nil
 }
@@ -382,6 +403,9 @@ func validateManifest(m Manifest) error {
 		}
 	}
 	if err := validateManifestRoles(m); err != nil {
+		return err
+	}
+	if err := validateManifestSkills(m); err != nil {
 		return err
 	}
 	return validateManifestOverrides(m)
@@ -610,6 +634,12 @@ func (s *Store) loadExtension(entry ExtensionEntry, index int) loadedExtension {
 			return fail(extensionInvalid, fmt.Sprintf("%s: %s names %s, which cannot be read", folder+"/"+manifestName, file.Owner, file.Path))
 		}
 	}
+	if err := checkManifestSkills(manifest, absolute); err != nil {
+		if errors.Is(err, errEscapes) {
+			return fail(extensionEscapes, folder+"/"+manifestName+": "+err.Error())
+		}
+		return fail(extensionInvalid, folder+"/"+manifestName+": "+err.Error())
+	}
 	loaded.Manifest = &manifest
 	return loaded
 }
@@ -755,6 +785,18 @@ func (s *Store) ResolveHooks(ctx context.Context, query HookQuery) (result HookR
 	file, present, err := s.Extensions()
 	if err != nil || !present {
 		return result, present, err
+	}
+	if _, _, named := query.Point.Named(); named {
+		// A named stage exists only while the extension declaring it is
+		// listed, readable, and on for the member; otherwise no hook at it
+		// applies, and the result says why.
+		if owner, reason := s.namedStageSkip(file, query.Point, query.Member); reason != "" {
+			if query.Confirm != "" {
+				return HookResult{}, true, errors.New(reason)
+			}
+			result.Skipped = append(result.Skipped, HookSkip{owner, reason})
+			return result, true, nil
+		}
 	}
 	var resolve []string
 	confirmed := false

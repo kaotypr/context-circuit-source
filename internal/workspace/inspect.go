@@ -94,6 +94,11 @@ type Orientation struct {
 	// Overrides lists each core default a person allowed an extension to
 	// override in this workspace. It is absent where none is allowed.
 	Overrides []OverrideStatus `json:"overrides,omitempty"`
+	// ExtensionSkills lists each skill an extension on for the active member
+	// ships, whether it is installed here, and the named stage it declares;
+	// NamedStages lists those stages, as other extensions hook them.
+	ExtensionSkills []ExtensionSkillState `json:"extension_skills,omitempty"`
+	NamedStages     []string              `json:"named_stages,omitempty"`
 	// SetupRequired names the `agent setup` run that brings this machine's
 	// extension role definitions in line with the extensions on for its
 	// member. It is this machine's state, not a workspace finding.
@@ -194,6 +199,12 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 	} else {
 		result.Extensions = summary
 		result.Overrides = s.overrideStatuses(result.ActiveMember)
+		result.ExtensionSkills = s.extensionSkillStates(result.ActiveMember)
+		for _, skill := range result.ExtensionSkills {
+			if skill.Stage != "" {
+				result.NamedStages = append(result.NamedStages, skill.Stage)
+			}
+		}
 	}
 	result.SetupRequired = s.AgentSetupRequired()
 	result.Issues = uniqueFindings(result.Issues)

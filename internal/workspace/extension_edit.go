@@ -205,6 +205,10 @@ type ExtensionState struct {
 	// Overrides names each overridable default the manifest declares; status
 	// says which a person allowed.
 	Overrides []string `json:"overrides,omitempty"`
+	// Skills names each skill the extension ships, by its installed name, and
+	// Stages each named stage they declare, as other extensions hook it.
+	Skills []string `json:"skills,omitempty"`
+	Stages []string `json:"stages,omitempty"`
 	// Scripts names the points that run a script, and Trust whether this
 	// member allowed the extension's current version on this machine: allowed,
 	// not allowed, or changed since allowed.
@@ -255,6 +259,12 @@ func (s *Store) ExtensionStates() ([]ExtensionState, error) {
 			}
 			for _, o := range loaded.Manifest.Overrides {
 				state.Overrides = append(state.Overrides, o.Default)
+			}
+			for _, skill := range loaded.Manifest.Skills {
+				state.Skills = append(state.Skills, extensionSkillName(entry.ID, skill.ID))
+				if skill.Stage != "" {
+					state.Stages = append(state.Stages, entry.ID+"/"+skill.Stage)
+				}
 			}
 			if len(state.Scripts) > 0 {
 				version, err := s.extensionVersion(loaded)
@@ -392,6 +402,7 @@ func (s *Store) extensionIssues() (issues, unchecked []Finding) {
 		}
 	}
 	issues = append(issues, s.extensionRoleIssues(file)...)
+	issues = append(issues, s.extensionSkillIssues(file)...)
 	issues = append(issues, s.overrideIssues(file)...)
 	return issues, unchecked
 }
