@@ -221,6 +221,13 @@ func TestALocalExtensionReturnsItsInstructions(t *testing.T) {
 	if !strings.Contains(spec.Prompt, filepath.Join(f.root, "extensions", "parity", "instructions", "after-implement.md")) {
 		t.Fatalf("the brief does not name the instruction file:\n%s", spec.Prompt)
 	}
+	// The role never reads AGENTS.md, so its brief carries the limits an
+	// instruction can't lift, repair loops included.
+	for _, limit := range []string{"pushing", "merging", "editing the plan record", "rerunning a check in a loop until it passes", "is not followed"} {
+		if !strings.Contains(spec.Prompt, limit) {
+			t.Errorf("the brief's extension limits miss %q:\n%s", limit, spec.Prompt)
+		}
+	}
 	// A planner works before plans name repositories, so it sees the
 	// repository-limited plan instructions, marked as such.
 	f.ok("record", "approve", "--id", i.ID, "--text", "Go ahead.")

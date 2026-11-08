@@ -8,8 +8,13 @@ without forking the template or changing a stage.
 An extension adds work at a stage's `before` or `after` point. The stage, its
 gates, and what it writes stay the core's. The rules the entry instruction
 holds — authorization for outward actions, the plan record left alone during
-execution, no repair loops, no attribution, no secrets — are not configurable,
-and an instruction asking to cross one is ignored and reported to the person.
+execution, no repair loops, no attribution, no secrets — are not configurable.
+
+An instruction asking to cross one is not followed and is reported to the
+person, while the rest of its extension still applies: refusing the whole
+extension would drop the checks it adds for one line it had no power to grant.
+A dispatched role's brief repeats those limits, repair loops included, because
+the role reads its instruction files without reading the entry instruction.
 
 Hooks bind to stages rather than roles. Dispatch is optional, so a hook bound
 to a role would silently not fire when the coordinator does the work itself. A
