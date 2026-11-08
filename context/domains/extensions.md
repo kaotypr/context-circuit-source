@@ -6,15 +6,20 @@ without forking the template or changing a stage.
 ## Wrap, never replace
 
 An extension adds work at a stage's `before` or `after` point. The stage, its
-gates, and what it writes stay the core's. The rules the entry instruction
-holds — authorization for outward actions, the plan record left alone during
-execution, no repair loops, no attribution, no secrets — are not configurable.
+gates, and what it writes stay the core's. The fixed rules the entry
+instruction holds — authorization for outward actions, the plan record left
+alone during execution, no attribution, no secrets — are not configurable. No
+repair loops is a default instead: an extension may override it, and three
+other defaults, only where a person allowed it, as the customization note
+describes.
 
 An instruction asking to cross one is not followed and is reported to the
 person, while the rest of its extension still applies: refusing the whole
 extension would drop the checks it adds for one line it had no power to grant.
 A dispatched role's brief repeats those limits, repair loops included, because
-the role reads its instruction files without reading the entry instruction.
+the role reads its instruction files without reading the entry instruction. An
+allowed repair loop does not lift that line from a role: the coordinator runs
+the rounds, and the role never loops by itself.
 
 Hooks bind to stages rather than roles. Dispatch is optional, so a hook bound
 to a role would silently not fire when the coordinator does the work itself. A
