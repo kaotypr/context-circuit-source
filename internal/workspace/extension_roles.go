@@ -259,6 +259,12 @@ func returnSection(r Role, additions []roleAddition) string {
 	return text
 }
 
+// dispatchDescription is an extension role's description as its native
+// definition carries it, ending with the one way to start it.
+func dispatchDescription(role, description string) string {
+	return strings.TrimSpace(description) + " Start it only with the prompt `agent dispatch --role " + role + "` returns, passed unmodified."
+}
+
 // dispatchGuard opens an extension role's native definition. A brief from
 // `agent dispatch` opens with "# Working directory"; any other prompt means the
 // coordinator spawned the role directly, past the CLI's checks, so the role
