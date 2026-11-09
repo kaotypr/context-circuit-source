@@ -509,14 +509,14 @@ func TestExtensionRolesAreInstalledDispatchedAndRemoved(t *testing.T) {
 	}
 	verifier := filepath.Join(f.root, ".claude/agents/cc-x-parity-parity-verifier.md")
 	text := read(t, verifier)
-	inOrder(t, text, "Work only from the brief `agent dispatch` writes for this role.", "agent dispatch --host claude-code --role x-parity-parity-verifier", "Check parity")
+	inOrder(t, text, "description: ", "Start it only with the prompt `agent dispatch --role x-parity-parity-verifier` returns, passed unmodified.", "---\n\nWork only from the brief `agent dispatch` writes for this role.", "agent dispatch --host claude-code --role x-parity-parity-verifier", "Check parity")
 	for _, want := range []string{"name: cc-x-parity-parity-verifier", "tools: Read, Glob, Grep", "review-model", "Check parity", "- Verdict\n- Findings\n- Not checked", "added by the workspace extension parity"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("verifier definition misses %q:\n%s", want, text)
 		}
 	}
 	codex := read(t, filepath.Join(f.root, ".codex/agents/cc-x-parity-parity-verifier.toml"))
-	if !strings.Contains(codex, `name = "cc_x_parity_parity_verifier"`) || !strings.Contains(codex, `sandbox_mode = "read-only"`) || !strings.Contains(codex, "agent dispatch --host codex --role x-parity-parity-verifier") {
+	if !strings.Contains(codex, `name = "cc_x_parity_parity_verifier"`) || !strings.Contains(codex, `sandbox_mode = "read-only"`) || !strings.Contains(codex, "agent dispatch --host codex --role x-parity-parity-verifier") || !strings.Contains(codex, "Start it only with the prompt") {
 		t.Fatalf("codex definition:\n%s", codex)
 	}
 	if cursor := read(t, filepath.Join(f.root, ".cursor/agents/cc-x-parity-parity-fixer.md")); !strings.Contains(cursor, "readonly: false") {
