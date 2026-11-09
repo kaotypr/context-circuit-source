@@ -67,6 +67,10 @@ func TestDispatchSteps(t *testing.T) {
 	if got := loopSteps(streamEvent("{'host': 'cursor', 'role': 'x-csv-check-csv-verifier', 'prompt': '# Override\\n\\nThis dispatch runs under the override repair-loop that this workspace allowed for the extension csv-check, round 1 of 3.'}")); got != "V" {
 		t.Fatalf("a specification printed in single quotes read as %q", got)
 	}
+	// Without --json the CLI prints the specification as YAML.
+	if got := loopSteps(streamEvent("host: claude-code\nrole: x-csv-check-csv-verifier\nprompt: \"# Override\\n\\nThis dispatch runs under the override repair-loop that this workspace allowed for the extension csv-check, round 1 of 3.\"\n")); got != "V" {
+		t.Fatalf("a specification printed as YAML read as %q", got)
+	}
 	if got := loopSteps(refused + streamEvent(verify)); got != "" {
 		t.Fatalf("dispatches the CLI never answered counted as %q", got)
 	}
