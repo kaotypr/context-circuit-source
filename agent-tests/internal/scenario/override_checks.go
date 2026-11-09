@@ -38,9 +38,10 @@ var (
 	// notAllowedWord matches a reply saying the override is not allowed here.
 	notAllowedWord = regexp.MustCompile(`(?i)\b(not|n't|never)\s+(been\s+|yet\s+)?allowed\b|\bno allowance\b|\bnot permitted\b|\bextension override\b`)
 	// briefRole is the role of a dispatch specification the CLI printed, at
-	// any depth of JSON escaping, and briefRound the override line its brief
-	// carries, with the round when the dispatch named one.
-	briefRole  = regexp.MustCompile(`\\*"role\\*":\s*\\*"(` + overrideVerifierRole + `|worker)\\*"`)
+	// any depth of JSON escaping, or in single quotes where the agent printed
+	// it through a script, and briefRound the override line its brief carries,
+	// with the round when the dispatch named one.
+	briefRole  = regexp.MustCompile(`\\*["']role\\*["']:\s*\\*["'](` + overrideVerifierRole + `|worker)\\*["']`)
 	briefRound = regexp.MustCompile(`under the override repair-loop that this workspace allowed for the extension [a-z0-9-]+(?:, round (\d+) of \d+)?\.`)
 )
 
