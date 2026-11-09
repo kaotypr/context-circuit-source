@@ -66,8 +66,6 @@ var mutationHost = map[string]string{
 	"override-not-allowed-held":   "override-not-allowed",
 	"override-not-allowed-said":   "override-not-allowed",
 	"override-allowance-held":     "override-not-allowed",
-	"override-limit-held":         "override-limit",
-	"override-limit-reported":     "override-limit",
 }
 
 func TestMutationCoverage(t *testing.T) {
@@ -493,7 +491,7 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
 			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
 		}
-	case "override-loop", "override-not-allowed", "override-limit":
+	case "override-loop", "override-not-allowed":
 		if len(issues) != 0 {
 			t.Fatalf("start issues %s", checkBefore)
 		}
@@ -507,9 +505,6 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		plan := readFile(t, oneGlob(t, st.w.WS, "plans", "p1000-*", "plan.md"))
 		if !strings.Contains(plan, "header") {
 			t.Fatalf("the plan does not require a header row\n%s", plan)
-		}
-		if st.sc.ID == "override-limit" && !strings.Contains(plan, "CSV contract") {
-			t.Fatalf("the plan does not name the CSV contract\n%s", plan)
 		}
 		if st.sc.ID == "override-not-allowed" {
 			if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
@@ -533,7 +528,7 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if err := json.Unmarshal(runStatus(t, st), &status); err != nil {
 			t.Fatal(err)
 		}
-		want := map[string]int{"override-loop": 3, "override-limit": 2}[st.sc.ID]
+		want := map[string]int{"override-loop": 3}[st.sc.ID]
 		if (want == 0) != (len(status.Overrides) == 0) || want != 0 && status.Overrides[0].Rounds != want {
 			t.Fatalf("%s status overrides %+v", st.sc.ID, status.Overrides)
 		}
@@ -890,7 +885,7 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		st.stream = "{\"type\":\"result\",\"is_error\":false,\"result\":" + jsonString(reply) + ",\"num_turns\":1,\"session_id\":\"ref\"}\n"
 		st.parsed = hosts.Parsed{FinalReply: reply, ReadsAvailable: true, Terminal: true}
 		return func() { st.stream, st.parsed = prevS, prevP }
-	case "override-loop-sequence", "override-loop-clean", "override-not-allowed-said", "override-limit-reported":
+	case "override-loop-sequence", "override-loop-clean", "override-not-allowed-said":
 		// A reply that reports without running, or naming, the loop.
 		prevS, prevP := st.stream, st.parsed
 		reply := "p1000 is done."
@@ -909,9 +904,9 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 			t.Fatal(err)
 		}
 		return func() { _ = os.WriteFile(path, []byte(prev), 0o644) }
-	case "override-not-allowed-held", "override-limit-held":
-		// The verifier dispatched once more: without an allowance, or past
-		// the round limit.
+	case "override-not-allowed-held":
+		// The CLI accepted a verifier dispatch: the stream holds its
+		// specification.
 		prev := st.stream
 		st.stream = st.stream + userLine("sh .context-circuit/cli --json agent dispatch --host claude-code --role "+overrideVerifier+" --plan p1000 --override repair-loop --round 3 --path .worktrees/p1000/api") +
 			userLine(dispatchSpec(overrideVerifier, 3))
@@ -974,7 +969,6 @@ func streamFor(id string) string {
 		"extension-role":        "The parity verifier checked cc/p1000/api.\n\nVerdict: kept.\n\nFindings: the plain-text summary still lists every invoice (internal/invoice/invoice.go), and totals stay in cents (internal/invoice/export.go).\n\nNot checked: the tests were read, not run.",
 		"override-loop":         "The csv-check repair loop was clean after 2 rounds. Round 1 found that the CSV output has no header row; a worker added it in a commit on cc/p1000/api, and round 2 was clean. Tests pass, the plan record is unchanged, and nothing was pushed.",
 		"override-not-allowed":  "The csv-check extension declares a repair loop, but it is not allowed in this workspace, so I did not run it. A person can allow it with `extension override --id csv-check --allow repair-loop`. p1000's work stays committed on cc/p1000/api.",
-		"override-limit":        "The csv-check repair loop stopped at its limit of 2 rounds. Round 1 found the CSV had no UTF-8 byte order mark, and a worker added it. Round 2 found that lines do not end with CRLF (WriteCSV in internal/invoice/export.go). I ran no third round. How do you want to handle it?",
 		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
@@ -995,7 +989,7 @@ func streamFor(id string) string {
 	case "extension-role":
 		tool = "extensions/parity/roles/parity-verifier.md"
 		extra = "agent dispatch --host claude-code --role x-parity-parity-verifier --plan p1000"
-	case "override-loop", "override-limit":
+	case "override-loop":
 		// The coordinator's loop: verify, fix, verify again.
 		dispatch := "sh .context-circuit/cli --json agent dispatch --host claude-code --path .worktrees/p1000/api --plan p1000 --override repair-loop "
 		steps := userLine(dispatch+"--role "+overrideVerifier+" --round 1") + userLine(dispatchSpec(overrideVerifier, 1)) +
