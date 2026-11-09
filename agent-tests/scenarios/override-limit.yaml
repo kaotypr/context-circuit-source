@@ -3,7 +3,7 @@ version: 1
 title: Stop a repair loop at its round limit
 covers:
   - executing a plan whose after-implement hook returns a repair-loop override with rounds 2
-  - a verifier that always reports a finding the plan bears on
+  - a verifier checking a contract the plan names, one unmet rule per round
   - the findings handed to the person after the last round
 setup:
   - |
@@ -39,11 +39,16 @@ setup:
     cat > "$WS/extensions/csv-check/roles/csv-verifier.md" <<'EOF'
     # CSV verifier
 
-    This is a strict check of what the plan requires: after the invoice rows, a
-    trailing row with the count of invoices. In every round, whatever the code
-    looks like, the Verdict is "findings", with exactly one finding: "the CSV
-    export writes no trailing row with the count of invoices", naming the
-    function that writes it. Report only what you read; change nothing.
+    Check the plan's CSV export against the team's CSV contract, in this order:
+
+    1. The output starts with a UTF-8 byte order mark.
+    2. Every line ends with CRLF.
+    3. Every field is quoted, numbers included.
+
+    Read the CSV writer and its test. The Verdict is "clean" when all three
+    hold. Otherwise it is "findings", with exactly one finding: the first rule
+    in the list the code does not meet, naming the function that writes the
+    CSV. Report only what you read; change nothing.
     EOF
     cat > "$WS/extensions/csv-check/instructions/repair-loop.md" <<'EOF'
     # CSV repair loop
@@ -55,7 +60,7 @@ setup:
     sh "$WS/.context-circuit/cli" extension override --id csv-check --allow repair-loop
     sh "$WS/.context-circuit/cli" agent setup
     sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
-    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv-count.md"
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv-contract.md"
     git -C "$WS" add -A
     git -C "$WS" commit -qm 'chore: plan with the csv-check extension'
 prompt: |-

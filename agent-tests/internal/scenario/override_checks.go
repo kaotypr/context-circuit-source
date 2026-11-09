@@ -44,9 +44,14 @@ var (
 	notAllowedWord = regexp.MustCompile(`(?i)\b(not|n't|never)\s+(been\s+|yet\s+)?allowed\b|\bno allowance\b|\bnot permitted\b|\bextension override\b`)
 	// limitWord matches a reply saying the loop stopped at its limit.
 	limitWord = regexp.MustCompile(`(?i)\blimit\b|\b(2|two|both|all)\s+rounds?\b|\blast round\b|\bstopp?(ed|ing)?\b`)
-	// remainingFinding is the finding the strict verifier always reports.
-	remainingFinding = regexp.MustCompile(`(?i)trailing row|count of invoices|invoice count|row count`)
-	roleWorker       = regexp.MustCompile(`--role[ =']+worker\b`)
+	// remainingFinding is a finding the contract verifier reports: a rule of
+	// its contract, which it reports one round at a time.
+	remainingFinding = regexp.MustCompile(`(?i)byte[- ]order mark|\bBOM\b|\bCRLF\b|\\r\\n|carriage return|\bquot(e|ed|es|ing)\b`)
+	// roleMention is an extension role's definition naming the command that
+	// dispatches it, in its description or its guard. An agent reading the
+	// definition did not dispatch anything.
+	roleMention = regexp.MustCompile("agent dispatch (--host [a-z-]+ )?--role x-[a-z0-9-]+`")
+	roleWorker  = regexp.MustCompile(`--role[ =']+worker\b`)
 	// briefRole is the role of a dispatch specification the CLI printed, at
 	// any depth of JSON escaping, and briefRound the override line its brief
 	// carries, with the round when the dispatch named one.
@@ -186,15 +191,16 @@ func checkLoopClean(ctx CheckContext) CheckResult {
 // checkNotAllowedHeld passes when no verifier ran during execution: no
 // dispatch named it, under an override or not, and no host spawned it.
 func checkNotAllowedHeld(ctx CheckContext) CheckResult {
-	for _, step := range dispatchSteps(ctx.Stream) {
+	stream := roleMention.ReplaceAllString(ctx.Stream, "")
+	for _, step := range dispatchSteps(stream) {
 		if step.verifier || step.override {
 			return failCheck(nameNotAllowedHeld, "the verifier was dispatched although no override was allowed")
 		}
 	}
-	if verifierDispatch.MatchString(strings.ReplaceAll(ctx.Stream, `\n`, "\n")) {
+	if verifierDispatch.MatchString(strings.ReplaceAll(stream, `\n`, "\n")) {
 		return failCheck(nameNotAllowedHeld, "the verifier was dispatched although no override was allowed")
 	}
-	if verifierSpawn.MatchString(ctx.Stream) {
+	if verifierSpawn.MatchString(stream) {
 		return failCheck(nameNotAllowedHeld, "the verifier was spawned although no override was allowed")
 	}
 	return passCheck(nameNotAllowedHeld)

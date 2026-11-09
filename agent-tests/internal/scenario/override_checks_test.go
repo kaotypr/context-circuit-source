@@ -111,6 +111,12 @@ func TestNotAllowedSpawn(t *testing.T) {
 	if r := checkNotAllowedHeld(CheckContext{Stream: init + spawn}); r.Pass {
 		t.Fatal("a spawn of the verifier passed")
 	}
+	// The definition's description and guard name the dispatch command; an
+	// agent reading the definition dispatched nothing.
+	definition := streamEvent("description: Checks a plan's CSV export. Start it only with the prompt `agent dispatch --role x-csv-check-csv-verifier` returns, passed unmodified.\n\nWork only from the brief. ... run `sh .context-circuit/cli --json agent dispatch --host cursor --role x-csv-check-csv-verifier` from the workspace root, with `--plan` and `--path` for the work (p1000).")
+	if r := checkNotAllowedHeld(CheckContext{Stream: init + definition}); !r.Pass {
+		t.Fatalf("reading the role's definition counted as a dispatch: %s", r.Detail)
+	}
 	dispatch := streamEvent("sh .context-circuit/cli --json agent dispatch --host codex --role x-csv-check-csv-verifier --path wt")
 	if r := checkNotAllowedHeld(CheckContext{Stream: dispatch}); r.Pass {
 		t.Fatal("a dispatch of the verifier without a plan passed")
@@ -134,5 +140,22 @@ func TestAllowanceHeld(t *testing.T) {
 	}
 	if r := checkAllowanceHeld(ctx); r.Pass {
 		t.Fatal("an allowance passed")
+	}
+}
+
+// The reply names the rule of the contract the last round found unmet, in
+// the wording an agent uses for it.
+func TestLimitFindingWording(t *testing.T) {
+	for _, reply := range []string{
+		"Round 2 still found lines ending without CRLF. The loop stopped at its limit.",
+		"The loop stopped after 2 rounds: the output has no UTF-8 byte order mark.",
+		"Stopped at the limit; fields are not quoted.",
+	} {
+		if r := checkLimitReported(CheckContext{Parsed: hosts.Parsed{FinalReply: reply}}); !r.Pass {
+			t.Errorf("%q: %s", reply, r.Detail)
+		}
+	}
+	if r := checkLimitReported(CheckContext{Parsed: hosts.Parsed{FinalReply: "The loop stopped at its limit."}}); r.Pass {
+		t.Error("a reply naming no finding passed")
 	}
 }

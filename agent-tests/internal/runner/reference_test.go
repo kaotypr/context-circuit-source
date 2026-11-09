@@ -508,8 +508,8 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if !strings.Contains(plan, "header") {
 			t.Fatalf("the plan does not require a header row\n%s", plan)
 		}
-		if st.sc.ID == "override-limit" && !strings.Contains(plan, "count of invoices") {
-			t.Fatalf("the plan does not require a trailing count row\n%s", plan)
+		if st.sc.ID == "override-limit" && !strings.Contains(plan, "CSV contract") {
+			t.Fatalf("the plan does not name the CSV contract\n%s", plan)
 		}
 		if st.sc.ID == "override-not-allowed" {
 			if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
@@ -974,7 +974,7 @@ func streamFor(id string) string {
 		"extension-role":        "The parity verifier checked cc/p1000/api.\n\nVerdict: kept.\n\nFindings: the plain-text summary still lists every invoice (internal/invoice/invoice.go), and totals stay in cents (internal/invoice/export.go).\n\nNot checked: the tests were read, not run.",
 		"override-loop":         "The csv-check repair loop was clean after 2 rounds. Round 1 found that the CSV output has no header row; a worker added it in a commit on cc/p1000/api, and round 2 was clean. Tests pass, the plan record is unchanged, and nothing was pushed.",
 		"override-not-allowed":  "The csv-check extension declares a repair loop, but it is not allowed in this workspace, so I did not run it. A person can allow it with `extension override --id csv-check --allow repair-loop`. p1000's work stays committed on cc/p1000/api.",
-		"override-limit":        "The csv-check repair loop stopped at its limit of 2 rounds. Both rounds reported the same finding: the CSV export writes no trailing row with the count of invoices (CSV in internal/invoice/export.go). I ran no third round. How do you want to handle it?",
+		"override-limit":        "The csv-check repair loop stopped at its limit of 2 rounds. Round 1 found the CSV had no UTF-8 byte order mark, and a worker added it. Round 2 found that lines do not end with CRLF (WriteCSV in internal/invoice/export.go). I ran no third round. How do you want to handle it?",
 		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"

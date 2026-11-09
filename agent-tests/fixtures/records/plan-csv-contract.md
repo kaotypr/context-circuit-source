@@ -7,7 +7,7 @@ The api repository gains a CSV export for invoices. The export lives in internal
 
 ## Approach
 
-Add a CSV writer in the api repository's internal/invoice package. It writes a header row, one row per invoice (number, customer, status, and total in cents), and a trailing row with the count of invoices. A test in the same package covers a single issued invoice. The plain-text summary stays.
+Add a CSV writer in the api repository's internal/invoice package. It writes a header row and one row per invoice (number, customer, status, and total in cents), and follows the team's CSV contract, which the csv-check extension's verifier checks. A test in the same package covers a single issued invoice. The plain-text summary stays.
 
 ## Tasks and order
 
