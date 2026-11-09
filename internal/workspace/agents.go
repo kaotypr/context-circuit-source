@@ -292,10 +292,13 @@ func agentType(host, role string) string {
 // roleFile is a role's native definition for host. An extension role's body is
 // what its brief returns under "What to return", limits included, because a
 // host may run the definition with a prompt that carries none of the brief.
+// It opens with a guard, because a host lists the definition among its agents
+// and may spawn it directly: the guard turns that spawn into a pointer back to
+// `agent dispatch`, where the CLI checks the dispatch and writes the brief.
 func roleFile(host, role string, r Role, setting AgentSetting) (string, []byte, error) {
 	body := r.Instructions
 	if r.Extension != "" {
-		body = returnSection(r, nil)
+		body = dispatchGuard(host, role) + "\n\n" + returnSection(r, nil)
 	}
 	name := agentType(host, role)
 	if host == "codex" {
@@ -644,7 +647,9 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	if err != nil {
 		return Dispatch{}, err
 	}
-	if repo != "" && !r.edits(role) {
+	// A read-only role has no repository assignment, but naming the plan's own
+	// repository is harmless, so only a repository outside the plan is refused.
+	if repo != "" && !r.edits(role) && plan == "" {
 		return Dispatch{}, errors.New("--repo assigns a worker, or an extension role with edit access")
 	}
 	setting, err := s.agentSetting(host, role, r)
@@ -680,6 +685,9 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		}
 		author = record.CreatedBy
 		planRepositories = record.Repositories
+		if repo != "" && !r.edits(role) && !slices.Contains(record.Repositories, repo) {
+			return Dispatch{}, fmt.Errorf("--repo %s is not one of %s's repositories; a read-only role takes --repo only as one of them", repo, record.ID)
+		}
 		prompt += "\n\n" + planBrief(record, s.Root)
 		if r.edits(role) {
 			assignment, err := s.workerAssignment(record, repo)

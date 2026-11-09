@@ -509,13 +509,14 @@ func TestExtensionRolesAreInstalledDispatchedAndRemoved(t *testing.T) {
 	}
 	verifier := filepath.Join(f.root, ".claude/agents/cc-x-parity-parity-verifier.md")
 	text := read(t, verifier)
+	inOrder(t, text, "Work only from the brief `agent dispatch` writes for this role.", "agent dispatch --host claude-code --role x-parity-parity-verifier", "Check parity")
 	for _, want := range []string{"name: cc-x-parity-parity-verifier", "tools: Read, Glob, Grep", "review-model", "Check parity", "- Verdict\n- Findings\n- Not checked", "added by the workspace extension parity"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("verifier definition misses %q:\n%s", want, text)
 		}
 	}
 	codex := read(t, filepath.Join(f.root, ".codex/agents/cc-x-parity-parity-verifier.toml"))
-	if !strings.Contains(codex, `name = "cc_x_parity_parity_verifier"`) || !strings.Contains(codex, `sandbox_mode = "read-only"`) {
+	if !strings.Contains(codex, `name = "cc_x_parity_parity_verifier"`) || !strings.Contains(codex, `sandbox_mode = "read-only"`) || !strings.Contains(codex, "agent dispatch --host codex --role x-parity-parity-verifier") {
 		t.Fatalf("codex definition:\n%s", codex)
 	}
 	if cursor := read(t, filepath.Join(f.root, ".cursor/agents/cc-x-parity-parity-fixer.md")); !strings.Contains(cursor, "readonly: false") {
@@ -556,7 +557,15 @@ func TestExtensionRolesAreInstalledDispatchedAndRemoved(t *testing.T) {
 	if strings.Contains(spec.Prompt, "Repository assignment") {
 		t.Fatalf("a read-only role was given a worker's assignment:\n%s", spec.Prompt)
 	}
-	f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--plan", p.ID, "--repo", "api", "--path", f.root)
+	// Naming the plan's own repository is accepted and changes nothing; any
+	// other is refused.
+	if same := dispatchSpec(t, f.ok("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--plan", p.ID, "--repo", "api", "--path", f.root)); same.Prompt != spec.Prompt {
+		t.Fatalf("--repo changed a read-only role's brief:\n%s", same.Prompt)
+	}
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--plan", p.ID, "--repo", "web", "--path", f.root); !strings.Contains(out, "is not one of "+p.ID+"'s repositories") {
+		t.Fatalf("a read-only role took a repository outside its plan: %s", out)
+	}
+	f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--repo", "api", "--task", "Compare.", "--path", f.root)
 	f.fail("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--path", f.root)
 	f.ok("agent", "dispatch", "--host", "codex", "--role", "x-parity-parity-verifier", "--task", "Compare the orders endpoints.", "--path", f.root)
 

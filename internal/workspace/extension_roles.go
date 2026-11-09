@@ -259,6 +259,14 @@ func returnSection(r Role, additions []roleAddition) string {
 	return text
 }
 
+// dispatchGuard opens an extension role's native definition. A brief from
+// `agent dispatch` opens with "# Working directory"; any other prompt means the
+// coordinator spawned the role directly, past the CLI's checks, so the role
+// does nothing and names the command that dispatches it.
+func dispatchGuard(host, role string) string {
+	return "Work only from the brief `agent dispatch` writes for this role. That brief opens with `# Working directory` and states this role's limits. If your prompt does not open that way, read nothing, change nothing, and reply only that the coordinator must run `sh .context-circuit/cli --json agent dispatch --host " + host + " --role " + role + "` from the workspace root, with `--plan` and `--path` for the work, and pass you its `prompt` unmodified."
+}
+
 // extensionRoleLimits is the paragraph every extension role's brief and
 // definition end with. The role never reads the workspace's AGENTS.md, so the
 // limits travel with it or nowhere.
