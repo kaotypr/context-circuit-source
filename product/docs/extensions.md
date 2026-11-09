@@ -314,9 +314,10 @@ role_additions:
   switched off is deleted only when nobody edited it. Setup names each one it
   removed or kept.
   A host lists these definitions among its agents and may spawn one directly,
-  past `agent dispatch`, so each opens with a guard: given a prompt that is not
-  a brief from `agent dispatch`, the role changes nothing and replies with the
-  dispatch command to run.
+  past `agent dispatch`. So each description ends by saying the role starts
+  only with the prompt `agent dispatch` returns, and each body opens with a
+  guard: given a prompt that is not that brief, the role changes nothing and
+  replies with the dispatch command to run.
 - **Access.** A `read-only` role gets the host's read-only tools or sandbox and
   is dispatched like the explorer, with `--task` or a `--plan` to read; it takes
   `--repo` only as one of that plan's repositories, which changes nothing. An `edit`

@@ -94,9 +94,10 @@ name, or from the shipped role its manifest calls it `like`; the tiering accepts
 any `x-` name, since one member's extension may be off for another.
 
 A host lists an installed role among its agents and may spawn it without
-`agent dispatch`, which skips the CLI's checks and the brief. The definition
-therefore opens with a guard: a prompt that is not a dispatch brief gets no
-work, only the dispatch command to run.
+`agent dispatch`, which skips the CLI's checks and the brief. Its description
+therefore says to start it only with the dispatch brief, for the coordinator
+choosing an agent, and its body opens with a guard for the role: a prompt
+that is not a dispatch brief gets no work, only the dispatch command to run.
 
 An addition to a shipped role reaches it through the brief only. Its definition
 and access stay as they ship, and an added heading follows the core ones and may

@@ -292,17 +292,21 @@ func agentType(host, role string) string {
 // roleFile is a role's native definition for host. An extension role's body is
 // what its brief returns under "What to return", limits included, because a
 // host may run the definition with a prompt that carries none of the brief.
-// It opens with a guard, because a host lists the definition among its agents
-// and may spawn it directly: the guard turns that spawn into a pointer back to
-// `agent dispatch`, where the CLI checks the dispatch and writes the brief.
+// A host lists the definition among its agents and may spawn it directly,
+// past `agent dispatch`, where the CLI checks the dispatch and writes the
+// brief. The description, which the coordinator reads when it picks an agent,
+// says to start it only with that brief; the body opens with a guard for the
+// role itself when a spawn arrives without one.
 func roleFile(host, role string, r Role, setting AgentSetting) (string, []byte, error) {
 	body := r.Instructions
+	description := r.Description
 	if r.Extension != "" {
 		body = dispatchGuard(host, role) + "\n\n" + returnSection(r, nil)
+		description = dispatchDescription(role, r.Description)
 	}
 	name := agentType(host, role)
 	if host == "codex" {
-		text := "name = " + strconv.Quote(name) + "\ndescription = " + strconv.Quote(r.Description) + "\n"
+		text := "name = " + strconv.Quote(name) + "\ndescription = " + strconv.Quote(description) + "\n"
 		if setting.Model != "inherit" {
 			text += "model = " + strconv.Quote(setting.Model) + "\n"
 		}
@@ -315,7 +319,7 @@ func roleFile(host, role string, r Role, setting AgentSetting) (string, []byte, 
 		text += "developer_instructions = " + strconv.Quote(body) + "\n"
 		return ".codex/agents/cc-" + role + ".toml", []byte(text), nil
 	}
-	fields := map[string]any{"name": name, "description": r.Description, "model": setting.Model}
+	fields := map[string]any{"name": name, "description": description, "model": setting.Model}
 	directory := ".claude"
 	if host == "claude-code" {
 		if setting.Effort != "inherit" {
