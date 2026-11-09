@@ -173,8 +173,9 @@ archived records to either. Scripts that relied on the old full listing pass
 `--all`. With no member selected, `record list` lists every record and says so
 in a `notice:` on stderr. `status` opens with `my_work`, the active member's own
 open work: `awaiting_approval` (intents not approved), `approved_without_plans`,
-`open_plans` (plans not completed), each an `id` and `path`, and
-`unarchived_finished`, the count of their finished records not archived yet. A
+`open_plans` (plans not completed), each an `id` and `path`, an open plan
+also listing the `worktrees` this machine prepared for it with their
+`repository`, `path`, and `branch`, and `unarchived_finished`, the count of their finished records not archived yet. A
 record is finished when it is a completed plan, or an approved intent whose
 plans are all completed. Nobody else's records are counted, and `my_work` is
 absent while no member is selected; a record it cannot read becomes an issue.

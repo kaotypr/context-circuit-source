@@ -3,6 +3,8 @@ package workspace
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 )
@@ -97,10 +99,53 @@ func (s *Store) SelectRecords(selection RecordSelection) (RecordListing, error) 
 	return RecordListing{selected, notice}, nil
 }
 
-// WorkItem is one record of a member's open work.
+// WorkItem is one record of a member's open work. An open plan also names
+// the worktrees this machine prepared for it, since its branch lives in the
+// repository the plan names and not in the workspace's own.
 type WorkItem struct {
-	ID   string `json:"id"`
-	Path string `json:"path"`
+	ID        string         `json:"id"`
+	Path      string         `json:"path"`
+	Worktrees []PlanWorktree `json:"worktrees,omitempty"`
+}
+
+// PlanWorktree is one worktree prepared for a plan on this machine: its
+// repository, its path relative to the workspace root where it lies inside,
+// and its branch.
+type PlanWorktree struct {
+	Repository string `json:"repository"`
+	Path       string `json:"path"`
+	Branch     string `json:"branch"`
+}
+
+// planWorktrees reads the worktrees prepared for record from the local
+// association, leaving out one whose folder is gone or that was prepared for
+// an earlier plan holding the same number.
+func (s *Store) planWorktrees(record Record) []PlanWorktree {
+	local, err := s.associations()
+	if err != nil {
+		return nil
+	}
+	var trees []PlanWorktree
+	for _, assoc := range local.Worktrees {
+		if assoc.Plan != record.ID || assoc.Path == "" {
+			continue
+		}
+		if assoc.PlanCreatedAt != "" && assoc.PlanCreatedAt != record.CreatedAt {
+			continue
+		}
+		path := assoc.Path
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(s.Root, path)
+		}
+		if info, err := os.Stat(path); err != nil || !info.IsDir() {
+			continue
+		}
+		if rel, err := filepath.Rel(s.Root, path); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			path = filepath.ToSlash(rel)
+		}
+		trees = append(trees, PlanWorktree{assoc.Repository, path, assoc.Branch})
+	}
+	return trees
 }
 
 // MyWork is the active member's own open work, which status opens with: their
@@ -169,10 +214,11 @@ func (s *Store) myWork(member string) (*MyWork, error) {
 		if record.CreatedBy != member || archived[record.ID] {
 			continue
 		}
-		item := WorkItem{record.ID, record.Path}
+		item := WorkItem{ID: record.ID, Path: record.Path}
 		switch {
 		case strings.HasPrefix(record.ID, "p"):
 			if record.CompletedAt == "" {
+				item.Worktrees = s.planWorktrees(record)
 				work.OpenPlans = append(work.OpenPlans, item)
 			}
 		case record.ApprovedAt == "":
