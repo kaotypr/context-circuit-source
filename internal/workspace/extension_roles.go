@@ -259,6 +259,16 @@ func returnSection(r Role, additions []roleAddition) string {
 	return text
 }
 
+// reportLine is how the coordinator reports an extension role's result: under
+// the headings the role returns, in order. A role that declares none, and a
+// shipped role, need no line.
+func reportLine(r Role) string {
+	if r.Extension == "" || len(r.Headings) == 0 {
+		return ""
+	}
+	return "Report this role's result to the person under its headings, in this order: " + strings.Join(r.Headings, ", ") + "."
+}
+
 // dispatchDescription is an extension role's description as its native
 // definition carries it, ending with the one way to start it.
 func dispatchDescription(role, description string) string {

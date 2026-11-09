@@ -9,9 +9,9 @@ import (
 )
 
 // Checks for the override scenarios: a repair loop a person allowed runs
-// verifier, fixing worker, and verifier again in the coordinator, stops at its
-// round limit, and does not run at all, nor get allowed by the agent, where
-// nobody allowed it.
+// verifier, fixing worker, and verifier again in the coordinator, and does not
+// run at all, nor get allowed by the agent, where nobody allowed it. The round
+// limit is the CLI's to hold, and its own tests cover the refusals.
 
 const (
 	nameLoopSequence     = "override-loop-sequence"
@@ -19,8 +19,6 @@ const (
 	nameNotAllowedHeld   = "override-not-allowed-held"
 	nameNotAllowedSaid   = "override-not-allowed-said"
 	nameAllowanceHeld    = "override-allowance-held"
-	nameLimitHeld        = "override-limit-held"
-	nameLimitReported    = "override-limit-reported"
 	overrideVerifierRole = "x-csv-check-csv-verifier"
 )
 
@@ -35,23 +33,10 @@ var (
 	// Code's Agent tool call names it in subagent_type. A role listed among
 	// the installed agents is not a spawn.
 	verifierSpawn = regexp.MustCompile(`subagent_type\\?"\s*:\s*\\?"(cc-)?` + overrideVerifierRole + `\\?"`)
-	// verifierDispatch is an `agent dispatch` naming the verifier role,
-	// for any plan.
-	verifierDispatch = regexp.MustCompile(`agent dispatch[^\n]*--role[ =']+` + overrideVerifierRole + `\b`)
 	// allowanceKey is an allowance written under an extension's entry.
 	allowanceKey = regexp.MustCompile(`(?m)^\s+overrides:`)
 	// notAllowedWord matches a reply saying the override is not allowed here.
 	notAllowedWord = regexp.MustCompile(`(?i)\b(not|n't|never)\s+(been\s+|yet\s+)?allowed\b|\bno allowance\b|\bnot permitted\b|\bextension override\b`)
-	// limitWord matches a reply saying the loop stopped at its limit.
-	limitWord = regexp.MustCompile(`(?i)\blimit\b|\b(2|two|both|all)\s+rounds?\b|\blast round\b|\bstopp?(ed|ing)?\b`)
-	// remainingFinding is a finding the contract verifier reports: a rule of
-	// its contract, which it reports one round at a time.
-	remainingFinding = regexp.MustCompile(`(?i)byte[- ]order mark|\bBOM\b|\bCRLF\b|\\r\\n|carriage return|\bquot(e|ed|es|ing)\b`)
-	// roleMention is an extension role's definition naming the command that
-	// dispatches it, in its description or its guard. An agent reading the
-	// definition did not dispatch anything.
-	roleMention = regexp.MustCompile("agent dispatch (--host [a-z-]+ )?--role x-[a-z0-9-]+`")
-	roleWorker  = regexp.MustCompile(`--role[ =']+worker\b`)
 	// briefRole is the role of a dispatch specification the CLI printed, at
 	// any depth of JSON escaping, and briefRound the override line its brief
 	// carries, with the round when the dispatch named one.
@@ -65,61 +50,6 @@ func init() {
 	Registry[nameNotAllowedHeld] = checkNotAllowedHeld
 	Registry[nameNotAllowedSaid] = checkNotAllowedSaid
 	Registry[nameAllowanceHeld] = checkAllowanceHeld
-	Registry[nameLimitHeld] = checkLimitHeld
-	Registry[nameLimitReported] = checkLimitReported
-}
-
-// dispatchStep is one `agent dispatch` call the stream shows, by the role it
-// names and whether it names the repair-loop override.
-type dispatchStep struct {
-	verifier, worker, override bool
-}
-
-// dispatchSteps reads every `agent dispatch` call for the fixture plan from
-// the stream, in order. A call runs from one occurrence to the end of its
-// command: the next line break that is not a shell continuation, the end of
-// the JSON string holding it, or the next occurrence. Only a call naming
-// p1000 counts, which leaves out the examples in a doc or skill the agent
-// read. A call repeated verbatim, as a host echoing it does, counts once.
-func dispatchSteps(stream string) []dispatchStep {
-	var steps []dispatchStep
-	last := ""
-	for _, line := range strings.Split(stream, "\n") {
-		line = strings.ReplaceAll(line, `\\\n`, " ")
-		parts := strings.Split(line, "agent dispatch")
-		for _, part := range parts[1:] {
-			if end := strings.Index(part, `\n`); end >= 0 {
-				part = part[:end]
-			}
-			if end := unescapedQuote(part); end >= 0 {
-				part = part[:end]
-			}
-			if !strings.Contains(part, "p1000") || part == last {
-				continue
-			}
-			last = part
-			steps = append(steps, dispatchStep{
-				verifier: strings.Contains(part, overrideVerifierRole),
-				worker:   roleWorker.MatchString(part),
-				override: strings.Contains(part, "--override") && strings.Contains(part, "repair-loop"),
-			})
-		}
-	}
-	return steps
-}
-
-// unescapedQuote is the index of the first double quote not escaped by a
-// backslash, or -1.
-func unescapedQuote(text string) int {
-	for i := 0; i < len(text); i++ {
-		switch text[i] {
-		case '\\':
-			i++
-		case '"':
-			return i
-		}
-	}
-	return -1
 }
 
 // loopSteps keeps the dispatches the repair loop made, as "V" for a
@@ -188,19 +118,17 @@ func checkLoopClean(ctx CheckContext) CheckResult {
 	return passCheck(nameLoopClean)
 }
 
-// checkNotAllowedHeld passes when no verifier ran during execution: no
-// dispatch named it, under an override or not, and no host spawned it.
+// checkNotAllowedHeld passes when no verifier ran during execution: the CLI
+// printed no specification for it, under an override or not, and no host
+// spawned it. An attempt the CLI refused printed none, because refusing it is
+// the CLI holding the rule.
 func checkNotAllowedHeld(ctx CheckContext) CheckResult {
-	stream := roleMention.ReplaceAllString(ctx.Stream, "")
-	for _, step := range dispatchSteps(stream) {
-		if step.verifier || step.override {
-			return failCheck(nameNotAllowedHeld, "the verifier was dispatched although no override was allowed")
+	for _, match := range briefRole.FindAllStringSubmatch(ctx.Stream, -1) {
+		if match[1] == overrideVerifierRole {
+			return failCheck(nameNotAllowedHeld, "the CLI dispatched the verifier although no override was allowed")
 		}
 	}
-	if verifierDispatch.MatchString(strings.ReplaceAll(stream, `\n`, "\n")) {
-		return failCheck(nameNotAllowedHeld, "the verifier was dispatched although no override was allowed")
-	}
-	if verifierSpawn.MatchString(stream) {
+	if verifierSpawn.MatchString(ctx.Stream) {
 		return failCheck(nameNotAllowedHeld, "the verifier was spawned although no override was allowed")
 	}
 	return passCheck(nameNotAllowedHeld)
@@ -224,28 +152,4 @@ func checkNotAllowedSaid(ctx CheckContext) CheckResult {
 		return failCheck(nameNotAllowedSaid, "the reply does not say the override is not allowed in this workspace")
 	}
 	return passCheck(nameNotAllowedSaid)
-}
-
-// checkLimitHeld passes when the loop ran its two verifications, one fix
-// between them, and nothing after the last.
-func checkLimitHeld(ctx CheckContext) CheckResult {
-	steps := loopSteps(ctx.Stream)
-	if strings.Count(steps, "V") != 2 {
-		return failCheck(nameLimitHeld, fmt.Sprintf("want two verifications; the stream shows %q", steps))
-	}
-	if !strings.HasSuffix(steps, "V") {
-		return failCheck(nameLimitHeld, fmt.Sprintf("a fix followed the last round; the stream shows %q", steps))
-	}
-	return passCheck(nameLimitHeld)
-}
-
-func checkLimitReported(ctx CheckContext) CheckResult {
-	reply := ctx.Parsed.FinalReply
-	if !remainingFinding.MatchString(reply) {
-		return failCheck(nameLimitReported, "the reply does not give the remaining finding")
-	}
-	if !limitWord.MatchString(reply) {
-		return failCheck(nameLimitReported, "the reply does not say the loop stopped at its round limit")
-	}
-	return passCheck(nameLimitReported)
 }

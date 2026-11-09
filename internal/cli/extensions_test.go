@@ -548,7 +548,8 @@ func TestExtensionRolesAreInstalledDispatchedAndRemoved(t *testing.T) {
 
 	// A read-only role is briefed like the explorer.
 	spec := dispatchSpec(t, f.ok("agent", "dispatch", "--host", "claude-code", "--role", "x-parity-parity-verifier", "--plan", p.ID, "--path", f.root))
-	if !spec.ReadOnly || spec.AgentType != "cc-x-parity-parity-verifier" || !spec.DefinitionInstalled || spec.Setting.Model != "verifier-model" {
+	if !spec.ReadOnly || spec.AgentType != "cc-x-parity-parity-verifier" || !spec.DefinitionInstalled || spec.Setting.Model != "verifier-model" ||
+		spec.Report != "Report this role's result to the person under its headings, in this order: Verdict, Findings, Not checked." {
 		t.Fatalf("verifier spec: %+v", spec)
 	}
 	inOrder(t, spec.Prompt, "# Working directory", "# Ownership\n\nYou are reading, not changing.", "# Plan "+p.ID,
@@ -584,6 +585,9 @@ func TestExtensionRolesAreInstalledDispatchedAndRemoved(t *testing.T) {
 	spec = dispatchSpec(t, f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", f.root))
 	if spec.ReadOnly {
 		t.Fatal("an addition changed the worker's access")
+	}
+	if spec.Report != "" {
+		t.Fatalf("a shipped role was given a report line: %q", spec.Report)
 	}
 	inOrder(t, spec.Prompt, "# Ownership\n\nYou are the sole owner", "# Extensions\n\nThis workspace's extensions add these instructions to the implement stage and the worker role.",
 		"after implement, parity:", "worker role, parity: ", filepath.Join("extensions", "parity", "roles", "worker-parity.md"),
