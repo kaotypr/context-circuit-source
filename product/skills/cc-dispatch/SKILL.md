@@ -20,7 +20,8 @@ An extension may add roles named `x-<extension>-<role>`; `extension list` shows
 them. Dispatch one on a person's request, or for a stage it declares, under the
 same rules as a shipped role: `--role x-<extension>-<role>`, with `--plan` for
 one with edit access. Its brief carries its own limits; pass it unmodified like
-any other, and report its result under the headings it returns. Look for the
+any other, and report its result as the specification's `report` says, under
+the headings it returns. Look for the
 plan's branch in the repository the plan names, not the workspace's own.
 A read-only extension role is still not a verifier during execution:
 running one there needs an override the workspace allowed, and without one it

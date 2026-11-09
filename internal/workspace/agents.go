@@ -637,6 +637,10 @@ type Dispatch struct {
 	DefinitionPath      string `json:"definition_path"`
 	DefinitionInstalled bool   `json:"definition_installed"`
 	SetupRequired       string `json:"setup_required,omitempty"`
+	// Report tells the coordinator how to pass an extension role's result on:
+	// under the headings the role returns. It sits here, beside the prompt the
+	// coordinator is about to pass, because a line in a skill was not enough.
+	Report string `json:"report,omitempty"`
 }
 
 func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, shared, reviewRequested bool, repository ...string) (Dispatch, error) {
@@ -739,7 +743,7 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	if !installed {
 		setup = s.agentSetupCommand(host)
 	}
-	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true, definition, installed, setup}, nil
+	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true, definition, installed, setup, reportLine(r)}, nil
 }
 
 // agentSetupCommand names the call that writes a host's role definitions. A

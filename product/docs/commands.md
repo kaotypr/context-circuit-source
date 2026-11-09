@@ -538,7 +538,9 @@ host's native role file, and `setup_required` naming the exact `agent setup` run
 when that file is absent. Role files are host-local and gitignored, so a workspace
 that never ran setup on this host names an agent type the host cannot resolve. It
 is a report, not a refusal: the prompt remains complete, so a live spawn tool can
-still carry it when native roles are unavailable.
+still carry it when native roles are unavailable. For an extension role that declares
+`returns` headings, `report` says to pass its result on to the person under those
+headings, in order.
 
 The returned `prompt` is the complete brief and is launched unmodified: it opens
 with the working directory, then ownership, then the quoted record, then the task,
