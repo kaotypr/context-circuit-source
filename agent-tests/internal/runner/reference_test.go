@@ -913,7 +913,8 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		// The verifier dispatched once more: without an allowance, or past
 		// the round limit.
 		prev := st.stream
-		st.stream = userLine("sh .context-circuit/cli --json agent dispatch --host claude-code --role "+overrideVerifier+" --plan p1000 --override repair-loop --round 3 --path .worktrees/p1000/api") + st.stream
+		st.stream = st.stream + userLine("sh .context-circuit/cli --json agent dispatch --host claude-code --role "+overrideVerifier+" --plan p1000 --override repair-loop --round 3 --path .worktrees/p1000/api") +
+			userLine(dispatchSpec(overrideVerifier, 3))
 		return func() { st.stream = prev }
 	case "extension-role-read-only":
 		// The role wrote into the worktree it was only to read.
@@ -997,9 +998,9 @@ func streamFor(id string) string {
 	case "override-loop", "override-limit":
 		// The coordinator's loop: verify, fix, verify again.
 		dispatch := "sh .context-circuit/cli --json agent dispatch --host claude-code --path .worktrees/p1000/api --plan p1000 --override repair-loop "
-		steps := userLine(dispatch+"--role "+overrideVerifier+" --round 1") +
-			userLine(dispatch+"--role worker --round 1 --task 'Findings: round 1'") +
-			userLine(dispatch+"--role "+overrideVerifier+" --round 2")
+		steps := userLine(dispatch+"--role "+overrideVerifier+" --round 1") + userLine(dispatchSpec(overrideVerifier, 1)) +
+			userLine(dispatch+"--role worker --round 1 --task 'Findings: round 1'") + userLine(dispatchSpec("worker", 1)) +
+			userLine(dispatch+"--role "+overrideVerifier+" --round 2") + userLine(dispatchSpec(overrideVerifier, 2))
 		return steps + claudeStream(reply, "extensions/csv-check/instructions/repair-loop.md", "")
 	case "override-not-allowed":
 		tool = "extensions/csv-check/extension.yaml"
@@ -1010,6 +1011,13 @@ func streamFor(id string) string {
 
 // overrideVerifier is the verifier the override scenarios' extension declares.
 const overrideVerifier = "x-csv-check-csv-verifier"
+
+// dispatchSpec is the specification the CLI prints for an accepted repair-loop
+// dispatch, its fields in the CLI's order, the round named in the brief.
+func dispatchSpec(role string, round int) string {
+	return fmt.Sprintf("{\n  \"host\": \"claude-code\",\n  \"role\": %s,\n  \"prompt\": %s\n}",
+		jsonString(role), jsonString(fmt.Sprintf("# Working directory\n\n.worktrees/p1000/api\n\n# Override\n\nThis dispatch runs under the override repair-loop that this workspace allowed for the extension csv-check, round %d of 3.", round)))
+}
 
 // userLine is one stream event carrying text, such as a command the agent ran.
 func userLine(text string) string {

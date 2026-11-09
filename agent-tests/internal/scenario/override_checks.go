@@ -47,6 +47,11 @@ var (
 	// remainingFinding is the finding the strict verifier always reports.
 	remainingFinding = regexp.MustCompile(`(?i)trailing row|count of invoices|invoice count|row count`)
 	roleWorker       = regexp.MustCompile(`--role[ =']+worker\b`)
+	// briefRole is the role of a dispatch specification the CLI printed, at
+	// any depth of JSON escaping, and briefRound the override line its brief
+	// carries, with the round when the dispatch named one.
+	briefRole  = regexp.MustCompile(`\\*"role\\*":\s*\\*"(` + overrideVerifierRole + `|worker)\\*"`)
+	briefRound = regexp.MustCompile(`under the override repair-loop that this workspace allowed for the extension [a-z0-9-]+(?:, round (\d+) of \d+)?\.`)
 )
 
 func init() {
@@ -113,15 +118,31 @@ func unescapedQuote(text string) int {
 }
 
 // loopSteps keeps the dispatches the repair loop made, as "V" for a
-// verification and "W" for a fix.
+// verification and "W" for a fix. A step counts only where the CLI accepted
+// the dispatch and printed its specification, whose brief names the override
+// and its round: a refused attempt prints none, so an agent correcting a flag
+// does not run a round. A specification the stream repeats, as a host echoing
+// a tool result does, counts once.
 func loopSteps(stream string) string {
 	var b strings.Builder
-	for _, step := range dispatchSteps(stream) {
-		switch {
-		case step.verifier && step.override:
-			b.WriteByte('V')
-		case step.worker && step.override:
-			b.WriteByte('W')
+	roles := briefRole.FindAllStringSubmatchIndex(stream, -1)
+	last := ""
+	for i, at := range roles {
+		end := len(stream)
+		if i+1 < len(roles) {
+			end = roles[i+1][0]
+		}
+		round := briefRound.FindStringSubmatch(stream[at[1]:end])
+		if round == nil {
+			continue
+		}
+		step := "V"
+		if stream[at[2]:at[3]] == "worker" {
+			step = "W"
+		}
+		if key := step + round[1]; key != last {
+			last = key
+			b.WriteString(step)
 		}
 	}
 	return b.String()

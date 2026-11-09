@@ -15,14 +15,33 @@ func streamEvent(text string) string {
 	return string(b) + "\n"
 }
 
-// Only a dispatch for the fixture plan counts, a shell continuation is read
-// through, and a doc's examples are not mistaken for the agent's calls.
+// spec is the specification the CLI prints for an accepted dispatch, as a
+// host's tool result carries it; round "" is a dispatch that named none.
+func spec(role, round string) string {
+	line := "This dispatch runs under the override repair-loop that this workspace allowed for the extension csv-check"
+	if round != "" {
+		line += ", round " + round + " of 3"
+	}
+	// Fields in the order the CLI prints them: the role before the prompt.
+	b, _ := json.MarshalIndent(struct {
+		Host   string `json:"host"`
+		Role   string `json:"role"`
+		Prompt string `json:"prompt"`
+	}{"claude-code", role, "# Working directory\n\nwt\n\n# Override\n\n" + line + "."}, "", "  ")
+	return streamEvent(string(b))
+}
+
+// Only a dispatch for the fixture plan counts toward the not-allowed check, a
+// shell continuation is read through, and a doc's examples are not mistaken
+// for the agent's calls. The loop counts only dispatches the CLI accepted:
+// a refused attempt prints no specification, and an echoed one counts once.
 func TestDispatchSteps(t *testing.T) {
 	doc := "sh .context-circuit/cli --json agent dispatch --host HOST --role worker \\\n  --plan p0001 --task 'FINDINGS' --override repair-loop --round 1 --path WORKTREE\n"
 	verify := "sh .context-circuit/cli --json agent dispatch --host claude-code \\\n  --role x-csv-check-csv-verifier --plan p1000 --override repair-loop --round 1 --path wt"
-	fix := `sh .context-circuit/cli --json agent dispatch --host claude-code --role worker --plan p1000 --task "Findings: no \"header\" row." --override repair-loop --round 1 --path wt`
-	stream := streamEvent(doc) + streamEvent(verify) + streamEvent(verify) + streamEvent(fix) +
-		streamEvent("sh .context-circuit/cli --json agent dispatch --host claude-code --role x-csv-check-csv-verifier --plan p1000 --override repair-loop --round 2 --path wt")
+	refused := streamEvent("sh .context-circuit/cli --json agent dispatch --host claude-code --role x-csv-check-csv-verifier --plan p1000 --repo api --override repair-loop --round 1 --path wt") +
+		streamEvent("--repo assigns a worker, or an extension role with edit access")
+	stream := streamEvent(doc) + refused + streamEvent(verify) + spec(overrideVerifierRole, "1") + spec(overrideVerifierRole, "1") +
+		spec("worker", "1") + spec(overrideVerifierRole, "2")
 	if got := loopSteps(stream); got != "VWV" {
 		t.Fatalf("steps %q", got)
 	}
@@ -42,18 +61,20 @@ func TestDispatchSteps(t *testing.T) {
 	if r := checkNotAllowedHeld(CheckContext{Stream: streamEvent(doc)}); !r.Pass {
 		t.Fatal("a doc example counted as a dispatch")
 	}
+	if got := loopSteps(refused + streamEvent(verify)); got != "" {
+		t.Fatalf("dispatches the CLI never answered counted as %q", got)
+	}
+	if got := loopSteps(spec(overrideVerifierRole, "") + spec("worker", "") + spec(overrideVerifierRole, "")); got != "VWV" {
+		t.Fatalf("a loop naming no rounds read as %q", got)
+	}
 }
 
 // The agent implements the plan itself, so a loop clean in round 1 passes and
 // reports one round; a fix left unverified, or a round past the fixture's
 // three, does not.
 func TestLoopShape(t *testing.T) {
-	verify := func(round string) string {
-		return streamEvent("sh .context-circuit/cli --json agent dispatch --host claude-code --role x-csv-check-csv-verifier --plan p1000 --override repair-loop --round " + round + " --path wt")
-	}
-	fix := func(round string) string {
-		return streamEvent("sh .context-circuit/cli --json agent dispatch --host claude-code --role worker --plan p1000 --task 'Findings' --override repair-loop --round " + round + " --path wt")
-	}
+	verify := func(round string) string { return spec(overrideVerifierRole, round) }
+	fix := func(round string) string { return spec("worker", round) }
 	cases := []struct {
 		stream, reply string
 		sequence      bool
