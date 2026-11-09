@@ -311,3 +311,36 @@ func TestCompletionOffersToArchive(t *testing.T) {
 		shownAt(t, f, r.ID, r.Path)
 	}
 }
+
+// An open plan names the worktree this machine prepared for it, because its
+// branch lives in the repository the plan names and not in the workspace's
+// own; a plan with none prepared names nothing.
+func TestStatusNamesAnOpenPlansWorktree(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	i := f.intent("orders")
+	prepared := f.plan(i.ID, "orders", "api")
+	waiting := f.plan(i.ID, "later", "api")
+	f.ok("worktree", "prepare", "--repo", "api", "--plan", prepared.ID)
+
+	work := myWorkStatus(t, f).MyWork
+	if work == nil || len(work.OpenPlans) != 2 {
+		t.Fatalf("my_work = %+v", work)
+	}
+	for _, item := range work.OpenPlans {
+		switch item.ID {
+		case prepared.ID:
+			want := []workspace.PlanWorktree{{Repository: "api", Path: ".worktrees/" + prepared.ID + "/api", Branch: "cc/" + prepared.ID + "/api"}}
+			if !slices.Equal(item.Worktrees, want) {
+				t.Errorf("worktrees = %+v, want %+v", item.Worktrees, want)
+			}
+		case waiting.ID:
+			if item.Worktrees != nil {
+				t.Errorf("a plan with no worktree names %+v", item.Worktrees)
+			}
+		}
+	}
+	if out := f.ok("status"); strings.Contains(out, `"worktrees": null`) {
+		t.Fatal("a plan with no worktree prints a null list")
+	}
+}
