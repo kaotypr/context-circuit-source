@@ -63,7 +63,7 @@ func TestSamplePaths(t *testing.T) {
 		{"product/skills/cc-plan/SKILL.md", []string{"plan"}, nil},
 		{"product/skills/cc-plan/route.md", []string{"plan"}, []string{"claude", "cursor"}},
 		{"product/skills/cc-dispatch/SKILL.md", []string{"execute", "extension-role", "override-limit", "override-loop", "plan"}, nil},
-		{"product/skills/cc-worktree/SKILL.md", []string{"execute", "override-loop"}, nil},
+		{"product/skills/cc-worktree/SKILL.md", []string{"execute", "override-limit", "override-loop"}, nil},
 		{"product/docs/customization.md", []string{"override-limit", "override-loop", "override-not-allowed"}, nil},
 		{"product/skills/cc-knowledge/SKILL.md", []string{"borrowed", "complete"}, nil},
 		{"product/skills/cc-complete/SKILL.md", []string{"after-merge", "archive", "complete"}, nil},
