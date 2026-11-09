@@ -54,6 +54,7 @@ func TestNames(t *testing.T) {
 		"nothing-pushed",
 		"orient-clean-trees",
 		"orient-reply",
+		"override-allowance-held",
 		"override-limit-held",
 		"override-limit-reported",
 		"override-loop-clean",

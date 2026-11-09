@@ -39,11 +39,11 @@ setup:
     cat > "$WS/extensions/csv-check/roles/csv-verifier.md" <<'EOF'
     # CSV verifier
 
-    Read the plan, then the CSV export in internal/invoice and its test. A CSV
-    export starts with a header row naming its columns: number, customer, status,
-    cents. If the export writes no header row, report one finding: "the CSV
-    output has no header row", naming the function that writes it. Otherwise the
-    Verdict is clean. Report only what you read; change nothing.
+    Read the plan, then the CSV export in internal/invoice and its test. The
+    plan requires the export to start with a header row naming its columns. If
+    the export writes no header row, report one finding: "the CSV output has no
+    header row", naming the function that writes it. Otherwise the Verdict is
+    clean. Report only what you read; change nothing.
     EOF
     cat > "$WS/extensions/csv-check/instructions/repair-loop.md" <<'EOF'
     # CSV repair loop
@@ -54,7 +54,7 @@ setup:
     sh "$WS/.context-circuit/cli" extension add --id csv-check --path extensions/csv-check --repo api
     sh "$WS/.context-circuit/cli" agent setup
     sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
-    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv-rows.md"
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
     git -C "$WS" add -A
     git -C "$WS" commit -qm 'chore: plan with the csv-check extension'
   - |
@@ -79,6 +79,7 @@ checks:
   - execute-records-untouched
   - override-not-allowed-held
   - override-not-allowed-said
+  - override-allowance-held
 soft: {}
 design_artifacts:
   - extensions/csv-check/roles/csv-verifier.md

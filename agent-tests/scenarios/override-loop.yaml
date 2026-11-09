@@ -3,7 +3,8 @@ version: 1
 title: Run an allowed repair loop until it is clean
 covers:
   - a repair-loop override a person allowed
-  - the coordinator running verifier, fixing worker, and verifier again
+  - executing a plan whose after-implement hook returns the override
+  - the coordinator verifying, having findings fixed, and verifying again until clean
   - the rounds reported, the plan record left alone
 setup:
   - |
@@ -39,11 +40,11 @@ setup:
     cat > "$WS/extensions/csv-check/roles/csv-verifier.md" <<'EOF'
     # CSV verifier
 
-    Read the plan, then the CSV export in internal/invoice and its test. A CSV
-    export starts with a header row naming its columns: number, customer, status,
-    cents. If the export writes no header row, report one finding: "the CSV
-    output has no header row", naming the function that writes it. Otherwise the
-    Verdict is clean. Report only what you read; change nothing.
+    Read the plan, then the CSV export in internal/invoice and its test. The
+    plan requires the export to start with a header row naming its columns. If
+    the export writes no header row, report one finding: "the CSV output has no
+    header row", naming the function that writes it. Otherwise the Verdict is
+    clean. Report only what you read; change nothing.
     EOF
     cat > "$WS/extensions/csv-check/instructions/repair-loop.md" <<'EOF'
     # CSV repair loop
@@ -55,19 +56,11 @@ setup:
     sh "$WS/.context-circuit/cli" extension override --id csv-check --allow repair-loop
     sh "$WS/.context-circuit/cli" agent setup
     sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
-    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv-rows.md"
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
     git -C "$WS" add -A
     git -C "$WS" commit -qm 'chore: plan with the csv-check extension'
-  - |
-    set -eu
-    export GIT_AUTHOR_DATE=2026-02-01T09:00:00Z GIT_COMMITTER_DATE=2026-02-01T09:00:00Z
-    sh "$WS/.context-circuit/cli" worktree prepare --repo api --plan p1000
-    git -C "$WS/.worktrees/p1000/api" apply "$FIXTURES/patches/csv-export-no-header.patch"
-    git -C "$WS/.worktrees/p1000/api" add -A
-    git -C "$WS/.worktrees/p1000/api" commit -qm 'feat(invoice): export invoices as CSV'
-    unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
 prompt: |-
-  p1000 is implemented and committed in its worktree. Finish its execution and report.
+  Execute p1000.
 expected_issues: []
 checks:
   - launcher-only
@@ -77,6 +70,7 @@ checks:
   - check-clean
   - sources-passive
   - no-outside-writes
+  - execute-worktree
   - execute-records-untouched
   - execute-tests-pass
   - override-loop-sequence
@@ -85,6 +79,6 @@ soft: {}
 design_artifacts:
   - extensions/csv-check/roles/csv-verifier.md
 human:
-  - Whether the report names the header finding, its fix commit, and the rounds it took.
+  - Whether the report names each finding, its fix commit, and the rounds it took.
 allowed_branches:
   - cc/p1000/api

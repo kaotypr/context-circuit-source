@@ -130,7 +130,8 @@ command only on their yes to its action. A `stopped` block goes to the person.
 Repair loops, verification during execution, risk-triggered review, and
 delegation are defaults an extension may override only where this workspace
 allowed it; every other rule here is fixed whatever an extension says.
-Run `extension override` only when the person asks.
+Run `extension override` only when the person asks for the allowance itself;
+asked to run an override nobody allowed, say so and give them that command.
 `.context-circuit/docs/extensions.md` is the reference, and
 `.context-circuit/docs/customization.md` for overrides.
 

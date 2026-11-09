@@ -847,7 +847,7 @@ func (s *Store) ResolveHooks(ctx context.Context, query HookQuery) (result HookR
 			case !query.Scoped && query.ListScoped:
 				marked = entry.Repositories
 			case !query.Scoped:
-				result.Skipped = append(result.Skipped, HookSkip{entry.ID, "limited to repositories " + strings.Join(entry.Repositories, ", ") + ", and " + query.Point.String() + " carries no repository list"})
+				result.Skipped = append(result.Skipped, HookSkip{entry.ID, "limited to repositories " + strings.Join(entry.Repositories, ", ") + ", and " + query.Point.String() + " carries no repository list; run it again with --plan or --repo"})
 				continue
 			case !overlaps(entry.Repositories, query.Repositories):
 				result.Skipped = append(result.Skipped, HookSkip{entry.ID, "outside repositories: limited to " + strings.Join(entry.Repositories, ", ")})

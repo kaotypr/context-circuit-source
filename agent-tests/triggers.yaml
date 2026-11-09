@@ -74,7 +74,7 @@ rows:
     note: Codex does not read route files.
 
   - match: product/skills/cc-worktree/SKILL.md
-    scenarios: [execute, override-loop]
+    scenarios: [execute, override-loop, override-limit]
     kind: skill-text
 
   - match: product/skills/cc-worktree/route.md
@@ -337,7 +337,7 @@ rows:
     note: extensions.yaml, manifests, hook resolution, the cache, script launch, trust, and the extensions section of a brief.
 
   - match: internal/cli/extensions.go
-    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role, override-loop, override-not-allowed, extension-skill]
+    scenarios: [extension-execute, extension-skip, extension-push, extension-stop, extension-report, extension-unallowed, extension-none-push, extension-role, override-loop, override-not-allowed, override-limit, extension-skill]
     kind: cli-action
     note: extension hooks, and the blocks CLI-fired stages return around their write.
 

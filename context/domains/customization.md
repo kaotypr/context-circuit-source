@@ -25,6 +25,10 @@ declare, and may lower a repair loop's rounds but never raise them. The
 allowance is per workspace; whether it applies to a stage still depends on the
 extension being on for the member and its repositories covering the plan.
 
+Only a person's request for the allowance itself authorizes the command; a
+request to run an override nobody allowed is answered with that command for
+the person to run.
+
 The instruction text only describes the exception. What makes it hold is the
 CLI: an allowed override reaches the coordinator only as an `overrides` block
 from `extension hooks`, and `agent dispatch` accepts the three dispatches an

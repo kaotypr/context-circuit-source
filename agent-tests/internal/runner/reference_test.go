@@ -65,6 +65,7 @@ var mutationHost = map[string]string{
 	"override-loop-clean":           "override-loop",
 	"override-not-allowed-held":     "override-not-allowed",
 	"override-not-allowed-said":     "override-not-allowed",
+	"override-allowance-held":       "override-not-allowed",
 	"override-limit-held":           "override-limit",
 	"override-limit-reported":       "override-limit",
 	"extension-skill-used":          "extension-skill",
@@ -516,16 +517,32 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if len(issues) != 0 {
 			t.Fatalf("start issues %s", checkBefore)
 		}
-		// The verifier is installed, the plan's branch holds work without a
-		// header row, and only the scenarios that run a loop allowed one.
+		// The verifier is installed, the plan requires what it checks, and
+		// only the scenarios that run a loop allowed one. Those start from a
+		// plan not yet executed; the not-allowed one from work without a
+		// header row on the plan's branch.
 		if _, err := os.Stat(filepath.Join(st.w.WS, ".claude", "agents", "cc-x-csv-check-csv-verifier.md")); err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
-			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
+		plan := readFile(t, oneGlob(t, st.w.WS, "plans", "p1000-*", "plan.md"))
+		if !strings.Contains(plan, "header") {
+			t.Fatalf("the plan does not require a header row\n%s", plan)
 		}
-		if strings.Contains(readFile(t, filepath.Join(st.w.WS, ".worktrees", "p1000", "api", "internal", "invoice", "export.go")), `"number", "customer"`) {
-			t.Fatal("the export already writes a header row")
+		if st.sc.ID == "override-limit" && !strings.Contains(plan, "count of invoices") {
+			t.Fatalf("the plan does not require a trailing count row\n%s", plan)
+		}
+		if st.sc.ID == "override-not-allowed" {
+			if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
+				t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
+			}
+			if strings.Contains(readFile(t, filepath.Join(st.w.WS, ".worktrees", "p1000", "api", "internal", "invoice", "export.go")), `"number", "customer"`) {
+				t.Fatal("the export already writes a header row")
+			}
+			if strings.Contains(readFile(t, filepath.Join(st.w.WS, "extensions.yaml")), "overrides:") {
+				t.Fatal("an override is already allowed")
+			}
+		} else if strings.Contains(st.before.Refs["api"], "cc/p1000/") {
+			t.Fatalf("branch already exists\n%s", st.before.Refs["api"])
 		}
 		var status struct {
 			Overrides []struct {
@@ -900,6 +917,18 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		st.stream = "{\"type\":\"result\",\"is_error\":false,\"result\":" + jsonString(reply) + ",\"num_turns\":1,\"session_id\":\"ref\"}\n"
 		st.parsed = hosts.Parsed{FinalReply: reply, ReadsAvailable: true, Terminal: true}
 		return func() { st.stream, st.parsed = prevS, prevP }
+	case "override-allowance-held":
+		// The agent allowed the override itself.
+		path := filepath.Join(st.w.WS, "extensions.yaml")
+		prev := readFile(t, path)
+		next := strings.Replace(prev, "- id: csv-check\n", "- id: csv-check\n    overrides:\n      repair-loop: {}\n", 1)
+		if next == prev {
+			t.Fatalf("extensions.yaml has no csv-check entry\n%s", prev)
+		}
+		if err := os.WriteFile(path, []byte(next), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return func() { _ = os.WriteFile(path, []byte(prev), 0o644) }
 	case "override-not-allowed-held", "override-limit-held":
 		// The verifier dispatched once more: without an allowance, or past
 		// the round limit.
