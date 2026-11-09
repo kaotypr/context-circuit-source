@@ -310,8 +310,13 @@ role_additions:
   definition a person edited is kept, and one whose extension was removed or
   switched off is deleted only when nobody edited it. Setup names each one it
   removed or kept.
+  A host lists these definitions among its agents and may spawn one directly,
+  past `agent dispatch`, so each opens with a guard: given a prompt that is not
+  a brief from `agent dispatch`, the role changes nothing and replies with the
+  dispatch command to run.
 - **Access.** A `read-only` role gets the host's read-only tools or sandbox and
-  is dispatched like the explorer, with `--task` or a `--plan` to read. An `edit`
+  is dispatched like the explorer, with `--task` or a `--plan` to read; it takes
+  `--repo` only as one of that plan's repositories, which changes nothing. An `edit`
   role is dispatched like the worker: it needs `--plan`, takes `--repo`, owns the
   worktree it is given, and commits only on that branch.
 - **Model and effort.** `role-tiering.yaml`, or its local override, may name the
