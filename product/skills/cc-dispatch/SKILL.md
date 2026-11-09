@@ -199,7 +199,9 @@ a progress log to the plan; completion is a person's request and carries the
 result. Preserve interrupted work. Do not create automatic repair loops, nested
 agent chains, execution records, or delivery side effects. The one exception is
 a `repair-loop` override this workspace allowed, which `after implement`
-returns.
+returns. Asked to run a loop or verifier nobody allowed, run nothing: say it is
+not allowed here and give the person the `extension override` command, which
+you run only when they ask for the allowance itself.
 
 ## A repair loop under an allowed override
 

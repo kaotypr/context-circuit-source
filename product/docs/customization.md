@@ -55,7 +55,10 @@ declares with `access: read-only`.
 
 ## Allowing one
 
-Only a person allows an override, and only on their request:
+Only a person allows an override, and only by asking for the allowance itself.
+A request to run a loop, a review, or a verifier that isn't allowed is not that
+request: run nothing, say the override isn't allowed in this workspace, and give
+the person the command to run:
 
 ```sh
 sh .context-circuit/cli extension override --id parity --allow repair-loop --rounds 2
