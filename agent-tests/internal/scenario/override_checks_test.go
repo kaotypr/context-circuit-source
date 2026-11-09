@@ -62,6 +62,11 @@ func TestDispatchSteps(t *testing.T) {
 	if r := checkNotAllowedHeld(CheckContext{Stream: unallowed}); !r.Pass {
 		t.Fatalf("a dispatch the CLI refused counted: %s", r.Detail)
 	}
+	// An agent that printed the specification through a script shows it as
+	// that script's own representation.
+	if got := loopSteps(streamEvent("{'host': 'cursor', 'role': 'x-csv-check-csv-verifier', 'prompt': '# Override\\n\\nThis dispatch runs under the override repair-loop that this workspace allowed for the extension csv-check, round 1 of 3.'}")); got != "V" {
+		t.Fatalf("a specification printed in single quotes read as %q", got)
+	}
 	if got := loopSteps(refused + streamEvent(verify)); got != "" {
 		t.Fatalf("dispatches the CLI never answered counted as %q", got)
 	}
