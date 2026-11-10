@@ -173,8 +173,9 @@ archived records to either. Scripts that relied on the old full listing pass
 `--all`. With no member selected, `record list` lists every record and says so
 in a `notice:` on stderr. `status` opens with `my_work`, the active member's own
 open work: `awaiting_approval` (intents not approved), `approved_without_plans`,
-`open_plans` (plans not completed), each an `id` and `path`, and
-`unarchived_finished`, the count of their finished records not archived yet. A
+`open_plans` (plans not completed), each an `id` and `path`, an open plan
+also listing the `worktrees` this machine prepared for it with their
+`repository`, `path`, and `branch`, and `unarchived_finished`, the count of their finished records not archived yet. A
 record is finished when it is a completed plan, or an approved intent whose
 plans are all completed. Nobody else's records are counted, and `my_work` is
 absent while no member is selected; a record it cannot read becomes an issue.
@@ -516,7 +517,10 @@ Settings default to host inheritance. `agent setup` applies settings to native
 agent files for every host unless `--host` narrows it, because one workspace is
 opened in several; the host may need to reload them. Initialization runs it, so a
 new workspace needs it again only after `agent configure` or in a fresh clone,
-where the ignored definitions never arrive. Setup also adds Claude Code's
+where the ignored definitions never arrive, or when an extension command or
+`status` returns `setup_required` because the extension roles on for this member
+changed. Its result lists the files `written`, and the extension definitions
+`removed` or `kept` because a person edited them. Setup also adds Claude Code's
 `attribution` setting, turning its commit and pull request trailers off, to the
 gitignored `.claude/settings.local.json` when that key is absent, and keeps
 everything else in the file. `agent dispatch` returns the
@@ -534,7 +538,9 @@ host's native role file, and `setup_required` naming the exact `agent setup` run
 when that file is absent. Role files are host-local and gitignored, so a workspace
 that never ran setup on this host names an agent type the host cannot resolve. It
 is a report, not a refusal: the prompt remains complete, so a live spawn tool can
-still carry it when native roles are unavailable.
+still carry it when native roles are unavailable. For an extension role that declares
+`returns` headings, `report` says to pass its result on to the person under those
+headings, in order.
 
 The returned `prompt` is the complete brief and is launched unmodified: it opens
 with the working directory, then ownership, then the quoted record, then the task,

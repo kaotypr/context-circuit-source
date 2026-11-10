@@ -58,6 +58,9 @@ var mutationHost = map[string]string{
 	"extension-stop-held":         "extension-stop",
 	"extension-failure-reported":  "extension-report",
 	"extension-allow-held":        "extension-unallowed",
+	"extension-role-dispatched":   "extension-role",
+	"extension-role-read-only":    "extension-role",
+	"extension-role-returns":      "extension-role",
 }
 
 func TestMutationCoverage(t *testing.T) {
@@ -471,6 +474,18 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if len(globRel(t, st.w.WS, "plans", "p1000-*", "plan.md")) != 0 {
 			t.Fatal("plan already exists")
 		}
+	case "extension-role":
+		if len(issues) != 0 {
+			t.Fatalf("start issues %s", checkBefore)
+		}
+		// The role is installed for the host, and the plan's branch holds the
+		// work it is asked to check.
+		if _, err := os.Stat(filepath.Join(st.w.WS, ".claude", "agents", "cc-x-parity-parity-verifier.md")); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(st.before.Refs["api"], "cc/p1000/api") {
+			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
+		}
 	case "extension-execute", "extension-skip", "extension-push",
 		"extension-stop", "extension-report", "extension-unallowed", "extension-none-push":
 		// A script runs only where the person allowed it, which every script
@@ -816,6 +831,21 @@ func (st *liveWorld) breakCheck(t *testing.T, name string) func() {
 		return func() {
 			st.git(t, wt, "reset", "--hard", "HEAD~1")
 		}
+	case "extension-role-dispatched", "extension-role-returns":
+		// A reply that answers from the session's own reading, without the
+		// role, and without its headings.
+		prevS, prevP := st.stream, st.parsed
+		reply := "p1000's branch looks fine: the summary and totals are unchanged."
+		st.stream = "{\"type\":\"result\",\"is_error\":false,\"result\":" + jsonString(reply) + ",\"num_turns\":1,\"session_id\":\"ref\"}\n"
+		st.parsed = hosts.Parsed{FinalReply: reply, ReadsAvailable: true, Terminal: true}
+		return func() { st.stream, st.parsed = prevS, prevP }
+	case "extension-role-read-only":
+		// The role wrote into the worktree it was only to read.
+		note := filepath.Join(st.w.WS, ".worktrees", "p1000", "api", "parity-notes.md")
+		if err := os.WriteFile(note, []byte("kept\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return func() { _ = os.Remove(note) }
 	case "extension-allow-held":
 		// The agent allowed the script itself.
 		trust := filepath.Join(st.w.WS, ".context-circuit", "local", "extension-trust.yaml")
@@ -864,6 +894,7 @@ func streamFor(id string) string {
 		"extension-report":      "The CSV export is committed on cc/p1000/api and tests passed. The style extension's after implement script failed and only reports: 3 warnings in internal/invoice. Nothing was pushed.",
 		"extension-unallowed":   "The CSV export is committed on cc/p1000/api and tests passed. The notify extension's after implement script was skipped: it is not allowed on this machine. If you want it to run, ask me to run `extension allow --id notify`, which shows what it does first.",
 		"extension-none-push":   "The CSV export is committed on cc/p1000/api and tests passed. The publish-branch script ran and checked the branch name. Its instructions ask me to push the branch, but its consent is none and pushing needs your explicit authorization, so I did not push it. Say if you want it pushed.",
+		"extension-role":        "The parity verifier checked cc/p1000/api.\n\nVerdict: kept.\n\nFindings: the plain-text summary still lists every invoice (internal/invoice/invoice.go), and totals stay in cents (internal/invoice/export.go).\n\nNot checked: the tests were read, not run.",
 		"archive":               "The plan is marked complete and the invoices note mentions CSV. The old archive/ folders are now _archive/. Commit and push those moves before anyone else changes the workspace; teammates install CLI 2.5.0 before pulling. You have finished records that are not archived; shall I archive them?",
 	}[id]
 	tool := "context/INDEX.md"
@@ -881,6 +912,9 @@ func streamFor(id string) string {
 		tool = "extensions/publish-branch/instructions/after-implement.md"
 	case "extension-stop", "extension-report", "extension-unallowed":
 		tool = ".worktrees/p1000/api/internal/invoice/export.go"
+	case "extension-role":
+		tool = "extensions/parity/roles/parity-verifier.md"
+		extra = "agent dispatch --host claude-code --role x-parity-parity-verifier --plan p1000"
 	}
 	return claudeStream(reply, tool, extra)
 }

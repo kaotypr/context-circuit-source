@@ -91,7 +91,11 @@ type Orientation struct {
 	// member. It is absent in a workspace without extensions.yaml, which is how
 	// an agent knows the extension rule does not apply there.
 	Extensions *ExtensionSummary `json:"extensions,omitempty"`
-	Issues     []Finding         `json:"issues"`
+	// SetupRequired names the `agent setup` run that brings this machine's
+	// extension role definitions in line with the extensions on for its
+	// member. It is this machine's state, not a workspace finding.
+	SetupRequired string    `json:"setup_required,omitempty"`
+	Issues        []Finding `json:"issues"`
 }
 
 func (s *Store) Status(ctx context.Context) (Orientation, error) {
@@ -187,6 +191,7 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 	} else {
 		result.Extensions = summary
 	}
+	result.SetupRequired = s.AgentSetupRequired()
 	result.Issues = uniqueFindings(result.Issues)
 	return result, nil
 }

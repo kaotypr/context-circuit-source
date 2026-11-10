@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -105,6 +106,33 @@ func act(f func(ctx context.Context, s *workspace.Store, in *input) error) func(
 }
 
 func noSplit(*input) bool { return false }
+
+// withAgentSetup adds setup_required to an extension command's result when the
+// change leaves this machine's extension role definitions behind the
+// extensions on for its member. Those definitions are files only setup
+// writes, so the command names the run instead of making it.
+func withAgentSetup(run func(context.Context, *workspace.Store, *input) (any, error)) func(context.Context, *workspace.Store, *input) (any, error) {
+	return func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+		result, err := run(ctx, s, in)
+		if err != nil {
+			return result, err
+		}
+		note := s.AgentSetupRequired()
+		if note == "" {
+			return result, nil
+		}
+		data, err := json.Marshal(result)
+		if err != nil {
+			return result, nil
+		}
+		var merged map[string]any
+		if json.Unmarshal(data, &merged) != nil || merged == nil {
+			return result, nil
+		}
+		merged["setup_required"] = note
+		return merged, nil
+	}
+}
 
 // toneToRecord resolves member tone's three ways of saying what to record into
 // the one line SetMemberTone writes: a preset's line, a hand-written line, or
@@ -379,35 +407,35 @@ var commands = map[string]command{
 		// A folder source takes --path and a remote one --url with --ref; the
 		// store refuses a mixed or empty call where it can say which.
 		optional: []string{"path", "ref", "subpath"},
-		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+		run: withAgentSetup(func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
 			return s.AddExtension(ctx, in.get("id"), in.get("path"), in.get("url"), in.get("ref"), in.get("subpath"), in.repos)
-		},
+		}),
 	},
 	"extension update": {
 		flags: []string{"id", "ref"},
-		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+		run: withAgentSetup(func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
 			return s.UpdateExtension(ctx, in.get("id"), in.get("ref"))
-		},
+		}),
 	},
 	"extension remove": {
 		flags: []string{"id"},
-		run: act(func(_ context.Context, s *workspace.Store, in *input) error {
+		run: withAgentSetup(act(func(_ context.Context, s *workspace.Store, in *input) error {
 			return s.RemoveExtension(in.get("id"))
-		}),
+		})),
 	},
 	"extension enable": {
 		flags:    []string{"id", "member"},
 		optional: []string{"member"},
-		run: act(func(_ context.Context, s *workspace.Store, in *input) error {
+		run: withAgentSetup(act(func(_ context.Context, s *workspace.Store, in *input) error {
 			return s.SetExtensionSwitch(in.get("id"), in.get("member"), true)
-		}),
+		})),
 	},
 	"extension disable": {
 		flags:    []string{"id", "member"},
 		optional: []string{"member"},
-		run: act(func(_ context.Context, s *workspace.Store, in *input) error {
+		run: withAgentSetup(act(func(_ context.Context, s *workspace.Store, in *input) error {
 			return s.SetExtensionSwitch(in.get("id"), in.get("member"), false)
-		}),
+		})),
 	},
 	"extension sync": {
 		extra: func(in *input) {
@@ -416,9 +444,9 @@ var commands = map[string]command{
 		// Sync writes only this machine's ignored cache, never a shared file,
 		// so like a fetch it leaves the ID split alone.
 		splits: noSplit,
-		run: func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
+		run: withAgentSetup(func(ctx context.Context, s *workspace.Store, in *input) (any, error) {
 			return s.SyncExtensions(ctx, in.prune)
-		},
+		}),
 	},
 	"extension list": {
 		readOnly: true,
