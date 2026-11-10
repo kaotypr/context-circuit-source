@@ -374,7 +374,19 @@ func (s *Store) SetupAgents(host string) (AgentSetup, error) {
 	result := AgentSetup{Written: []string{}}
 	hosts := Hosts
 	if host != "" {
+		if err := validHost(host); err != nil {
+			return result, err
+		}
 		hosts = []string{host}
+	}
+	// The skill folders are shared by every host, so they are copied once,
+	// whichever host is named: a wrapper points at its copy.
+	skills, err := s.setupSkills()
+	result.Written = append(result.Written, skills.Written...)
+	result.Removed = append(result.Removed, skills.Removed...)
+	result.Kept = append(result.Kept, skills.Kept...)
+	if err != nil {
+		return result, err
 	}
 	for _, each := range hosts {
 		done, err := s.setupHost(each)
@@ -436,6 +448,13 @@ func (s *Store) definitions(host string) (map[string][]byte, []string, error) {
 		}
 		files[path], paths = content, append(paths, path)
 	}
+	wrappers, order, err := s.skillWrappers(host)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, path := range order {
+		files[path], paths = wrappers[path], append(paths, path)
+	}
 	return files, paths, nil
 }
 
@@ -453,61 +472,20 @@ func (s *Store) setupHost(host string) (AgentSetup, error) {
 	if err != nil {
 		return result, err
 	}
-	for _, path := range paths {
-		current, err := s.Read(path)
-		if err != nil && !os.IsNotExist(err) {
-			return result, err
-		}
-		if err == nil && digest(current) != digest(files[path]) && digest(current) != old.Files[path] {
-			return result, fmt.Errorf("preserve customized agent definition: %s", path)
-		}
+	remove, kept, err := s.planSync(old, files, paths, "preserve customized agent definition: %s")
+	if err != nil {
+		return result, err
 	}
-	// A definition the inventory records and setup no longer produces belongs
-	// to an extension that is gone or off for this member. Setup removes only a
-	// file it wrote and nobody changed since; an edited one is the person's.
-	var remove []string
-	for _, path := range slices.Sorted(maps.Keys(old.Files)) {
-		if _, produced := files[path]; produced {
-			continue
-		}
-		current, err := s.Read(path)
-		if os.IsNotExist(err) {
-			continue
-		}
-		if err != nil {
-			return result, err
-		}
-		if digest(current) == old.Files[path] {
-			remove = append(remove, path)
-			continue
-		}
-		result.Kept = append(result.Kept, KeptAgent{path, "edited since setup wrote it, so it is kept although no extension on for this member produces it; delete it by hand if it is no longer wanted"})
-	}
+	result.Kept = kept
 	// The host setting is checked before anything is written, so a settings
 	// file setup refuses to touch leaves the role definitions as they were too.
 	setting, settingChanged, settingMode, err := s.hostSetting(host)
 	if err != nil {
 		return result, err
 	}
-	next := agentInventory{Files: map[string]string{}}
-	for _, path := range paths {
-		if err := s.Write(path, files[path], 0644); err != nil {
-			return result, err
-		}
-		result.Written = append(result.Written, path)
-		next.Files[path] = digest(files[path])
-	}
-	for _, path := range remove {
-		resolved, err := s.Path(path)
-		if err != nil {
-			return result, err
-		}
-		if err := os.Remove(resolved); err != nil && !os.IsNotExist(err) {
-			return result, err
-		}
-		result.Removed = append(result.Removed, path)
-	}
-	if err := s.WriteYAML(inventoryPath, next, 0600); err != nil {
+	written, removed, err := s.applySync(inventoryPath, files, nil, paths, remove)
+	result.Written, result.Removed = written, removed
+	if err != nil {
 		return result, err
 	}
 	if !settingChanged {
@@ -518,12 +496,81 @@ func (s *Store) setupHost(host string) (AgentSetup, error) {
 	return result, s.Write(path, setting, settingMode)
 }
 
+// planSync refuses to overwrite a file setup would write that a person
+// changed since setup last wrote it, and names the files the inventory records
+// that setup no longer produces: those it removes, because nobody changed
+// them, and those it keeps, because somebody did.
+func (s *Store) planSync(old agentInventory, files map[string][]byte, paths []string, refusal string) (remove []string, kept []KeptAgent, err error) {
+	for _, path := range paths {
+		current, err := s.Read(path)
+		if err != nil && !os.IsNotExist(err) {
+			return nil, nil, err
+		}
+		if err == nil && digest(current) != digest(files[path]) && digest(current) != old.Files[path] {
+			return nil, nil, fmt.Errorf(refusal, path)
+		}
+	}
+	// A file the inventory records and setup no longer produces belongs to an
+	// extension that is gone or off for this member. Setup removes only a file
+	// it wrote and nobody changed since; an edited one is the person's.
+	for _, path := range slices.Sorted(maps.Keys(old.Files)) {
+		if _, produced := files[path]; produced {
+			continue
+		}
+		current, err := s.Read(path)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		if digest(current) == old.Files[path] {
+			remove = append(remove, path)
+			continue
+		}
+		kept = append(kept, KeptAgent{path, "edited since setup wrote it, so it is kept although no extension on for this member produces it; delete it by hand if it is no longer wanted"})
+	}
+	return remove, kept, nil
+}
+
+// applySync writes the files, removes the stale ones, and records what it
+// wrote in the inventory. A file without a mode is written 0644.
+func (s *Store) applySync(inventoryPath string, files map[string][]byte, modes map[string]fs.FileMode, paths, remove []string) (written, removed []string, err error) {
+	next := agentInventory{Files: map[string]string{}}
+	for _, path := range paths {
+		mode := fs.FileMode(0644)
+		if m, ok := modes[path]; ok {
+			mode = m
+		}
+		if err := s.Write(path, files[path], mode); err != nil {
+			return written, removed, err
+		}
+		written = append(written, path)
+		next.Files[path] = digest(files[path])
+	}
+	for _, path := range remove {
+		resolved, err := s.Path(path)
+		if err != nil {
+			return written, removed, err
+		}
+		if err := os.Remove(resolved); err != nil && !os.IsNotExist(err) {
+			return written, removed, err
+		}
+		removed = append(removed, path)
+		s.pruneSkillFolders(path)
+	}
+	return written, removed, s.WriteYAML(inventoryPath, next, 0600)
+}
+
 // AgentSetupRequired names the `agent setup` run that brings this machine's
 // extension role definitions in line with the extensions on for its member, or
 // is empty when they already match. Only extension definitions are compared:
 // a shipped definition never changes with an extension, and a host that was
 // never set up and has no extension role to write is not behind.
 func (s *Store) AgentSetupRequired() string {
+	if s.skillsBehind() {
+		return "this machine's extension role definitions and skills no longer match the extensions on for this member: run `" + s.agentSetupCommand("") + "`, then reload the host's agent definitions and skills if it does not pick them up"
+	}
 	for _, host := range Hosts {
 		old := agentInventory{Files: map[string]string{}}
 		if err := s.YAML(agentInventoryPath(host), &old); err != nil && !os.IsNotExist(err) {
@@ -545,15 +592,16 @@ func (s *Store) AgentSetupRequired() string {
 			}
 		}
 		if !maps.Equal(want, have) {
-			return "this machine's extension role definitions no longer match the extensions on for this member: run `" + s.agentSetupCommand("") + "`, then reload the host's agent definitions if it does not pick them up"
+			return "this machine's extension role definitions and skills no longer match the extensions on for this member: run `" + s.agentSetupCommand("") + "`, then reload the host's agent definitions and skills if it does not pick them up"
 		}
 	}
 	return ""
 }
 
-// extensionDefinition reports whether a definition path is an extension role's.
+// extensionDefinition reports whether a definition path is an extension
+// role's, or the wrapper of an extension skill.
 func extensionDefinition(path string) bool {
-	return strings.HasPrefix(filepath.Base(filepath.FromSlash(path)), "cc-x-")
+	return strings.HasPrefix(filepath.Base(filepath.FromSlash(path)), "cc-x-") || extensionSkillPath(path)
 }
 
 // hostSettingFile is one top-level key setup adds to a host's own local settings

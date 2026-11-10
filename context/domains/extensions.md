@@ -1,7 +1,8 @@
 # Workspace extensions
 
 How a workspace adds work before and after the stages an agent goes through,
-without forking the template or changing a stage.
+and roles, skills, and named stages beside the shipped ones, without forking
+the template or changing a stage.
 
 ## Wrap, never replace
 
@@ -111,6 +112,37 @@ until setup runs again. The extension commands and `status` say so as
 lets setup remove a definition whose extension is gone or off only when nobody
 edited it.
 
+## Skills and named stages an extension adds
+
+An extension may ship skills, installed by `agent setup` as
+`x-<extension>-<skill>` for the extensions on for the member: a copy of the
+folder under `.agents/skills/`, with its frontmatter name rewritten to the
+installed one because Codex reads that folder directly, and a one-line wrapper
+under `.claude/skills/` and `.cursor/skills/` in the shipped wrapper form. The
+copy is shared by every host and recorded in its own inventory, so naming one
+host still writes the folder its wrapper points to, and an edited copy is
+protected and a stale one removed the way a role definition is.
+
+The installed paths are gitignored rather than committed. The source of truth
+is the extension's folder or pinned commit, so committing a copy would only let
+it drift from the extension on another machine. No shipped skill and no
+template path starts with `x-`, so an extension skill never shadows a shipped
+one and a delta between two template tags never writes or removes one.
+
+A skill runs on a person's request or when a core hook instruction names it,
+and starts neither planning nor execution. It may declare a named stage, which
+other extensions hook as `before|after <extension>/<stage>`.
+
+- The parser accepts that form by shape only. Whether the stage exists is
+  settled at resolution, where a stage whose extension is not listed,
+  unreadable, off for the member, or not declaring it returns one skip with
+  that reason.
+- A manifest is validated without the workspace, so a hook at an undeclared
+  stage is a `check` finding rather than an invalid manifest.
+- Running a named stage is the declaring skill's job. It never enters `record
+  order`, the entry instruction, or a core skill, because a stage the core does
+  not know cannot be a gate the core enforces.
+
 ## Said, not guessed
 
 Every hook that does not apply is reported with its reason. A record made
@@ -193,5 +225,8 @@ Owner:
   across extensions.
 - `context-circuit-source@internal/workspace/agents.go` — writing, refreshing,
   and removing extension role definitions, and `setup_required`.
+- `context-circuit-source@internal/workspace/extension_skills.go` — skills:
+  validation, the copy and its wrappers, named-stage resolution, and the
+  `check` findings across extensions.
 - `context-circuit-source@product/docs/extensions.md` — the reference an agent
   follows.

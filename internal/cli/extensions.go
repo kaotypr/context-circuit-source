@@ -208,7 +208,10 @@ func runExtensionHooks(ctx context.Context, s *workspace.Store, in *input) (any,
 			query.Script.Worktrees = map[string]string{repo: checkout.Path}
 		}
 	}
-	if slices.Contains(repositoryStages, point.Stage) && len(query.Script.Worktrees) == 1 {
+	// A named stage runs where its skill works: the worktree, when the point
+	// fires for one.
+	_, _, named := point.Named()
+	if (named || slices.Contains(repositoryStages, point.Stage)) && len(query.Script.Worktrees) == 1 {
 		for _, tree := range query.Script.Worktrees {
 			query.Script.Dir = tree
 		}

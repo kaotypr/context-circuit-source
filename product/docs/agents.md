@@ -81,7 +81,12 @@ name, or else from the shipped role its manifest calls it `like`. These
 definitions follow the extensions on for this machine's member, so an extension
 change returns `setup_required` until setup runs again; an unedited definition
 whose extension is gone or off is removed, and an edited one is kept and named.
-`.context-circuit/docs/extensions.md` describes the section and the roles.
+Setup also installs the skills of the extensions on for this machine's member:
+each folder under `.agents/skills/x-<extension>-<skill>/`, written once for
+every host, and a wrapper under `.claude/skills/` and `.cursor/skills/`, kept,
+removed, and reported the same way.
+`.context-circuit/docs/extensions.md` describes the section, the roles, and the
+skills.
 
 The `cc-dispatch` skill resolves each task, invokes the host's actual agent tool,
 waits, and integrates the result. `agent dispatch` alone produces a specification;

@@ -57,6 +57,9 @@ Every stage has a `before` and an `after` point:
 | `complete` | `record complete` |
 | `archive` | `record archive` |
 
+A skill an extension ships may declare a named stage of its own, hooked as
+`<extension>/<stage>`; "Skills and named stages" below describes it.
+
 For a stage the agent fires, run the point yourself:
 
 ```sh
@@ -344,12 +347,12 @@ declares, under the same rules as a shipped role. It runs nothing on its own.
 
 ### After an extension change
 
-Extension roles are files on each machine, so changing which extensions are on
-leaves them behind until setup runs again. `extension add`, `update`, `remove`,
+Extension roles and skills are files on each machine, so changing which
+extensions are on leaves them behind until setup runs again. `extension add`, `update`, `remove`,
 `enable`, `disable`, and `sync` return `setup_required` with the `agent setup`
 call when this machine's definitions no longer match, and `status` reports the
-same. Run it, and reload the host's agent definitions if it does not pick up
-new ones in the current session; a dispatch reports `definition_installed`
+same. Run it, and reload the host's agent definitions and skills if it does
+not pick up new ones in the current session; a dispatch reports `definition_installed`
 either way. Additions to the shipped roles travel in the brief and never need
 setup.
 
@@ -357,6 +360,68 @@ setup.
 not a lowercase slug or appears twice, an unknown `access` or stage, a `like` or
 `role` that is not a shipped role, a `returns` heading equal to a core heading,
 and an instruction file that is missing or leaves the folder.
+
+## Skills and named stages
+
+A manifest may ship skills:
+
+```yaml
+skills:
+  - id: qa
+    path: skills/qa             # a folder holding SKILL.md and what it references
+    stage: qa                   # optional: declares the named stage qa-pass/qa
+```
+
+- **Names.** A skill is installed as `x-<extension>-<skill>`, here
+  `x-qa-pass-qa`. No shipped skill starts with `x-`, so an extension skill never
+  replaces or shadows one, and no template version ships an `x-` path, so a
+  template update never writes or removes one.
+- **Installation.** `agent setup` copies each skill of each extension on for this
+  machine's member to `.agents/skills/x-<extension>-<skill>/`, with `name` in its
+  `SKILL.md` frontmatter set to the installed name, and writes a one-line
+  wrapper pointing to it under `.claude/skills/` and `.cursor/skills/`, like the
+  shipped wrappers. The copy is shared by every host, so naming one host still
+  writes it. All of these are gitignored and regenerated on each machine from
+  the extension; a copied file a person edited is kept like an edited
+  definition, and a skill whose extension was removed or switched off is
+  deleted only when nobody edited it.
+- **When a skill runs.** On a person's request, or when a core stage's hook
+  instruction names it. It never starts on its own, and it starts neither
+  planning nor execution: work that needs either goes through the core path
+  first. The host may need a reload to see a skill installed mid-session.
+- **The `SKILL.md`.** Its frontmatter carries `name` and `description`, as a
+  shipped skill's does. The description is what a person's request is matched
+  against.
+
+### Named stages
+
+A skill that declares `stage: qa` gives other extensions two hook points,
+`before qa-pass/qa` and `after qa-pass/qa`:
+
+```yaml
+hooks:
+  - at: after qa-pass/qa
+    instructions: instructions/after-qa.md
+```
+
+Running them is the skill's own job: its text runs
+`extension hooks --stage qa-pass/qa --when before` before its work and
+`--when after` after it, with `--plan` or `--repo` where the work has one,
+and follows what each returns as for a core stage. A script at a named stage
+runs in the worktree when the point fires for one.
+
+A point whose extension is not listed, cannot be read, is off for the member,
+or does not declare that stage returns no instructions and one skip with that
+reason. A named stage has no place in the lifecycle: `record order`, the entry
+instruction, and the core skills never fire it, and a core point never carries
+its hooks.
+
+`status` lists the extension skills on for you under `extension_skills`, with
+whether each is installed here, and their stages under `named_stages`. `check`
+reports a skill that is not valid as written — an id or stage that is not a
+lowercase slug or appears twice, a path that leaves the folder or holds no
+`SKILL.md`, frontmatter without `name` and `description` — and a hook at a named
+stage no listed extension declares.
 
 ## Managing extensions
 

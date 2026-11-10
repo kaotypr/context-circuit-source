@@ -1,0 +1,103 @@
+id: extension-skill
+version: 1
+title: Run a skill an extension ships, with hooks at its named stage
+covers:
+  - an extension skill installed by agent setup as x-<extension>-<skill>
+  - a person asking for that skill by what it does
+  - the skill running its named stage's before and after points
+  - another extension's hook at that named stage, followed
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    mkdir -p "$WS/extensions/qa-pass/skills/qa" "$WS/extensions/qa-report/instructions"
+    cat > "$WS/extensions/qa-pass/extension.yaml" <<'EOF'
+    id: qa-pass
+    version: 1.0.0
+    name: QA pass
+    summary: A QA pass a person runs on a plan's worktree.
+    members: default-on
+    hooks: []
+    skills:
+      - id: qa
+        path: skills/qa
+        stage: qa
+    EOF
+    cat > "$WS/extensions/qa-pass/skills/qa/SKILL.md" <<'EOF'
+    ---
+    name: qa
+    description: Run the QA pass on a plan's worktree when a person asks for it.
+    ---
+
+    # QA pass
+
+    Run this only when a person asks for a QA pass on a plan. It checks work that
+    is already committed; it starts neither planning nor execution.
+
+    1. Run `sh .context-circuit/cli extension hooks --stage qa-pass/qa --when before --plan PLAN`
+       from the workspace root, and follow what it returns.
+    2. In the plan's worktree, run `go vet ./...` and `go test ./...`. Change
+       nothing there, and commit nothing.
+    3. Run `sh .context-circuit/cli extension hooks --stage qa-pass/qa --when after --plan PLAN`,
+       and follow what it returns.
+    4. Report whether vet and the tests passed.
+    EOF
+    cat > "$WS/extensions/qa-report/extension.yaml" <<'EOF'
+    id: qa-report
+    version: 1.0.0
+    name: QA report
+    summary: Makes a QA pass say what it ran.
+    members: default-on
+    hooks:
+      - at: after qa-pass/qa
+        instructions: instructions/after-qa.md
+    EOF
+    cat > "$WS/extensions/qa-report/instructions/after-qa.md" <<'EOF'
+    # After a QA pass
+
+    In your reply, list every command the QA pass ran in the worktree under the
+    heading "Commands run", one per line, each with whether it passed.
+    EOF
+    sh "$WS/.context-circuit/cli" extension add --id qa-pass --path extensions/qa-pass
+    sh "$WS/.context-circuit/cli" extension add --id qa-report --path extensions/qa-report
+    sh "$WS/.context-circuit/cli" agent setup
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan with the qa extensions'
+  - |
+    set -eu
+    export GIT_AUTHOR_DATE=2026-02-01T09:00:00Z GIT_COMMITTER_DATE=2026-02-01T09:00:00Z
+    sh "$WS/.context-circuit/cli" worktree prepare --repo api --plan p1000
+    git -C "$WS/.worktrees/p1000/api" apply "$FIXTURES/patches/csv-export.patch"
+    git -C "$WS/.worktrees/p1000/api" add -A
+    git -C "$WS/.worktrees/p1000/api" commit -qm 'feat(invoice): export invoices as CSV'
+    unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+prompt: |-
+  Run the QA pass on p1000's worktree.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - extension-skill-used
+  - extension-skill-hooks-run
+  - extension-skill-hook-followed
+  - extension-skill-scoped
+soft: {}
+design_artifacts:
+  - extensions/qa-pass/skills/qa/SKILL.md
+  - extensions/qa-report/instructions/after-qa.md
+human:
+  - Whether the reply reports vet and the tests truthfully, and lists only commands that actually ran.
+allowed_branches: []

@@ -271,7 +271,8 @@ every changing command is refused, and the agent declines changing requests;
 reading still works. Add the member to the roster with a band if nobody has,
 select them, run
 `workspace connect`, obtain each repository, and run `agent setup` to write the
-role definitions, which are gitignored and so never arrive with the clone.
+role definitions and any extension skills, which are gitignored and so never
+arrive with the clone.
 
 Working copies belong under `repositories/<id>`, which the shipped `.gitignore`
 excludes. `repo clone` takes no `--url` for an ID the workspace already
