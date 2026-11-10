@@ -26,9 +26,10 @@ import (
 // would break every one of them. A workspace without the file behaves exactly as
 // one from before extensions existed, and nothing here reads anything else.
 //
-// This CLI returns instructions and runs nothing. A manifest may already declare
-// scripts, for a later CLI that runs them; they are validated, accepted, and
-// reported as not run, never ignored in silence.
+// A hook returns instructions for the agent, and may run a script. A script
+// runs only after this machine's member allowed the extension's exact version
+// (extension_trust.go), only with the consent its hook declares, and is launched
+// as extension_run.go describes. Every hook that does not run says why.
 
 // ExtensionsPath is the workspace file listing the extensions a workspace uses.
 const ExtensionsPath = "extensions.yaml"
@@ -137,8 +138,10 @@ type ManifestHook struct {
 	Script       *HookScript `yaml:"script,omitempty" json:"script,omitempty"`
 }
 
-// HookScript is a script hook as a manifest declares it. This CLI validates
-// its shape and never runs it.
+// HookScript is a script hook as a manifest declares it. Consent none means
+// the script acts only locally; standing means enabling and allowing the
+// extension authorized Action for this hook; each-time means the person is
+// asked before every run.
 type HookScript struct {
 	Run        []string `yaml:"run" json:"run"`
 	RunWindows []string `yaml:"run_windows,omitempty" json:"run_windows,omitempty"`
@@ -614,6 +617,28 @@ type HookQuery struct {
 	// with its repositories, where the point carries no repository list. It
 	// serves a planner brief, written before the plans name repositories.
 	ListScoped bool
+	// Run lets allowed scripts run. Without it a script hook is skipped with
+	// NotRun as its reason: a brief only lists instructions, and a CLI-fired
+	// stage's scripts run only when its command fires them.
+	Run    bool
+	NotRun string
+	// Confirm is the extension whose each-time script the person said yes to.
+	// Only that extension's script at this point runs, with confirmed true; the
+	// rest of the point already ran on the call that asked.
+	Confirm string
+	// Script is what a script receives beyond the point and its extension.
+	Script ScriptContext
+}
+
+// ScriptContext is the record and worktrees a hook point fires for, and the
+// folder its scripts run in.
+type ScriptContext struct {
+	Record    *ScriptRecord
+	Records   []ScriptRecord
+	Worktrees map[string]string
+	// Dir is the worktree for a repository-scoped stage, and the workspace
+	// root when empty.
+	Dir string
 }
 
 // HookInstruction is one instruction file to follow at a point, as a
@@ -633,24 +658,38 @@ type HookSkip struct {
 	Reason string `json:"reason"`
 }
 
+// HookConfirmation is an each-time script waiting for the person's yes, with
+// the action it would take in the manifest's words and the call that runs it.
+type HookConfirmation struct {
+	ID      string `json:"id"`
+	Action  string `json:"action"`
+	Confirm string `json:"confirm"`
+}
+
 // HookResult is what one hook point returns.
 type HookResult struct {
 	Point        string            `json:"point"`
 	Instructions []HookInstruction `json:"instructions"`
-	Skipped      []HookSkip        `json:"skipped,omitempty"`
+	// Ran is each script that ran, and what came of it.
+	Ran []HookRun `json:"ran,omitempty"`
+	// ConfirmationRequired is each each-time script the person must say yes
+	// to before it runs.
+	ConfirmationRequired []HookConfirmation `json:"confirmation_required,omitempty"`
+	Skipped              []HookSkip         `json:"skipped,omitempty"`
 	// Stopped means the stage must not go on until a person decides: a
-	// required extension could not be read on this machine.
+	// required extension could not be read or its script is not allowed on
+	// this machine, or a script whose on_failure is stop failed.
 	Stopped bool   `json:"stopped"`
 	Resolve string `json:"resolve,omitempty"`
 }
 
 // empty reports a point where nothing applied and nothing was skipped.
 func (r HookResult) empty() bool {
-	return len(r.Instructions) == 0 && len(r.Skipped) == 0 && !r.Stopped
+	return len(r.Instructions) == 0 && len(r.Ran) == 0 && len(r.ConfirmationRequired) == 0 && len(r.Skipped) == 0 && !r.Stopped
 }
 
-// scriptsNotRun is the reason every script hook gives on this CLI.
-const scriptsNotRun = "script not run: this CLI runs no extension scripts"
+// scriptsNotRun is the reason a script hook gives where nothing may run it.
+const scriptsNotRun = "script not run: only the coordinator runs scripts, through `extension hooks`"
 
 // ResolveHooks resolves one hook point. listed is false when the workspace has
 // no extensions.yaml, and the result is then empty.
@@ -661,7 +700,11 @@ func (s *Store) ResolveHooks(ctx context.Context, query HookQuery) (result HookR
 		return result, present, err
 	}
 	var resolve []string
+	confirmed := false
 	for index, entry := range file.Extensions {
+		if query.Confirm != "" && entry.ID != query.Confirm {
+			continue
+		}
 		loaded := s.loadExtension(entry, index)
 		if loaded.Fault == extensionUncached && query.Fetch {
 			if _, fetchErr := s.fetchExtension(ctx, entry); fetchErr == nil {
@@ -708,7 +751,7 @@ func (s *Store) ResolveHooks(ctx context.Context, query HookQuery) (result HookR
 				continue
 			}
 		}
-		if hook.Instructions != "" {
+		if hook.Instructions != "" && query.Confirm == "" {
 			result.Instructions = append(result.Instructions, HookInstruction{
 				ID:           entry.ID,
 				File:         loaded.Folder + "/" + filepath.ToSlash(filepath.Clean(filepath.FromSlash(hook.Instructions))),
@@ -717,13 +760,117 @@ func (s *Store) ResolveHooks(ctx context.Context, query HookQuery) (result HookR
 			})
 		}
 		if hook.Script != nil {
-			result.Skipped = append(result.Skipped, HookSkip{entry.ID, scriptsNotRun})
+			if remedy := s.runHookScript(ctx, query, loaded, *hook, &result); remedy != "" {
+				resolve = append(resolve, remedy)
+			}
+			confirmed = confirmed || query.Confirm == entry.ID && hook.Script.Consent == "each-time"
 		}
+	}
+	if query.Confirm != "" && !confirmed {
+		return HookResult{}, true, fmt.Errorf("%s has no each-time script at %s that is on for this member; --confirm runs only a script that asked for the person's yes", query.Confirm, query.Point)
 	}
 	if result.Stopped {
 		result.Resolve = "take this to the person before the stage goes on: " + strings.Join(unique(resolve), "; ")
 	}
 	return result, true, nil
+}
+
+// runHookScript is the run step between resolving a hook and returning it:
+// it checks the allow, then consent, launches the script, and folds the outcome
+// into result. It returns what resolves a stop it caused, or "".
+func (s *Store) runHookScript(ctx context.Context, query HookQuery, loaded loadedExtension, hook ManifestHook, result *HookResult) string {
+	id, script := loaded.Entry.ID, *hook.Script
+	skip := func(reason string) { result.Skipped = append(result.Skipped, HookSkip{id, reason}) }
+	if query.Confirm != "" && script.Consent != "each-time" {
+		return ""
+	}
+	if !query.Run {
+		reason := query.NotRun
+		if reason == "" {
+			reason = scriptsNotRun
+		}
+		skip(reason)
+		return ""
+	}
+	if _, why := scriptCommand(script, scriptGOOS); why != "" {
+		skip(why)
+		return ""
+	}
+	version, err := s.extensionVersion(loaded)
+	state := TrustNotAllowed
+	if err == nil {
+		state, err = s.trustState(query.Member, id, version)
+	}
+	if err != nil {
+		skip("script not run: its version could not be read: " + err.Error())
+		if loaded.required() {
+			result.Stopped = true
+			return "the script of " + id + " could not be checked against this machine's allow: " + err.Error()
+		}
+		return ""
+	}
+	if state != TrustAllowed {
+		skip(notAllowedReason(state, id))
+		if loaded.required() {
+			// A required extension's work is part of the stage, so the stage
+			// does not go on without it; allowing it is still the person's call.
+			result.Stopped = true
+			return id + " is required and its script is " + state + " on this machine: ask the person whether to run `extension allow --id " + id + "`"
+		}
+		return ""
+	}
+	confirmed := false
+	if script.Consent == "each-time" {
+		if _, fired := CLIFiredStages[query.Point.Stage]; fired {
+			skip("each-time script not run: " + query.Point.String() + " is fired by `" + CLIFiredStages[query.Point.Stage] + "`, where no yes can be given; its author can move it to a stage the agent fires")
+			return ""
+		}
+		if query.Confirm != id {
+			confirm := "extension hooks --stage " + query.Point.Stage + " --when " + query.Point.When
+			if query.Script.Record != nil {
+				if query.Script.Record.Kind == "plan" {
+					confirm += " --plan " + query.Script.Record.ID
+				} else {
+					confirm += " --intent " + query.Script.Record.ID
+				}
+			}
+			if query.Scoped && len(query.Repositories) == 1 {
+				confirm += " --repo " + query.Repositories[0]
+			}
+			result.ConfirmationRequired = append(result.ConfirmationRequired, HookConfirmation{ID: id, Action: script.Action, Confirm: confirm + " --confirm " + id})
+			return ""
+		}
+		confirmed = true
+	}
+	folder, err := s.Path(loaded.Folder)
+	if err != nil {
+		skip("script not run: " + err.Error())
+		return ""
+	}
+	dir := query.Script.Dir
+	if dir == "" {
+		dir = s.Root
+	}
+	worktrees := query.Script.Worktrees
+	if worktrees == nil {
+		worktrees = map[string]string{}
+	}
+	settings := loaded.Entry.Settings
+	if settings == nil {
+		settings = map[string]any{}
+	}
+	run := runScript(ctx, folder, script, dir, ScriptInput{
+		Point: query.Point.String(), WorkspaceRoot: s.Root, Member: query.Member,
+		Extension: ScriptExtension{ID: id, Settings: settings},
+		Record:    query.Script.Record, Records: query.Script.Records,
+		Worktrees: worktrees, Confirmed: confirmed,
+	})
+	result.Ran = append(result.Ran, run)
+	if run.Status == ScriptFailed && script.OnFailure == "stop" {
+		result.Stopped = true
+		return id + " failed at " + query.Point.String() + " and its on_failure is stop; it is not re-run until the person decides"
+	}
+	return ""
 }
 
 // extensionRemedy names what makes an unreadable extension readable.
@@ -750,32 +897,69 @@ func overlaps(left, right []string) bool {
 	return false
 }
 
-// StageHooks resolves the before and after points of a stage a CLI command
-// fires, for the repositories the command touched. It is nil when the
+// StageHook resolves one point of a stage a CLI command fires, for the
+// repositories and record it fires for, running the scripts allowed there. The
+// command calls it outside the workspace lock: the before point before taking
+// the lock, the after point once it is released, so a slow script never blocks
+// another command and a script may call the CLI itself. It is nil when the
 // workspace lists no extensions or nothing applied, so a command's result keeps
-// its shape there. It never fails the command that already did its work: a
-// point it could not resolve is returned stopped, naming what to do.
-//
-// In this CLI both points are resolved after the command has written, so a
-// before instruction arrives with the command's result; a skill that must act
-// first asks `extension hooks --when before` just before running the command.
-func (s *Store) StageHooks(ctx context.Context, stage string, repositories []string, scoped bool) []HookResult {
+// its shape there. A point it could not resolve is returned stopped, naming
+// what to do.
+func (s *Store) StageHook(ctx context.Context, point HookPoint, repositories []string, scoped bool, script ScriptContext) *HookResult {
 	member, _ := s.ActiveMember()
-	var blocks []HookResult
-	for _, when := range []string{"before", "after"} {
-		point := HookPoint{when, stage}
-		result, listed, err := s.ResolveHooks(ctx, HookQuery{Point: point, Member: member, Repositories: repositories, Scoped: scoped})
-		if err != nil {
-			result = HookResult{Point: point.String(), Instructions: []HookInstruction{}, Stopped: true,
-				Resolve: "take this to the person: " + err.Error() + "; `check` names what is wrong"}
-		} else if !listed {
-			return nil
+	result, listed, err := s.ResolveHooks(ctx, HookQuery{Point: point, Member: member, Repositories: repositories, Scoped: scoped, Run: true, Script: script})
+	if err != nil {
+		result = HookResult{Point: point.String(), Instructions: []HookInstruction{}, Stopped: true,
+			Resolve: "take this to the person: " + err.Error() + "; `check` names what is wrong"}
+	} else if !listed || result.empty() {
+		return nil
+	}
+	return &result
+}
+
+// ScriptRecordFor is a record as a script receives it, or nil when id names
+// none.
+func (s *Store) ScriptRecordFor(id string) *ScriptRecord {
+	record, err := s.FindRecord(id)
+	if err != nil {
+		return nil
+	}
+	kind := "intent"
+	if strings.HasPrefix(record.ID, "p") {
+		kind = "plan"
+	}
+	path := record.Path
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(s.Root, filepath.FromSlash(path))
+	}
+	repositories := record.Repositories
+	if repositories == nil {
+		repositories = []string{}
+	}
+	return &ScriptRecord{ID: record.ID, Kind: kind, Path: path, Repositories: repositories}
+}
+
+// PlanWorktrees is each repository's worktree prepared for plan on this
+// machine, as absolute paths, read from the local association.
+func (s *Store) PlanWorktrees(plan string) map[string]string {
+	worktrees := map[string]string{}
+	local, err := s.associations()
+	if err != nil {
+		return worktrees
+	}
+	for _, assoc := range local.Worktrees {
+		if assoc.Plan != plan || assoc.Path == "" {
+			continue
 		}
-		if !result.empty() {
-			blocks = append(blocks, result)
+		path := assoc.Path
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(s.Root, path)
+		}
+		if info, err := os.Stat(path); err == nil && info.IsDir() {
+			worktrees[assoc.Repository] = path
 		}
 	}
-	return blocks
+	return worktrees
 }
 
 // PreparedWorktree is what `worktree prepare` returns: the worktree, and the

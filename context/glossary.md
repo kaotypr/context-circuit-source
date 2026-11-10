@@ -24,7 +24,7 @@ the repositories for the business word finds nothing without it.
 | Direct execution | Implementing a plan inside a bound checkout instead of a prepared worktree, only when a person asks for it | `context-circuit-source@product/AGENTS.md.in` |
 | Dispatch specification | The resolved subagent invocation the CLI returns without launching anything | `context-circuit-source@internal/workspace/agents.go` `DispatchAgent` |
 | Execution request | A person's separate decision to run presented plans, authorizing worktree preparation and implementation | `context-circuit-source@product/AGENTS.md.in` |
-| Extension | A folder with an `extension.yaml` manifest that adds instructions before and after stages, listed in a workspace's `extensions.yaml` | `context-circuit-source@internal/workspace/extensions.go` `ExtensionsFile`, `Manifest` |
+| Extension | A folder with an `extension.yaml` manifest that adds instructions and scripts before and after stages, listed in a workspace's `extensions.yaml` | `context-circuit-source@internal/workspace/extensions.go` `ExtensionsFile`, `Manifest` |
 | Finished record | A completed plan, or an approved intent whose plans are all completed; what archiving takes by default | `context-circuit-source@internal/workspace/mine.go` `finished` |
 | Group folder | One level of folder under the intent or plan folder that organizes records and means nothing to the CLI, least of all who owns them | `context-circuit-source@internal/workspace/placement.go` `isGroup`, `folderChain` |
 | Hook point | A stage's before or after moment where extensions add work, written "after implement" | `context-circuit-source@internal/workspace/extensions.go` `HookPoint`, `Store.ResolveHooks` |
@@ -42,6 +42,7 @@ the repositories for the business word finds nothing without it.
 | Role tiering | The per-host model and effort preference for each subagent role, shared and optionally overridden per machine | `context-circuit-source@template/role-tiering.yaml`, `internal/workspace/agents.go` |
 | Seed | The blank workspace embedded in the CLI for initialization and export | `context-circuit-source@assets.go`, `template/` |
 | Setup | A readable roster listing this machine's selected member, with every member holding a band; every change waits for it | `context-circuit-source@internal/workspace/workspace.go` `Store.Setup`, `Store.RequireSetup` |
+| Standing consent | An extension script's declaration that enabling and allowing it authorizes the one action its manifest names for that hook, the only configuration that stands in for a person's answer | `context-circuit-source@internal/workspace/extensions.go` `HookScript`, `Store.runHookScript` |
 | Start reference | Where a plan's branch begins in one repository, with any merges it needs first | `context-circuit-source@internal/workspace/order.go` `OrderStart` |
 | Version store | The directory holding side-by-side CLI installs, one per version and platform | `context-circuit-source@product/skills/cc-cli/scripts/install.sh` |
 | Wave | One layer of plans that may run concurrently, derived from dependencies and completion | `context-circuit-source@internal/workspace/order.go` `OrderWave` |

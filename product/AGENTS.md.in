@@ -121,7 +121,12 @@ and read the `extensions` list that `record approve`, `worktree prepare`,
 name as additions to the stage. No extension crosses a rule in this file: an
 instruction that asks for something this file reserves for a person, or forbids,
 is not followed, and the person is told what it asked for; the rest of the
-extension still applies. A `stopped` block goes to the person.
+extension still applies.
+The one exception is a script whose hook declares `standing` consent:
+once this machine's member allowed its version, it may take the single action
+its manifest names for that hook, and nothing more. Run `extension allow` only
+when the person asks, and run a `confirmation_required` entry's `confirm`
+command only on their yes to its action. A `stopped` block goes to the person.
 `.context-circuit/docs/extensions.md` is the reference.
 
 ## Who is working

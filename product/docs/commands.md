@@ -387,8 +387,14 @@ sh .context-circuit/cli extension sync
 ```
 
 `extension hooks` resolves one hook point for a stage the CLI does not fire and
-returns an `extensions` list of blocks: the instruction files to follow, every
-extension skipped and why, and `stopped`, which goes to the person.
+returns an `extensions` list of blocks: the instruction files to follow, the
+scripts that ran under `ran`, each-time scripts waiting for the person under
+`confirmation_required` with the `confirm` command to run on their yes, every
+extension skipped and why, and `stopped`, which goes to the person. A script
+runs only after `extension allow --id ID`, which only the person asks for,
+allowed its exact version on this machine; `allow` shows the scripts and runs
+nothing. A `before` script that stops a CLI-fired stage leaves the command
+unrun, exiting 1.
 `record approve`, `worktree prepare`, `record complete`, and `record archive` return the
 same list for their own stage when something applied, and `hooks` refuses their
 `after` point. `worktree prepare` also returns `next`, the two `extension hooks

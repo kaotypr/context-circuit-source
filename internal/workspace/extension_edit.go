@@ -198,8 +198,14 @@ type ExtensionState struct {
 	Reason string   `json:"reason,omitempty"`
 	Cached *bool    `json:"cached,omitempty"`
 	Hooks  []string `json:"hooks,omitempty"`
-	// Scripts names the points whose script this CLI does not run.
-	Scripts []string `json:"scripts_not_run,omitempty"`
+	// Scripts names the points that run a script, and Trust whether this
+	// member allowed the extension's current version on this machine: allowed,
+	// not allowed, or changed since allowed.
+	Scripts []string `json:"scripts,omitempty"`
+	Trust   string   `json:"trust,omitempty"`
+	// Allow is the command that clears a trust other than allowed, which the
+	// person decides to run.
+	Allow string `json:"allow,omitempty"`
 }
 
 // ExtensionStates lists every extension for the active member on this machine.
@@ -230,6 +236,18 @@ func (s *Store) ExtensionStates() ([]ExtensionState, error) {
 				state.Hooks = append(state.Hooks, point.String())
 				if hook.Script != nil {
 					state.Scripts = append(state.Scripts, point.String())
+				}
+			}
+			if len(state.Scripts) > 0 {
+				version, err := s.extensionVersion(loaded)
+				if err == nil {
+					state.Trust, err = s.trustState(member, entry.ID, version)
+				}
+				if err != nil {
+					return nil, err
+				}
+				if state.Trust != TrustAllowed {
+					state.Allow = "extension allow --id " + entry.ID
 				}
 			}
 		case extensionUncached, extensionUnavailable:

@@ -129,7 +129,9 @@ func TestALocalExtensionReturnsItsInstructions(t *testing.T) {
 	if h.Instructions[0].Settings["reference"] != "legacy-orders" {
 		t.Fatalf("settings did not travel: %+v", h.Instructions[0])
 	}
-	if len(h.Skipped) != 1 || !strings.Contains(h.Skipped[0].Reason, "runs no extension scripts") {
+	// The script is not allowed on this machine yet (on Windows it names no
+	// Windows command), so it is skipped and says why, and nothing ran.
+	if len(h.Skipped) != 1 || len(h.Ran) != 0 || !strings.Contains(h.Skipped[0].Reason, "extension allow --id parity") && !strings.Contains(h.Skipped[0].Reason, "no Windows command") {
 		t.Fatalf("the script was not reported as not run: %+v", h)
 	}
 	h = hooks(t, f.ok("extension", "hooks", "--stage", "implement", "--when", "after", "--plan", inWeb.ID))

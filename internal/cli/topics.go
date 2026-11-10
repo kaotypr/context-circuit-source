@@ -154,10 +154,21 @@ record complete and record archive return an extensions list of blocks
 themselves, and hooks refuses their after point; for intent, plan, implement,
 review and deliver the agent runs hooks. Each block names its point, the
 instruction files to follow, every extension skipped and why, and stopped,
-which goes to the person. This CLI runs no extension scripts: a manifest may
-declare them, and each is reported as not run. Instructions never authorize an
-action the workspace rules reserve for a person. Changes to extensions.yaml
-return no commit recommendation; committing it is the person's call.`,
+the scripts that ran and what came of them, each-time scripts waiting under
+confirmation_required, and stopped, which goes to the person. A command runs
+its own stage's scripts outside the write lock: before it writes and after it
+releases. A before stop leaves the command unrun with exit 1; an after stop
+leaves what it wrote.
+
+A script runs only after the active member ran allow for the extension's exact
+version on this machine: the commit of a remote source, or a hash of a folder
+source's files. Any change asks again; allow shows the scripts and runs
+nothing, and is run only at the person's request. A hook declares consent none,
+standing (allowing it authorizes the one action its manifest names), or
+each-time (hooks --confirm ID runs it after the person's yes), and on_failure
+stop or report. Instructions never authorize an action the workspace rules
+reserve for a person. Changes to extensions.yaml return no commit
+recommendation; committing it is the person's call.`,
 
 	"context": `Finds catalog entries in context/INDEX.md by substring, or, with --repo, the
 entries claiming one repository and the reconciliation they leave outstanding —

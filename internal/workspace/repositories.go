@@ -80,6 +80,23 @@ func aheadBehind(ctx context.Context, repo, branch string) (int, int, string) {
 
 func Git(ctx context.Context, path string, args ...string) (string, error) {
 	command := exec.CommandContext(ctx, "git", append([]string{"-C", path}, args...)...)
+	command.Env = gitFreeEnviron()
+	command.Env = append(command.Env, "GIT_TERMINAL_PROMPT=0")
+	data, err := command.Output()
+	if err != nil {
+		if failure, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("git %s: %s", args[0], strings.TrimSpace(string(failure.Stderr)))
+		}
+		return "", fmt.Errorf("git %s: %w", args[0], err)
+	}
+	return strings.TrimRight(string(data), "\r\n"), nil
+}
+
+// gitFreeEnviron is this process's environment without the Git variables that
+// would redirect a command away from the repository it was started in. The Git
+// runner and extension scripts start from it alike.
+func gitFreeEnviron() []string {
+	var env []string
 	// A coding host may itself be running inside a Git operation. Its checkout
 	// overrides must not redirect commands away from the selected repository.
 	for _, item := range os.Environ() {
@@ -100,17 +117,9 @@ func Git(ctx context.Context, path string, args ...string) (string, error) {
 		if strings.HasPrefix(key, "GIT_CONFIG_KEY_") || strings.HasPrefix(key, "GIT_CONFIG_VALUE_") {
 			continue
 		}
-		command.Env = append(command.Env, item)
+		env = append(env, item)
 	}
-	command.Env = append(command.Env, "GIT_TERMINAL_PROMPT=0")
-	data, err := command.Output()
-	if err != nil {
-		if failure, ok := err.(*exec.ExitError); ok {
-			return "", fmt.Errorf("git %s: %s", args[0], strings.TrimSpace(string(failure.Stderr)))
-		}
-		return "", fmt.Errorf("git %s: %w", args[0], err)
-	}
-	return strings.TrimRight(string(data), "\r\n"), nil
+	return env
 }
 
 func (s *Store) LocalPath(path string) (string, error) {

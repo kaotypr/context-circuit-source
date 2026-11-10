@@ -78,8 +78,13 @@ extension enable      --id ID [--member ID] (default: the active member)
 extension disable     --id ID [--member ID] (refused for a required extension)
 extension sync        [--prune] (fetch every recorded commit this machine lacks)
 extension list        each extension's state for this member and machine
+extension allow       --id ID (show its scripts and allow this version to run for the
+                      active member on this machine; runs nothing; only at the
+                      person's request)
 extension hooks       --stage STAGE --when before|after [--intent ID | --plan ID]
-                      [--repo ID] (the instructions one hook point returns)
+                      [--repo ID] [--confirm ID] (one hook point's instructions,
+                      and its allowed scripts run; --confirm runs an each-time
+                      script after the person's yes)
 record create         --kind intent|plan --slug SLUG --title TITLE
                       [--intent ID --repo ID ... --depends-on ID ...]
 record show           --id ID
@@ -440,6 +445,23 @@ func execute(ctx context.Context, s *workspace.Store, cmd command, in *input, er
 		}
 		return cmd.run(ctx, s, in)
 	}
+	// A stage the CLI fires runs its hooks outside the write lock, so a slow
+	// script never blocks another command and a script may call the CLI: the
+	// setup gate and precheck first, then the before point, then the lock and
+	// the command's work, then the after point once the lock is released. A
+	// before point that stops leaves the command unrun, having written nothing.
+	var blocks []workspace.HookResult
+	if cmd.stage != "" {
+		if err := stageGate(ctx, s, cmd, in); err != nil {
+			return nil, err
+		}
+		if before := stageHook(ctx, s, cmd.stage, "before", in, nil); before != nil {
+			blocks = append(blocks, *before)
+			if before.Stopped {
+				return nil, &stageStopped{result: map[string]any{"extensions": blocks}, command: in.name, point: before.Point}
+			}
+		}
+	}
 	var result any
 	var err error
 	if cmd.readOnly {
@@ -447,10 +469,13 @@ func execute(ctx context.Context, s *workspace.Store, cmd command, in *input, er
 	} else {
 		result, err = p.locked(ctx, in.name, action)
 	}
-	// A stage's hooks are resolved after the lock is released, once the
-	// command did what it was asked, so they never block another command.
+	// An after point that stops is reported as stopped; what the stage wrote
+	// stays, and the person decides before the next stage.
 	if err == nil && cmd.stage != "" {
-		result = withStageHooks(ctx, s, cmd.stage, in, result)
+		if after := stageHook(ctx, s, cmd.stage, "after", in, result); after != nil {
+			blocks = append(blocks, *after)
+		}
+		result = withStageHooks(ctx, s, in, result, blocks)
 	}
 	// The split is reported on the error stream in both output modes, the way
 	// the pinned-version warning is, so no command's result changes shape. It
@@ -540,8 +565,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// ones blocking them, which is what the person needs to decide what to add.
 	// It deleted nothing and stays a failure.
 	var refused *workspace.DeletionRefused
+	var stopped *stageStopped
 	if errors.As(err, &refused) {
 		result = refused.Preview
+	} else if errors.As(err, &stopped) {
+		// A stage an extension stopped still shows the block that says why.
+		result = stopped.result
 	} else if err != nil {
 		fmt.Fprintln(errOut, err)
 		return 1
@@ -553,6 +582,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	fmt.Fprint(errOut, in.notice)
 	if refused != nil {
 		fmt.Fprintln(errOut, refused)
+		return 1
+	}
+	if stopped != nil {
+		fmt.Fprintln(errOut, stopped)
 		return 1
 	}
 	if in.checkFailed {

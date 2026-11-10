@@ -17,7 +17,7 @@ func TestCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != 19 {
+	if len(loaded) != 23 {
 		t.Fatalf("scenarios %d", len(loaded))
 	}
 	entries, err := os.ReadDir(dir)
@@ -64,6 +64,7 @@ func TestCatalogue(t *testing.T) {
 			"intent-tone": true, "complete-tone": true,
 			"after-merge": true, "ff": true,
 			"extension-execute": true, "extension-skip": true, "extension-push": true,
+			"extension-stop": true, "extension-report": true, "extension-unallowed": true, "extension-none-push": true,
 		}
 		if wantSetup[sc.ID] {
 			if len(sc.Setup) == 0 || strings.TrimSpace(strings.Join(sc.Setup, "")) == "" {

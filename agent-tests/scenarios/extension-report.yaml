@@ -1,0 +1,63 @@
+id: extension-report
+version: 1
+title: A failing script that only reports
+covers:
+  - an after implement script with on_failure report
+  - a failure shown while the stage goes on
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    mkdir -p "$WS/extensions/style/scripts"
+    cat > "$WS/extensions/style/extension.yaml" <<'EOF'
+    id: style
+    version: 1.0.0
+    name: style
+    summary: Reports style warnings in changed code.
+    members: default-on
+    hooks:
+    - at: after implement
+      script:
+        run: [sh, scripts/hook.sh]
+        on_failure: report
+    EOF
+    cat > "$WS/extensions/style/scripts/hook.sh" <<'EOF'
+    cat > /dev/null
+    echo "style check: 3 warnings in internal/invoice" >&2
+    exit 1
+    EOF
+    sh "$WS/.context-circuit/cli" extension add --id style --path extensions/style --repo api
+    # The person allowed this version of its scripts on this machine.
+    sh "$WS/.context-circuit/cli" extension allow --id style
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan with the style extension'
+prompt: |-
+  Execute p1000.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - execute-worktree
+  - execute-tests-pass
+  - execute-records-untouched
+  - extension-failure-reported
+soft:
+  commit-subjects-conventional: "new commit subjects match type(scope): subject"
+design_artifacts:
+  - .worktrees/p1000/api/internal/invoice
+human: []
+allowed_branches:
+  - cc/p1000/api
