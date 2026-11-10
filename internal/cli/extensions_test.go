@@ -220,7 +220,14 @@ func TestALocalExtensionReturnsItsInstructions(t *testing.T) {
 	if section < 0 || !(task < section && section < language && language < returns) {
 		t.Fatalf("extensions section out of place:\n%s", spec.Prompt)
 	}
-	if !strings.Contains(spec.Prompt, filepath.Join(f.root, "extensions", "parity", "instructions", "after-implement.md")) {
+	// On Windows the test's temporary directory may be a short 8.3 name,
+	// such as RUNNER~1, while the CLI prints the long one.
+	longRoot, err := filepath.EvalSymlinks(f.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	instruction := filepath.Join("extensions", "parity", "instructions", "after-implement.md")
+	if !strings.Contains(spec.Prompt, filepath.Join(f.root, instruction)) && !strings.Contains(spec.Prompt, filepath.Join(longRoot, instruction)) {
 		t.Fatalf("the brief does not name the instruction file:\n%s", spec.Prompt)
 	}
 	// The role never reads AGENTS.md, so its brief carries the limits an
