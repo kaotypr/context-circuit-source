@@ -61,7 +61,12 @@ Write-Output '{"status":"ok","summary":"14 behaviors match"}'
 		t.Fatalf("input: %v %s", err, data)
 	}
 	cwd, _ := os.ReadFile(filepath.Join(dir, "cwd.txt"))
-	if !strings.EqualFold(strings.TrimSpace(string(cwd)), dir) {
+	// The test's temporary directory may be a short 8.3 name, such as
+	// RUNNER~1, while the script sees the long one: compare the directories,
+	// not their spelling.
+	ran, rerr := os.Stat(strings.TrimSpace(string(cwd)))
+	want, werr := os.Stat(dir)
+	if rerr != nil || werr != nil || !os.SameFile(ran, want) {
 		t.Fatalf("ran in %s, want %s", cwd, dir)
 	}
 }
