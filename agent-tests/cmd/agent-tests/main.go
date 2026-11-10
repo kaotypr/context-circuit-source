@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/proc"
+	"github.com/kaotypr/context-circuit-source/agent-tests/internal/record"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/report"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/runner"
 	"github.com/kaotypr/context-circuit-source/agent-tests/internal/surface"
@@ -58,6 +59,7 @@ surface-diff
        Exit 0 whether or not the surface differs.
 report read a finished run and write report.md. It does not start a host.
        --design writes design.md. --upgrade-check runs check on a file-level delta.
+       --deny-file names private terms to replace in bundle.zip and design.md.
 export-baseline
        merge finished run directories into a baseline directory for
        report --baseline. It does not start a host.
@@ -302,8 +304,9 @@ func reportCmd(args []string, caller map[string]string) int {
 	upgrade := fs.Bool("upgrade-check", false, "apply the template delta and run check")
 	noZip := fs.Bool("no-zip", false, "do not write bundle.zip")
 	checkout := fs.String("checkout", "", "source checkout, used by --upgrade-check")
+	deny := fs.String("deny-file", "", "local file with one private term per line, replaced in bundle.zip and design.md")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: agent-tests report [--run ID] [--out DIR] [--baseline DIR] [--design] [--upgrade-check] [--no-zip]")
+		fmt.Fprintln(os.Stderr, "usage: agent-tests report [--run ID] [--out DIR] [--baseline DIR] [--design] [--upgrade-check] [--no-zip] [--deny-file PATH]")
 		fmt.Fprintln(os.Stderr, "read a finished run. It does not start a host.")
 		fs.PrintDefaults()
 	}
@@ -335,7 +338,12 @@ func reportCmd(args []string, caller map[string]string) int {
 	if user == "" {
 		user = caller["LOGNAME"]
 	}
-	err := report.Run(context.Background(), report.Options{
+	terms, err := report.LoadDenyTerms(*deny)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "report:", err)
+		return 1
+	}
+	err = report.Run(context.Background(), report.Options{
 		OutDir:   outDir,
 		Run:      *runID,
 		Baseline: *baseline,
@@ -344,6 +352,7 @@ func reportCmd(args []string, caller map[string]string) int {
 		NoZip:    *noZip,
 		Home:     caller["HOME"],
 		User:     user,
+		Private:  record.PrivateEntries(caller, append(terms, root)...),
 		Checkout: root,
 		Path:     caller["PATH"],
 	})

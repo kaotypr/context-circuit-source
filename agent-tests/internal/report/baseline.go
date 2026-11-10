@@ -243,6 +243,12 @@ func checkExportTarget(dir string) (bool, error) {
 	return true, nil
 }
 
+// LoadDenyTerms reads a deny file for report and export-baseline. Its terms
+// are never printed.
+func LoadDenyTerms(path string) ([]string, error) {
+	return loadDenyTerms(path)
+}
+
 // loadDenyTerms reads one term per line. Blank lines and lines starting
 // with # are skipped. The error never quotes the file or its contents.
 func loadDenyTerms(path string) ([]string, error) {
@@ -251,7 +257,7 @@ func loadDenyTerms(path string) ([]string, error) {
 	}
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("export-baseline: the deny file could not be read")
+		return nil, fmt.Errorf("the deny file could not be read")
 	}
 	var terms []string
 	sc := bufio.NewScanner(bytes.NewReader(b))
@@ -263,7 +269,7 @@ func loadDenyTerms(path string) ([]string, error) {
 		terms = append(terms, strings.ToLower(line))
 	}
 	if err := sc.Err(); err != nil {
-		return nil, fmt.Errorf("export-baseline: the deny file could not be read")
+		return nil, fmt.Errorf("the deny file could not be read")
 	}
 	return terms, nil
 }

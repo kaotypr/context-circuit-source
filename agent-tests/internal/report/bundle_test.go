@@ -210,3 +210,58 @@ func keys(m map[string]string) []string {
 	}
 	return out
 }
+
+// A run root under a path with a space is found whole, and private words and
+// paths are replaced; an archive that would still hold one is refused.
+func TestBundlePrivateText(t *testing.T) {
+	dir := t.TempDir()
+	reply := filepath.Join(dir, "runs", "s", "claude", "branch", "r1", "reply.md")
+	mustWrite(t, reply, "Worktree at /Volumes/My Disk/tmp/agent-test-77/ws.\nUpdate with tool@acme-internal.\n")
+	dest := filepath.Join(dir, "bundle.zip")
+	private := []string{"acme-internal", "/Volumes/My Disk/tmp"}
+	if err := WriteBundle(BundleOptions{RunDir: dir, Dest: dest, Private: private}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := readZip(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, text := range got {
+		if strings.Contains(text, "My Disk") || strings.Contains(text, "acme") {
+			t.Fatalf("%s: %s", name, text)
+		}
+	}
+	if cleaned := cleanPaths("at /Volumes/My Disk/tmp/agent-test-77/ws", "", "", nil, nil); cleaned != "at $RUN/ws" {
+		t.Fatalf("run root with a space: %q", cleaned)
+	}
+}
+
+func TestBundleRefusesPrivateLeft(t *testing.T) {
+	dir := t.TempDir()
+	reply := filepath.Join(dir, "runs", "s", "claude", "branch", "r1", "reply.md")
+	// Cleaning replaces a private path only where it starts a word; glued
+	// to the word before it, the path is left as written, so the archive is
+	// refused rather than published with it.
+	mustWrite(t, reply, "wrote x/Volumes/My Disk/tmp/y\n")
+	dest := filepath.Join(dir, "bundle.zip")
+	mustWrite(t, dest, "stale")
+	err := WriteBundle(BundleOptions{RunDir: dir, Dest: dest, Private: []string{"/Volumes/My Disk/tmp"}})
+	if err == nil || !strings.Contains(err.Error(), "private text left in") {
+		t.Fatalf("err %v", err)
+	}
+	if strings.Contains(err.Error(), "My Disk") {
+		t.Fatalf("the error repeats the private path: %v", err)
+	}
+	if _, serr := os.Stat(dest); serr == nil {
+		t.Fatal("an archive was left behind")
+	}
+}
+
+// A path printed right after a JSON \n escape is found from its slash, so a
+// volume name with a space is replaced whole.
+func TestRunRootAfterEscape(t *testing.T) {
+	in := `"text":"main\n/Volumes/My Disk/tmp/agent-test-9/ws d82563a\n"`
+	if got := cleanPaths(in, "", "", nil, nil); got != `"text":"main\n$RUN/ws d82563a\n"` {
+		t.Fatalf("got %s", got)
+	}
+}
