@@ -24,6 +24,7 @@ product/launcher/cli.ps1 .context-circuit/cli.ps1
 product/launcher/gitattributes .context-circuit/.gitattributes
 template/role-tiering.yaml .context-circuit/role-tiering.yaml
 product/docs/agents.md .context-circuit/docs/agents.md
+product/docs/extensions.md .context-circuit/docs/extensions.md
 product/skills/cc-cli/SKILL.md .agents/skills/cc-cli/SKILL.md
 product/skills/cc-cli/scripts/install.sh .agents/skills/cc-cli/scripts/install.sh
 product/skills/cc-cli/scripts/install.ps1 .agents/skills/cc-cli/scripts/install.ps1

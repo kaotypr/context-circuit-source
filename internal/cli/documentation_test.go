@@ -310,6 +310,9 @@ func TestGeneralRulesStayOutOfTheStackedSkill(t *testing.T) {
 		// Approving an outcome and spending effort on planning are two
 		// decisions, and the second must not ride in on the first.
 		"Approval alone does not start planning",
+		// An extension adds work to a stage; it can never be the thing that
+		// authorizes what this file reserves for a person.
+		"No extension crosses a rule in this file",
 	} {
 		if !strings.Contains(agents, gate) {
 			t.Errorf("gate or prohibition missing from the entry instruction: %q", gate)
@@ -612,6 +615,87 @@ func TestTheFastForwardGateStaysResident(t *testing.T) {
 	for _, command := range []string{"repo sync", "workspace sync"} {
 		if !strings.Contains(productFile(t, filepath.Join("docs", "commands.md")), "sh .context-circuit/cli "+command) {
 			t.Errorf("commands.md does not document %s", command)
+		}
+	}
+}
+
+// extensions.yaml is a workspace's data and the extension cache is a machine's,
+// so no template release may ship either: a template update writing them would
+// replace what a workspace chose, or commit what one machine fetched.
+func TestTheTemplateShipsNoWorkspaceData(t *testing.T) {
+	manifest, err := os.ReadFile(filepath.Join("..", "..", "scripts", "release-manifest.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	forbidden := func(destination string) bool {
+		destination = filepath.ToSlash(destination)
+		return destination == "extensions.yaml" || strings.HasPrefix(destination, ".context-circuit/local/")
+	}
+	for line := range strings.SplitSeq(string(manifest), "\n") {
+		if fields := strings.Fields(line); len(fields) == 2 && forbidden(fields[1]) {
+			t.Errorf("the release manifest ships workspace or machine data: %s", line)
+		}
+	}
+	root := filepath.Join("..", "..", "template")
+	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		rel, _ := filepath.Rel(root, path)
+		if forbidden(strings.TrimSuffix(rel, ".in")) {
+			t.Errorf("template/ carries workspace or machine data: %s", rel)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ignore := productFile(t, filepath.Join("..", "template", "gitignore.in"))
+	if !strings.Contains(ignore, ".context-circuit/local/") {
+		t.Error("template/gitignore.in no longer ignores .context-circuit/local/, where the extension cache lives")
+	}
+}
+
+// The entry instruction says which files sit at the workspace root and how many
+// there are, and workspace.md describes each. The two lists change together.
+func TestTheRootFilesAgree(t *testing.T) {
+	yamlName := regexp.MustCompile("`([a-z.]+\\.yaml)`")
+	agents := productFile(t, "AGENTS.md.in")
+	start := strings.Index(agents, "Read `workspace.yaml` for project identity")
+	end := strings.Index(agents, "sit at the\nworkspace root")
+	if end < 0 {
+		end = strings.Index(agents, "sit at the workspace root")
+	}
+	if start < 0 || end < start {
+		t.Fatal("the entry instruction's root-file paragraph moved")
+	}
+	named := map[string]bool{}
+	for _, match := range yamlName.FindAllStringSubmatch(agents[start:end], -1) {
+		named[match[1]] = true
+	}
+	counts := map[int]string{4: "four", 5: "five", 6: "six"}
+	if word := counts[len(named)]; word == "" || !strings.Contains(agents[start:end+40], "These "+word+" files") {
+		t.Errorf("the entry instruction names %d root files but does not count them so: %v", len(named), named)
+	}
+	documented := map[string]bool{}
+	for line := range strings.SplitSeq(productFile(t, filepath.Join("docs", "workspace.md")), "\n") {
+		cells := strings.Split(line, "|")
+		if len(cells) < 3 {
+			continue
+		}
+		name := strings.TrimSpace(cells[1])
+		if strings.HasSuffix(name, ".yaml") && !strings.Contains(name, "/") {
+			documented[name] = true
+		}
+	}
+	for name := range named {
+		if !documented[name] {
+			t.Errorf("AGENTS.md.in names root file %s, which docs/workspace.md does not describe", name)
+		}
+	}
+	for name := range documented {
+		if !named[name] {
+			t.Errorf("docs/workspace.md describes root file %s, which AGENTS.md.in does not name", name)
 		}
 	}
 }

@@ -20,6 +20,10 @@ sh <root>/.context-circuit/cli --json agent dispatch --host codex --role reviewe
 `--review-requested` represents the actual user request. It supplies no human
 approval by itself.
 
+With extensions on, run `extension hooks --stage review --when before`, with
+`--plan ID` where the review is of a plan, before it starts, and `--when after`
+once its findings exist.
+
 ## What to supply
 
 The requested diff, the current revision, relevant surrounding code, and the

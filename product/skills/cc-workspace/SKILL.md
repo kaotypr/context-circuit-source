@@ -144,6 +144,14 @@ is disabled — so an improvement is a merge request in that repository, from a
 separate checkout of it. `.agents/skills/cc-knowledge/SKILL.md` carries what may
 and may not be done with what it says.
 
+## Extensions
+
+Add, update, switch, and remove extensions only on a person's request, through
+the `extension` commands `.context-circuit/docs/extensions.md` lists. They change
+`extensions.yaml`, which the person commits as any shared file; settings are
+edited there by hand and never hold a credential. On a new machine,
+`extension sync` fetches the remote ones.
+
 ## Describe the workspace's own repository
 
 The shared records travel through the Git repository carrying the workspace, so

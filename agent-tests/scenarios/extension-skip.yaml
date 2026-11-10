@@ -1,0 +1,67 @@
+id: extension-skip
+version: 1
+title: Run a plan made without the extension
+covers:
+  - an after implement instruction hook
+  - a record made without the extension
+  - a skip reported instead of an invented list
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    mkdir -p "$WS/extensions/parity/instructions"
+    cat > "$WS/extensions/parity/extension.yaml" <<'EOF'
+    id: parity
+    version: 1.0.0
+    name: Behavior parity
+    summary: Checks that changed invoice code keeps the behaviors a plan lists.
+    members: default-on
+    hooks:
+      - at: after implement
+        instructions: instructions/after-implement.md
+    EOF
+    cat > "$WS/extensions/parity/instructions/after-implement.md" <<'EOF'
+    # Parity after implementing
+
+    After the last commit in the api worktree, read the plan's `## Parity` section.
+    For each behavior it lists, confirm the new code keeps it, by reading the code
+    or running its test. Report each behavior under a "Parity" heading in your
+    reply, as kept or changed.
+
+    A plan written while this extension was off has no `## Parity` section. Then
+    report "Parity: skipped, the plan lists no behaviors to compare", and do not
+    write a list of your own. Never edit the plan.
+    EOF
+    sh "$WS/.context-circuit/cli" extension add --id parity --path extensions/parity --repo api
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan with the parity extension'
+prompt: |-
+  Execute p1000.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - execute-worktree
+  - execute-records-untouched
+  - extension-instructions-read
+  - extension-skip-reported
+soft:
+  commit-subjects-conventional: "new commit subjects match type(scope): subject"
+design_artifacts:
+  - .worktrees/p1000/api/internal/invoice
+human: []
+allowed_branches:
+  - cc/p1000/api

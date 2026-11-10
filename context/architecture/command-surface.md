@@ -13,6 +13,7 @@ repo connect|clone|init|base|remote|relate|fetch|inspect
 workspace connect|base|remote
 record create|show|list|approve|complete|archive|dependencies|order|delete
 context find
+extension add|update|remove|enable|disable|sync|list|hooks
 worktree prepare|list|inspect|move|repair|remove
 template export
 agent settings|configure|setup|dispatch
@@ -56,6 +57,15 @@ offer to archive; both are said to the person, never acted on unasked.
 specification, export, and the diagnostic run without serializing the workspace;
 everything that writes runs under the workspace lock.
 
+Four commands fire an extension stage themselves — approve, prepare, complete,
+and archive — and add an `extensions` list of hook blocks to their result once
+they have succeeded, outside the write lock. The list is absent where the
+workspace lists no extensions or nothing applied, so a result keeps the shape
+it always had. `worktree prepare` returns its worktree embedded beside that
+list for the same reason. `check` names a remote extension this machine has
+not fetched under `unchecked`, apart from `issues`, without changing the exit
+code.
+
 ## Documentation parity
 
 The shipped reference cannot drift from the implemented surface. A test extracts
@@ -72,5 +82,7 @@ Owner:
   and the output contract.
 - `context-circuit-source@product/docs/commands.md` — the reference a workspace
   is shipped.
+- `context-circuit-source@internal/cli/extensions.go` — the stage hooks a
+  command fires and `extension hooks`.
 - `context-circuit-source@internal/cli/documentation_test.go` — the check that
   holds one to the other.

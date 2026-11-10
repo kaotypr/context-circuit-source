@@ -7,7 +7,7 @@ import "strings"
 var groups = map[string]bool{
 	"member": true, "repo": true, "record": true, "worktree": true,
 	"context": true, "template": true, "agent": true, "workspace": true,
-	"knowledge": true,
+	"knowledge": true, "extension": true,
 }
 
 // Topics carry what a signature line cannot: what the command decides, what it
@@ -138,6 +138,26 @@ moved records are rewritten; any other link the move breaks is reported as
 links_reported. Approve, complete, and archive return commit_recommended naming
 the files they leave uncommitted; complete also returns archive_offer while the
 active member has finished records not archived.`,
+
+	"extension": `Lists the extensions a workspace uses in extensions.yaml at its root, in the
+order their hooks run, and resolves the instructions each hook point returns. An
+extension is a folder with an extension.yaml manifest: a folder in the
+workspace, or a Git repository pinned to the commit its ref named when it was
+added, fetched into the ignored .context-circuit/local/extensions/ cache. A
+ref that moves upstream is reported by sync and never followed; update records
+the move. Each member is on or off by the manifest's default (required,
+default-on, or opt-in) unless enable or disable says otherwise; required cannot
+be switched off.
+
+Hooks fire before and after nine stages. record approve, worktree prepare,
+record complete and record archive return an extensions list of blocks
+themselves, and hooks refuses their after point; for intent, plan, implement,
+review and deliver the agent runs hooks. Each block names its point, the
+instruction files to follow, every extension skipped and why, and stopped,
+which goes to the person. This CLI runs no extension scripts: a manifest may
+declare them, and each is reported as not run. Instructions never authorize an
+action the workspace rules reserve for a person. Changes to extensions.yaml
+return no commit recommendation; committing it is the person's call.`,
 
 	"context": `Finds catalog entries in context/INDEX.md by substring, or, with --repo, the
 entries claiming one repository and the reconciliation they leave outstanding —

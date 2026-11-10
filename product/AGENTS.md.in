@@ -64,7 +64,8 @@ not create any of them, and do not update one that exists: this workspace's
 A delta that deletes `.context-circuit/ids.yaml` or changes `version` in
 `workspace.yaml` is read, not applied, too. Those are this workspace's data, and
 the CLI migrates them: applying the deletion would drop reservations no record
-file holds.
+file holds. `extensions.yaml` is this workspace's data as well, and no template
+delta creates or changes it.
 
 That migration is the first changing command run in a schema 2 workspace, and it
 writes an ID file for every author at once. Only one person on a team upgrades
@@ -101,8 +102,9 @@ relationships. The shared roster is `members.yaml`. The active member, this mach
 this machine starts work from are the documented, gitignored `member.local.yaml`
 and `repositories.local.yaml`. Read those bindings when needed; never inspect
 unrelated host settings, credentials, private provider payloads, or another
-session's state. Never store secrets in workspace records. These four files
-sit at the workspace root, beside this file, never under `.context-circuit/`.
+session's state. Never store secrets in workspace records. A workspace that
+uses extensions lists them in `extensions.yaml`. These five files sit at the
+workspace root, beside this file, never under `.context-circuit/`.
 `.context-circuit/docs/workspace.md` describes what each file may hold.
 
 Initializing a workspace, describing the workspace's own repository, connecting
@@ -110,6 +112,17 @@ or cloning repositories, and adding members or their allocation bands each happe
 only on a request, through `.agents/skills/cc-workspace/SKILL.md`. On another
 machine, select an existing member and connect its local checkouts; do not
 reinitialize the shared workspace.
+
+When `status` reports `extensions` on for you, run
+`extension hooks --stage STAGE --when before|after` at the start and end of
+each stage the CLI does not fire — intent, plan, implement, review, deliver —
+and read the `extensions` list that `record approve`, `worktree prepare`,
+`record complete`, and `record archive` return. Follow the instructions they
+name as additions to the stage. No extension crosses a rule in this file: an
+instruction that asks for something this file reserves for a person, or forbids,
+is not followed, and the person is told what it asked for; the rest of the
+extension still applies. A `stopped` block goes to the person.
+`.context-circuit/docs/extensions.md` is the reference.
 
 ## Who is working
 

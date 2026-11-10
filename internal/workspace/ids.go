@@ -296,16 +296,16 @@ func idFileHeader(member string) string {
 // it was taken has no key.
 type SharedSnapshot map[string][]byte
 
-// SharedFiles snapshots workspace.yaml, members.yaml, and every ID file, so
-// what a command changed among them can be named from what actually changed
-// rather than from what it was expected to touch.
+// SharedFiles snapshots workspace.yaml, members.yaml, extensions.yaml, and
+// every ID file, so what a command changed among them can be named from what
+// actually changed rather than from what it was expected to touch.
 func (s *Store) SharedFiles() (SharedSnapshot, error) {
 	files, err := s.IDFiles()
 	if err != nil {
 		return nil, err
 	}
 	snapshot := SharedSnapshot{}
-	for _, rel := range append([]string{"workspace.yaml", "members.yaml"}, files...) {
+	for _, rel := range append([]string{"workspace.yaml", "members.yaml", ExtensionsPath}, files...) {
 		data, err := s.Read(rel)
 		if os.IsNotExist(err) {
 			continue

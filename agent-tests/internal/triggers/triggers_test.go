@@ -20,7 +20,7 @@ func TestCatalogue(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "ff", "intent", "intent-lang", "intent-tone",
+		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-push", "extension-skip", "ff", "intent", "intent-lang", "intent-tone",
 		"join", "orient", "plan", "push-records", "push-records-conflict",
 	}
 	var got []string
@@ -48,7 +48,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "plan", "push-records", "push-records-conflict"}
+	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-push", "extension-skip", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "plan", "push-records", "push-records-conflict"}
 	cases := []struct {
 		path      string
 		scenarios []string
@@ -86,6 +86,8 @@ func TestSamplePaths(t *testing.T) {
 		{"internal/cli/commands.go", []string{"borrowed", "complete", "execute", "intent", "join", "plan"}, nil},
 		{"internal/cli/cli.go", []string{"complete", "intent", "plan", "push-records"}, nil},
 		{"internal/workspace/readme.go", []string{"join"}, nil},
+		{"internal/workspace/extension_fetch.go", []string{"extension-execute", "extension-push", "extension-skip"}, nil},
+		{"product/docs/extensions.md", []string{"extension-execute", "extension-push", "extension-skip"}, nil},
 		{"internal/workspace/records.go", []string{"intent", "plan"}, nil},
 		{"internal/workspace/agents.go", []string{"execute", "plan"}, nil},
 		{"scripts/release-manifest.txt", all, nil},

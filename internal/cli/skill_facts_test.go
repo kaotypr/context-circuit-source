@@ -26,6 +26,11 @@ func TestTheCompletionSkillNamesTheResultKey(t *testing.T) {
 	if result["completed"] != p.ID {
 		t.Fatalf("record complete returned %v, want completed=%s", result, p.ID)
 	}
+	// Without extensions.yaml the stage's hook blocks are absent, so the
+	// result a 2.5 skill reads is unchanged.
+	if _, ok := result["extensions"]; ok {
+		t.Fatal("record complete returns extensions in a workspace without any")
+	}
 	if _, ok := result["completed_at"]; ok {
 		t.Fatal("record complete now returns completed_at; update cc-complete")
 	}

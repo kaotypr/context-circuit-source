@@ -69,6 +69,17 @@ repo fetch            --id ID [--remote origin]
 repo sync             [--id ID ...] (fetch, then fast-forward each base branch,
                       default every bound repository; never merges, resets, or discards)
 repo inspect          --id ID
+extension add         --id ID (--path PATH | --url URL --ref REF [--subpath PATH])
+                      [--repo ID ...] (validates the manifest; a remote is pinned
+                      to the commit its ref names and fetched)
+extension update      --id ID --ref REF (move a remote to a new ref and its commit)
+extension remove      --id ID (the cached commits stay until sync --prune)
+extension enable      --id ID [--member ID] (default: the active member)
+extension disable     --id ID [--member ID] (refused for a required extension)
+extension sync        [--prune] (fetch every recorded commit this machine lacks)
+extension list        each extension's state for this member and machine
+extension hooks       --stage STAGE --when before|after [--intent ID | --plan ID]
+                      [--repo ID] (the instructions one hook point returns)
 record create         --kind intent|plan --slug SLUG --title TITLE
                       [--intent ID --repo ID ... --depends-on ID ...]
 record show           --id ID
@@ -309,6 +320,7 @@ func openStore(cmd command, in *input, root *string, original []string, out, err
 		return nil, 1, true
 	}
 	s.Command = commandName(version)
+	s.CLIVersion = version
 	// An exported blank seed is no workspace yet, so --path names no pin.
 	if !cmd.fromPath {
 		if code, stop := applyPin(s, cmd, in, original, version, out, errOut); stop {
@@ -434,6 +446,11 @@ func execute(ctx context.Context, s *workspace.Store, cmd command, in *input, er
 		result, err = action()
 	} else {
 		result, err = p.locked(ctx, in.name, action)
+	}
+	// A stage's hooks are resolved after the lock is released, once the
+	// command did what it was asked, so they never block another command.
+	if err == nil && cmd.stage != "" {
+		result = withStageHooks(ctx, s, cmd.stage, in, result)
 	}
 	// The split is reported on the error stream in both output modes, the way
 	// the pinned-version warning is, so no command's result changes shape. It

@@ -47,6 +47,11 @@ outcome, do the same grounding and omit `--intent`. Do not invent an intent.
 Neither planning request authorizes execution. Present the complete plan and
 wait for a separate request to execute it.
 
+With extensions on, run `extension hooks --stage plan --when before` before
+planning, with `--intent ID` for an intent, and
+`extension hooks --stage plan --when after --plan ID` for each plan once every
+plan folder is written.
+
 ## How many plans
 
 One plan folder may cover one or several repositories. Use separate

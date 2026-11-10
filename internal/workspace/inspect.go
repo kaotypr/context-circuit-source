@@ -87,7 +87,11 @@ type Orientation struct {
 	// sees of it. It is reported beside the repositories, and separately from
 	// them, because reading it is part of orienting and working in it is not.
 	Knowledge []KnowledgeState `json:"knowledge_repositories,omitempty"`
-	Issues    []Finding        `json:"issues"`
+	// Extensions counts the extensions listed and those on for the active
+	// member. It is absent in a workspace without extensions.yaml, which is how
+	// an agent knows the extension rule does not apply there.
+	Extensions *ExtensionSummary `json:"extensions,omitempty"`
+	Issues     []Finding         `json:"issues"`
 }
 
 func (s *Store) Status(ctx context.Context) (Orientation, error) {
@@ -176,6 +180,12 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 			needsAPerson+"the knowledge records could not be read; inspect workspace.yaml and repositories.local.yaml"))
 	} else {
 		result.Knowledge = knowledge
+	}
+	if summary, err := s.extensionSummary(result.ActiveMember); err != nil {
+		result.Issues = append(result.Issues, found(err.Error(),
+			"repair extensions.yaml by hand so it decodes; .context-circuit/docs/extensions.md describes each field"))
+	} else {
+		result.Extensions = summary
 	}
 	result.Issues = uniqueFindings(result.Issues)
 	return result, nil
@@ -300,6 +310,8 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	}
 	issues = append(issues, borrowedIssues(state.Knowledge)...)
 	issues = append(issues, s.reviewIssues(ctx)...)
+	extensions, _ := s.extensionIssues()
+	issues = append(issues, extensions...)
 	return uniqueFindings(issues), nil
 }
 
