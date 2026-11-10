@@ -690,7 +690,18 @@ records hosts the contributor lacked. Who runs those hosts is in "Hosts".
 Before anything is written, the zip builder rewrites a home prefix to `$HOME`,
 a run-root prefix to `$RUN`, and the account name, as a whole word in text and
 in entry names, to `$USER`. A longer word that merely contains that name is
-left as written. It drops `auth.json`, `.credentials*`, `*.token`, `.netrc`,
+left as written. A path is matched in every form a host prints it: as written,
+with its spaces or a `~` escaped by a backslash, URL-encoded, and with those
+backslashes escaped again inside JSON. A run root under a directory whose name
+has a space is found whole. The caller's `TMPDIR` and the source checkout, and
+any prefix of them with two or more elements, become `$PRIVATE`. The machine's
+host name and each term of `report --deny-file` become `[private]`,
+case-insensitively, in entry names, the zip and `design.md`. Use the deny file
+for text the account adds rather than the scenario, such as a notice from a
+plugin assigned to the account that names a private term. If any of those
+paths, the home prefix, the account name or a deny term is still in a file
+after cleaning, the command stops, names the file but not the text, and leaves
+no zip behind. It drops `auth.json`, `.credentials*`, `*.token`, `.netrc`,
 `.env`, `id_rsa*`, `*.pem`, and the contents of a per-host auth directory
 (`claude` and `codex` config directories, `cursor-home`, and `.claude`,
 `.codex`, `.cursor`) before it scans for keys. The host id in

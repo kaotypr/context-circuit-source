@@ -24,6 +24,7 @@ type Options struct {
 	Home     string
 	User     string
 	RunRoots []string
+	Private  []string
 	Checkout string
 	Path     string
 	Stdout   io.Writer
@@ -78,6 +79,7 @@ func Run(ctx context.Context, opts Options) error {
 			Home:     opts.Home,
 			User:     opts.User,
 			RunRoots: opts.RunRoots,
+			Private:  opts.Private,
 		}); err != nil {
 			return err
 		}
@@ -94,6 +96,7 @@ func Run(ctx context.Context, opts Options) error {
 		Home:        opts.Home,
 		User:        opts.User,
 		RunRoots:    opts.RunRoots,
+		Private:     opts.Private,
 	})
 	if err != nil {
 		return err

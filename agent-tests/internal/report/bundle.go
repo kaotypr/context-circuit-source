@@ -21,6 +21,9 @@ type BundleOptions struct {
 	Home     string
 	User     string
 	RunRoots []string
+	// Private lists paths and words that must not be published. Each is
+	// replaced, and an archive that still holds one is refused.
+	Private []string
 }
 
 type zipEntry struct {
@@ -49,8 +52,10 @@ func WriteBundle(opts BundleOptions) error {
 	return nil
 }
 
+// secretErr reports a refusal: a key-shaped string, or private text that
+// cleaning left. A stale archive from an earlier report is removed with it.
 func secretErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "key-shaped string")
+	return err != nil && (strings.Contains(err.Error(), "key-shaped string") || strings.Contains(err.Error(), "private text left in"))
 }
 
 func collectEntries(opts BundleOptions) ([]zipEntry, error) {
@@ -90,8 +95,11 @@ func collectEntries(opts BundleOptions) ([]zipEntry, error) {
 		if err != nil {
 			return err
 		}
-		text := cleanPaths(string(body), opts.Home, opts.User, opts.RunRoots)
-		zipName = cleanPaths(zipName, opts.Home, opts.User, opts.RunRoots)
+		text := cleanPaths(string(body), opts.Home, opts.User, opts.RunRoots, opts.Private)
+		zipName = cleanPaths(zipName, opts.Home, opts.User, opts.RunRoots, opts.Private)
+		if leak := record.PrivateLeak(zipName+"\n"+text, opts.Home, opts.User, opts.Private); leak != "" {
+			return fmt.Errorf("bundle: private text left in %s after cleaning", zipName)
+		}
 		if record.LooksLikeSecret(zipName) || record.LooksLikeSecret(text) {
 			return fmt.Errorf("bundle: key-shaped string in %s", zipName)
 		}

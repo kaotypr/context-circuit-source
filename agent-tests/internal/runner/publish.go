@@ -21,6 +21,8 @@ type textRedactor struct {
 	runRoot string
 	// secrets are literal values of the caller's key and token variables.
 	secrets []string
+	// private are paths and words the caller marked private.
+	private []string
 }
 
 func (rt *runtime) redact() textRedactor {
@@ -35,7 +37,7 @@ func (rt *runtime) redact() textRedactor {
 	secrets := secretValues(rt.opts.Caller)
 	secrets = append(secrets, rt.loginSecrets...)
 	sort.Slice(secrets, func(i, j int) bool { return len(secrets[i]) > len(secrets[j]) })
-	return textRedactor{home: home, user: user, secrets: secrets}
+	return textRedactor{home: home, user: user, secrets: secrets, private: record.PrivateEntries(rt.opts.Caller)}
 }
 
 // secretValues returns the values of caller variables that look like keys or
@@ -70,7 +72,7 @@ func (r textRedactor) text(s string) string {
 			s = record.RedactRunRoot(s, resolved)
 		}
 	}
-	return s
+	return record.RedactPrivate(s, r.private)
 }
 
 func (rt *runtime) publishHost(runDir string, w world.World, res proc.Result, streamPath string, parsed *hosts.Parsed, drops *[]string) error {

@@ -325,7 +325,7 @@ const evidence = `### Evidence
 - Cleaned zip of all runs: <!-- attach agent-tests/out/<run-id>/bundle.zip -->
   It holds every run's JSON line, stream and produced files. The runner cleans it: home and run-root
   paths become ` + "`$HOME`/`$RUN`" + `, the username is removed, and auth files are dropped. If it finds a
-  key-shaped string, it refuses to build the zip.
+  key-shaped string, or private text left after cleaning, it refuses to build the zip.
 `
 
 const checklist = `### Reviewer checklist

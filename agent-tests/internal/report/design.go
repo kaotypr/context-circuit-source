@@ -19,6 +19,7 @@ type DesignInput struct {
 	Home        string
 	User        string
 	RunRoots    []string
+	Private     []string
 }
 
 // RenderDesign writes design.md for the paired runs.
@@ -340,7 +341,7 @@ func producedRoots(dir string) []producedRoot {
 func cleanFiles(files map[string][]byte, in DesignInput) map[string][]byte {
 	out := make(map[string][]byte, len(files))
 	for name, body := range files {
-		out[name] = []byte(publicText(string(body), in.Home, in.User, in.RunRoots))
+		out[name] = []byte(publicText(string(body), in.Home, in.User, in.RunRoots, in.Private))
 	}
 	return out
 }
@@ -441,8 +442,8 @@ func fileDiffs(before, after map[string][]byte) string {
 func readsSection(beforeDir, branchDir string, in DesignInput) string {
 	before, beforeOK := readReads(beforeDir)
 	after, afterOK := readReads(branchDir)
-	before = publicText(before, in.Home, in.User, in.RunRoots)
-	after = publicText(after, in.Home, in.User, in.RunRoots)
+	before = publicText(before, in.Home, in.User, in.RunRoots, in.Private)
+	after = publicText(after, in.Home, in.User, in.RunRoots, in.Private)
 	if !beforeOK && !afterOK {
 		return "reads list not available\n"
 	}
@@ -484,7 +485,7 @@ func readReply(dir string) string {
 }
 
 func replyFence(text string, in DesignInput) string {
-	text = publicText(text, in.Home, in.User, in.RunRoots)
+	text = publicText(text, in.Home, in.User, in.RunRoots, in.Private)
 	text = firstLines(text, 12)
 	if strings.TrimSpace(text) == "" {
 		text = "(none)"
