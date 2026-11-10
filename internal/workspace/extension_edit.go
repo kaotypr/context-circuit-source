@@ -202,6 +202,9 @@ type ExtensionState struct {
 	// dispatched as, and Adds each shipped role it adds to.
 	Roles []string `json:"roles,omitempty"`
 	Adds  []string `json:"role_additions,omitempty"`
+	// Overrides names each overridable default the manifest declares; status
+	// says which a person allowed.
+	Overrides []string `json:"overrides,omitempty"`
 	// Scripts names the points that run a script, and Trust whether this
 	// member allowed the extension's current version on this machine: allowed,
 	// not allowed, or changed since allowed.
@@ -249,6 +252,9 @@ func (s *Store) ExtensionStates() ([]ExtensionState, error) {
 				if !slices.Contains(state.Adds, addition.Role) {
 					state.Adds = append(state.Adds, addition.Role)
 				}
+			}
+			for _, o := range loaded.Manifest.Overrides {
+				state.Overrides = append(state.Overrides, o.Default)
 			}
 			if len(state.Scripts) > 0 {
 				version, err := s.extensionVersion(loaded)
@@ -386,6 +392,7 @@ func (s *Store) extensionIssues() (issues, unchecked []Finding) {
 		}
 	}
 	issues = append(issues, s.extensionRoleIssues(file)...)
+	issues = append(issues, s.overrideIssues(file)...)
 	return issues, unchecked
 }
 

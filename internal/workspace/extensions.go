@@ -103,6 +103,10 @@ type ExtensionEntry struct {
 	Repositories []string                   `yaml:"repositories,omitempty" json:"repositories,omitempty"`
 	Settings     map[string]any             `yaml:"settings,omitempty" json:"settings,omitempty"`
 	Members      map[string]ExtensionSwitch `yaml:"members,omitempty" json:"members,omitempty"`
+	// Overrides are the core defaults a person allowed this extension to
+	// override in this workspace, by name. Only `extension override` writes
+	// them, and `check` validates one written by hand.
+	Overrides map[string]OverrideAllowance `yaml:"overrides,omitempty" json:"overrides,omitempty"`
 }
 
 // ExtensionsFile is extensions.yaml. Order is the order hooks at one point run.
@@ -126,6 +130,9 @@ type Manifest struct {
 	// headings to a shipped role's brief, never to its definition or access.
 	Roles         []ManifestRole `yaml:"roles,omitempty" json:"roles,omitempty"`
 	RoleAdditions []RoleAddition `yaml:"role_additions,omitempty" json:"role_additions,omitempty"`
+	// Overrides are the overridable defaults the extension asks to change.
+	// None applies until a person allows it in extensions.yaml.
+	Overrides []ManifestOverride `yaml:"overrides,omitempty" json:"overrides,omitempty"`
 }
 
 // Role access a manifest may declare.
@@ -374,7 +381,10 @@ func validateManifest(m Manifest) error {
 			}
 		}
 	}
-	return validateManifestRoles(m)
+	if err := validateManifestRoles(m); err != nil {
+		return err
+	}
+	return validateManifestOverrides(m)
 }
 
 var settingPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
@@ -589,7 +599,7 @@ func (s *Store) loadExtension(entry ExtensionEntry, index int) loadedExtension {
 			return fail(extensionInvalid, fmt.Sprintf("%s: %s names %s, which cannot be read", folder+"/"+manifestName, hook.At, hook.Instructions))
 		}
 	}
-	for _, file := range manifestRoleFiles(manifest) {
+	for _, file := range append(manifestRoleFiles(manifest), manifestOverrideFiles(manifest)...) {
 		if err := insidePath(file.Path); err != nil {
 			return fail(extensionEscapes, fmt.Sprintf("%s: %s instructions %s", folder+"/"+manifestName, file.Owner, err))
 		}
@@ -720,6 +730,9 @@ type HookResult struct {
 	// to before it runs.
 	ConfirmationRequired []HookConfirmation `json:"confirmation_required,omitempty"`
 	Skipped              []HookSkip         `json:"skipped,omitempty"`
+	// Overrides is each override a person allowed that applies at this point,
+	// for the coordinator to carry out.
+	Overrides []HookOverride `json:"overrides,omitempty"`
 	// Stopped means the stage must not go on until a person decides: a
 	// required extension could not be read or its script is not allowed on
 	// this machine, or a script whose on_failure is stop failed.
@@ -729,7 +742,7 @@ type HookResult struct {
 
 // empty reports a point where nothing applied and nothing was skipped.
 func (r HookResult) empty() bool {
-	return len(r.Instructions) == 0 && len(r.Ran) == 0 && len(r.ConfirmationRequired) == 0 && len(r.Skipped) == 0 && !r.Stopped
+	return len(r.Instructions) == 0 && len(r.Ran) == 0 && len(r.ConfirmationRequired) == 0 && len(r.Skipped) == 0 && len(r.Overrides) == 0 && !r.Stopped
 }
 
 // scriptsNotRun is the reason a script hook gives where nothing may run it.
@@ -779,7 +792,11 @@ func (s *Store) ResolveHooks(ctx context.Context, query HookQuery) (result HookR
 				hook = &loaded.Manifest.Hooks[i]
 			}
 		}
-		if hook == nil {
+		overrides := pointOverrides(loaded, query.Point)
+		if query.Confirm != "" {
+			overrides = nil
+		}
+		if hook == nil && len(overrides) == 0 {
 			continue
 		}
 		marked := []string(nil)
@@ -788,12 +805,20 @@ func (s *Store) ResolveHooks(ctx context.Context, query HookQuery) (result HookR
 			case !query.Scoped && query.ListScoped:
 				marked = entry.Repositories
 			case !query.Scoped:
-				result.Skipped = append(result.Skipped, HookSkip{entry.ID, "limited to repositories " + strings.Join(entry.Repositories, ", ") + ", and " + query.Point.String() + " carries no repository list"})
+				result.Skipped = append(result.Skipped, HookSkip{entry.ID, "limited to repositories " + strings.Join(entry.Repositories, ", ") + ", and " + query.Point.String() + " carries no repository list; run it again with --plan or --repo"})
 				continue
 			case !overlaps(entry.Repositories, query.Repositories):
 				result.Skipped = append(result.Skipped, HookSkip{entry.ID, "outside repositories: limited to " + strings.Join(entry.Repositories, ", ")})
 				continue
 			}
+		}
+		// An override applies to the plan it fires for, so a listing that
+		// only marks repositories carries none.
+		if marked == nil {
+			result.Overrides = append(result.Overrides, overrides...)
+		}
+		if hook == nil {
+			continue
 		}
 		if hook.Instructions != "" && query.Confirm == "" {
 			result.Instructions = append(result.Instructions, HookInstruction{
@@ -1031,7 +1056,7 @@ func (s *Store) ImplementHooks(ctx context.Context, plan, repo string) []string 
 		if err != nil || !listed {
 			return nil
 		}
-		if len(result.Instructions) > 0 || result.Stopped {
+		if len(result.Instructions) > 0 || len(result.Overrides) > 0 || result.Stopped {
 			applies = true
 		}
 		for _, skip := range result.Skipped {

@@ -1,0 +1,20 @@
+diff --git a/internal/invoice/export.go b/internal/invoice/export.go
+index a475b5d..a993591 100644
+--- a/internal/invoice/export.go
++++ b/internal/invoice/export.go
+@@ -13,10 +13,13 @@ func TextSummary(i Invoice) string {
+ 	return fmt.Sprintf("Invoice %d for %s: %d cents (%s)", i.Number, i.Customer, i.Total(), i.Status)
+ }
+ 
+-// CSV writes invoices as CSV text: number, customer, status, and cents, one
+-// row per invoice.
++// CSV writes invoices as CSV text: a header row, then number, customer,
++// status, and cents, one row per invoice.
+ func CSV(w io.Writer, invoices []Invoice) error {
+ 	out := csv.NewWriter(w)
++	if err := out.Write([]string{"number", "customer", "status", "cents"}); err != nil {
++		return err
++	}
+ 	for _, item := range invoices {
+ 		row := []string{
+ 			strconv.Itoa(item.Number),

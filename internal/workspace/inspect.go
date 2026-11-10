@@ -91,6 +91,9 @@ type Orientation struct {
 	// member. It is absent in a workspace without extensions.yaml, which is how
 	// an agent knows the extension rule does not apply there.
 	Extensions *ExtensionSummary `json:"extensions,omitempty"`
+	// Overrides lists each core default a person allowed an extension to
+	// override in this workspace. It is absent where none is allowed.
+	Overrides []OverrideStatus `json:"overrides,omitempty"`
 	// SetupRequired names the `agent setup` run that brings this machine's
 	// extension role definitions in line with the extensions on for its
 	// member. It is this machine's state, not a workspace finding.
@@ -190,6 +193,7 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 			"repair extensions.yaml by hand so it decodes; .context-circuit/docs/extensions.md describes each field"))
 	} else {
 		result.Extensions = summary
+		result.Overrides = s.overrideStatuses(result.ActiveMember)
 	}
 	result.SetupRequired = s.AgentSetupRequired()
 	result.Issues = uniqueFindings(result.Issues)

@@ -25,6 +25,12 @@ follow it as `.context-circuit/docs/extensions.md` says. Where an extension
 applies to implementing in that worktree, it also returns `next`: the two
 `extension hooks --stage implement` commands. Run the first before the first
 change in the worktree and the second after its last commit there.
+**Do not report the implementation until that `after implement` command has run
+and you have read each instruction file and override it returns**. An allowed
+override is carried out as `.context-circuit/docs/customization.md` says, and its
+result goes in the report. Anything an instruction asks that needs a person, such
+as a push, a pull request or a merge, is not done: name it in the report as
+waiting on them.
 
 ## Choosing the starting point
 

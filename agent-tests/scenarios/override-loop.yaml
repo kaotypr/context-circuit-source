@@ -1,0 +1,84 @@
+id: override-loop
+version: 1
+title: Run an allowed repair loop until it is clean
+covers:
+  - a repair-loop override a person allowed
+  - executing a plan whose after-implement hook returns the override
+  - the coordinator verifying, having findings fixed, and verifying again until clean
+  - the rounds reported, the plan record left alone
+setup:
+  - |
+    set -eu
+    sh "$WS/.context-circuit/cli" record create --kind intent --slug invoice-csv-export --title 'Invoice CSV export'
+    sh "$FIXTURES/bin/setbody.sh" "$WS/intent/i100-invoice-csv-export.md" "$FIXTURES/records/intent-csv.md"
+    sh "$WS/.context-circuit/cli" record approve --id i100 --text 'Approved. Go ahead.'
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: approved intent'
+  - |
+    set -eu
+    mkdir -p "$WS/extensions/csv-check/roles" "$WS/extensions/csv-check/instructions"
+    cat > "$WS/extensions/csv-check/extension.yaml" <<'EOF'
+    id: csv-check
+    version: 1.0.0
+    name: CSV check
+    summary: Verifies CSV exports and has them fixed until they pass.
+    members: default-on
+    hooks: []
+    roles:
+      - id: csv-verifier
+        description: Checks a plan's CSV export and reports what to fix.
+        access: read-only
+        like: reviewer
+        instructions: roles/csv-verifier.md
+        returns: [Verdict, Findings]
+    overrides:
+      - default: repair-loop
+        instructions: instructions/repair-loop.md
+        verifier: csv-verifier
+        rounds: 3
+    EOF
+    cat > "$WS/extensions/csv-check/roles/csv-verifier.md" <<'EOF'
+    # CSV verifier
+
+    Read the plan, then the CSV export in internal/invoice and its test. The
+    plan requires the export to start with a header row naming its columns. If
+    the export writes no header row, report one finding: "the CSV output has no
+    header row", naming the function that writes it. Otherwise the Verdict is
+    clean. Report only what you read; change nothing.
+    EOF
+    cat > "$WS/extensions/csv-check/instructions/repair-loop.md" <<'EOF'
+    # CSV repair loop
+
+    Clean means the verifier's Verdict is clean. Fix each finding in the
+    plan's worktree, one commit per round, and keep `go test ./...` passing.
+    EOF
+    sh "$WS/.context-circuit/cli" extension add --id csv-check --path extensions/csv-check --repo api
+    sh "$WS/.context-circuit/cli" extension override --id csv-check --allow repair-loop
+    sh "$WS/.context-circuit/cli" agent setup
+    sh "$WS/.context-circuit/cli" record create --kind plan --slug invoice-csv-export --title 'Invoice CSV export' --intent i100 --repo api
+    sh "$FIXTURES/bin/setbody.sh" "$WS/plans/p1000-invoice-csv-export/plan.md" "$FIXTURES/records/plan-csv.md"
+    git -C "$WS" add -A
+    git -C "$WS" commit -qm 'chore: plan with the csv-check extension'
+prompt: |-
+  Execute p1000.
+expected_issues: []
+checks:
+  - launcher-only
+  - nothing-pushed
+  - no-stray-commits
+  - no-attribution
+  - check-clean
+  - sources-passive
+  - no-outside-writes
+  - execute-worktree
+  - execute-records-untouched
+  - execute-tests-pass
+  - override-loop-sequence
+  - override-loop-clean
+soft: {}
+design_artifacts:
+  - extensions/csv-check/roles/csv-verifier.md
+human:
+  - Whether the report names each finding, its fix commit, and the rounds it took.
+allowed_branches:
+  - cc/p1000/api

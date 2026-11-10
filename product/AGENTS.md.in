@@ -127,7 +127,13 @@ once this machine's member allowed its version, it may take the single action
 its manifest names for that hook, and nothing more. Run `extension allow` only
 when the person asks, and run a `confirmation_required` entry's `confirm`
 command only on their yes to its action. A `stopped` block goes to the person.
-`.context-circuit/docs/extensions.md` is the reference.
+Repair loops, verification during execution, risk-triggered review, and
+delegation are defaults an extension may override only where this workspace
+allowed it; every other rule here is fixed whatever an extension says.
+Run `extension override` only when the person asks for the allowance itself;
+asked to run an override nobody allowed, say so and give them that command.
+`.context-circuit/docs/extensions.md` is the reference, and
+`.context-circuit/docs/customization.md` for overrides.
 
 ## Who is working
 
@@ -370,7 +376,8 @@ partial, and interrupted work; failure in one repository does not discard
 successful work in another.
 
 Do not start independent verification during execution, trigger a reviewer from
-risk classification, or create automatic repair loops. Do not introduce execution,
+risk classification, or create automatic repair loops, unless `extension hooks`
+returns an override this workspace allowed for it. Do not introduce execution,
 candidate, verification, host-evidence, or separate formal completion records.
 The `check` command is an explicitly invoked diagnostic for workspace consistency,
 not an implementation gate. Each of its findings names what discharges it, and a
@@ -385,7 +392,8 @@ shown. Unverified is a complete answer.
 ## Independent review on request
 
 Independent verification is a manually requested read-only code review. It is
-never triggered by risk classification, and it is not a condition for opening a
+never triggered by risk classification unless this workspace allowed a
+`risk-review` override, and it is not a condition for opening a
 pull request, delivering, or completing. When a person asks for one, use
 `.agents/skills/cc-review/SKILL.md`. Never call the implementing session's own
 inspection independent; where independence is unavailable, say so and offer an
