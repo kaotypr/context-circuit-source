@@ -1,7 +1,0 @@
----
-product: both
-kind: added
-upgrade: Nothing changes until a person allows an override with `extension override`.
----
-
-An extension can now ask to change one of four core defaults, and a person can allow it for their workspace: `repair-loop` (implement, verify, and fix until clean or a round limit), `verify-during-execution` (a read-only role checks each implementation once), `risk-review` (the reviewer runs when the extension's instructions say a change warrants it), and `delegation` (a stage always goes to a named role). A manifest declares the overrides it wants under `overrides`, and `extension override --id ID --allow NAME [--rounds N]` allows one, or `--revoke NAME` takes it back; `--rounds` can lower a repair loop's limit but never raise it. An allowed override comes back from `extension hooks` under `overrides`, `status` lists each one and whether it is on for you, and `agent dispatch --override NAME [--round N]` accepts the verifier, the fixing worker, or the reviewer it needs and refuses any other use. Approving an intent, authorizing pushes and merges, starting planning and execution, leaving the plan record alone, no attribution, no secrets, and read-only borrowed knowledge stay fixed: a manifest naming any of them is invalid. `check` reports an allowance the manifest does not declare, rounds out of range, a verifier that is not read-only, and two extensions delegating one stage to different roles. `.context-circuit/docs/customization.md` describes the overrides and the repair loop.
