@@ -35,7 +35,9 @@ stages:
   - template
 
 default:
-  image: golang:1.25
+  # Keep in step with the go line in go.mod; GitHub reads that file, this
+  # pipeline does not.
+  image: golang:1.26
   before_script:
     # build-cli.sh packages the Windows targets with zip, which the Go image
     # does not carry.
