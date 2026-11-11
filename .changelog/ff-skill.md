@@ -1,5 +1,5 @@
 ---
-product: template
+product: both
 kind: added
 upgrade: Needs a CLI with `repo sync` and `workspace sync`; install the version the template pins.
 ---

@@ -1,5 +1,5 @@
 ---
-product: template
+product: both
 kind: changed
 authors: "@hallode"
 ---
