@@ -1,0 +1,6 @@
+Tool: Bash cat workspace.yaml && echo ---- && ls -la && echo ---- && ls context 2>/dev/null; echo ----; cat context/INDEX.md 2>/dev/null; echo ----; rg -il "invoice" --glob '!sources/**' . 2>/dev/null; echo ----; git show --stat HEAD~0 | head -30
+Tool: Bash cat context/domains/invoices.md; echo ----; cat context/glossary.md; echo ----; rg -n -i "invoice|number|sequence|year" context/ --glob '!INDEX.md' ; echo ----; ls context/domains; echo ----; sh .context-circuit/cli check 2>&1 | head -
+Tool: Bash sh .context-circuit/cli context find invoice number 2>&1 | head -60; echo ----; sh .context-circuit/cli context find "invoice number" 2>&1 | head -60; echo ----; sh .context-circuit/cli context find sequence 2>&1 | head -40
+Tool: Bash sh .context-circuit/cli context --help 2>&1 | head -40; echo ----; sh .context-circuit/cli context find --help 2>&1 | head -30
+Tool: Bash sh .context-circuit/cli context find --query invoice 2>&1 | head -60; echo ----; sh .context-circuit/cli context find --query number 2>&1 | head -40
+Tool: Bash cd $RUN && git --git-dir remotes/handbook.git show main:numbering.md 2>&1 | head -60; echo ----; git --git-dir remotes/handbook.git log --oneline -5 main 2>&1

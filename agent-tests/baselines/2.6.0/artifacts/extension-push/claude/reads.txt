@@ -1,0 +1,15 @@
+Tool: Bash ls -R plans | head -50 && cat plans/p1000-*/plan.md 2>/dev/null | head -300
+Tool: Bash ls -la && cat members.yaml; echo ---; cat member.local.yaml; echo ---; cat repositories.local.yaml; echo ---; cat workspace.yaml; echo ---; cat .context-circuit/CLI_VERSION; echo; sh .context-circuit/cli status 2>&1 | head -60
+Tool: Bash cat .agents/skills/cc-worktree/SKILL.md; echo ----; cat extensions.yaml; echo ----; sh .context-circuit/cli extension hooks --stage implement --when before 2>&1 | head -80
+Tool: Bash sh .context-circuit/cli worktree prepare --repo api --plan p1000 2>&1 | head -120
+Tool: Bash sh .context-circuit/cli extension hooks --stage implement --when before --plan p1000 --repo api 2>&1 | head -80; echo ----; cd .worktrees/p1000/api && cat AGENTS.md CLAUDE.md 2>/dev/null | head -80; ls -la; git log --oneline | head -5;
+Tool: Bash cat internal/invoice/invoice.go internal/invoice/export.go internal/invoice/export_test.go internal/invoice/invoice_test.go go.mod README.md
+Tool: Bash which go && go version && git status --short && git config user.name; git config user.email; git log -3 --format='%an <%ae> | %s'
+Tool: Write $RUN/ws/.worktrees/p1000/api/internal/invoice/csv.go
+Tool: Write $RUN/ws/.worktrees/p1000/api/internal/invoice/csv_test.go
+Tool: Bash gofmt -l ./internal && go vet ./... && go test ./... 2>&1 | tail -20
+Tool: Bash git add internal/invoice/csv.go internal/invoice/csv_test.go && git commit -q -m "feat(invoice): add CSV invoice export" && git log --oneline -2 && git status --short && cd ../.. && sh .context-circuit/cli extension hooks --stage imple
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli extension hooks --stage implement --when after --plan p1000 --repo api 2>&1 | head -60; echo ---; git status --short
+Tool: Bash cat extensions/publish-branch/instructions/after-implement.md; echo ---; ls -R extensions/publish-branch | head -30
+Tool: Bash cat extensions/publish-branch/extension.yaml; echo ---; sh .context-circuit/cli extension 2>&1 | head -30
+Tool: Bash cd $RUN/ws/.worktrees/p1000/api && git status --short && git log --oneline -1 && git branch --show-current

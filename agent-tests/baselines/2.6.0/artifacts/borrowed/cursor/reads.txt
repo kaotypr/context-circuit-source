@@ -1,0 +1,13 @@
+Tool: read $PRIVATE/agent-test-3461222229/ws/.agents/skills/cc-knowledge/SKILL.md
+Tool: read $PRIVATE/agent-test-3461222229/ws/members.yaml
+Tool: glob member.local.yaml
+Tool: glob context/**/*
+Tool: read $PRIVATE/agent-test-3461222229/ws/context/domains/invoices.md
+Tool: read $PRIVATE/agent-test-3461222229/ws/context/INDEX.md
+Tool: read $PRIVATE/agent-test-3461222229/ws/context/glossary.md
+Tool: read $PRIVATE/agent-test-3461222229/ws/member.local.yaml
+Tool: read $PRIVATE/agent-test-3461222229/ws/workspace.yaml
+Tool: grep invoice $PRIVATE/agent-test-3461222229/ws
+Tool: grep context find $PRIVATE/agent-test-3461222229/ws/.context-circuit/docs
+Tool: read $PRIVATE/agent-test-3461222229/ws/.context-circuit/docs/commands.md
+Tool: shell sh .context-circuit/cli context find --query "invoice number"

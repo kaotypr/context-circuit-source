@@ -1,0 +1,3 @@
+Created the linked plan [p1000: Invoice CSV export](<$PRIVATE/agent-test-2499955042/ws/plans/p1000-invoice-csv-export/plan.md>).
+
+It proposes a standard-library CSV writer in `api@internal/invoice`, with tests for the requested columns, totals, and CSV escaping. No implementation or tests were run; execution needs a separate request. The CLI also linked `p1000` to `i100` and reserved the plan ID in the workspace records.

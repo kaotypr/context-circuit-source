@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  4583229 [main]
+
+git branch -a -vv
+* main                4583229 chore: plan with the csv-check extension
+  remotes/origin/main 245d0e6 chore: fixture
+
+git log --all --not 4583229de44fe4ec5a1f4ea970c5631258663e0a --format=%h %s
+
+git diff --stat

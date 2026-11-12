@@ -1,0 +1,4 @@
+Tool: command_execution /bin/zsh -lc 'cat .agents/skills/cc-workspace/SKILL.md && cat members.yaml && cat member.local.yaml && cat repositories.local.yaml && cat workspace.yaml && cat .context-circuit/CLI_VERSION'
+Tool: command_execution /bin/zsh -lc 'cat workspace.yaml; cat repositories.local.yaml; cat .context-circuit/CLI_VERSION; sh .context-circuit/cli status; sh .context-circuit/cli member presets'
+Tool: command_execution /bin/zsh -lc "sh .context-circuit/cli member add --id dana --name 'Dana Reyes' --band 2 --role 'backend developer' && sh .context-circuit/cli member use --id dana && sh .context-circuit/cli repo connect --id api --path rep
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli check; sh .context-circuit/cli status; git status --short'

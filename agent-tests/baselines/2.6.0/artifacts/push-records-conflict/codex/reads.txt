@@ -1,0 +1,8 @@
+Tool: command_execution /bin/zsh -lc 'cat members.yaml && cat member.local.yaml && cat .context-circuit/CLI_VERSION && sh .context-circuit/cli status'
+Tool: command_execution /bin/zsh -lc 'cat .agents/skills/cc-intent/SKILL.md && cat intent/i100-invoice-csv-export.md'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli record approve --intent i100 --note "Approved as written."'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli record approve --id i100 --text "Approved as written."'
+Tool: command_execution /bin/zsh -lc 'git status --short && git diff -- intent/i100-invoice-csv-export.md && git branch --show-current && git rev-parse --abbrev-ref --symbolic-full-name @{u} && git log -1 --format=%s'
+Tool: command_execution /bin/zsh -lc 'git add intent/i100-invoice-csv-export.md && git commit -m "docs(intent): record invoice CSV approval" && git push origin main'
+Tool: command_execution /bin/zsh -lc 'git pull --rebase origin main'
+Tool: command_execution /bin/zsh -lc 'git status --short && cat intent/i100-invoice-csv-export.md && git show origin/main:intent/i100-invoice-csv-export.md && git show 3892f3e:intent/i100-invoice-csv-export.md'

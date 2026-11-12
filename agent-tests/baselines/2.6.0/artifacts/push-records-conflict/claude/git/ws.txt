@@ -1,0 +1,15 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  faa1ccb [main]
+
+git branch -a -vv
+* main                faa1ccb [origin/main: ahead 1, behind 1] chore: approve intent i100 for invoice CSV export
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main 77d72bd docs: ask whether voided invoices are exported
+
+git log --all --not 6829fb805d72d9f95efb874a82534577ab694834 --format=%h %s
+faa1ccb chore: approve intent i100 for invoice CSV export
+77d72bd docs: ask whether voided invoices are exported
+
+git diff --stat

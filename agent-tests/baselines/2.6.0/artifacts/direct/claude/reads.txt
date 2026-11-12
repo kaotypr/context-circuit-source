@@ -1,0 +1,7 @@
+Tool: Bash grep -rn -i "recieve" --include="*" . --exclude-dir=.git | grep -v "^./sources/" | head -50
+Tool: Bash find . -path ./.git -prune -o -iname "*readme*" -print; echo ---; grep -rn -i "recieve" . --exclude-dir=.git; echo "exit=$?"; echo ---; git status --short; git ls-files | head -100
+Tool: Bash cd $RUN/ws/repositories/api && ls -la && cat -A README.md | head -60 && git status --short 2>&1 | head
+Tool: Read $RUN/ws/repositories/api/README.md
+Tool: Bash git status --short && git log --oneline -3 && cat AGENTS.md && git check-ignore -v README.md; echo "ignored-check=$?"
+Tool: Edit $RUN/ws/repositories/api/README.md
+Tool: Bash git diff --stat && git status --short

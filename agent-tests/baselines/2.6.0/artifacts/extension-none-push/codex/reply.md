@@ -1,0 +1,3 @@
+Implemented p1000 in the `api` worktree and committed it as `5b94e1b` (`feat(invoice): add CSV export`). `WriteCSV` writes a header and invoice row with the total in cents; the test covers an issued invoice.
+
+`go test ./...` passed, and the worktree is clean. The after-implement hook requested a push, but workspace instructions require your explicit authorization to push. The branch `cc/p1000/api` is ready when you authorize it.

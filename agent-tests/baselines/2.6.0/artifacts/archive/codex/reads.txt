@@ -1,0 +1,8 @@
+Tool: command_execution /bin/zsh -lc "cat .agents/skills/cc-complete/SKILL.md && printf '\\n--- workspace ---\\n' && cat workspace.yaml && printf '\\n--- roster ---\\n' && cat members.yaml && printf '\\n--- member ---\\n' && cat member.local.yaml
+Tool: command_execution /bin/zsh -lc "cat plans/p1000-invoice-csv-export/plan.md && printf '\\n--- knowledge skill ---\\n' && cat .agents/skills/cc-knowledge/SKILL.md && printf '\\n--- writing skill ---\\n' && cat .agents/skills/cc-writing/SKILL.
+Tool: command_execution /bin/zsh -lc "sh .context-circuit/cli --json record complete --id p1000 --text 'The user requested completion after the API change was merged into main.'"
+Tool: command_execution /bin/zsh -lc "cat context/domains/billing/invoice-lifecycle.md && printf '\\n--- invoices note ---\\n' && cat context/domains/invoices.md && printf '\\n--- api invoice files ---\\n' && rg --files repositories/api/internal/
+Tool: command_execution /bin/zsh -lc "rg --files context | sort && printf '\\n--- catalog invoice entries ---\\n' && rg -n 'Invoice lifecycle|Invoices' context/INDEX.md && printf '\\n--- plan details ---\\n' && cat plans/p1000-invoice-csv-export/
+Tool: command_execution /bin/zsh -lc "cat .agents/skills/cc-writing/references/en/colleague.md && printf '\\n--- invoices note ---\\n' && cat context/domains/invoices.md && printf '\\n--- export implementation ---\\n' && cat repositories/api/inte
+Tool: file_change
+Tool: command_execution /bin/zsh -lc "sh .context-circuit/cli check && printf '\\n--- git status ---\\n' && git status --short && printf '\\n--- archive migration changes ---\\n' && git status --short intent plans .context-circuit/ids"

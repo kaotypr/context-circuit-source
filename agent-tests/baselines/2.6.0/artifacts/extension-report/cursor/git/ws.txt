@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  cdd9218 [main]
+
+git branch -a -vv
+* main                cdd9218 chore: plan with the style extension
+  remotes/origin/main 8b54924 chore: fixture
+
+git log --all --not cdd9218d583f5bd09a8110359dffa80f463e691a --format=%h %s
+
+git diff --stat

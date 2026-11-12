@@ -1,0 +1,11 @@
+Tool: Bash ls -la && ls intents plans 2>/dev/null; find . -name 'i100*' -not -path './.git/*'; cat .agents/skills/cc-plan/SKILL.md
+Tool: Bash cat intent/i100-invoice-csv-export.md && echo ---- && cat members.yaml member.local.yaml workspace.yaml repositories.local.yaml && echo ---- && cat context/INDEX.md 2>/dev/null; ls context repositories sources plans; cat plans/README.m
+Tool: Bash cat context/domains/invoices.md; echo ----; cat context/glossary.md | head -60; echo ----; cd repositories/api && git status --short | head; git log --oneline | head -5; find . -path ./.git -prune -o -type f -print | head -80; cat AGEN
+Tool: Bash cat go.mod && cat internal/invoice/export.go internal/invoice/invoice.go && echo ---- && cat internal/invoice/export_test.go && echo ---- && head -60 internal/invoice/invoice_test.go && cat README.md && go version 2>&1; go test ./... 2
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli status 2>&1 | head -60
+Tool: Bash sh .context-circuit/cli record create --kind plan --slug invoice-csv-export --title "Invoice CSV export" --intent i100 --repo api 2>&1; ls plans; 
+Tool: Read $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: Write $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: Edit $RUN/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: Bash sh .context-circuit/cli check 2>&1 | head -40; git status --short
+Tool: Bash git diff

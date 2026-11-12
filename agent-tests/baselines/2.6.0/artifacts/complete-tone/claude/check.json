@@ -1,0 +1,9 @@
+{
+  "issues": [
+    {
+      "issue": "context/INDEX.md:175: domains/invoices.md was last confirmed 2026-01-15, and api@internal/invoice/ has 1 commit since",
+      "resolve": "needs a person: read the note against the code it anchors to, then edit the note and its catalog entry together and move the reviewed date — or move the date alone if nothing it says changed"
+    }
+  ],
+  "ok": false
+}

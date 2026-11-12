@@ -1,0 +1,9 @@
+members:
+  maya:
+    name: Maya
+    band: 1
+  dana:
+    name: Dana Reyes
+    band: 2
+    roles:
+    - backend developer

@@ -1,0 +1,15 @@
+Tool: read $PRIVATE/agent-test-1533433073/ws/.cursor/skills/cc-dispatch/SKILL.md
+Tool: glob **/plans/p1000*/** $PRIVATE/agent-test-1533433073/ws
+Tool: read $PRIVATE/agent-test-1533433073/ws/.agents/skills/cc-dispatch/SKILL.md
+Tool: read $PRIVATE/agent-test-1533433073/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: grep agent dispatch $PRIVATE/agent-test-1533433073/ws/.context-circuit/docs
+Tool: read $PRIVATE/agent-test-1533433073/ws/.context-circuit/docs/extensions.md
+Tool: read $PRIVATE/agent-test-1533433073/ws/.context-circuit/docs/customization.md
+Tool: shell sh .context-circuit/cli --json worktree list 2>&1 | head -c 8000; echo; sh .context-circuit/cli --json agent dispatch --help 2>&1 | head -c 4000
+Tool: grep id: api|path: $PRIVATE/agent-test-1533433073/ws/workspace.yaml
+Tool: read $PRIVATE/agent-test-1533433073/ws/repositories.local.yaml
+Tool: shell git -C repositories/api worktree list && sh .context-circuit/cli --json worktree list --repo api
+Tool: getMcpTools
+Tool: shell sh .context-circuit/cli --json agent dispatch --host cursor --role x-parity-parity-verifier --plan p1000 --repo api --path $RUN/ws/.worktrees/p1000/api > $TMP/dispatch-p1000.json && python3 -c 'import json; d=json.load(open("$TMP/disp
+Tool: shell git -C .worktrees/p1000/api diff main...HEAD
+Tool: task

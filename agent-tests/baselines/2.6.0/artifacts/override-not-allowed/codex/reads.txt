@@ -1,0 +1,4 @@
+Tool: command_execution /bin/zsh -lc "cat members.yaml && printf '\\n--- member local ---\\n' && cat member.local.yaml && printf '\\n--- workspace ---\\n' && cat workspace.yaml && printf '\\n--- extensions ---\\n' && cat extensions.yaml"
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli status && cat .agents/skills/cc-direct/SKILL.md && cat .context-circuit/docs/extensions.md'
+Tool: command_execution /bin/zsh -lc "cat extensions/csv-check/extension.yaml && printf '\\n--- customization ---\\n' && cat .context-circuit/docs/customization.md && printf '\\n--- plan ---\\n' && cat plans/p1000-invoice-csv-export/plan.md && pr
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli extension hooks --stage implement --when after --plan p1000 --repo api'

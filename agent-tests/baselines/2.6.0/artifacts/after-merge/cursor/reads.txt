@@ -1,0 +1,5 @@
+Tool: read $PRIVATE/agent-test-4288547947/ws/.agents/skills/ff/SKILL.md
+Tool: glob plans/p1000*/plan.md
+Tool: grep ^  api:|id: api|base_branch|default_branch $PRIVATE/agent-test-4288547947/ws/workspace.yaml
+Tool: read $PRIVATE/agent-test-4288547947/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: grep base_branch|api $PRIVATE/agent-test-4288547947/ws/repositories.local.yaml

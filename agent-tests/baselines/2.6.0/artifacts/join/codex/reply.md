@@ -1,0 +1,3 @@
+You’re set up as Dana Reyes (`dana`) on the suggested band 2, with the role `backend developer`. This machine is bound to the existing `repositories/api` checkout on `main`, and the workspace checkout is connected on `main`. Agent setup completed.
+
+`check` returned `ok: true` with no issues. The only tracked change is `members.yaml`; setup files and local bindings are uncommitted. No commits were made. You can choose a tone preset later with `member tone`; it’s currently unset, so the workspace uses the `colleague` register.

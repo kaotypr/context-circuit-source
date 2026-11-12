@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  db00493 [main]
+
+git branch -a -vv
+* main                db00493 chore: fixture
+  remotes/origin/main db00493 chore: fixture
+
+git log --all --not db00493f0802d3547f9715eb68c40e5d52cd893b --format=%h %s
+
+git diff --stat

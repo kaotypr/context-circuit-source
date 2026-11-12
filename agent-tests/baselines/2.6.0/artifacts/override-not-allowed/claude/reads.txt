@@ -1,0 +1,3 @@
+Tool: Bash sh .context-circuit/cli status && echo ---- && sh .context-circuit/cli extension hooks --stage implement --when after && echo ---- && cat extensions.yaml && echo ---- && ls .context-circuit/docs && ls plans
+Tool: Bash find extensions -type f | head -50 && echo ---- && for f in $(find extensions -type f -name '*.yaml' -o -name '*.md' -o -name '*.json' | grep -v -e '\.py$'); do echo "== $f"; cat "$f"; echo; done && echo ---- && ls -R plans/p1000-invoi
+Tool: Bash cat .context-circuit/docs/extensions.md && echo ---- && cat .context-circuit/docs/customization.md | head -150 && echo ---- && sh .context-circuit/cli extension hooks --stage review --when after; echo ---- ; sh .context-circuit/cli ext

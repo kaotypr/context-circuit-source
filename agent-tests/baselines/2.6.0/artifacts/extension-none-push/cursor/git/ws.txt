@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  fd2ab1e [main]
+
+git branch -a -vv
+* main                fd2ab1e chore: plan with the publish-branch extension
+  remotes/origin/main 40092ec chore: fixture
+
+git log --all --not fd2ab1e6bfb51d257291478d1b9dff6365842f28 --format=%h %s
+
+git diff --stat

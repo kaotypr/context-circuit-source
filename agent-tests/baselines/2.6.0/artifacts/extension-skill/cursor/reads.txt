@@ -1,0 +1,11 @@
+Tool: read $PRIVATE/agent-test-565418637/ws/.cursor/skills/x-qa-pass-qa/SKILL.md
+Tool: read $PRIVATE/agent-test-565418637/ws/.agents/skills/x-qa-pass-qa/SKILL.md
+Tool: shell sh .context-circuit/cli extension hooks --stage qa-pass/qa --when before --plan p1000
+Tool: grep worktree $PRIVATE/agent-test-565418637/ws/.context-circuit/docs
+Tool: glob **/p1000*/** $PRIVATE/agent-test-565418637/ws
+Tool: read $PRIVATE/agent-test-565418637/ws/plans/p1000-invoice-csv-export/plan.md
+Tool: glob .worktrees/p1000*/**/* $PRIVATE/agent-test-565418637/ws
+Tool: shell ls -la .worktrees/p1000 2>/dev/null; sh .context-circuit/cli worktree list 2>/dev/null | head -80
+Tool: shell go vet ./... && go test ./...
+Tool: shell sh .context-circuit/cli extension hooks --stage qa-pass/qa --when after --plan p1000
+Tool: read $PRIVATE/agent-test-565418637/ws/extensions/qa-report/instructions/after-qa.md

@@ -1,0 +1,16 @@
+git status --porcelain
+ M .context-circuit/ids/maya.yaml
+?? intent/i100-invoice-csv-download.md
+
+git worktree list
+$RUN/ws  0d647e8 [main]
+
+git branch -a -vv
+* main                0d647e8 chore: member language
+  remotes/origin/main e7f41d0 chore: fixture
+
+git log --all --not 0d647e8ff02467dd77407d79f78cd74f98780cf7 --format=%h %s
+
+git diff --stat
+ .context-circuit/ids/maya.yaml | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)

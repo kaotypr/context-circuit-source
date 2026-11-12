@@ -89,9 +89,13 @@ produced outside CI, by whoever changes what agents see. Host behavior that
 was not exercised is reported as not exercised, and a claim about a host is
 never stronger than the runs behind it.
 
-The 2.5.0 baseline ran one run per scenario per host on 2026-10-29:
+The 2.6.0 baseline ran one run per scenario per host on 2026-11-11 and
+2026-11-12:
 
-- Claude Code, claude-haiku-5-5: 12 of 12 passed.
-- Cursor, grok-4.7-low: 12 of 12 passed.
-- Codex, gpt-6-luna: 11 of 12 passed. It answered an English request in the
+- Claude Code, claude-haiku-5-5: 25 of 27 passed. It once left a knowledge
+  note unreconciled when completing a plan, and one reply missed a grader's
+  wording.
+- Codex, gpt-6-luna: 26 of 27 passed. It answered an English request in the
   record author's language.
+- Cursor, grok-4.7-low: 26 of 27 passed. It pushed a plan branch because an
+  extension's instructions asked it to, without the person's authorization.

@@ -1,0 +1,8 @@
+Tool: Bash ls -la && echo "--- context ---" && ls -R context 2>/dev/null | head -100 && echo "--- .context-circuit ---" && ls -la .context-circuit && cat .context-circuit/CLI_VERSION 2>/dev/null; echo; cat .context-circuit/VERSION 2>/dev/null
+Tool: Read $RUN/ws/workspace.yaml
+Tool: Read $RUN/ws/context/INDEX.md
+Tool: Read $RUN/ws/.context-circuit/docs/commands.md
+Tool: Read $RUN/ws/context/domains/invoices.md
+Tool: Read $RUN/ws/README.md
+Tool: Read $RUN/ws/context/glossary.md
+Tool: Read $RUN/ws/members.yaml

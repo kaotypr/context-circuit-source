@@ -1,0 +1,5 @@
+Tool: command_execution /bin/zsh -lc "cat members.yaml member.local.yaml repositories.local.yaml workspace.yaml && printf '\\n--- CLI ---\\n' && sh .context-circuit/cli status"
+Tool: command_execution /bin/zsh -lc "cat .context-circuit/extensions.yaml extensions.yaml 2>/dev/null; cat plans/p1000-invoice-csv-export/plan.md; find .worktrees/p1000/api -maxdepth 2 -name AGENTS.md -o -name CLAUDE.md; rg -n \"parity|verifier\
+Tool: command_execution /bin/zsh -lc 'cat .agents/skills/cc-review/SKILL.md .agents/skills/cc-dispatch/SKILL.md; cat extensions/parity/roles/parity-verifier.md; cat extensions/parity/instructions/after-implement.md; cat .worktrees/p1000/api/AGENT
+Tool: command_execution /bin/zsh -lc "find extensions/parity -maxdepth 3 -type f -print; cat .context-circuit/docs/agents.md; sh .context-circuit/cli --json agent dispatch --host codex --role x-parity-parity-verifier --plan p1000 --repo api --pat
+Tool: command_execution /bin/zsh -lc 'cat extensions/parity/extension.yaml; sh .context-circuit/cli extension hooks --stage review --when before --plan p1000'

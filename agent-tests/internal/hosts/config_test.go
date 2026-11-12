@@ -16,14 +16,14 @@ func TestLoadHosts(t *testing.T) {
 	if claude.Name != "claude" || claude.Model != "claude-haiku-5-5" || claude.Effort != "medium" || claude.Provisional {
 		t.Fatalf("%+v", claude)
 	}
-	if claude.Command != "claude" || claude.HostVersion != "2.1.304 (Claude Code)" || claude.MaxBudgetUSD != 3 {
+	if claude.Command != "claude" || claude.HostVersion != "2.1.308 (Claude Code)" || claude.MaxBudgetUSD != 3 {
 		t.Fatalf("%+v", claude)
 	}
 	if !reflectAuth(claude.AuthEnv, []string{"ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"}) {
 		t.Fatalf("auth %v", claude.AuthEnv)
 	}
 	codex := hosts["codex"]
-	if codex.Model != "gpt-6-luna" || codex.Effort != "medium" || codex.PriceRow != "gpt-6-luna" || codex.HostVersion != "codex-cli 0.164.0" {
+	if codex.Model != "gpt-6-luna" || codex.Effort != "medium" || codex.PriceRow != "gpt-6-luna" || codex.HostVersion != "codex-cli 0.167.1" {
 		t.Fatalf("%+v", codex)
 	}
 	cursor := hosts["cursor"]

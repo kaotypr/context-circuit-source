@@ -1,0 +1,10 @@
+Tool: Bash ls -la && ls plans/ && cat plans/p1000*/plan.md 2>/dev/null; ls plans/p1000* 2>/dev/null; cat workspace.yaml member.local.yaml repositories.local.yaml 2>/dev/null
+Tool: Bash cat .agents/skills/cc-worktree/SKILL.md; echo ----; cat extensions.yaml; echo ----; sh .context-circuit/cli status 2>&1 | head -60; echo ----; sh .context-circuit/cli extension hooks --stage implement --when before 2>&1 | head -60
+Tool: Bash sh .context-circuit/cli worktree prepare --repo api --plan p1000 2>&1
+Tool: Bash sh .context-circuit/cli extension hooks --stage implement --when before --plan p1000 --repo api 2>&1; echo ----; W=.worktrees/p1000/api; cat $W/AGENTS.md $W/CLAUDE.md 2>/dev/null; ls -la $W; find $W -path '*/.git' -prune -o -type f -pr
+Tool: Bash cd $RUN/ws/.worktrees/p1000/api && cat go.mod && for f in internal/invoice/*.go; do echo "=== $f"; cat $f; done; git status --short; git log --oneline | head -5; which go && go version
+Tool: Bash go test ./... 2>&1 | tail -5
+Tool: Bash sh $RUN/ws/.context-circuit/cli extension hooks --stage implement --when before --plan p1000 --repo api >/dev/null 2>&1; cat > internal/invoice/csv.go <<'EOF' package invoice  import ( 	"encoding/csv" 	"io" 	"strconv" )  // WriteCSV wr
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli extension hooks --stage implement --when after --plan p1000 --repo api 2>&1; cd .worktrees/p1000/api && git add internal/invoice/csv.go internal/invoice/csv_test.go && git commit -q -m "feat(invoic
+Tool: Bash cd $RUN/ws && cat extensions/parity/instructions/after-implement.md; echo ----; sh .context-circuit/cli extension hooks --help 2>&1 | head -5; ls extensions/parity
+Tool: Bash cd $RUN/ws/.worktrees/p1000/api && git diff d82563a 769c367 --stat && git diff d82563a 769c367 -- internal/invoice/export.go invoice.go | wc -l && go test ./... -run 'TestWriteCSV|TestTextSummary' -v 2>&1 | tail -8
