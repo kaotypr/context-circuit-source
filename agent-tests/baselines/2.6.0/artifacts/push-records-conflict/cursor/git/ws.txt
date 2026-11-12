@@ -1,0 +1,19 @@
+git status --porcelain
+UU intent/i100-invoice-csv-export.md
+
+git worktree list
+$RUN/ws  f2f143a (detached HEAD)
+
+git branch -a -vv
+* (no branch, rebasing main) f2f143a docs: ask whether voided invoices are exported
+  main                       9ef6145 [origin/main: ahead 1, behind 1] chore: approve invoice CSV export intent
+  remotes/origin/main        f2f143a docs: ask whether voided invoices are exported
+
+git log --all --not 7a083b1b59d1e602994cb512834f3cb10c03e7fc --format=%h %s
+9ef6145 chore: approve invoice CSV export intent
+f2f143a docs: ask whether voided invoices are exported
+
+git diff --stat
+ intent/i100-invoice-csv-export.md | Unmerged
+ intent/i100-invoice-csv-export.md | 9 +++++++++
+ 1 file changed, 9 insertions(+)

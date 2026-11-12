@@ -1,0 +1,3 @@
+Execution is stopped by the `contract` extension: its before-implement check failed because **2 of 14 orders-service behaviors differ from the recorded contract**. The extension’s `on_failure: stop` requires taking this to you; I made no code changes.
+
+The `p1000` API worktree was prepared at `.worktrees/p1000/api` on branch `cc/p1000/api`, starting from `main`. The extension says not to rerun the hook until you decide how to proceed.

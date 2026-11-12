@@ -1,0 +1,9 @@
+Tool: Bash sh .context-circuit/cli status 2>&1; echo "---"; sh .context-circuit/cli record --help 2>&1 | head -60; echo "---"; ls plans 2>&1; cat member.local.yaml 2>&1; cat members.yaml 2>&1
+Tool: Read $RUN/ws/.agents/skills/cc-complete/SKILL.md
+Tool: Bash sh .context-circuit/cli --json record complete --id p1000 --text 'Person reported that the p1000 changes were merged into main in the api repository and asked for the plan to be marked completed.' 2>&1
+Tool: Bash cat plans/p1000-invoice-csv-export/plan.md; echo "--- notes"; ls context; cat context/domains/billing/invoice-lifecycle.md context/domains/invoices.md 2>&1
+Tool: Bash cat context/INDEX.md; echo "---"; find context -type f; echo "---"; cat context/glossary.md; echo "--- cli check"; sh .context-circuit/cli check 2>&1 | head -40
+Tool: Bash cd $RUN/ws/repositories/api 2>&1 && git log --oneline -5 main 2>&1; git ls-tree -r --name-only main -- internal/invoice 2>&1; git show main:internal/invoice/ 2>/dev/null | head; for f in $(git ls-tree -r --name-only main -- internal/in
+Tool: Edit $RUN/ws/context/domains/invoices.md
+Tool: Edit $RUN/ws/context/INDEX.md
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli check 2>&1; echo "---"; git status --short

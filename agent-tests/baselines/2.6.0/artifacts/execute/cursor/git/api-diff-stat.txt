@@ -1,0 +1,4 @@
+git diff --stat main...cc/p1000/api
+ internal/invoice/csv.go      | 29 +++++++++++++++++++++++++++++
+ internal/invoice/csv_test.go | 27 +++++++++++++++++++++++++++
+ 2 files changed, 56 insertions(+)

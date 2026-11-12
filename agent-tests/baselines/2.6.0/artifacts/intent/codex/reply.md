@@ -1,0 +1,3 @@
+I wrote the intent for your review: [i100 — Let customers download invoices as CSV]($PRIVATE/agent-test-3715173981/ws/intent/i100-customer-invoice-csv-download.md).
+
+It keeps the existing plain-text summary and invoice lifecycle unchanged, and asks you to decide whether a download covers all accessible invoices or one invoice, and how to represent line items. Reply with your answers by number, or tell me what to revise. I’ll wait for your approval before planning or building.

@@ -1,0 +1,12 @@
+Tool: command_execution /bin/zsh -lc 'cat .agents/skills/cc-worktree/SKILL.md && cat .agents/skills/cc-writing/SKILL.md && cat .context-circuit/docs/commands.md && cat members.yaml && cat member.local.yaml && cat workspace.yaml && cat repositorie
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli status --json && sh .context-circuit/cli record order --plan p1000 --json'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli worktree prepare --repo api --plan p1000 --json'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli extension hooks --stage implement --when before --plan p1000 --repo api --json && find .worktrees/p1000/api -name AGENTS.md -o -name CLAUDE.md && git -C .worktrees/p1000/api status --s
+Tool: command_execution /bin/zsh -lc 'cat .worktrees/p1000/api/AGENTS.md && cat .worktrees/p1000/api/internal/invoice/invoice.go && cat .worktrees/p1000/api/internal/invoice/export.go && cat .worktrees/p1000/api/internal/invoice/export_test.go &&
+Tool: command_execution /bin/zsh -lc "rg \"WriteCSV|CSV|csv\" .worktrees/p1000/api --glob '"'!sources/**'"' --glob '*.go' && cat .worktrees/p1000/api/go.mod"
+Tool: command_execution /bin/zsh -lc 'cat .worktrees/p1000/api/go.mod'
+Tool: command_execution /bin/zsh -lc "cat > .worktrees/p1000/api/internal/invoice/csv.go <<'EOF' package invoice  import ( 	\"encoding/csv\" 	\"io\" 	\"strconv\" )  // WriteCSV writes invoices as CSV with their totals in cents. func WriteCSV(w io
+Tool: command_execution /bin/zsh -lc "cat > internal/invoice/csv.go <<'EOF' package invoice  import ( 	\"encoding/csv\" 	\"io\" 	\"strconv\" )  // WriteCSV writes invoices as CSV with their totals in cents. func WriteCSV(w io.Writer, invoices []I
+Tool: command_execution /bin/zsh -lc 'git status --short && git diff --check && git diff -- internal/invoice/csv.go internal/invoice/csv_test.go && git add internal/invoice/csv.go internal/invoice/csv_test.go && git commit -m "feat(invoice): add 
+Tool: command_execution /bin/zsh -lc "sh .context-circuit/cli extension hooks --stage implement --when after --plan p1000 --repo api --json && git -C .worktrees/p1000/api status --short && git -C .worktrees/p1000/api log -1 --format='%h %s'"
+Tool: command_execution /bin/zsh -lc 'cat extensions/parity/instructions/after-implement.md'

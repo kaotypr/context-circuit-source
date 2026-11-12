@@ -1,0 +1,3 @@
+Executed p1000 in the `api` worktree. Added `CSVExport` with a header and invoice rows containing number, customer, status, and total in cents, plus a test for one issued invoice.
+
+`go test ./...` passed. The change is committed as `1984a29` (`feat(invoice): add CSV export`), and the worktree is clean. The after-implement hook reported the allowed `repair-loop` override; its verifier found the export clean on round 1, so no repair was needed.

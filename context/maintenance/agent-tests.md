@@ -27,11 +27,11 @@ reported as inconclusive and never counted as a pass.
 
 Three hosts are supported: Claude Code, Codex, and Cursor. A result is only
 meaningful as a statement about one host, one model, and one date: host H, model
-M, k of N runs passed, on date D. The 2.5.0 baseline, under
-`agent-tests/baselines/2.5.0/`, confirmed the pinned models and host versions:
+M, k of N runs passed, on date D. The 2.6.0 baseline, under
+`agent-tests/baselines/2.6.0/`, confirmed the pinned models and host versions:
 Claude Code with claude-haiku-5-5, Codex with gpt-6-luna, and Cursor with
-grok-4.7-low, one run per scenario per host on 2026-10-29. The validation note
-cites its result.
+grok-4.7-low, one run per scenario per host on 2026-11-11 and 2026-11-12. The
+validation note cites its result.
 
 ## Why it is not CI
 

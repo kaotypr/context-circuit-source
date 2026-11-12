@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  8b84c74 [main]
+
+git branch -a -vv
+* main                8b84c74 chore: plan with the contract extension
+  remotes/origin/main eb9aa8f chore: fixture
+
+git log --all --not 8b84c74775cf0634ee3c8644dd9c7b542dc66b19 --format=%h %s
+
+git diff --stat

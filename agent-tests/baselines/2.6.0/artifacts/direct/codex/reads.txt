@@ -1,0 +1,4 @@
+Tool: command_execution /bin/zsh -lc "pwd && cat members.yaml && printf '\\n--- member.local.yaml ---\\n' && cat member.local.yaml && printf '\\n--- repositories.local.yaml ---\\n' && cat repositories.local.yaml && printf '\\n--- README candidate
+Tool: command_execution /bin/zsh -lc "cat .agents/skills/cc-direct/SKILL.md && printf '\\n--- api files ---\\n' && rg --files repositories/api -g 'AGENTS.md' -g 'CLAUDE.md' -g '*README*' -g '"'!sources/**'"' && printf '\\n--- api status ---\\n' &
+Tool: command_execution /bin/zsh -lc "cat repositories/api/AGENTS.md && printf '\\n--- typo occurrences ---\\n' && rg -n -i 'recieve|receive' repositories/api/README.md"
+Tool: command_execution /bin/zsh -lc "python3 -c \"from pathlib import Path; p=Path('repositories/api/README.md'); s=p.read_text(); old='Customers recieve a text summary of each invoice.'; new='Customers receive a text summary of each invoice.'; 

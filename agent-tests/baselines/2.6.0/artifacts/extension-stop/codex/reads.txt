@@ -1,0 +1,4 @@
+Tool: command_execution /bin/zsh -lc "pwd && rg --files -g 'members.yaml' -g 'member.local.yaml' -g 'workspace.yaml' -g 'repositories.local.yaml' -g 'context/INDEX.md' -g 'AGENTS.md' -g 'plan.md' -g 'CLI_VERSION' -g 'commands.md' | sort"
+Tool: command_execution /bin/zsh -lc 'cat members.yaml member.local.yaml workspace.yaml repositories.local.yaml && cat plans/p1000-invoice-csv-export/plan.md && cat .context-circuit/CLI_VERSION && sh .context-circuit/cli status'
+Tool: command_execution /bin/zsh -lc 'cat context/INDEX.md && cat .agents/skills/cc-worktree/SKILL.md && cat .context-circuit/docs/extensions.md && sh .context-circuit/cli extension hooks --stage implement --when before && sh .context-circuit/cli
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli extension hooks --stage implement --when before --plan p1000 && sh .context-circuit/cli worktree prepare --repo api --plan p1000'

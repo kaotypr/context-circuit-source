@@ -1,0 +1,4 @@
+Tool: command_execution /bin/zsh -lc 'cat .agents/skills/ff/SKILL.md && cat members.yaml && cat member.local.yaml && cat repositories.local.yaml && cat workspace.yaml'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli --json status'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli --json repo sync'
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli --json workspace sync'

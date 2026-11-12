@@ -1,0 +1,3 @@
+Tool: Read $RUN/ws/.agents/skills/ff/SKILL.md
+Tool: Bash sh .context-circuit/cli --json repo sync
+Tool: Bash sh .context-circuit/cli --json workspace sync

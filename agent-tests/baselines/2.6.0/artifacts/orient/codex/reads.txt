@@ -1,0 +1,3 @@
+Tool: command_execution /bin/zsh -lc "pwd && cat workspace.yaml && printf '\\n--- repositories.local.yaml ---\\n' && cat repositories.local.yaml && printf '\\n--- members.yaml ---\\n' && cat members.yaml && printf '\\n--- member.local.yaml ---\\n
+Tool: command_execution /bin/zsh -lc "cat .context-circuit/CLI_VERSION && printf '\\n--- launcher docs ---\\n' && sed -n '1,180p' .context-circuit/docs/commands.md && printf '\\n--- context index ---\\n' && if test -f context/INDEX.md; then cat c
+Tool: command_execution /bin/zsh -lc "cat context/domains/invoices.md && printf '\\n--- bound repositories ---\\n' && ls -la repositories && printf '\\n--- launcher file ---\\n' && sed -n '1,100p' .context-circuit/cli"

@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  0c42ed0 [main]
+
+git branch -a -vv
+* main                0c42ed0 chore: plan with the qa extensions
+  remotes/origin/main 404a48a chore: fixture
+
+git log --all --not 0c42ed0e876785d9b56b909529cc2c0d3f43bd49 --format=%h %s
+
+git diff --stat

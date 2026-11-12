@@ -1,0 +1,13 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws/repositories/handbook  6a4926b [main]
+
+git branch -a -vv
+* main                6a4926b [origin/main] docs: invoice numbering
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main 6a4926b docs: invoice numbering
+
+git log --all --not 6a4926b0f73dc68f8bdb7e7b94e269ae2019f55b --format=%h %s
+
+git diff --stat

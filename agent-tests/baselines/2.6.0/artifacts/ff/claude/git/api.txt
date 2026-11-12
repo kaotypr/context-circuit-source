@@ -1,0 +1,14 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws/repositories/api  8303579 [main]
+
+git branch -a -vv
+* main                8303579 docs: mention resending invoices
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main 8303579 docs: mention resending invoices
+
+git log --all --not d82563a2d2393e6ddc3fcb6c0f27b7a13b736160 --format=%h %s
+8303579 docs: mention resending invoices
+
+git diff --stat

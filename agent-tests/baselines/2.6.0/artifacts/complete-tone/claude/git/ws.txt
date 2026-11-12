@@ -1,0 +1,15 @@
+git status --porcelain
+ M plans/p1000-invoice-csv-export/plan.md
+
+git worktree list
+$RUN/ws  e2a6826 [main]
+
+git branch -a -vv
+* main                e2a6826 chore: plan
+  remotes/origin/main fc0183c chore: fixture
+
+git log --all --not e2a68262e1002e540b2abb96cada3735f283d344 --format=%h %s
+
+git diff --stat
+ plans/p1000-invoice-csv-export/plan.md | 5 +++++
+ 1 file changed, 5 insertions(+)

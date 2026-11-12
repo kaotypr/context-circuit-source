@@ -1,0 +1,10 @@
+Tool: Bash ls -la && ls plans/ && ls plans/p1000* && cat plans/p1000*/plan.md && cat members.yaml member.local.yaml repositories.local.yaml 2>/dev/null
+Tool: Bash cat .agents/skills/cc-worktree/SKILL.md && sh .context-circuit/cli status 2>&1 | head -60 && ls repositories/api && git -C repositories/api status && git -C repositories/api branch -a && git -C repositories/api worktree list
+Tool: Bash sh .context-circuit/cli worktree prepare --repo api --plan p1000 2>&1; echo "---"; sh .context-circuit/cli extension hooks --stage implement --when before 2>&1
+Tool: Bash cd $RUN/ws/.worktrees/p1000/api && cat AGENTS.md && cat README.md | head -40 && ls -R internal && cat internal/invoice/*.go && cat go.mod && sh $RUN/ws/.context-circuit/cli extension hooks --stage implement --when before --plan p1000 -
+Tool: Bash cat internal/invoice/export.go && echo ---- && cat internal/invoice/export_test.go && echo ---- && git log --oneline -5 && which go && go version && git status
+Tool: Write $RUN/ws/.worktrees/p1000/api/internal/invoice/csv.go
+Tool: Write $RUN/ws/.worktrees/p1000/api/internal/invoice/csv_test.go
+Tool: Bash gofmt -l ./internal/invoice; go test ./... 2>&1; echo "exit=$?"
+Tool: Bash git add internal/invoice/csv.go internal/invoice/csv_test.go && git commit -q -m "feat(invoice): csv export" && git log --oneline -2 && git status --short && cd ../../.. && sh .context-circuit/cli extension hooks --stage implement --wh
+Tool: Bash cat extensions/publish-branch/instructions/after-implement.md; echo ---; cat extensions.yaml

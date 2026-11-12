@@ -1,0 +1,13 @@
+git status --porcelain
+?? notes.txt
+
+git worktree list
+$RUN/ws  1df21c7 [main]
+
+git branch -a -vv
+* main                1df21c7 chore: fixture
+  remotes/origin/main 1df21c7 chore: fixture
+
+git log --all --not 1df21c7f16d6803cfc9d2eee2e4e91722cdab21f --format=%h %s
+
+git diff --stat

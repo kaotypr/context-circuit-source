@@ -1,0 +1,5 @@
+Tool: Skill
+Tool: Bash sh .context-circuit/cli status && ls plans/ && cat plans/p1000*/plan.md 2>/dev/null | head -80
+Tool: Read $RUN/ws/.agents/skills/cc-complete/SKILL.md
+Tool: Bash sh .context-circuit/cli --json record complete --id p1000 --text 'Pengguna meminta penyelesaian setelah pekerjaan p1000 digabungkan ke main di repositori api.'
+Tool: Bash sh .context-circuit/cli check; echo "exit=$?"; tail -5 plans/p1000-invoice-csv-export/plan.md

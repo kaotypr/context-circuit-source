@@ -1,0 +1,8 @@
+I didn't change anything, because the wrong claim isn't in your knowledge to fix. It lives in the mounted handbook, which this workspace treats as read-only.
+
+- **Where the claim is:** the handbook's `numbering.md` (remote commit `6a4926b`, "docs: invoice numbering") says: "Invoice numbers are global and never restart. A number identifies one invoice for the whole life of the business. A later year does not start again at 1."
+- **Why I left it:** `workspace.yaml` mounts the handbook as a knowledge repository. Our rules say borrowed knowledge is changed only through that repository's own review. I can't edit, commit to, or push it from here, and I can't record a correction of it in `context/`.
+- **Our own notes:** `context/domains/invoices.md` covers voiding and credit notes and says nothing about numbering, so nothing local is wrong. `check` passes with no issues. I didn't add anything to `context/`, because a local numbering note would duplicate the handbook and contradict it.
+- **What I did not verify:** I didn't check the code for how numbers are generated, so the yearly restart is your statement, not something I confirmed.
+
+To get future work right, the handbook needs the fix upstream. I can draft the replacement `numbering.md` text for that review. To do it accurately I need the new rule: does the year become part of the number (for example `2026-0001`), or does the sequence restart each calendar year with the year kept separately?

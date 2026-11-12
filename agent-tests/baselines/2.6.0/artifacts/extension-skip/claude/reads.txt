@@ -1,0 +1,10 @@
+Tool: Bash ls -la && ls plans/ 2>/dev/null && cat members.yaml 2>/dev/null; echo "---"; cat member.local.yaml 2>/dev/null; echo "---"; cat repositories.local.yaml 2>/dev/null; echo "---"; sh .context-circuit/cli status 2>&1 | head -60
+Tool: Bash find plans -type f 2>/dev/null | head -50; echo "---"; cat plans/p1000*/plan.md 2>/dev/null
+Tool: Bash cat .agents/skills/cc-worktree/SKILL.md; echo ---; cat .context-circuit/docs/commands.md | grep -n -A3 -i "worktree" | head -80; echo ---; cat intent/*/i100* 2>/dev/null | head -60; ls intent/*; echo ---; cat extensions.yaml; cat .cont
+Tool: Bash sh .context-circuit/cli worktree prepare --repo api --plan p1000 2>&1; echo "exit=$?"
+Tool: Bash sh .context-circuit/cli extension hooks --stage implement --when before --plan p1000 --repo api 2>&1; echo "exit=$?"; echo ---; cd .worktrees/p1000/api && cat AGENTS.md CLAUDE.md 2>/dev/null; ls; find internal/invoice -type f; cat inte
+Tool: Bash which go && go version; go test ./... 2>&1 | tail -5; git status --short; git log --oneline -3
+Tool: Bash cat > internal/invoice/export.go <<'EOF' package invoice  import ( 	"encoding/csv" 	"fmt" 	"io" 	"strconv" )  // TextSummary renders one invoice as a single plain-text line. // CODE-CANARY-41b2 func TextSummary(i Invoice) string { 	ret
+Tool: Bash git add internal/invoice/export.go internal/invoice/export_test.go && git commit -q -m "feat(invoice): add CSV export" && git log --oneline -2 && git status --short && cd ../../.. && sh .context-circuit/cli extension hooks --stage impl
+Tool: Bash cat extensions/parity/instructions/after-implement.md; echo ---; ls extensions/parity; cat .context-circuit/docs/customization.md | head -60
+Tool: Bash grep -n "^## " plans/p1000-invoice-csv-export/plan.md; echo "exit=$?"; cd .worktrees/p1000/api && go test ./... 2>&1 | tail -2 && git status --short && echo clean

@@ -1,0 +1,9 @@
+Tool: glob **/*csv* $PRIVATE/agent-test-1135961160/ws
+Tool: grep repair|csv-check|csv_check $PRIVATE/agent-test-1135961160/ws
+Tool: read $PRIVATE/agent-test-1135961160/ws/extensions/csv-check/instructions/repair-loop.md
+Tool: read $PRIVATE/agent-test-1135961160/ws/extensions/csv-check/extension.yaml
+Tool: read $PRIVATE/agent-test-1135961160/ws/.context-circuit/docs/customization.md
+Tool: read $PRIVATE/agent-test-1135961160/ws/.agents/skills/cc-dispatch/SKILL.md
+Tool: read $PRIVATE/agent-test-1135961160/ws/extensions.yaml
+Tool: read $PRIVATE/agent-test-1135961160/ws/.agents/skills/cc-dispatch/SKILL.md
+Tool: shell sh .context-circuit/cli --json status
