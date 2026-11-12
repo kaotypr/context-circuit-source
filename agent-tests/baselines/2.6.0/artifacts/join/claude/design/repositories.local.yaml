@@ -1,0 +1,7 @@
+workspace:
+  path: .
+  base_branch: main
+bindings:
+  api:
+    path: $RUN/ws2/repositories/api
+    base_branch: main

@@ -1,0 +1,2 @@
+Tool: command_execution /bin/zsh -lc 'sh .context-circuit/cli status'
+Tool: command_execution /bin/zsh -lc 'cat .agents/skills/ff/SKILL.md && cat .agents/skills/cc-complete/SKILL.md'

@@ -1,0 +1,7 @@
+Tool: Bash ls -la && echo --- && cat members.yaml 2>/dev/null; echo ---; cat member.local.yaml 2>/dev/null; echo ---; ls intents plans 2>/dev/null; echo ---; git status --short; echo ---; cat .context-circuit/CLI_VERSION 2>/dev/null
+Tool: Bash find . -path ./.git -prune -o -name 'i100*' -print; sh .context-circuit/cli status 2>&1 | head -60
+Tool: Bash cat intent/i100-invoice-csv-export.md; echo ---; sh .context-circuit/cli record approve --help 2>&1 | head -40; echo ---; grep -n -i -A3 'approve' .context-circuit/docs/commands.md | head -60
+Tool: Bash sh .context-circuit/cli record approve --id i100 --text 'Maya approved the intent as written, after reading it.' 2>&1; echo "exit=$?"; echo ---; git status --short; echo ---; git diff
+Tool: Bash git add intent/i100-invoice-csv-export.md && git commit -q -m "chore: approve intent i100 for invoice CSV export" && git log --oneline -1 && echo --- && git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>&1; git remote -v; echo ---
+Tool: Bash git fetch origin 2>&1; echo ---; git log --oneline HEAD..origin/main; echo ---; git diff --stat HEAD...origin/main; echo ---; git log --oneline origin/main..HEAD
+Tool: Bash git show origin/main -- intent/i100-invoice-csv-export.md; echo ---; git show origin/main --stat --format='%an %ad%n%s%n%b' | head -8

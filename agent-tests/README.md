@@ -299,9 +299,9 @@ who reviews, asks because a result is borderline. `--runs` defaults to 1.
 ## What "before" is
 
 The before side is a committed baseline when your host version and model match
-`hosts.yaml`. The current one is `baselines/2.5.0/`, recorded on the frozen
-2.5 release branch with every pin in `hosts.yaml`. Pass it as
-`report --baseline baselines/2.5.0`.
+`hosts.yaml`. The current one is `baselines/2.6.0/`, recorded on the frozen
+2.6 release branch with every pin in `hosts.yaml`. Pass it as
+`report --baseline baselines/2.6.0`.
 
 When your host version or model differs from the baseline's, run the base ref
 and your branch alternately on the same machine. Pass `--base` with the pull request's target branch. With
@@ -472,7 +472,7 @@ warning shows the change to one decimal place, so a rise of 15.1% does not
 display as 15%. Pass ranks above inconclusive, and inconclusive ranks above
 fail, which is how "lower" is decided.
 
-The model pins in `hosts.yaml` were confirmed by the 2.5.0 baseline. A pin
+The model pins in `hosts.yaml` were confirmed by the 2.6.0 baseline. A pin
 marked `provisional: true` is one no baseline has run yet, and `probe` and a
 dry run say so: `provisional: not yet confirmed by a baseline run`. Claude Code and Codex are
 pinned at effort `medium`. Cursor omits the effort flag, and the report shows

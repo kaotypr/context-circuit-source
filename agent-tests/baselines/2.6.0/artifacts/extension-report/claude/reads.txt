@@ -1,0 +1,12 @@
+Tool: Bash ls -la && ls plans/ 2>/dev/null && find plans -maxdepth 3 -type f | head -50 && cat workspace.yaml 2>/dev/null | head -60 && cat member.local.yaml 2>/dev/null && cat repositories.local.yaml 2>/dev/null
+Tool: Bash cat plans/p1000-invoice-csv-export/plan.md && echo ---- && cat members.yaml && echo ---- && cat extensions.yaml && echo ---- && ls repositories/ repositories/api | head && git -C repositories/api status | head -5 && git -C repositories
+Tool: Bash cat .agents/skills/cc-worktree/SKILL.md && echo ---- && sh .context-circuit/cli status 2>&1 | head -60
+Tool: Bash sh .context-circuit/cli worktree prepare --repo api --plan p1000 2>&1
+Tool: Bash sh .context-circuit/cli extension hooks --stage implement --when before --plan p1000 --repo api 2>&1; echo ----; cat repositories/../.worktrees/p1000/api/AGENTS.md 2>/dev/null | head -80; echo ----; ls .worktrees/p1000/api; ls .worktre
+Tool: Bash cd $RUN/ws/.worktrees/p1000/api && cat internal/invoice/invoice.go && echo ---- && cat internal/invoice/export.go && echo ---- && cat internal/invoice/export_test.go && echo ---- && cat internal/invoice/invoice_test.go && echo ---- && 
+Tool: Write $RUN/ws/.worktrees/p1000/api/internal/invoice/csv.go
+Tool: Write $RUN/ws/.worktrees/p1000/api/internal/invoice/csv_test.go
+Tool: Bash gofmt -l ./internal && go vet ./... && go test ./... 2>&1
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli extension hooks --stage implement --when after --plan p1000 --repo api 2>&1; echo ----; cd .worktrees/p1000/api && git add internal/invoice/csv.go internal/invoice/csv_test.go && git commit -q -m "
+Tool: Bash cd $RUN/ws && ls -R extensions | head -30 && cat extensions/style/*.yaml extensions/style/*.md 2>/dev/null | head -80; find extensions/style -type f -name '*' | head; 
+Tool: Bash cat extensions/style/extension.yaml && echo ---- && cat extensions/style/scripts/hook.sh

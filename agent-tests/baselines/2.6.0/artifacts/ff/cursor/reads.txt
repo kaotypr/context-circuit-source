@@ -1,0 +1,1 @@
+Tool: shell sh .context-circuit/cli --json repo sync && sh .context-circuit/cli --json workspace sync

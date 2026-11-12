@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  fde9803 [main]
+
+git branch -a -vv
+* main                fde9803 chore: fixture
+  remotes/origin/main fde9803 chore: fixture
+
+git log --all --not fde980350f20648f5a72d6fdcf024c488ceb898f --format=%h %s
+
+git diff --stat

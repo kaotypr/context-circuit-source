@@ -1,0 +1,15 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  1aa4c5a [main]
+
+git branch -a -vv
+* main                1aa4c5a [origin/main] chore(intent): approve i100 invoice CSV export
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/main 1aa4c5a chore(intent): approve i100 invoice CSV export
+
+git log --all --not c33c7c0cc7e43f36d0cd1be34e4db4b844298e12 --format=%h %s
+1aa4c5a chore(intent): approve i100 invoice CSV export
+a111c09 chore: plan invoice numbering
+
+git diff --stat

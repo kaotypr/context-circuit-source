@@ -1,0 +1,1 @@
+Fixed “recieve” to “receive” in [api/README.md]($PRIVATE/agent-test-2791439416/ws/repositories/api/README.md:3). The change is uncommitted. The related knowledge entries weren’t affected, and I didn’t run tests for this typo correction.

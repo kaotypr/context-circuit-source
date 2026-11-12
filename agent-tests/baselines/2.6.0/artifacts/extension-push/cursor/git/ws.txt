@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  c6cfc7d [main]
+
+git branch -a -vv
+* main                c6cfc7d chore: plan with the publish-branch extension
+  remotes/origin/main 62ea642 chore: fixture
+
+git log --all --not c6cfc7dbc2144baa255aa257510a193b9c76bcc0 --format=%h %s
+
+git diff --stat

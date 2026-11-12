@@ -1,0 +1,19 @@
+git status --porcelain
+ M context/INDEX.md
+ M context/domains/invoices.md
+ M plans/p1000-invoice-csv-export/plan.md
+
+git worktree list
+$RUN/ws  dde84b3 [main]
+
+git branch -a -vv
+* main                dde84b3 chore: plan
+  remotes/origin/main c5ef9d4 chore: fixture
+
+git log --all --not dde84b3b050da48468c929e969c7a505c935b2d4 --format=%h %s
+
+git diff --stat
+ context/INDEX.md                       | 2 +-
+ context/domains/invoices.md            | 4 ++--
+ plans/p1000-invoice-csv-export/plan.md | 7 +++++++
+ 3 files changed, 10 insertions(+), 3 deletions(-)

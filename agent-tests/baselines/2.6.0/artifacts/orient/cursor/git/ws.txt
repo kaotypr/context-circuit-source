@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  11a5d82 [main]
+
+git branch -a -vv
+* main                11a5d82 chore: fixture
+  remotes/origin/main 11a5d82 chore: fixture
+
+git log --all --not 11a5d82cd73949abdddefa63a61f8d70200c4739 --format=%h %s
+
+git diff --stat

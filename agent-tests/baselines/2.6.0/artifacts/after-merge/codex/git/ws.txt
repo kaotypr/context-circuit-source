@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  fe36d4a [main]
+
+git branch -a -vv
+* main                fe36d4a chore: plan
+  remotes/origin/main 499a810 chore: fixture
+
+git log --all --not fe36d4a63bdf63fbee76df8d8e9b3eabecb43371 --format=%h %s
+
+git diff --stat

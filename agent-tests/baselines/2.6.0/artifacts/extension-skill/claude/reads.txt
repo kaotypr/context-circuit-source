@@ -1,0 +1,10 @@
+Tool: Skill
+Tool: Read $RUN/ws/.agents/skills/x-qa-pass-qa/SKILL.md
+Tool: Bash sh .context-circuit/cli extension hooks --stage qa-pass/qa --when before --plan p1000
+Tool: Bash git worktree list && sh .context-circuit/cli worktree --help 2>&1 | head -40
+Tool: Bash ls plans/ 2>&1; ls plans/p1000* 2>&1; sh .context-circuit/cli help worktree 2>&1 | head -40; git branch -a
+Tool: Bash cat plans/p1000-invoice-csv-export/plan.md; ls -la plans/p1000-invoice-csv-export; cat repositories.local.yaml 2>&1; cat workspace.yaml | head -60
+Tool: Bash sh .context-circuit/cli worktree list --repo api 2>&1; git -C repositories/api worktree list 2>&1; git -C repositories/api branch -a 2>&1
+Tool: Bash cd $RUN/ws/.worktrees/p1000/api && go vet ./... 2>&1; echo "VET_EXIT=$?"; go test ./... 2>&1; echo "TEST_EXIT=$?"
+Tool: Bash cd $RUN/ws && sh .context-circuit/cli extension hooks --stage qa-pass/qa --when after --plan p1000
+Tool: Bash cat extensions/qa-report/instructions/after-qa.md

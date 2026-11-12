@@ -1,0 +1,2 @@
+Tool: Read $RUN/ws/.agents/skills/ff/SKILL.md
+Tool: Bash ls plans/ && head -30 plans/p1000-*/plan.md && echo ---- && cat repositories.local.yaml 2>/dev/null; echo ----; grep -n -A4 'api' workspace.yaml | head -30

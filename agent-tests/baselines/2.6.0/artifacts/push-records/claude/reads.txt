@@ -1,0 +1,9 @@
+Tool: Bash cat intent/i100-invoice-csv-export.md && echo ---MEMBERS && cat members.yaml && echo ---LOCAL && cat member.local.yaml && echo ---DIFF && git diff && echo ---CMDS && sed -n '1,200p' .context-circuit/docs/commands.md | grep -n -A6 -i 'r
+Tool: Bash sh .context-circuit/cli record approve --id i100 --text 'User approved the intent as written: customers can download their invoices as CSV from the api, in internal/invoice.' ; echo EXIT=$?
+Tool: Bash git status --short && echo ---BRANCH && git branch -vv && echo ---REMOTE && git remote -v && echo ---LOG && git log --format='%h %an <%ae> %s' -3
+Tool: Bash git add -- .context-circuit/ids/maya.yaml intent/i100-invoice-csv-export.md && git commit -q -m "chore(intent): approve i100 invoice CSV export" && git log --format='%h %s' -1 && git push origin main 2>&1; echo PUSH_EXIT=$?; git status
+Tool: Bash git fetch -q origin && git log --format='%h %an %s' HEAD..origin/main && echo ---FILES && git diff --stat HEAD...origin/main && echo ---REBASE && git pull --rebase origin main 2>&1; echo PULL_EXIT=$?; git status --short
+Tool: Read $RUN/ws/.context-circuit/ids/maya.yaml
+Tool: Write $RUN/ws/.context-circuit/ids/maya.yaml
+Tool: Bash git add -- .context-circuit/ids/maya.yaml && GIT_EDITOR=true git rebase --continue 2>&1; echo REBASE_EXIT=$?; git status --short; echo ---CHECK; sh .context-circuit/cli check 2>&1; echo CHECK_EXIT=$?
+Tool: Bash git push origin main 2>&1; echo PUSH_EXIT=$?; git fetch -q origin && git status -sb | head -1 && git log --format='%h %s' -3 origin/main

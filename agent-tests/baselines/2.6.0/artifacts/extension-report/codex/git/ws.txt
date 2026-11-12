@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  93f40d8 [main]
+
+git branch -a -vv
+* main                93f40d8 chore: plan with the style extension
+  remotes/origin/main 584e3f4 chore: fixture
+
+git log --all --not 93f40d84d0c93e5a830a4db7c53ed7789e12a888 --format=%h %s
+
+git diff --stat

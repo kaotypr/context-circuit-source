@@ -1,0 +1,7 @@
+Tool: glob workspace.yaml
+Tool: glob context/**/*.md
+Tool: read $PRIVATE/agent-test-4087327256/ws/.context-circuit/docs/commands.md
+Tool: read $PRIVATE/agent-test-4087327256/ws/workspace.yaml
+Tool: read $PRIVATE/agent-test-4087327256/ws/context/INDEX.md
+Tool: read $PRIVATE/agent-test-4087327256/ws/context/domains/invoices.md
+Tool: read $PRIVATE/agent-test-4087327256/ws/.context-circuit/CLI_VERSION

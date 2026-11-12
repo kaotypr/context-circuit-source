@@ -1,0 +1,3 @@
+Maya, saya sudah menulis intent **Unduh invoice sebagai CSV melalui API** ([i100](<$RUN/ws/intent/i100-invoice-csv-download.md>)) untuk kamu tinjau sebelum ada yang mulai membangun.
+
+Intent ini menyebutkan bahwa customer dapat mengunduh invoice miliknya sebagai CSV melalui API, sementara aturan siklus invoice tetap berlaku. Satu hal masih perlu kamu putuskan: informasi apa saja yang harus masuk ke CSV? Rekomendasi saya adalah memakai informasi yang sudah ada di ringkasan invoice. Balas dengan jawaban atau perubahan yang kamu inginkan; setelah kamu menyetujui intent ini, kamu bisa meminta saya membuat plan.

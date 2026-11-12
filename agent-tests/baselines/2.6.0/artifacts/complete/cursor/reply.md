@@ -1,0 +1,9 @@
+A merge into main means I should follow the fast-forward path: offer to sync and mark the plan complete only after you confirm. I’ll read that skill and the completion skill first.You asked to mark p1000 complete after the api merge. I’ll complete that plan and leave the base-branch sync until you say to do it.The plan is marked complete. I’ll read the invoice notes the CLI named and decide whether the CSV export changes what they say.The invoices note still says export is plain text only, and the merged code now writes CSV as well. I’ll update that note and its catalog entry, then record that the void-versus-credit note is unchanged.The invoice CSV export plan (p1000) is complete. I recorded that you asked for that after it landed on `main` in the api repository, and the consistency check came back clean.
+
+The invoices note had said export was plain text only. The merged code also writes CSV — one row per invoice, with number, customer, status, and total in cents — so I updated that note and its catalog entry, and set the reviewed date to 2026-11-11. Voiding a draft versus crediting an issued invoice is the same as before.
+
+Those record and knowledge files are still uncommitted, so other clones cannot see them yet. Do you want me to commit and push them, or commit only?
+
+You also have two finished records that are not archived. I can archive those if you want. And I have not moved this machine's api `main` up to the remote yet. Say if you want that fast-forward as well.
+
+The Context Circuit plugin here is 0.5.0, with 0.2.2 installed. Update it with `/plugin marketplace update [private]-internal`, then `/plugin update context-circuit@[private]-internal`.

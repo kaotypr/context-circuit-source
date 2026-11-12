@@ -1,0 +1,6 @@
+Tool: Bash ls -la && find plans intents -type f 2>/dev/null | head -50 && cat .context-circuit/CLI_VERSION 2>/dev/null; cat members.yaml member.local.yaml 2>/dev/null; sh .context-circuit/cli status 2>&1 | head -60
+Tool: Bash cat plans/p1000-invoice-csv-export/plan.md && echo ---- && cat plans/README.md && echo ---- && cat extensions.yaml && ls sources intent context repositories repositories/*
+Tool: Bash cat .agents/skills/cc-worktree/SKILL.md | head -120; echo ----; sh .context-circuit/cli extension hooks --stage implement --when before 2>&1; echo ----; sh .context-circuit/cli worktree --help 2>&1 | head -40
+Tool: Bash sh .context-circuit/cli worktree prepare --repo api --plan p1000 2>&1; echo "exit=$?"
+Tool: Bash sh .context-circuit/cli extension hooks --stage implement --when before --plan p1000 --repo api 2>&1; echo "exit=$?"; cd .worktrees/p1000/api && cat AGENTS.md && echo ---- && cat README.md && find . -path ./.git -prune -o -type f -prin
+Tool: Bash git status --short && git log --oneline -3 && cat internal/invoice/export.go internal/invoice/export_test.go; echo ----; cd ../../../ && sed -n 1,80p extensions/contract/* 2>/dev/null | head -80; ls extensions/contract 2>/dev/null

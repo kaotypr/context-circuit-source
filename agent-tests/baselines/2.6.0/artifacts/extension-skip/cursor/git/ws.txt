@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  b49fce6 [main]
+
+git branch -a -vv
+* main                b49fce6 chore: plan with the parity extension
+  remotes/origin/main 020531f chore: fixture
+
+git log --all --not b49fce669a79d512781ee4f2f3b14967d416a73f --format=%h %s
+
+git diff --stat

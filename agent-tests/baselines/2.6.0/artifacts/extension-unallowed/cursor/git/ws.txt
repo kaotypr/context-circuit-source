@@ -1,0 +1,12 @@
+git status --porcelain
+
+git worktree list
+$RUN/ws  c7a4f74 [main]
+
+git branch -a -vv
+* main                c7a4f74 chore: plan with the notify extension
+  remotes/origin/main 95c09d7 chore: fixture
+
+git log --all --not c7a4f749b2c8600cbfc15635bcf5a8d1d973f8c5 --format=%h %s
+
+git diff --stat
