@@ -24,7 +24,7 @@ func (rt *runtime) writeGitState(ctx context.Context, w world.World, before scen
 			return err
 		}
 	}
-	if sc.ID == "execute" {
+	if sc.ID == "execute" || sc.ID == "execute-in-worktree" {
 		return rt.writeExecuteGit(ctx, w, dest, red)
 	}
 	return nil

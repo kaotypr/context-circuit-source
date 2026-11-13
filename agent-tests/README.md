@@ -521,6 +521,7 @@ until a baseline run exists.
 | `intent-tone` | the same with a preset tone: only that language's and that tone's reference files are read | `intent-record`, `intent-no-plan`, `intent-lang-body` | 120k-500k |
 | `plan` | planning an approved intent from real code, then stop | `plan-record`, `plan-linked` | 300k-1.5M |
 | `execute` | a plan run in a worktree on its own branch | `execute-worktree`, `execute-records-untouched`, `execute-tests-pass` | 0.5M-3M |
+| `execute-in-worktree` | the same plan run with the host started inside the plan's prepared worktree, not the workspace root: whether the launcher, the commit rules, the records, and attribution settings still hold from there | `execute-worktree`, `execute-records-untouched`, `execute-tests-pass` | 0.5M-3M |
 | `complete` | completion plus knowledge reconciliation, ending check-clean | `complete-plan-done`, `complete-note` | 200k-900k |
 | `complete-tone` | completion for a member with a language and a preset tone: the note takes the tone, the reconciled knowledge stays English with none | `complete-plan-done`, `complete-note` | 200k-900k |
 | `archive` | completion in a workspace with a legacy `archive/` folder: the rename to `_archive/` and the archive offer, made and not acted on unasked | `complete-plan-done`, `complete-note` | 200k-900k |
@@ -563,6 +564,15 @@ must equal what its remote holds, with HEAD on it and its earlier tip an
 ancestor, and the workspace's branch and its uncommitted `notes.txt` must stay
 unchanged. `after-merge-offered` requires the plan not completed, api's base
 branch unmoved, and a reply that offers both the sync and the completion.
+A scenario's `start_dir` is the host's working directory, a slash-separated
+path relative to the workspace; it must stay inside it and exist once setup has
+run. It moves only where the host starts: setup, `$WS`, snapshots, and grading
+still use the workspace, and `no-outside-writes` still exempts the whole
+workspace. Only `execute-in-worktree` sets it, to `.worktrees/p1000/api`, the
+worktree its setup prepared. Claude Code and Cursor start in that directory
+(Cursor with `--workspace` naming it), and Codex with `-C` naming it and the
+workspace named with `--add-dir`, so the sandbox keeps the workspace writable as
+a run started at its root does.
 `join` also snapshots the original checkout, under the keys `ws0` and
 `ws0/<repo>`, so a commit left there fails `no-stray-commits`, and a file
 written there fails `no-outside-writes`.
@@ -593,7 +603,7 @@ fixtures, so a changed scenario starts its own history.
 Each run directory holds the raw stream, the reply, the reads list, snapshots,
 `check.json`, `check-before.json`, the files the agent changed, the scenario's
 design artifacts, and Git state per repository under `artifacts/git/`. For
-`execute`, that also includes `api-diff-stat.txt`, a `git diff --stat` from
+`execute` and `execute-in-worktree`, that also includes `api-diff-stat.txt`, a `git diff --stat` from
 `main` to the plan branch, and `api-log.txt`, that branch's commit messages
 from `git log` with `--format=%B`. `reproduce.txt` is a date comment plus the
 `agent-tests run` line for that scenario, host, and ref. A base-side line also

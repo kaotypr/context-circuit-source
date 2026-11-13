@@ -20,7 +20,7 @@ func TestCatalogue(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone",
+		"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "execute-in-worktree", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone",
 		"join", "orient", "override-loop", "override-not-allowed", "plan", "push-records", "push-records-conflict",
 	}
 	var got []string
@@ -48,7 +48,7 @@ func TestCatalogue(t *testing.T) {
 
 func TestSamplePaths(t *testing.T) {
 	table := loadTable(t)
-	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "override-loop", "override-not-allowed", "plan", "push-records", "push-records-conflict"}
+	all := []string{"after-merge", "archive", "borrowed", "complete", "complete-tone", "direct", "execute", "execute-in-worktree", "extension-execute", "extension-none-push", "extension-push", "extension-report", "extension-role", "extension-skill", "extension-skip", "extension-stop", "extension-unallowed", "ff", "intent", "intent-lang", "intent-tone", "join", "orient", "override-loop", "override-not-allowed", "plan", "push-records", "push-records-conflict"}
 	cases := []struct {
 		path      string
 		scenarios []string

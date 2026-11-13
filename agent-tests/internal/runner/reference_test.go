@@ -144,7 +144,7 @@ func TestReferenceSolutions(t *testing.T) {
 			if verdict != "pass" {
 				t.Fatalf("verdict %s\n%s\ncheck %s\nsolution:\n%s", verdict, formatResults(results), graded.CheckAfter, stderr)
 			}
-			if sc.ID == "execute" {
+			if sc.ID == "execute" || sc.ID == "execute-in-worktree" {
 				assertExecuteGit(t, st)
 			}
 			assertSoft(t, st, graded, verdict, results)
@@ -394,9 +394,18 @@ func runSolution(t *testing.T, st *liveWorld, solution, stream string) string {
 	if err := os.WriteFile(wrapper, []byte(body), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	// The solution starts where the host would: the scenario's start_dir
+	// when it names one, otherwise the workspace.
+	dir, err := hostStartDir(st.w, st.sc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dir == "" {
+		dir = st.w.WS
+	}
 	res, err := proc.Run(context.Background(), proc.Spec{
 		Argv: []string{"sh", wrapper},
-		Dir:  st.w.WS,
+		Dir:  dir,
 		Env:  hostLikeEnv(st.w),
 	})
 	if err != nil || res.ExitCode != 0 {
@@ -579,6 +588,28 @@ func assertStart(t *testing.T, st *liveWorld, checkBefore []byte) {
 		if strings.Contains(st.before.Refs["api"], "cc/p1000/") {
 			t.Fatalf("branch already exists\n%s", st.before.Refs["api"])
 		}
+	case "execute-in-worktree":
+		if len(issues) != 0 {
+			t.Fatalf("start issues %s", checkBefore)
+		}
+		// The plan's worktree is prepared on its branch, which holds no
+		// work yet, and the workspace around it is clean.
+		if len(globRel(t, st.w.WS, "plans", "p1000-*", "plan.md")) != 1 {
+			t.Fatal("plan missing")
+		}
+		if !strings.Contains(st.before.Refs["api"], "refs/heads/cc/p1000/api") {
+			t.Fatalf("plan branch missing\n%s", st.before.Refs["api"])
+		}
+		wt := filepath.Join(st.w.WS, ".worktrees", "p1000", "api")
+		if st.git(t, wt, "rev-parse", "--abbrev-ref", "HEAD") != "cc/p1000/api" {
+			t.Fatal("the worktree is not on the plan branch")
+		}
+		if st.git(t, st.w.API, "rev-list", "--count", "main..cc/p1000/api") != "0" {
+			t.Fatal("the plan branch already holds work")
+		}
+		if st.git(t, st.w.WS, "status", "--porcelain") != "" {
+			t.Fatal("the workspace is dirty")
+		}
 	case "complete", "complete-tone":
 		if len(issues) != 1 || !strings.Contains(string(checkBefore), "needs a person") || !strings.Contains(string(checkBefore), "invoices") {
 			t.Fatalf("start check %s", checkBefore)
@@ -695,7 +726,7 @@ func assertSoft(t *testing.T, st *liveWorld, graded scenario.CheckContext, verdi
 		if line.Soft["read-api-code"] != true || line.Soft["subagents"] != 0 {
 			t.Fatalf("soft %#v", line.Soft)
 		}
-	case "execute", "extension-execute", "extension-skip", "extension-push",
+	case "execute", "execute-in-worktree", "extension-execute", "extension-skip", "extension-push",
 		"extension-report", "extension-unallowed", "extension-none-push":
 		if line.Soft["commit-subjects-conventional"] != true {
 			t.Fatalf("soft %#v", line.Soft)
@@ -986,6 +1017,7 @@ func streamFor(id string) string {
 		"intent-tone":           "Intent-nya udah aku tulis. Please approve it before anyone builds it.",
 		"plan":                  "The plan is in the plan folder and it stops before implementation.",
 		"execute":               "The CSV export is on the worktree branch. Tests passed. Nothing was pushed.",
+		"execute-in-worktree":   "The CSV export is committed on cc/p1000/api. Tests passed. Nothing was pushed.",
 		"complete":              "The plan is marked complete and the invoices note mentions CSV. Those edits are uncommitted, and committing them is recommended.",
 		"complete-tone":         "The plan is marked complete and the invoices note mentions CSV. Those edits are uncommitted, and committing them is recommended.",
 		"direct":                "The README typo is fixed and the change is not committed.",
@@ -1016,6 +1048,8 @@ func streamFor(id string) string {
 		tool = "repositories/api/internal/invoice/export.go"
 	case "execute":
 		tool = ".worktrees/p1000/api/internal/invoice/export.go"
+	case "execute-in-worktree":
+		tool = "internal/invoice/export.go"
 	case "extension-execute", "extension-skip":
 		tool = "extensions/parity/instructions/after-implement.md"
 	case "extension-push", "extension-none-push":
