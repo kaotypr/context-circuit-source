@@ -29,11 +29,16 @@ func (codexHost) Build(in LaunchInput) (Launch, error) {
 		"--json",
 		"--ignore-user-config",
 		"--skip-git-repo-check",
-		"-C", in.Workspace,
+		"-C", startDir(in),
 		"-m", chosenModel(in),
 		"--sandbox", "workspace-write",
 		"--add-dir", gocache,
 		"--add-dir", wsCodex,
+	}
+	// A host started below the workspace, in a plan's worktree, keeps the
+	// whole workspace writable as a run started at its root does.
+	if startDir(in) != in.Workspace {
+		argv = append(argv, "--add-dir", in.Workspace)
 	}
 	// workspace-write keeps .git read-only and any path outside the
 	// workspace unwritable, so a run allowed to commit and push names the
@@ -82,7 +87,7 @@ func (codexHost) Build(in LaunchInput) (Launch, error) {
 	})
 	return Launch{
 		Argv:       argv,
-		Dir:        in.Workspace,
+		Dir:        startDir(in),
 		Env:        env,
 		MkDirs:     []string{codexHome, home, wsCodex},
 		Stdin:      "",

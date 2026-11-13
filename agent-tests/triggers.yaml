@@ -259,13 +259,13 @@ rows:
     note: Also the host whose generated definition changed.
 
   - match: scripts/release-manifest.txt
-    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skill, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, override-loop, override-not-allowed, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, execute-in-worktree, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skill, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, override-loop, override-not-allowed, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.
 
   - match: assets.go
-    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skill, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, override-loop, override-not-allowed, plan, push-records, push-records-conflict]
+    scenarios: [after-merge, archive, borrowed, complete, complete-tone, direct, execute, execute-in-worktree, extension-execute, extension-none-push, extension-push, extension-report, extension-role, extension-skill, extension-skip, extension-stop, extension-unallowed, ff, intent, intent-lang, intent-tone, join, orient, override-loop, override-not-allowed, plan, push-records, push-records-conflict]
     kind: structure
     larger: true
     note: Every scenario on any one host, plus orient on all three hosts. A destination added, removed, or moved.

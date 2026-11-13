@@ -38,7 +38,7 @@ func (claudeHost) Build(in LaunchInput) (Launch, error) {
 	})
 	return Launch{
 		Argv:   argv,
-		Dir:    in.Workspace,
+		Dir:    startDir(in),
 		Env:    env,
 		MkDirs: []string{configDir, home},
 	}, nil

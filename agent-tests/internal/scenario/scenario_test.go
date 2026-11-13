@@ -200,3 +200,53 @@ func TestPushWorkspaceBaseKeepsOtherHashes(t *testing.T) {
 		t.Fatalf("a false field is in the canonical YAML:\n%s", b)
 	}
 }
+
+// start_dir moves only the host's working directory, so it has to stay
+// inside the workspace. It is left out of the canonical YAML when empty.
+func TestStartDir(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, body string) string {
+		t.Helper()
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	got, err := Load(write("ok.yaml", "id: s\nversion: 1\nprompt: hi\nstart_dir: .worktrees/p1000/api\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.StartDir != ".worktrees/p1000/api" || got.Workspace != "" {
+		t.Fatalf("%+v", got)
+	}
+	off := got
+	off.StartDir = ""
+	if off.Hash("sha256:abc") == got.Hash("sha256:abc") {
+		t.Fatal("the field does not change the hash")
+	}
+	b, err := yaml.Marshal(off)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b), "start_dir") {
+		t.Fatalf("an empty start_dir is in the canonical YAML:\n%s", b)
+	}
+	for _, good := range []string{"", "repositories/api", ".worktrees/p1000/api", "a..b"} {
+		if err := ValidateStartDir(good); err != nil {
+			t.Errorf("%q: %v", good, err)
+		}
+	}
+	bad := []string{
+		"/abs", "..", "../ws2", "a/../../b", ".", "./a", "a/./b", "a/", "a//b",
+		`a\b`, `C:\ws`, "C:/ws", "a/..",
+	}
+	for _, path := range bad {
+		if err := ValidateStartDir(path); err == nil {
+			t.Errorf("%q: expected validation error", path)
+		}
+	}
+	if _, err := Load(write("bad.yaml", "id: bad\nversion: 1\nprompt: hi\nstart_dir: ../ws2\n")); err == nil || !strings.Contains(err.Error(), "start_dir") {
+		t.Fatalf("load error %v", err)
+	}
+}

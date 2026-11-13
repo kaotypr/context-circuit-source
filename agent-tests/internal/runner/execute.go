@@ -132,12 +132,17 @@ func (rt *runtime) one(ctx context.Context, item planned, emptyWorkspace bool) (
 	if err != nil {
 		return err
 	}
+	start, err := hostStartDir(w, item.Scenario)
+	if err != nil {
+		return err
+	}
 	prompt := expandPrompt(item.Scenario.Prompt, w)
 	launch, err := adapter.Build(hosts.LaunchInput{
 		Prompt:           prompt,
 		Model:            item.Config.Model,
 		Effort:           item.Config.Effort,
 		Workspace:        w.WS,
+		StartDir:         start,
 		RunRoot:          w.RunRoot,
 		SessionID:        newSessionID(),
 		Cfg:              item.Config,
@@ -500,6 +505,28 @@ func applyWorkspace(w *world.World, sc scenario.Scenario) {
 		w.Env = map[string]string{}
 	}
 	w.Env["WS"] = w.WS
+}
+
+// hostStartDir is the directory the host starts in when the scenario names
+// a start_dir: that path under the active workspace, which setup must have
+// created. It is "" when the scenario names none, and the host then starts
+// in the workspace.
+func hostStartDir(w world.World, sc scenario.Scenario) (string, error) {
+	if sc.StartDir == "" {
+		return "", nil
+	}
+	if err := scenario.ValidateStartDir(sc.StartDir); err != nil {
+		return "", fmt.Errorf("scenario %s: %w", sc.ID, err)
+	}
+	dir := filepath.Join(w.WS, filepath.FromSlash(sc.StartDir))
+	info, err := os.Stat(dir)
+	if err != nil {
+		return "", fmt.Errorf("scenario %s: start_dir %s: %w", sc.ID, sc.StartDir, err)
+	}
+	if !info.IsDir() {
+		return "", fmt.Errorf("scenario %s: start_dir %s is not a directory", sc.ID, sc.StartDir)
+	}
+	return dir, nil
 }
 
 func (rt *runtime) captureCheck(ctx context.Context, w world.World) ([]byte, error) {

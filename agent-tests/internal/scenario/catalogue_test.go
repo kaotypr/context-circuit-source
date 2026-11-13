@@ -17,7 +17,7 @@ func TestCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(loaded) != 27 {
+	if len(loaded) != 28 {
 		t.Fatalf("scenarios %d", len(loaded))
 	}
 	entries, err := os.ReadDir(dir)
@@ -59,7 +59,7 @@ func TestCatalogue(t *testing.T) {
 		}
 		wantSetup := map[string]bool{
 			"join": true, "intent-lang": true, "plan": true,
-			"execute": true, "complete": true, "borrowed": true, "archive": true,
+			"execute": true, "execute-in-worktree": true, "complete": true, "borrowed": true, "archive": true,
 			"push-records": true, "push-records-conflict": true,
 			"intent-tone": true, "complete-tone": true,
 			"after-merge": true, "ff": true,
@@ -110,8 +110,16 @@ func TestCatalogue(t *testing.T) {
 	if byID["join"].Workspace != "ws2" {
 		t.Fatalf("join workspace %q", byID["join"].Workspace)
 	}
-	if len(byID["execute"].AllowedBranches) != 1 || byID["execute"].AllowedBranches[0] != "cc/p1000/api" {
-		t.Fatalf("execute branches %v", byID["execute"].AllowedBranches)
+	for _, id := range []string{"execute", "execute-in-worktree"} {
+		if len(byID[id].AllowedBranches) != 1 || byID[id].AllowedBranches[0] != "cc/p1000/api" {
+			t.Fatalf("%s branches %v", id, byID[id].AllowedBranches)
+		}
+	}
+	for id, sc := range byID {
+		want := map[string]string{"execute-in-worktree": ".worktrees/p1000/api"}[id]
+		if sc.StartDir != want {
+			t.Fatalf("%s start_dir %q, want %q", id, sc.StartDir, want)
+		}
 	}
 	for id, sc := range byID {
 		push := id == "push-records" || id == "push-records-conflict"
