@@ -24,7 +24,7 @@ func (cursorHost) Build(in LaunchInput) (Launch, error) {
 		"--output-format", "stream-json",
 		"--force",
 		"--trust",
-		"--workspace", in.Workspace,
+		"--workspace", startDir(in),
 	}
 	home := filepath.Join(in.RunRoot, "cursor-home")
 	config := filepath.Join(home, ".config")
@@ -52,7 +52,7 @@ func (cursorHost) Build(in LaunchInput) (Launch, error) {
 	// configuration; Cursor fills every other field with its defaults.
 	return Launch{
 		Argv:   argv,
-		Dir:    in.Workspace,
+		Dir:    startDir(in),
 		Env:    env,
 		MkDirs: []string{home, config, configDir, dataDir},
 		SetupArgv: [][]string{{

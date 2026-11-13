@@ -38,6 +38,13 @@ type Scenario struct {
 	// Workspace is the single path element under the run root where the
 	// host starts. Empty means ws.
 	Workspace string `yaml:"workspace"`
+	// StartDir is the host's working directory, a slash-separated path
+	// relative to the workspace, such as a plan's worktree. It changes only
+	// where the host starts: setup, $WS and grading still use the
+	// workspace. Empty means the workspace itself. It is omitted from the
+	// canonical YAML when empty, so the hash of a scenario that does not
+	// set it is unchanged.
+	StartDir string `yaml:"start_dir,omitempty"`
 	// Human lists judgements a person still has to make.
 	Human []string `yaml:"human"`
 	// AllowedBranches are path.Match patterns for branch names this
@@ -208,8 +215,33 @@ func (s Scenario) validate() error {
 	if err := validateWorkspace(s.Workspace); err != nil {
 		return fmt.Errorf("scenario %s: %w", s.ID, err)
 	}
+	if err := ValidateStartDir(s.StartDir); err != nil {
+		return fmt.Errorf("scenario %s: %w", s.ID, err)
+	}
 	if err := validateAllowedBranches(s.AllowedBranches); err != nil {
 		return fmt.Errorf("scenario %s: %w", s.ID, err)
+	}
+	return nil
+}
+
+// ValidateStartDir accepts an empty path, which means the workspace, or a
+// clean, slash-separated relative path that stays inside the workspace:
+// no "." or ".." element, no leading slash, no backslash, and no drive
+// colon.
+func ValidateStartDir(dir string) error {
+	if dir == "" {
+		return nil
+	}
+	if strings.ContainsAny(dir, `\:`) || path.IsAbs(dir) || filepath.IsAbs(dir) {
+		return fmt.Errorf("start_dir %q must be a relative slash-separated path", dir)
+	}
+	if path.Clean(dir) != dir {
+		return fmt.Errorf("start_dir %q must be a clean path", dir)
+	}
+	for _, elem := range strings.Split(dir, "/") {
+		if elem == "." || elem == ".." {
+			return fmt.Errorf("start_dir %q must stay inside the workspace", dir)
+		}
 	}
 	return nil
 }

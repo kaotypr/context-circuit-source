@@ -43,6 +43,10 @@ type LaunchInput struct {
 	Model     string
 	Effort    string
 	Workspace string
+	// StartDir is the host's working directory when it is not the
+	// workspace itself, such as a plan's worktree inside it. Empty means
+	// Workspace. It moves only where the host starts.
+	StartDir  string
 	RunRoot   string
 	SessionID string
 	Cfg       HostConfig
@@ -234,6 +238,15 @@ func firstSummary(in map[string]any) string {
 		}
 	}
 	return ""
+}
+
+// startDir is the directory the host starts in: StartDir when it is set,
+// otherwise the workspace.
+func startDir(in LaunchInput) string {
+	if in.StartDir != "" {
+		return in.StartDir
+	}
+	return in.Workspace
 }
 
 func chosenModel(in LaunchInput) string {
