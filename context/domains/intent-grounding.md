@@ -38,6 +38,19 @@ renumbering what somebody already answered by number.
 With no questions, the unnumbered empty-state line stays as written; a
 placeholder numbered item would claim a decision is pending when none is.
 
+A question with a few clear answers lists them directly beneath the bold
+question as an indented `- ` list, and the option the agent recommends ends with
+`_(recommended)_`. At most one option carries the marker, and none does when no
+answer is clearly better. The marker is fixed English like `_Answer:_`, whatever
+language the intent is written in, so a tool reading the record can offer the
+options as choices with the recommended one preselected without parsing prose.
+`_Answer:_` still goes beneath once the question is settled.
+
+Options are for questions whose answers really are few and clear; an open-ended
+question stays plain, with any recommendation in prose, rather than being forced
+into a menu. They never replace answering by number, and a person may answer
+with something not listed.
+
 Answers are written into the record by the agent, not by a command. Only a gate
 needs an operation that records a decision and its date — see
 [authorization boundaries](authorization.md) — and answering a question is not a
