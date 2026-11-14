@@ -79,6 +79,26 @@ written; a placeholder would invent a pending decision.
 A question the request already answers is applied without asking. An
 implementation question belongs in the plan, not here.
 
+### Options under a question
+
+When a question has a few clear answers, list them under it as an indented `- `
+list, directly beneath the bold question. End the one you recommend with
+`_(recommended)_`. That marker is fixed English, like `_Answer:_`, whatever
+language the intent is written in, so a tool can recognize it. Mark at most one
+option, and none when no answer is clearly better. Once the question is settled,
+`_Answer:_` still goes beneath, after the options.
+
+```markdown
+1. **Which repositories get the export?**
+   - Only `api` _(recommended)_
+   - `api` and `web`
+```
+
+List options only when the answers are few and clear. A question whose answer
+is open-ended stays a plain question, and a recommendation for it goes in prose
+beneath. Options do not limit the answer: a person still answers by number, and
+may answer with something that is not listed.
+
 ## Presenting it
 
 The record is in its author's language; the conversation is not. Present the
@@ -86,6 +106,9 @@ intent, its open questions, and everything you say around them in the language
 the person is writing to you in, even when the record itself is in another. The
 member's tone covers that conversation too, as
 `.agents/skills/cc-writing/SKILL.md` describes.
+
+Invite answers by question number. Where a question lists options, say the
+person may pick one or answer in their own words.
 
 ## After approval
 

@@ -30,7 +30,11 @@ settle becomes an open question rather than an assumption.
 Open questions are a numbered list — bold question, italic `_Answer:_` line beneath
 once settled — so a person can answer by number. Numbers are stable: an answered
 question keeps its number and is never deleted, and a later question takes the next
-unused one. The unnumbered empty-state line stays when there are none. The agent
+unused one. The unnumbered empty-state line stays when there are none. A question
+with a few clear answers lists them beneath it as an indented `- ` list, and the
+recommended one, if any, ends with the fixed English marker `_(recommended)_`, at
+most one per question; `_Answer:_` still goes beneath once settled. An open-ended
+question stays plain, and a person may answer with something not listed. The agent
 writes and answers them in the Markdown; no command records an answer, because only
 approval is a gate. A question arising during planning that bears on the outcome
 returns to the intent instead of being settled inside a plan.
