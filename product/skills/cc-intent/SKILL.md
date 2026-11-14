@@ -79,8 +79,6 @@ written; a placeholder would invent a pending decision.
 A question the request already answers is applied without asking. An
 implementation question belongs in the plan, not here.
 
-### Options under a question
-
 When a question has a few clear answers, list them under it as an indented `- `
 list, directly beneath the bold question. End the one you recommend with
 `_(recommended)_`. That marker is fixed English, like `_Answer:_`, whatever
